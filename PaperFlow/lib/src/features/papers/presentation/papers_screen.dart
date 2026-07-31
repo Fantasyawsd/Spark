@@ -452,7 +452,7 @@ class _PaperGridCardState extends State<_PaperGridCard> {
                     paper.title,
                     maxLines: widget.index.isEven ? 4 : 5,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: PaperFlowColors.ink,
                       fontSize: 15,
                       height: 1.2,
@@ -615,15 +615,6 @@ class _PaperCardState extends State<_PaperCard> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _MobileSelectableText(
-                    text: '${paper.venue} · 被引 ${paper.citations}',
-                    style: TextStyle(
-                      color: PaperFlowColors.primary,
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 7),
-                  _MobileSelectableText(
                     key: ValueKey('paper-title-${paper.id}'),
                     text: paper.title,
                     maxLines: 3,
@@ -648,16 +639,16 @@ class _PaperCardState extends State<_PaperCard> {
                       fontWeight: FontWeight.w500,
                     ),
                   ),
-                  const SizedBox(height: 9),
-                  Wrap(
-                    spacing: 7,
-                    runSpacing: 7,
-                    children: [
-                      for (final topic in paper.topics)
-                        TopicChip(label: topic, compact: true),
-                    ],
+                  const SizedBox(height: 8),
+                  _MobileSelectableText(
+                    text: '${paper.venue} · 被引 ${paper.citations}',
+                    style: TextStyle(
+                      color: PaperFlowColors.primary,
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
-                  const SizedBox(height: 7),
+                  const SizedBox(height: 9),
                   PaperFlowTabBar(
                     key: const ValueKey('paper-tabs'),
                     tabs: _tabs,
@@ -684,6 +675,15 @@ class _PaperCardState extends State<_PaperCard> {
                             setState(() => _abstractExpanded = true),
                       ),
                     ),
+                  ),
+                  const SizedBox(height: 9),
+                  Wrap(
+                    spacing: 7,
+                    runSpacing: 7,
+                    children: [
+                      for (final topic in paper.topics)
+                        TopicChip(label: topic, compact: true),
+                    ],
                   ),
                 ],
               ),

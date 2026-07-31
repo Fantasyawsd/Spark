@@ -487,7 +487,7 @@ class _PaperGridCardState extends State<_PaperGridCard> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    paper.authors,
+                    _compactAuthorLine(paper),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
@@ -629,8 +629,7 @@ class _PaperCardState extends State<_PaperCard> {
                   ),
                   const SizedBox(height: 7),
                   _MobileSelectableText(
-                    text:
-                        '${_compactAuthors(paper.authors)} · ${paper.firstAffiliation}',
+                    text: _compactAuthorLine(paper),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
@@ -708,12 +707,6 @@ class _PaperCardState extends State<_PaperCard> {
     );
   }
 
-  String _compactAuthors(String authors) {
-    final names = authors.split(',').map((name) => name.trim()).toList();
-    if (names.length <= 1) return authors;
-    return '${names.first} 等';
-  }
-
   void _copyTitle(String title) {
     Clipboard.setData(ClipboardData(text: title));
   }
@@ -734,6 +727,12 @@ class _PaperCardState extends State<_PaperCard> {
       _ => paper.relatedPapersMarkdown,
     };
   }
+}
+
+String _compactAuthorLine(PaperRecord paper) {
+  final names = paper.authors.split(',').map((name) => name.trim()).toList();
+  final author = names.length <= 1 ? paper.authors : '${names.first} 等';
+  return '$author · ${paper.firstAffiliation}';
 }
 
 class _PaperTabBody extends StatelessWidget {

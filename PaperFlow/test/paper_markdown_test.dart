@@ -106,8 +106,22 @@ void main() {
     final copyButton = find.byIcon(Icons.copy_rounded);
     expect(copyButton, findsOneWidget);
 
+    String? copiedText;
+    final messenger =
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    messenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
+      if (call.method == 'Clipboard.setData') {
+        copiedText =
+            (call.arguments as Map<Object?, Object?>)['text'] as String?;
+      }
+      return null;
+    });
+    addTearDown(
+      () => messenger.setMockMethodCallHandler(SystemChannels.platform, null),
+    );
+
     await tester.tap(copyButton);
-    final clipboard = await Clipboard.getData(Clipboard.kTextPlain);
-    expect(clipboard?.text, 'final value = 42;');
+    await tester.pump();
+    expect(copiedText, 'final value = 42;');
   });
 }

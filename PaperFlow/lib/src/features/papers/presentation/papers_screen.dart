@@ -671,19 +671,13 @@ class _PaperCardState extends State<_PaperCard> {
                         text: _tabText(paper, index),
                         expandable: index == 0,
                         expanded: index == 0 && _abstractExpanded,
+                        footer: index == 2
+                            ? _PaperTopics(topics: paper.topics)
+                            : null,
                         onExpand: () =>
                             setState(() => _abstractExpanded = true),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 9),
-                  Wrap(
-                    spacing: 7,
-                    runSpacing: 7,
-                    children: [
-                      for (final topic in paper.topics)
-                        TopicChip(label: topic, compact: true),
-                    ],
                   ),
                 ],
               ),
@@ -748,12 +742,14 @@ class _PaperTabBody extends StatelessWidget {
     required this.text,
     required this.expandable,
     required this.expanded,
+    this.footer,
     required this.onExpand,
   });
 
   final String text;
   final bool expandable;
   final bool expanded;
+  final Widget? footer;
   final VoidCallback onExpand;
 
   static const _textStyle = TextStyle(
@@ -775,15 +771,17 @@ class _PaperTabBody extends StatelessWidget {
             expandable && painter.height > constraints.maxHeight;
 
         if (!hasOverflow && !expanded) {
-          return _PaperMarkdown(data: text);
+          return _ScrollablePaperContent(
+            markdown: text,
+            footer: footer,
+          );
         }
 
         if (!expandable || expanded) {
-          return SingleChildScrollView(
+          return _ScrollablePaperContent(
             key: const ValueKey('paper-tab-scroll'),
-            padding: const EdgeInsets.only(bottom: 12),
-            physics: const ClampingScrollPhysics(),
-            child: _PaperMarkdown(data: text),
+            markdown: text,
+            footer: footer,
           );
         }
 
@@ -838,6 +836,52 @@ class _PaperTabBody extends StatelessWidget {
         .replaceAll(RegExp(r'\[([^\]]+)\]\([^)]*\)'), r'$1')
         .replaceAll(RegExp(r'^[#>*+\-]+\s*', multiLine: true), '')
         .replaceAll(RegExp(r'[*_~]'), '');
+  }
+}
+
+class _ScrollablePaperContent extends StatelessWidget {
+  const _ScrollablePaperContent({
+    super.key,
+    required this.markdown,
+    this.footer,
+  });
+
+  final String markdown;
+  final Widget? footer;
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.only(bottom: 12),
+      physics: const ClampingScrollPhysics(),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _PaperMarkdown(data: markdown),
+          if (footer != null) ...[
+            const SizedBox(height: 14),
+            footer!,
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _PaperTopics extends StatelessWidget {
+  const _PaperTopics({required this.topics});
+
+  final List<String> topics;
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: 7,
+      runSpacing: 7,
+      children: [
+        for (final topic in topics) TopicChip(label: topic, compact: true),
+      ],
+    );
   }
 }
 

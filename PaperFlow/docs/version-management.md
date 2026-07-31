@@ -239,3 +239,13 @@ git diff --cached
 - 分支可以安全合并、回退或交接。
 
 如果尚未形成提交，只能称为“工作区实现完成”，不能称为“版本完成”。
+
+## 12. 2026-07-31 执行记录
+
+- 功能分支：`codex/papersSource`
+- `main` 基线：`b022df0`
+- 当前实现 checkpoint：`d3455c5`
+- 后续文档与 Markdown 修复已按职责拆分为独立提交。
+- 验证结果：`flutter analyze` 通过，完整测试 70 项通过，`flutter build windows --debug` 通过。
+- 工作区状态：提交完成后应保持干净。
+- 远程状态：当前未配置 Git remote，因此现阶段只有本地回滚能力，尚无异地备份。

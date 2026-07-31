@@ -607,7 +607,7 @@ class _PaperCardState extends State<_PaperCard> {
             child: Padding(
               padding: EdgeInsets.fromLTRB(
                 16,
-                safePadding.top + 116,
+                safePadding.top + 64,
                 16,
                 safePadding.bottom + 134,
               ),

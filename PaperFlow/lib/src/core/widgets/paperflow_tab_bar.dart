@@ -49,6 +49,9 @@ class PaperFlowTabBar extends StatelessWidget {
                         Expanded(
                           child: InkWell(
                             onTap: () => onSelected(index),
+                            splashFactory: NoSplash.splashFactory,
+                            overlayColor:
+                                WidgetStateProperty.all(Colors.transparent),
                             child: Align(
                               alignment: Alignment.topCenter,
                               child: Text(

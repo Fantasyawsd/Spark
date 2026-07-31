@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../theme/paperflow_theme.dart';
+import '../../../../core/theme/paperflow_theme.dart';
 
 class PaperDiagram extends StatelessWidget {
   const PaperDiagram({super.key, this.accent = const Color(0xFF4A7FCA)});

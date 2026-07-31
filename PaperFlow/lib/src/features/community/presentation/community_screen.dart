@@ -3,10 +3,11 @@ import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 
 import '../../../core/motion/motion_tokens.dart';
 import '../../../core/theme/paperflow_theme.dart';
-import '../../../core/widgets/paper_diagram.dart';
 import '../../../core/widgets/paperflow_tab_bar.dart';
 import '../../../core/widgets/profile_avatar.dart';
 import '../domain/community_post.dart';
+import '../data/community_post_seed.dart';
+import 'widgets/paper_diagram.dart';
 
 class CommunityScreen extends StatefulWidget {
   const CommunityScreen({super.key});

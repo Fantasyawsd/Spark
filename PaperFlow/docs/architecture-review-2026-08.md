@@ -25,6 +25,9 @@
 - Profile 的阅读历史从固定 Demo 统计改为真实论文列表，并增加真实稍后阅读列表；页面只消费领域对象和打开论文回调。
 - 扩展论文偏好快照，按筛选条件保存论文位置及最后选中的一级/二级分类，应用重建后可恢复。
 - 修复 `PaperFeedController` 异步偏好写入在销毁后通知监听器的生命周期错误。
+- `CommunityPost` 与 `MessageItem` 已移除 Flutter 依赖，领域实体恢复为纯 Dart 类型。
+- Community 和 Messages 的演示数据已迁至各自的 `data` 层，不再与领域实体定义混放。
+- 仅由 Community 使用的 `PaperDiagram` 已从 `core/widgets` 迁回该业务模块的展示层。
 
 ## 高优先级待整改
 
@@ -37,7 +40,6 @@
 
 - `PaperController` 当前是 `PaperFeedController` 与 `PaperInteractionController` 的兼容外观。保留用于过渡，待调用方全部改为窄接口后再删除，不立即重构。
 - `paper_markdown.dart` 同时承担渲染、代码块解析、LaTeX 预处理、流式修复和剪贴板操作。后续出现第三个调用方或新增解析能力时再按职责拆分。
-- `community` 与 `messages` 的领域文件仍包含 Flutter 类型和 demo 数据，应在对应业务功能化时拆出 ViewModel 与 seed data。
 - 仅由单个业务模块使用的组件不应继续放入 `core/widgets`；迁移时以真实复用关系为准，不进行批量目录改名。
 
 ## 继续开发约束

@@ -5,6 +5,7 @@ import '../../../core/widgets/profile_avatar.dart';
 import '../../../core/widgets/surface_card.dart';
 import '../../chat/application/chat_session_controller.dart';
 import '../../chat/domain/chat_session_repository.dart';
+import '../data/message_seed.dart';
 import '../domain/message_item.dart';
 import 'widgets/swipe_action_row.dart';
 

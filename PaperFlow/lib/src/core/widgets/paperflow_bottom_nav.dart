@@ -31,11 +31,9 @@ class PaperFlowBottomNav extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.fromLTRB(4, 4, 4, 3),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.86),
+              color: Colors.white.withValues(alpha: 0.9),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: Colors.white.withValues(alpha: 0.92),
-              ),
+              border: Border.all(color: PaperFlowColors.line),
             ),
             child: SafeArea(
               top: false,
@@ -48,6 +46,9 @@ class PaperFlowBottomNav extends StatelessWidget {
                       label: papersGridMode ? '‹ 返回' : '论文 ⇄',
                       icon: papersGridMode
                           ? Icons.arrow_back_ios_new_rounded
+                          : Icons.description_outlined,
+                      selectedIcon: papersGridMode
+                          ? Icons.arrow_back_ios_new_rounded
                           : Icons.description_rounded,
                       index: 0,
                       selectedIndex: selectedIndex,
@@ -55,7 +56,8 @@ class PaperFlowBottomNav extends StatelessWidget {
                     ),
                     _NavItem(
                       label: '社区',
-                      icon: Icons.group_rounded,
+                      icon: Icons.groups_outlined,
+                      selectedIcon: Icons.groups_rounded,
                       index: 1,
                       selectedIndex: selectedIndex,
                       onSelected: onSelected,
@@ -80,23 +82,28 @@ class PaperFlowBottomNav extends StatelessWidget {
                                 ),
                               ],
                             ),
-                            child: const Icon(Icons.add_rounded,
-                                color: Colors.white, size: 34),
+                            child: const Icon(
+                              Icons.add_rounded,
+                              color: Colors.white,
+                              size: 34,
+                            ),
                           ),
                         ),
                       ),
                     ),
                     _NavItem(
-                      label: '消息',
-                      icon: Icons.chat_bubble_rounded,
+                      label: '聊天',
+                      icon: Icons.chat_bubble_outline_rounded,
+                      selectedIcon: Icons.chat_bubble_rounded,
                       index: 2,
                       selectedIndex: selectedIndex,
-                      badge: messageCount,
+                      showUnreadDot: messageCount > 0,
                       onSelected: onSelected,
                     ),
                     _NavItem(
                       label: '我的',
-                      icon: Icons.person_rounded,
+                      icon: Icons.person_outline_rounded,
+                      selectedIcon: Icons.person_rounded,
                       index: 3,
                       selectedIndex: selectedIndex,
                       onSelected: onSelected,
@@ -116,23 +123,25 @@ class _NavItem extends StatelessWidget {
   const _NavItem({
     required this.label,
     required this.icon,
+    required this.selectedIcon,
     required this.index,
     required this.selectedIndex,
     required this.onSelected,
-    this.badge = 0,
+    this.showUnreadDot = false,
   });
 
   final String label;
   final IconData icon;
+  final IconData selectedIcon;
   final int index;
   final int selectedIndex;
   final ValueChanged<int> onSelected;
-  final int badge;
+  final bool showUnreadDot;
 
   @override
   Widget build(BuildContext context) {
     final selected = index == selectedIndex;
-    final color = selected ? PaperFlowColors.primary : PaperFlowColors.muted;
+    final color = selected ? PaperFlowColors.ink : PaperFlowColors.muted;
     return Expanded(
       child: InkResponse(
         onTap: () => onSelected(index),
@@ -148,29 +157,23 @@ class _NavItem extends StatelessWidget {
                 children: [
                   Align(
                     alignment: Alignment.center,
-                    child: Icon(icon, size: 25, color: color),
+                    child: Icon(
+                      selected ? selectedIcon : icon,
+                      size: 25,
+                      color: color,
+                    ),
                   ),
-                  if (badge > 0)
+                  if (showUnreadDot)
                     Positioned(
-                      right: -2,
-                      top: -6,
+                      right: 1,
+                      top: 0,
                       child: Container(
-                        height: 20,
-                        constraints: const BoxConstraints(minWidth: 20),
-                        padding: const EdgeInsets.symmetric(horizontal: 5),
+                        width: 7,
+                        height: 7,
                         decoration: BoxDecoration(
                           color: PaperFlowColors.primary,
-                          borderRadius: BorderRadius.all(Radius.circular(99)),
-                        ),
-                        child: Center(
-                          child: Text(
-                            '$badge',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 1),
                         ),
                       ),
                     ),

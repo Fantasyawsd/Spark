@@ -25,8 +25,9 @@ void main() {
     await tester.pumpWidget(const PaperFlowApp(showSplash: false));
     await tester.pump();
 
-    const title = 'LoRA: Low-Rank Adaptation of Large Language Models';
-    await tester.tap(find.byKey(const ValueKey('paper-title-lora-2021')));
+    const title =
+        'Corruption Robust Offline Reinforcement Learning with Human Feedback';
+    await tester.tap(find.byKey(const ValueKey('paper-title-2402.06734')));
     await tester.pump(const Duration(milliseconds: 100));
 
     expect(find.text('论文题目已复制'), findsNothing);
@@ -34,33 +35,101 @@ void main() {
     expect(find.byType(SelectableText), findsWidgets);
   });
 
+  testWidgets('paper metadata exposes the primary reading path',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(378, 810));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final linkService = _FakePaperLinkService();
+
+    await tester.pumpWidget(
+      PaperFlowApp(
+        showSplash: false,
+        linkService: linkService,
+      ),
+    );
+    await tester.pump();
+
+    expect(find.text('关注作者'), findsOneWidget);
+    expect(find.textContaining('· arXiv'), findsNothing);
+    expect(find.textContaining('被引 0'), findsOneWidget);
+    expect(find.byKey(const ValueKey('paper-open-link')), findsOneWidget);
+    expect(find.byKey(const ValueKey('paper-ai-entry')), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byType(PaperActionBar),
+        matching: find.text('0'),
+      ),
+      findsNWidgets(4),
+    );
+    expect(
+      find.descendant(
+        of: find.byType(PaperActionBar),
+        matching: find.text('AI'),
+      ),
+      findsNothing,
+    );
+
+    await tester.tap(find.byKey(const ValueKey('paper-open-link')));
+    await tester.pump();
+    expect(linkService.opened.single.toString(), contains('/pdf/2402.06734'));
+  });
+
   testWidgets('paper tabs animate content and actions keep shared state',
       (tester) async {
     await tester.binding.setSurfaceSize(const Size(378, 810));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
-    await tester.pumpWidget(const PaperFlowApp(showSplash: false));
+    await tester.pumpWidget(
+      const PaperFlowApp(
+        showSplash: false,
+        translationServiceFactory: _FakePaperTranslationServiceFactory(),
+      ),
+    );
     await tester.pump();
 
     final pagesSize = tester.getSize(
       find.byKey(const ValueKey('paper-tab-pages')).first,
     );
-    await tester.tap(find.text('中文摘要').first);
+    await tester.tap(find.text('中文解读').first);
     await tester.pump(const Duration(milliseconds: 100));
     expect(
       tester.getSize(find.byKey(const ValueKey('paper-tab-pages')).first),
       pagesSize,
     );
     await tester.pumpAndSettle();
-    expect(find.textContaining('LoRA 是一种参数高效'), findsOneWidget);
+    expect(find.text('DeepSeek 中文翻译'), findsOneWidget);
 
     await tester.tap(find.byIcon(Icons.favorite_border_rounded).first);
     await tester.pumpAndSettle();
     expect(find.byIcon(Icons.favorite_rounded), findsWidgets);
 
-    await tester.tap(find.byIcon(Icons.bookmark_rounded).first);
+    await tester.tap(find.byIcon(Icons.bookmark_border_rounded).first);
     await tester.pumpAndSettle();
-    expect(find.byIcon(Icons.bookmark_border_rounded), findsWidgets);
+    expect(find.byIcon(Icons.bookmark_rounded), findsWidgets);
+  });
+
+  testWidgets('long Chinese interpretation can open the full reader',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(378, 810));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(
+      PaperFlowApp(
+        showSplash: false,
+        translationServiceFactory: _FakePaperTranslationServiceFactory(
+          content: List.filled(160, '这是中文解读正文').join(' '),
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.tap(find.text('中文解读').first);
+    await tester.pumpAndSettle();
+
+    expect(find.text('展开全文'), findsOneWidget);
+    await tester.tap(find.text('展开全文'));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('paper-full-reader')), findsOneWidget);
+    expect(find.text('中文解读'), findsOneWidget);
   });
 
   testWidgets('abstract expansion appears only when text exceeds its viewport',
@@ -74,15 +143,24 @@ void main() {
     addTearDown(longController.dispose);
     await tester.pumpWidget(
       MaterialApp(
-        home: Scaffold(body: PapersScreen(controller: longController)),
+        home: Scaffold(
+          body: PapersScreen(
+            feedController: longController.feed,
+            interactionController: longController.interactions,
+            aiService: const _FakePaperAiService(),
+            translationServiceFactory:
+                const _FakePaperTranslationServiceFactory(),
+          ),
+        ),
       ),
     );
     await tester.pump();
 
     expect(find.text('展开全文'), findsOneWidget);
     await tester.tap(find.text('展开全文'));
-    await tester.pump();
-    expect(find.byKey(const ValueKey('paper-tab-scroll')), findsOneWidget);
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('paper-full-reader')), findsOneWidget);
+    expect(find.text('原文摘要'), findsOneWidget);
 
     final shortController = PaperController(
       _TestPaperRepository(_testPaper('A short abstract.')),
@@ -90,7 +168,15 @@ void main() {
     addTearDown(shortController.dispose);
     await tester.pumpWidget(
       MaterialApp(
-        home: Scaffold(body: PapersScreen(controller: shortController)),
+        home: Scaffold(
+          body: PapersScreen(
+            feedController: shortController.feed,
+            interactionController: shortController.interactions,
+            aiService: const _FakePaperAiService(),
+            translationServiceFactory:
+                const _FakePaperTranslationServiceFactory(),
+          ),
+        ),
       ),
     );
     await tester.pump();
@@ -108,19 +194,43 @@ void main() {
 
     expect(tester.getSize(find.byKey(const ValueKey('paper-feed'))).height,
         greaterThan(700));
-    expect(find.textContaining('被引 1,234'), findsOneWidget);
-    expect(find.text('中文摘要'), findsWidgets);
+    expect(find.textContaining('被引 0'), findsOneWidget);
+    expect(find.text('中文解读'), findsWidgets);
 
     await tester.tap(find.text('论文 ⇄'));
     await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey('paper-grid')), findsOneWidget);
     expect(find.text('‹ 返回'), findsOneWidget);
 
-    await tester.tap(find.textContaining('Mamba: Linear-Time'));
+    await tester.tap(find.textContaining('Perturbation Effects on Robustness'));
     await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey('paper-feed')), findsOneWidget);
-    expect(find.textContaining('Mamba: Linear-Time'), findsOneWidget);
+    expect(find.textContaining('Perturbation Effects on Robustness'),
+        findsOneWidget);
     expect(find.text('论文 ⇄'), findsOneWidget);
+  });
+
+  testWidgets('paper feed is clipped below the fixed header', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(378, 810));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(const PaperFlowApp(showSplash: false));
+    await tester.pumpAndSettle();
+
+    final header = find.byKey(const ValueKey('papers-header'));
+    final viewport = find.byKey(const ValueKey('paper-feed-viewport'));
+    final headerBottom = tester.getBottomLeft(header).dy;
+    final viewportTop = tester.getTopLeft(viewport).dy;
+
+    expect(viewportTop, closeTo(headerBottom, 0.1));
+
+    await tester.drag(
+      find.byKey(const ValueKey('paper-feed')),
+      const Offset(0, -260),
+    );
+    await tester.pump();
+
+    expect(tester.getTopLeft(viewport).dy, closeTo(headerBottom, 0.1));
   });
 
   testWidgets('comments sheet switches to AI conversation', (tester) async {
@@ -133,9 +243,9 @@ void main() {
     await tester.tap(find.byIcon(Icons.chat_bubble_outline_rounded).first);
     await tester.pumpAndSettle();
 
-    expect(find.text('评论 128'), findsOneWidget);
+    expect(find.text('评论 0'), findsOneWidget);
     expect(find.text('AI 解析'), findsOneWidget);
-    expect(find.text('Lin Zhang'), findsOneWidget);
+    expect(find.text('还没有评论，来发表第一条看法吧'), findsOneWidget);
 
     final halfHeight = tester
         .getSize(find.byKey(const ValueKey('paper-comments-sheet')))
@@ -162,7 +272,7 @@ void main() {
       contentSize,
     );
     expect(find.text('解释核心方法'), findsOneWidget);
-    expect(find.text('问 AI 或按住说话'), findsOneWidget);
+    expect(find.byKey(const ValueKey('paper-ai-input')), findsOneWidget);
   });
 
   testWidgets('comments and local AI messages complete their send flow',
@@ -206,7 +316,108 @@ void main() {
     expect(find.textContaining('DeepSeek Markdown'), findsOneWidget);
   });
 
-  testWidgets('more paper topics can be selected from the add button',
+  testWidgets('comments, replies and likes persist per paper', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(378, 810));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final repository = InMemoryPaperCommentRepository();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) => Scaffold(
+            body: TextButton(
+              onPressed: () => showPaperCommentsSheet(
+                context,
+                demoPapers.first,
+                aiService: const _FakePaperAiService(),
+                commentRepository: repository,
+              ),
+              child: const Text('打开持久评论'),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    Future<void> openSheet() async {
+      await tester.tap(find.text('打开持久评论'));
+      await tester.pumpAndSettle();
+    }
+
+    await openSheet();
+    await tester.enterText(find.byType(TextField), '我的本地评论');
+    await tester.pump();
+    await tester.tap(find.byTooltip('发送'));
+    await tester.pumpAndSettle();
+    expect(find.text('评论 1'), findsOneWidget);
+
+    await tester.tap(find.text('回复').first);
+    await tester.enterText(find.byType(TextField), '我的本地回复');
+    await tester.pump();
+    await tester.tap(find.byTooltip('发送'));
+    await tester.pumpAndSettle();
+    expect(find.text('我的本地回复'), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.favorite_border_rounded).first);
+    await tester.pumpAndSettle();
+    expect(find.byIcon(Icons.favorite_rounded), findsOneWidget);
+
+    await tester.tap(find.byTooltip('关闭'));
+    await tester.pumpAndSettle();
+    await openSheet();
+    expect(find.text('我的本地评论'), findsOneWidget);
+    expect(find.byIcon(Icons.favorite_rounded), findsOneWidget);
+    await tester.tap(find.text('展开 1 条回复'));
+    await tester.pumpAndSettle();
+    expect(find.text('我的本地回复'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('删除评论').first);
+    await tester.pumpAndSettle();
+    expect(find.text('我的本地评论'), findsNothing);
+    expect(find.text('评论 0'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('关闭'));
+    await tester.pumpAndSettle();
+    await openSheet();
+    expect(find.text('我的本地评论'), findsNothing);
+  });
+
+  testWidgets('sharing a paper calls the service and updates its count',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(378, 810));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final feed = PaperFeedController(const ArxivSeedRepository());
+    final interactions = PaperInteractionController();
+    final shareService = _FakePaperShareService(PaperShareResult.copied);
+    addTearDown(feed.dispose);
+    addTearDown(interactions.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: PapersScreen(
+            feedController: feed,
+            interactionController: interactions,
+            aiService: const _FakePaperAiService(),
+            translationServiceFactory:
+                const _FakePaperTranslationServiceFactory(),
+            shareService: shareService,
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    await tester.tap(find.byKey(const ValueKey('paper-action-share')));
+    await tester.pumpAndSettle();
+
+    expect(shareService.payloads, hasLength(1));
+    expect(shareService.payloads.single.subject, feed.papers.first.title);
+    expect(interactions.shareCountDelta(feed.papers.first.id), 1);
+    expect(find.text('分享内容已复制'), findsOneWidget);
+  });
+
+  testWidgets('topic filter stays compact and only appears in recommendations',
       (tester) async {
     await tester.binding.setSurfaceSize(const Size(378, 810));
     addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -214,17 +425,153 @@ void main() {
     await tester.pumpWidget(const PaperFlowApp(showSplash: false));
     await tester.pump();
 
-    expect(find.byIcon(Icons.tune_rounded), findsNothing);
-    await tester.tap(find.byTooltip('添加主题'));
+    expect(find.byKey(const ValueKey('paper-topic-filter')), findsOneWidget);
+    expect(find.text('LLM'), findsNothing);
+    await tester.tap(
+      find.byKey(const ValueKey('paper-primary-category-1')),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('paper-topic-filter')), findsNothing);
+    expect(find.text('还没有关注作者'), findsOneWidget);
+    await tester.tap(
+      find.byKey(const ValueKey('paper-primary-category-0')),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('paper-topic-filter')), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('paper-topic-filter')));
     await tester.pumpAndSettle();
 
-    expect(find.text('选择主题'), findsOneWidget);
-    await tester.tap(find.text('AI Agent'));
-    await tester.tap(find.text('完成'));
+    expect(find.text('研究领域'), findsOneWidget);
+    expect(find.text('全部领域'), findsOneWidget);
+    await tester.tap(
+      find.byKey(const ValueKey('paper-topic-choice-AI Agent')),
+    );
     await tester.pumpAndSettle();
 
-    expect(find.text('AI Agent'), findsOneWidget);
+    expect(find.byTooltip('研究领域：AI Agent'), findsOneWidget);
   });
+
+  testWidgets('local search opens a paper and keeps its history',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(378, 810));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final historyRepository = InMemoryPaperSearchHistoryRepository();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: PaperFlowShell(
+          searchHistoryRepository: historyRepository,
+        ),
+      ),
+    );
+    await tester.pump();
+
+    await tester.tap(find.byTooltip('搜索'));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const ValueKey('paper-search-field')),
+      'Milmer',
+    );
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(
+      find.byKey(const ValueKey('paper-search-result-2502.00547')),
+      findsOneWidget,
+    );
+
+    await tester.tap(
+      find.byKey(const ValueKey('paper-search-result-2502.00547')),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const ValueKey('paper-title-2502.00547')),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.byTooltip('搜索'));
+    await tester.pumpAndSettle();
+    expect(find.text('Milmer'), findsOneWidget);
+  });
+
+  testWidgets('paper AI sessions appear in the global chat entry',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(378, 810));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final repository = InMemoryPaperAiSessionRepository();
+    final paper = const ArxivSeedRepository().getAll().first;
+    await repository.save(paper.id, const [
+      PaperAiMessage(fromUser: true, content: '解释这篇论文'),
+      PaperAiMessage(fromUser: false, content: '这是论文回答'),
+    ]);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: PaperFlowShell(
+          aiService: const _FakePaperAiService(),
+          aiSessionRepository: repository,
+        ),
+      ),
+    );
+    await tester.pump();
+
+    await tester.tap(find.text('聊天'));
+    await tester.pumpAndSettle();
+    expect(find.text('AI 聊天'), findsOneWidget);
+    expect(find.text('PaperFlow 主聊天'), findsOneWidget);
+    expect(find.text(paper.title), findsOneWidget);
+
+    await tester.tap(
+      find.byKey(ValueKey('ai-session-${paper.id}')),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('global-paper-ai-chat')), findsOneWidget);
+  });
+
+  testWidgets('main AI chat stays pinned above paper sessions', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(378, 810));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: PaperFlowShell(
+          aiService: _FakePaperAiService(),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    await tester.tap(find.text('聊天'));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('main-ai-chat')), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('main-ai-chat')));
+    await tester.pumpAndSettle();
+    expect(find.text('主聊天'), findsOneWidget);
+    expect(find.text('今天想研究什么？'), findsOneWidget);
+    expect(find.byKey(const ValueKey('paper-ai-input')), findsOneWidget);
+  });
+}
+
+class _FakePaperLinkService implements PaperLinkService {
+  final List<Uri> opened = [];
+
+  @override
+  Future<bool> open(Uri uri) async {
+    opened.add(uri);
+    return true;
+  }
+}
+
+class _FakePaperShareService implements PaperShareService {
+  _FakePaperShareService(this.result);
+
+  final PaperShareResult result;
+  final List<PaperSharePayload> payloads = [];
+
+  @override
+  Future<PaperShareResult> share(PaperSharePayload payload) async {
+    payloads.add(payload);
+    return result;
+  }
 }
 
 class _FakePaperAiService implements PaperAiService {
@@ -238,6 +585,32 @@ class _FakePaperAiService implements PaperAiService {
     await Future<void>.delayed(const Duration(milliseconds: 150));
     return '**DeepSeek Markdown**\n\n- ${paper.title}\n- ${conversation.last.content}';
   }
+}
+
+class _FakePaperTranslationServiceFactory
+    implements PaperTranslationServiceFactory {
+  const _FakePaperTranslationServiceFactory({
+    this.content = '**DeepSeek 中文翻译**',
+  });
+
+  final String content;
+
+  @override
+  PaperTranslationService create() => _FakePaperTranslationService(content);
+}
+
+class _FakePaperTranslationService implements PaperTranslationService {
+  const _FakePaperTranslationService(this.content);
+
+  final String content;
+
+  @override
+  Stream<String> translateAbstract(PaperRecord paper) async* {
+    yield content;
+  }
+
+  @override
+  void cancelActiveTranslation() {}
 }
 
 class _TestPaperRepository implements PaperRepository {
@@ -266,6 +639,5 @@ PaperRecord _testPaper(String abstractText) {
     comments: '0',
     saves: '0',
     shares: '0',
-    accent: PaperAccent.blue,
   );
 }

@@ -35,6 +35,19 @@ lib/src/
 mode, topics, likes, and saves. `PaperRepository` isolates the UI from the data
 source so the demo repository can later be replaced by an API-backed one.
 
+## Paper data sources
+
+The paper data layer now includes adapters for the recommended ingestion path:
+
+- `ArxivJsonlImporter` streams the official Kaggle snapshot and filters target categories.
+- `ArxivOaiClient` reads arXiv OAI-PMH pages and persists `resumptionToken` through `ArxivPaperSyncService`.
+- `OpenAlexClient` enriches an arXiv record with citations, institutions, concepts, and related works.
+
+These adapters are intentionally not called from the app startup path. A backend
+or an import worker should use them to upsert records into its database, then
+expose the existing `PaperRepository` contract to Flutter. No Kaggle credential,
+database credential, or third-party API key belongs in the mobile client.
+
 ## Requirements
 
 - Flutter SDK 3.44 or newer
@@ -58,24 +71,30 @@ flutter run -d windows
 
 ## DeepSeek AI
 
-AI paper conversations use DeepSeek's OpenAI-compatible chat completions API.
-Provide the key at build or run time instead of committing it to the repository:
+PaperFlow uses DeepSeek as its only model provider. Both normal chat and
+web-search chat use DeepSeek's remote Anthropic-compatible Messages endpoint.
+Claude, Codex, and localhost proxy settings are not read by the application.
+
+Configure independent user environment variables:
 
 ```powershell
-flutter run -d windows --dart-define=DEEPSEEK_API_KEY=your_key
-flutter build apk --release --dart-define=DEEPSEEK_API_KEY=your_key
+[Environment]::SetEnvironmentVariable('DEEPSEEK_API_KEY', 'your_key', 'User')
+[Environment]::SetEnvironmentVariable('DEEPSEEK_BASE_URL', 'https://api.deepseek.com', 'User')
+[Environment]::SetEnvironmentVariable('DEEPSEEK_MODEL', 'deepseek-v4-flash', 'User')
 ```
 
-Optional configuration:
+Run or build with the repository helper:
 
-```text
-DEEPSEEK_BASE_URL=https://api.deepseek.com
-DEEPSEEK_MODEL=deepseek-chat
+```powershell
+.\tool\flutter_with_deepseek.ps1 -FlutterCommand run -FlutterArguments @('-d', 'windows')
+.\tool\flutter_with_deepseek.ps1 -FlutterCommand build -FlutterArguments @('apk', '--release')
 ```
 
-`dart-define` prevents accidental source-control exposure, but a key embedded in
-a client application can still be extracted. Production releases should call a
-server-side PaperFlow endpoint that stores the DeepSeek key securely.
+Normal chat sends an Anthropic Messages request without tools. Web search uses
+the same endpoint with DeepSeek's remote `web_search_20250305` tool. The helper
+passes settings through `dart-define` without printing the key. A key embedded
+in a client can still be extracted, so production should use a PaperFlow server
+that stores the DeepSeek key securely.
 
 ## Verify
 

@@ -294,12 +294,12 @@ class _FavoritesCard extends StatelessWidget {
   const _FavoritesCard();
 
   static List<(String, String, IconData, Color)> get items => [
-    ('NLP', '156', Icons.chat_bubble_rounded, PaperFlowColors.primary),
-    ('CV', '98', Icons.photo_camera_rounded, PaperFlowColors.blue),
-    ('RL', '64', Icons.query_stats_rounded, PaperFlowColors.purple),
-    ('LLM', '112', Icons.psychology_rounded, PaperFlowColors.green),
-    ('Agents', '47', Icons.smart_toy_rounded, PaperFlowColors.orange),
-  ];
+        ('NLP', '156', Icons.chat_bubble_rounded, PaperFlowColors.primary),
+        ('CV', '98', Icons.photo_camera_rounded, PaperFlowColors.blue),
+        ('RL', '64', Icons.query_stats_rounded, PaperFlowColors.purple),
+        ('LLM', '112', Icons.psychology_rounded, PaperFlowColors.green),
+        ('Agents', '47', Icons.smart_toy_rounded, PaperFlowColors.orange),
+      ];
 
   @override
   Widget build(BuildContext context) {
@@ -715,9 +715,8 @@ void showPaperThemeSheet(BuildContext context) {
                                   ? PaperFlowColors.ink
                                   : PaperFlowColors.muted,
                               fontSize: 10,
-                              fontWeight: selected
-                                  ? FontWeight.w700
-                                  : FontWeight.w500,
+                              fontWeight:
+                                  selected ? FontWeight.w700 : FontWeight.w500,
                             ),
                           ),
                         ],

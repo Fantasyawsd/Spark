@@ -40,14 +40,11 @@ class _CommunityScreenState extends State<CommunityScreen> {
         child: Column(
           children: [
             SizedBox(
-              height: 54,
-              child: Align(
-                alignment: Alignment.bottomCenter,
-                child: _CommunityFilters(
-                  feedIndex: _feedIndex,
-                  pageController: _feedController,
-                  onFeedSelected: _selectFeed,
-                ),
+              height: 52,
+              child: _CommunityFilters(
+                feedIndex: _feedIndex,
+                pageController: _feedController,
+                onFeedSelected: _selectFeed,
               ),
             ),
             Expanded(
@@ -60,7 +57,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
                   crossAxisCount: 2,
                   mainAxisSpacing: 10,
                   crossAxisSpacing: 10,
-                  padding: const EdgeInsets.fromLTRB(12, 12, 12, 92),
+                  padding: const EdgeInsets.fromLTRB(12, 8, 12, 92),
                   itemCount: demoCommunityPosts.length,
                   itemBuilder: (context, index) => _DiscoveryCard(
                     post: demoCommunityPosts[index],
@@ -108,6 +105,8 @@ class _CommunityFilters extends StatelessWidget {
         pageController: pageController,
         height: 44,
         indicatorWidth: 24,
+        selectedColor: PaperFlowColors.ink,
+        indicatorColor: PaperFlowColors.ink,
         textSize: 13,
         onSelected: onFeedSelected,
       ),
@@ -196,41 +195,50 @@ class _DiscoveryCardState extends State<_DiscoveryCard> {
                         ),
                       ),
                     ),
-                    GestureDetector(
-                      onTap: _toggleLike,
-                      child: AnimatedScale(
-                        scale: _likePressed ? 0.86 : 1,
-                        duration: MotionTokens.duration(
-                          context,
-                          MotionTokens.feedbackDuration,
-                        ),
-                        curve: MotionTokens.pageCurve,
-                        child: AnimatedSwitcher(
-                          duration: MotionTokens.duration(
-                            context,
-                            MotionTokens.feedbackDuration,
-                          ),
-                          child: Icon(
-                            _liked
-                                ? Icons.favorite_rounded
-                                : Icons.favorite_border_rounded,
-                            key: ValueKey(_liked),
-                            color: _liked
-                                ? PaperFlowColors.primary
-                                : PaperFlowColors.muted,
-                            size: 17,
+                    SizedBox(
+                      width: 44,
+                      height: 44,
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: _toggleLike,
+                        child: Center(
+                          child: AnimatedScale(
+                            scale: _likePressed ? 0.86 : 1,
+                            duration: MotionTokens.duration(
+                              context,
+                              MotionTokens.feedbackDuration,
+                            ),
+                            curve: MotionTokens.pageCurve,
+                            child: AnimatedSwitcher(
+                              duration: MotionTokens.duration(
+                                context,
+                                MotionTokens.feedbackDuration,
+                              ),
+                              child: Icon(
+                                _liked
+                                    ? Icons.favorite_rounded
+                                    : Icons.favorite_border_rounded,
+                                key: ValueKey(_liked),
+                                color: _liked
+                                    ? PaperFlowColors.primary
+                                    : PaperFlowColors.muted,
+                                size: 19,
+                              ),
+                            ),
                           ),
                         ),
                       ),
                     ),
-                    const SizedBox(width: 3),
-                    Text(
-                      post.likes,
-                      style: const TextStyle(
-                        color: PaperFlowColors.muted,
-                        fontSize: 9.5,
+                    if (post.likes.trim() != '0') ...[
+                      const SizedBox(width: 3),
+                      Text(
+                        post.likes,
+                        style: const TextStyle(
+                          color: PaperFlowColors.muted,
+                          fontSize: 9.5,
+                        ),
                       ),
-                    ),
+                    ],
                   ],
                 ),
               ],

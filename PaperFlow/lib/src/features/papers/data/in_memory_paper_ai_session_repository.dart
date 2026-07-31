@@ -1,0 +1,45 @@
+import '../application/paper_ai_service.dart';
+import '../application/paper_ai_session_repository.dart';
+
+class InMemoryPaperAiSessionRepository implements PaperAiSessionRepository {
+  final Map<String, List<PaperAiMessage>> _sessions = {};
+  final Map<String, DateTime> _updatedAt = {};
+
+  @override
+  Future<List<PaperAiMessage>> load(String paperId) async =>
+      List.unmodifiable(_sessions[paperId] ?? const []);
+
+  @override
+  Future<void> save(String paperId, List<PaperAiMessage> messages) async {
+    _sessions[paperId] = List.from(messages);
+    _updatedAt[paperId] = DateTime.now();
+  }
+
+  @override
+  Future<void> clear(String paperId) async {
+    _sessions.remove(paperId);
+    _updatedAt.remove(paperId);
+  }
+
+  @override
+  Future<List<PaperAiSessionSummary>> listSessions() async {
+    final result =
+        _sessions.entries.where((entry) => entry.value.isNotEmpty).map(
+      (entry) {
+        final preview = entry.value.reversed
+            .map((message) => message.content)
+            .firstWhere((content) => content.trim().isNotEmpty,
+                orElse: () => '');
+        return PaperAiSessionSummary(
+          paperId: entry.key,
+          messageCount: entry.value.length,
+          preview: preview,
+          updatedAt:
+              _updatedAt[entry.key] ?? DateTime.fromMillisecondsSinceEpoch(0),
+        );
+      },
+    ).toList()
+          ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+    return List.unmodifiable(result);
+  }
+}

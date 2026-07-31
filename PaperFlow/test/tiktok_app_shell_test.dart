@@ -11,16 +11,20 @@ void main() {
     await tester.pumpWidget(const PaperFlowApp(showSplash: false));
     await tester.pump();
 
-    expect(find.text('LoRA: Low-Rank Adaptation of Large Language Models'),
-        findsOneWidget);
+    expect(
+      find.text(
+        'Corruption Robust Offline Reinforcement Learning with Human Feedback',
+      ),
+      findsOneWidget,
+    );
 
     await tester.tap(find.text('社区'));
     await tester.pump();
     expect(find.text('社区'), findsOneWidget);
 
-    await tester.tap(find.text('消息'));
+    await tester.tap(find.text('聊天'));
     await tester.pump();
-    expect(find.text('消息'), findsOneWidget);
+    expect(find.text('AI 聊天'), findsOneWidget);
 
     await tester.tap(find.text('我的'));
     await tester.pump();

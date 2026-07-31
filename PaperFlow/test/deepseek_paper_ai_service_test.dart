@@ -6,26 +6,22 @@ import 'package:http/testing.dart';
 import 'package:paperflow/paperflow.dart';
 
 void main() {
-  test('DeepSeek service sends paper context and conversation', () async {
+  test('DeepSeek Anthropic service sends paper context and conversation',
+      () async {
     late http.Request captured;
     final client = MockClient((request) async {
       captured = request;
-      return http.Response(
-        jsonEncode({
-          'choices': [
-            {
-              'message': {'content': '**回答**\n\n- 要点'},
-            },
-          ],
-        }),
-        200,
-        headers: {'content-type': 'application/json'},
+      return _sseResponse(
+        '${_event(reasoning: '先分析方法。')}'
+        '${_event(content: '**回答**')}'
+        '${_event(content: '\n\n- 要点')}'
+        '$_stopEvent',
       );
     });
     final service = DeepSeekPaperAiService(
       apiKey: 'test-key',
       baseUrl: 'https://example.test/v1',
-      model: 'deepseek-chat',
+      model: 'deepseek-v4-flash',
       client: client,
     );
 
@@ -36,14 +32,70 @@ void main() {
       ],
     );
 
-    expect(captured.url.toString(), 'https://example.test/v1/chat/completions');
-    expect(captured.headers['Authorization'], 'Bearer test-key');
+    expect(
+      captured.url.toString(),
+      'https://example.test/v1/anthropic/v1/messages',
+    );
+    expect(captured.headers['x-api-key'], 'test-key');
+    expect(captured.headers['anthropic-version'], '2023-06-01');
     final body = jsonDecode(captured.body) as Map<String, dynamic>;
-    expect(body['model'], 'deepseek-chat');
+    expect(body['model'], 'deepseek-v4-flash');
+    expect(body['stream'], isTrue);
+    expect(body['thinking'], {'type': 'enabled', 'budget_tokens': 1024});
+    expect(body['output_config'], {'effort': 'medium'});
+    expect(body, isNot(contains('temperature')));
+    expect(body['system'], contains(demoPapers.first.title));
     final messages = body['messages'] as List<dynamic>;
-    expect(messages.first['content'], contains(demoPapers.first.title));
-    expect(messages.last['content'], '解释核心方法');
+    expect(messages.single['content'], '解释核心方法');
     expect(result, '**回答**\n\n- 要点');
+  });
+
+  test('DeepSeek Anthropic stream separates reasoning and answer deltas',
+      () async {
+    final service = DeepSeekPaperAiService(
+      apiKey: 'test-key',
+      client: MockClient(
+        (_) async => _sseResponse(
+          '${_event(reasoning: '步骤一')}'
+          '${_event(reasoning: '，步骤二')}'
+          '${_event(content: '最终答案')}'
+          '$_stopEvent',
+        ),
+      ),
+    );
+
+    final chunks = await service.answerStream(
+      paper: demoPapers.first,
+      conversation: const [
+        PaperAiMessage(fromUser: true, content: '解释方法'),
+      ],
+    ).toList();
+
+    expect(chunks.map((chunk) => chunk.reasoningDelta).join(), '步骤一，步骤二');
+    expect(chunks.map((chunk) => chunk.contentDelta).join(), '最终答案');
+  });
+
+  test('DeepSeek can disable reasoning per conversation', () async {
+    late http.Request captured;
+    final service = DeepSeekPaperAiService(
+      apiKey: 'test-key',
+      client: MockClient((request) async {
+        captured = request;
+        return _sseResponse('${_event(content: '直接回答')}$_stopEvent');
+      }),
+    );
+    service.setReasoningEffort(PaperAiReasoningEffort.none);
+
+    await service.answer(
+      paper: demoPapers.first,
+      conversation: const [
+        PaperAiMessage(fromUser: true, content: '直接回答'),
+      ],
+    );
+
+    final body = jsonDecode(captured.body) as Map<String, dynamic>;
+    expect(body['thinking'], {'type': 'disabled'});
+    expect(body, isNot(contains('output_config')));
   });
 
   test('DeepSeek service rejects missing API key before network access',
@@ -100,3 +152,23 @@ void main() {
     );
   });
 }
+
+String _event({String? reasoning, String? content}) {
+  final delta = reasoning != null
+      ? {'type': 'thinking_delta', 'thinking': reasoning}
+      : {'type': 'text_delta', 'text': content ?? ''};
+  return 'data: ${jsonEncode({
+        'type': 'content_block_delta',
+        'delta': delta,
+      })}\n\n';
+}
+
+const _stopEvent = 'data: {"type":"message_stop"}\n\n';
+
+http.Response _sseResponse(String body) => http.Response.bytes(
+      utf8.encode(body),
+      200,
+      headers: {
+        'content-type': 'text/event-stream; charset=utf-8',
+      },
+    );

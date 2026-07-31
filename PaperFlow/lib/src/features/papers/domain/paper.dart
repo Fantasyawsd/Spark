@@ -1,5 +1,3 @@
-enum PaperAccent { blue, purple, green, pink, azure, orange }
-
 class PaperRecord {
   const PaperRecord({
     required this.id,
@@ -17,7 +15,14 @@ class PaperRecord {
     required this.comments,
     required this.saves,
     required this.shares,
-    required this.accent,
+    this.arxivId,
+    this.doi,
+    this.paperUrl,
+    this.pdfUrl,
+    this.publishedAt,
+    this.updatedAt,
+    this.license,
+    this.source = 'demo',
   });
 
   final String id;
@@ -35,5 +40,22 @@ class PaperRecord {
   final String comments;
   final String saves;
   final String shares;
-  final PaperAccent accent;
+  final String? arxivId;
+  final String? doi;
+  final String? paperUrl;
+  final String? pdfUrl;
+  final DateTime? publishedAt;
+  final DateTime? updatedAt;
+  final String? license;
+  final String source;
+}
+
+extension PaperAuthorIdentity on PaperRecord {
+  String get authorKey {
+    final firstAuthor = authors
+        .split(',')
+        .map((name) => name.trim())
+        .firstWhere((name) => name.isNotEmpty, orElse: () => id);
+    return 'author:${firstAuthor.toLowerCase()}';
+  }
 }

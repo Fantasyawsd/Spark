@@ -1,0 +1,50 @@
+import '../domain/paper.dart';
+
+class PaperSharePayload {
+  const PaperSharePayload({required this.subject, required this.text});
+
+  final String subject;
+  final String text;
+}
+
+enum PaperShareResult { shared, copied, cancelled }
+
+abstract interface class PaperShareService {
+  Future<PaperShareResult> share(PaperSharePayload payload);
+}
+
+class PaperShareException implements Exception {
+  const PaperShareException(this.message, [this.cause]);
+
+  final String message;
+  final Object? cause;
+
+  @override
+  String toString() => message;
+}
+
+class PaperShareComposer {
+  const PaperShareComposer._();
+
+  static PaperSharePayload compose(PaperRecord paper) {
+    final firstAuthor = paper.authors.split(',').first.trim();
+    final abstractText = _plainText(paper.abstractText);
+    final snippet = abstractText.length > 180
+        ? '${abstractText.substring(0, 180).trimRight()}…'
+        : abstractText;
+    final link = paper.paperUrl ?? paper.pdfUrl ?? 'PaperFlow 本地论文，暂无公开链接';
+    return PaperSharePayload(
+      subject: paper.title,
+      text:
+          '${paper.title}\n\n$firstAuthor · ${paper.venue}\n\n$snippet\n\n$link',
+    );
+  }
+
+  static String _plainText(String markdown) {
+    return markdown
+        .replaceAll(RegExp(r'\[([^\]]+)\]\([^)]*\)'), r'$1')
+        .replaceAll(RegExp(r'[*_~0#>]'), '')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
+  }
+}

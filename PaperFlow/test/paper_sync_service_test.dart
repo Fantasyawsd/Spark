@@ -1,0 +1,78 @@
+import 'package:flutter_test/flutter_test.dart';
+import 'package:paperflow/paperflow.dart';
+
+void main() {
+  test('sync service coordinates ports without concrete HTTP clients',
+      () async {
+    final store = _MemoryPaperStore();
+    final stateStore = _MemorySyncStateStore();
+    final service = ArxivPaperSyncService(
+      metadataSource: _FakeMetadataSource(),
+      enhancementSource: _FakeEnhancementSource(),
+      stateStore: stateStore,
+      paperStore: store,
+    );
+
+    final count = await service.sync(set: 'cs:cs:AI');
+
+    expect(count, 1);
+    expect(store.papers.single.title, 'Imported paper');
+    expect(store.papers.single.citations, '42');
+    expect(stateStore.state.lastDatestamp, DateTime.utc(2024, 1, 2));
+  });
+}
+
+class _FakeMetadataSource implements ArxivMetadataSource {
+  @override
+  Future<ArxivMetadataPage> listRecords({
+    String? set,
+    DateTime? from,
+    DateTime? until,
+    String? resumptionToken,
+  }) async {
+    return ArxivMetadataPage(
+      records: [
+        ArxivMetadata(
+          id: '2401.00001',
+          title: 'Imported paper',
+          authors: const ['Alice Smith'],
+          abstractText: 'An imported abstract.',
+          categories: const ['cs.AI'],
+          publishedAt: DateTime.utc(2024, 1, 1),
+          updatedAt: DateTime.utc(2024, 1, 2),
+          primaryCategory: 'cs.AI',
+        ),
+      ],
+    );
+  }
+}
+
+class _FakeEnhancementSource implements PaperEnhancementSource {
+  @override
+  Future<PaperEnhancement?> findByArxivId(String arxivId) async {
+    return const PaperEnhancement(citationCount: 42);
+  }
+}
+
+class _MemoryPaperStore implements PaperStore {
+  final papers = <PaperRecord>[];
+
+  @override
+  Future<void> upsert(Iterable<PaperRecord> values) async {
+    papers
+      ..clear()
+      ..addAll(values);
+  }
+}
+
+class _MemorySyncStateStore implements PaperSyncStateStore {
+  PaperSyncState state = const PaperSyncState();
+
+  @override
+  Future<PaperSyncState> read(String source) async => state;
+
+  @override
+  Future<void> write(String source, PaperSyncState value) async {
+    state = value;
+  }
+}

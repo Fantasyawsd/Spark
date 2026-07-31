@@ -8,7 +8,7 @@ class DemoPaperRepository implements PaperRepository {
   List<PaperRecord> getAll() => demoPapers;
 }
 
-const demoPapers = <PaperRecord>[
+final demoPapers = <PaperRecord>[
   PaperRecord(
     id: 'lora-2021',
     venue: 'ICLR 2024',
@@ -48,7 +48,7 @@ Instead of updating every model parameter, LoRA injects trainable low-rank matri
     comments: '128',
     saves: '8.2k',
     shares: '256',
-    accent: PaperAccent.blue,
+    publishedAt: DateTime(2021),
   ),
   PaperRecord(
     id: 'mamba-2023',
@@ -71,7 +71,7 @@ Instead of updating every model parameter, LoRA injects trainable low-rank matri
     comments: '306',
     saves: '6.1k',
     shares: '734',
-    accent: PaperAccent.purple,
+    publishedAt: DateTime(2023),
   ),
   PaperRecord(
     id: 'retrieval-long-context-2025',
@@ -95,7 +95,7 @@ Instead of updating every model parameter, LoRA injects trainable low-rank matri
     comments: '184',
     saves: '3.7k',
     shares: '421',
-    accent: PaperAccent.green,
+    publishedAt: DateTime(2025),
   ),
   PaperRecord(
     id: 'qlora-2023',
@@ -119,7 +119,7 @@ Instead of updating every model parameter, LoRA injects trainable low-rank matri
     comments: '418',
     saves: '9.4k',
     shares: '1.1k',
-    accent: PaperAccent.pink,
+    publishedAt: DateTime(2023),
   ),
   PaperRecord(
     id: 'segment-anything-2023',
@@ -143,7 +143,7 @@ Instead of updating every model parameter, LoRA injects trainable low-rank matri
     comments: '692',
     saves: '11.2k',
     shares: '1.8k',
-    accent: PaperAccent.azure,
+    publishedAt: DateTime(2023),
   ),
   PaperRecord(
     id: 'swe-agent-2024',
@@ -168,6 +168,6 @@ Instead of updating every model parameter, LoRA injects trainable low-rank matri
     comments: '275',
     saves: '4.6k',
     shares: '587',
-    accent: PaperAccent.orange,
+    publishedAt: DateTime(2024),
   ),
 ];

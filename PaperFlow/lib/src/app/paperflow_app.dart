@@ -1,20 +1,67 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../core/theme/paperflow_theme.dart';
 import '../core/theme/theme_controller.dart';
 import '../core/widgets/paperflow_bottom_nav.dart';
 import '../core/widgets/paperflow_sheet.dart';
+import '../features/chat/application/main_ai_chat_definition.dart';
+import '../features/chat/presentation/main_ai_chat_screen.dart';
+import '../features/chat/presentation/paper_ai_chat_screen.dart';
 import '../features/community/presentation/community_screen.dart';
 import '../features/messages/presentation/messages_screen.dart';
+import '../features/papers/application/paper_ai_service.dart';
+import '../features/papers/application/paper_ai_session_repository.dart';
 import '../features/papers/application/paper_controller.dart';
-import '../features/papers/data/demo_paper_repository.dart';
+import '../features/papers/application/paper_link_service.dart';
+import '../features/papers/application/paper_share_service.dart';
+import '../features/papers/application/paper_translation_service.dart';
+import '../features/papers/data/arxiv_seed_repository.dart';
+import '../features/papers/data/deepseek_paper_ai_service.dart';
+import '../features/papers/data/deepseek_paper_translation_service.dart';
+import '../features/papers/data/deepseek_web_search_ai_service.dart';
+import '../features/papers/data/in_memory_paper_ai_session_repository.dart';
+import '../features/papers/domain/paper_comment_repository.dart';
+import '../features/papers/domain/paper.dart';
+import '../features/papers/domain/paper_interaction_repository.dart';
+import '../features/papers/domain/paper_preference_repository.dart';
 import '../features/papers/presentation/papers_screen.dart';
 import '../features/profile/presentation/profile_screen.dart';
+import '../features/search/application/paper_search_controller.dart';
+import '../features/search/data/in_memory_paper_search_history_repository.dart';
+import '../features/search/domain/paper_search_history_repository.dart';
+import '../features/search/presentation/paper_search_screen.dart';
 
 class PaperFlowApp extends StatelessWidget {
-  const PaperFlowApp({super.key, this.showSplash = true});
+  const PaperFlowApp({
+    super.key,
+    this.showSplash = true,
+    this.commentRepository,
+    this.interactionRepository,
+    this.preferenceRepository,
+    this.searchHistoryRepository,
+    this.shareService,
+    this.linkService,
+    this.aiService,
+    this.aiSessionRepository,
+    this.translationServiceFactory,
+    this.translationRepository,
+    this.webSearchAiService,
+  });
 
   final bool showSplash;
+  final PaperCommentRepository? commentRepository;
+  final PaperInteractionRepository? interactionRepository;
+  final PaperPreferenceRepository? preferenceRepository;
+  final PaperSearchHistoryRepository? searchHistoryRepository;
+  final PaperShareService? shareService;
+  final PaperLinkService? linkService;
+  final PaperAiService? aiService;
+  final PaperAiSessionRepository? aiSessionRepository;
+  final PaperTranslationServiceFactory? translationServiceFactory;
+  final PaperTranslationRepository? translationRepository;
+  final PaperAiService? webSearchAiService;
 
   @override
   Widget build(BuildContext context) {
@@ -24,16 +71,53 @@ class PaperFlowApp extends StatelessWidget {
         title: 'PaperFlow',
         debugShowCheckedModeBanner: false,
         theme: PaperFlowTheme.light(),
-        home: _PaperFlowBootstrap(showSplash: showSplash),
+        home: _PaperFlowBootstrap(
+          showSplash: showSplash,
+          commentRepository: commentRepository,
+          interactionRepository: interactionRepository,
+          preferenceRepository: preferenceRepository,
+          searchHistoryRepository: searchHistoryRepository,
+          shareService: shareService,
+          linkService: linkService,
+          aiService: aiService,
+          aiSessionRepository: aiSessionRepository,
+          translationServiceFactory: translationServiceFactory,
+          translationRepository: translationRepository,
+          webSearchAiService: webSearchAiService,
+        ),
       ),
     );
   }
 }
 
 class _PaperFlowBootstrap extends StatefulWidget {
-  const _PaperFlowBootstrap({required this.showSplash});
+  const _PaperFlowBootstrap({
+    required this.showSplash,
+    required this.commentRepository,
+    required this.interactionRepository,
+    required this.preferenceRepository,
+    required this.searchHistoryRepository,
+    required this.shareService,
+    required this.linkService,
+    required this.aiService,
+    required this.aiSessionRepository,
+    required this.translationServiceFactory,
+    required this.translationRepository,
+    required this.webSearchAiService,
+  });
 
   final bool showSplash;
+  final PaperCommentRepository? commentRepository;
+  final PaperInteractionRepository? interactionRepository;
+  final PaperPreferenceRepository? preferenceRepository;
+  final PaperSearchHistoryRepository? searchHistoryRepository;
+  final PaperShareService? shareService;
+  final PaperLinkService? linkService;
+  final PaperAiService? aiService;
+  final PaperAiSessionRepository? aiSessionRepository;
+  final PaperTranslationServiceFactory? translationServiceFactory;
+  final PaperTranslationRepository? translationRepository;
+  final PaperAiService? webSearchAiService;
 
   @override
   State<_PaperFlowBootstrap> createState() => _PaperFlowBootstrapState();
@@ -90,7 +174,21 @@ class _PaperFlowBootstrapState extends State<_PaperFlowBootstrap>
 
   @override
   Widget build(BuildContext context) {
-    if (_splashComplete) return const PaperFlowShell();
+    if (_splashComplete) {
+      return PaperFlowShell(
+        commentRepository: widget.commentRepository,
+        interactionRepository: widget.interactionRepository,
+        preferenceRepository: widget.preferenceRepository,
+        searchHistoryRepository: widget.searchHistoryRepository,
+        shareService: widget.shareService,
+        linkService: widget.linkService,
+        aiService: widget.aiService,
+        aiSessionRepository: widget.aiSessionRepository,
+        translationServiceFactory: widget.translationServiceFactory,
+        translationRepository: widget.translationRepository,
+        webSearchAiService: widget.webSearchAiService,
+      );
+    }
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFF),
@@ -119,7 +217,32 @@ class _PaperFlowBootstrapState extends State<_PaperFlowBootstrap>
 }
 
 class PaperFlowShell extends StatefulWidget {
-  const PaperFlowShell({super.key});
+  const PaperFlowShell({
+    super.key,
+    this.commentRepository,
+    this.interactionRepository,
+    this.preferenceRepository,
+    this.searchHistoryRepository,
+    this.shareService,
+    this.linkService,
+    this.aiService,
+    this.aiSessionRepository,
+    this.translationServiceFactory,
+    this.translationRepository,
+    this.webSearchAiService,
+  });
+
+  final PaperCommentRepository? commentRepository;
+  final PaperInteractionRepository? interactionRepository;
+  final PaperPreferenceRepository? preferenceRepository;
+  final PaperSearchHistoryRepository? searchHistoryRepository;
+  final PaperShareService? shareService;
+  final PaperLinkService? linkService;
+  final PaperAiService? aiService;
+  final PaperAiSessionRepository? aiSessionRepository;
+  final PaperTranslationServiceFactory? translationServiceFactory;
+  final PaperTranslationRepository? translationRepository;
+  final PaperAiService? webSearchAiService;
 
   @override
   State<PaperFlowShell> createState() => _PaperFlowShellState();
@@ -128,12 +251,41 @@ class PaperFlowShell extends StatefulWidget {
 class _PaperFlowShellState extends State<PaperFlowShell> {
   int _selectedIndex = 0;
   late final PaperController _paperController;
+  late final PaperAiService _paperAiService;
+  late final PaperAiService _webSearchAiService;
+  late final PaperAiService _mainAiService;
+  late final PaperAiService _mainWebSearchAiService;
+  late final PaperAiSessionRepository _aiSessionRepository;
+  late final PaperSearchHistoryRepository _searchHistoryRepository;
+  late final PaperTranslationServiceFactory _translationServiceFactory;
+  late final PaperLinkService _linkService;
 
   @override
   void initState() {
     super.initState();
-    _paperController = PaperController(const DemoPaperRepository())
-      ..addListener(_handlePaperStateChanged);
+    _paperController = PaperController(
+      const ArxivSeedRepository(),
+      interactionRepository: widget.interactionRepository,
+      preferenceRepository: widget.preferenceRepository,
+    )..addListener(_handlePaperStateChanged);
+    unawaited(_paperController.initialize());
+    _paperAiService = widget.aiService ?? DeepSeekPaperAiService();
+    _webSearchAiService =
+        widget.webSearchAiService ?? DeepSeekWebSearchAiService();
+    _mainAiService = DeepSeekPaperAiService(
+      systemPromptBuilder: (_) => MainAiChatDefinition.systemPrompt(),
+    );
+    _mainWebSearchAiService = DeepSeekWebSearchAiService(
+      systemPromptBuilder: (_) =>
+          MainAiChatDefinition.systemPrompt(webSearch: true),
+    );
+    _aiSessionRepository =
+        widget.aiSessionRepository ?? InMemoryPaperAiSessionRepository();
+    _translationServiceFactory = widget.translationServiceFactory ??
+        const DeepSeekPaperTranslationServiceFactory();
+    _searchHistoryRepository = widget.searchHistoryRepository ??
+        InMemoryPaperSearchHistoryRepository();
+    _linkService = widget.linkService ?? const PlatformPaperLinkService();
   }
 
   @override
@@ -154,9 +306,26 @@ class _PaperFlowShellState extends State<PaperFlowShell> {
             child: IndexedStack(
               index: _selectedIndex,
               children: [
-                PapersScreen(controller: _paperController),
+                PapersScreen(
+                  feedController: _paperController.feed,
+                  interactionController: _paperController.interactions,
+                  aiService: _paperAiService,
+                  webSearchAiService: _webSearchAiService,
+                  aiSessionRepository: _aiSessionRepository,
+                  translationServiceFactory: _translationServiceFactory,
+                  translationRepository: widget.translationRepository,
+                  commentRepository: widget.commentRepository,
+                  shareService: widget.shareService,
+                  linkService: _linkService,
+                  onSearch: _openPaperSearch,
+                ),
                 CommunityScreen(),
-                MessagesScreen(),
+                MessagesScreen(
+                  aiSessionRepository: _aiSessionRepository,
+                  papers: _paperController.feed.allPapers,
+                  onOpenAiChat: _openAiChat,
+                  onOpenMainAiChat: _openMainAiChat,
+                ),
                 ProfileScreen(),
               ],
             ),
@@ -185,6 +354,48 @@ class _PaperFlowShellState extends State<PaperFlowShell> {
 
   void _handlePaperStateChanged() {
     if (mounted) setState(() {});
+  }
+
+  void _openPaperSearch() {
+    final controller = PaperSearchController(
+      papers: _paperController.feed.allPapers,
+      historyRepository: _searchHistoryRepository,
+    );
+    Navigator.of(context)
+        .push<void>(
+          MaterialPageRoute(
+            builder: (context) => PaperSearchScreen(
+              controller: controller,
+              onPaperSelected: _paperController.openPaperById,
+            ),
+          ),
+        )
+        .whenComplete(controller.dispose);
+  }
+
+  Future<void> _openAiChat(PaperRecord paper) async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (context) => PaperAiChatScreen(
+          paper: paper,
+          aiService: _paperAiService,
+          webSearchAiService: _webSearchAiService,
+          sessionRepository: _aiSessionRepository,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openMainAiChat() async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (context) => MainAiChatScreen(
+          aiService: _mainAiService,
+          webSearchAiService: _mainWebSearchAiService,
+          sessionRepository: _aiSessionRepository,
+        ),
+      ),
+    );
   }
 
   void _showCreateSheet(BuildContext context) {

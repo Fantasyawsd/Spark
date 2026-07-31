@@ -3,10 +3,24 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/paperflow_theme.dart';
 import '../../../core/widgets/profile_avatar.dart';
 import '../../../core/widgets/surface_card.dart';
+import '../../chat/application/main_ai_chat_definition.dart';
+import '../../papers/application/paper_ai_session_repository.dart';
+import '../../papers/domain/paper.dart';
 import '../domain/message_item.dart';
 
 class MessagesScreen extends StatefulWidget {
-  const MessagesScreen({super.key});
+  const MessagesScreen({
+    super.key,
+    this.aiSessionRepository,
+    this.papers = const [],
+    this.onOpenAiChat,
+    this.onOpenMainAiChat,
+  });
+
+  final PaperAiSessionRepository? aiSessionRepository;
+  final List<PaperRecord> papers;
+  final Future<void> Function(PaperRecord paper)? onOpenAiChat;
+  final Future<void> Function()? onOpenMainAiChat;
 
   @override
   State<MessagesScreen> createState() => _MessagesScreenState();
@@ -14,73 +28,383 @@ class MessagesScreen extends StatefulWidget {
 
 class _MessagesScreenState extends State<MessagesScreen> {
   int _tabIndex = 0;
+  List<PaperAiSessionSummary> _aiSessions = const [];
+  bool _loadingSessions = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAiSessions();
+  }
+
+  @override
+  void didUpdateWidget(covariant MessagesScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _loadAiSessions();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final direct = _tabIndex == 0;
+    final direct = _tabIndex == 1;
+    final visibleMessages = direct
+        ? demoMessages.where((item) => item.kind == MessageKind.direct).toList()
+        : demoMessages
+            .where((item) => item.kind != MessageKind.direct)
+            .toList();
     return ColoredBox(
       color: PaperFlowColors.canvas,
       child: SafeArea(
         bottom: false,
         child: Column(
           children: [
-            SizedBox(
-              height: 54,
-              child: Align(
-                alignment: Alignment.bottomCenter,
-                child: _SegmentedTabs(
-                  labels: const ['私信', '通知'],
-                  selectedIndex: _tabIndex,
-                  onSelected: (index) => setState(() => _tabIndex = index),
+            const SizedBox(
+              height: 50,
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(18, 12, 18, 0),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    '聊天',
+                    style: TextStyle(
+                      color: PaperFlowColors.ink,
+                      fontSize: 22,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
                 ),
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 14, 16, 4),
-              child: Row(
-                children: [
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(99),
-                      border: Border.all(color: PaperFlowColors.primary),
-                    ),
-                    child: Row(
-                      children: [
-                        Text('Unread',
-                            style: TextStyle(
-                                color: PaperFlowColors.primary, fontSize: 12)),
-                        const SizedBox(width: 7),
-                        CircleAvatar(
-                            radius: 4,
-                            backgroundColor: PaperFlowColors.primary),
-                      ],
-                    ),
-                  ),
-                  const Spacer(),
-                  const Text('Recent',
-                      style: TextStyle(
-                          color: PaperFlowColors.muted, fontSize: 13)),
-                  const SizedBox(width: 5),
-                  const Icon(Icons.keyboard_arrow_down_rounded,
-                      color: PaperFlowColors.muted, size: 22),
-                ],
+            SizedBox(
+              height: 48,
+              child: _SegmentedTabs(
+                labels: const ['AI 聊天', '私信', '通知'],
+                selectedIndex: _tabIndex,
+                onSelected: (index) => setState(() => _tabIndex = index),
               ),
             ),
             Expanded(
-              child: ListView.separated(
-                padding: const EdgeInsets.fromLTRB(14, 7, 14, 92),
-                itemCount: demoMessages.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 10),
-                itemBuilder: (context, index) => _MessageCard(
-                  item: demoMessages[index],
-                  showAvatar: direct,
-                ),
-              ),
+              child: _tabIndex == 0
+                  ? _AiSessionList(
+                      loading: _loadingSessions,
+                      sessions: _aiSessions,
+                      papers: widget.papers,
+                      onOpen: _openAiSession,
+                      onOpenMain: _openMainAiChat,
+                    )
+                  : ListView.separated(
+                      padding: const EdgeInsets.fromLTRB(14, 10, 14, 92),
+                      itemCount: visibleMessages.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 10),
+                      itemBuilder: (context, index) => _MessageCard(
+                        item: visibleMessages[index],
+                        showAvatar: direct,
+                      ),
+                    ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _loadAiSessions() async {
+    final repository = widget.aiSessionRepository;
+    if (repository == null || _loadingSessions) return;
+    _loadingSessions = true;
+    try {
+      final sessions = await repository.listSessions();
+      if (mounted) setState(() => _aiSessions = sessions);
+    } on PaperAiSessionPersistenceException {
+      // Keep the chat page usable even if local history cannot be read.
+    } finally {
+      _loadingSessions = false;
+      if (mounted) setState(() {});
+    }
+  }
+
+  Future<void> _openAiSession(PaperAiSessionSummary session) async {
+    final paper =
+        widget.papers.where((item) => item.id == session.paperId).firstOrNull;
+    if (paper == null || widget.onOpenAiChat == null) return;
+    await widget.onOpenAiChat!(paper);
+    await _loadAiSessions();
+  }
+
+  Future<void> _openMainAiChat() async {
+    final open = widget.onOpenMainAiChat;
+    if (open == null) return;
+    await open();
+    await _loadAiSessions();
+  }
+}
+
+class _AiSessionList extends StatelessWidget {
+  const _AiSessionList({
+    required this.loading,
+    required this.sessions,
+    required this.papers,
+    required this.onOpen,
+    required this.onOpenMain,
+  });
+
+  final bool loading;
+  final List<PaperAiSessionSummary> sessions;
+  final List<PaperRecord> papers;
+  final ValueChanged<PaperAiSessionSummary> onOpen;
+  final VoidCallback onOpenMain;
+
+  @override
+  Widget build(BuildContext context) {
+    if (loading && sessions.isEmpty) {
+      return const Center(child: CircularProgressIndicator(strokeWidth: 2));
+    }
+    final papersById = {for (final paper in papers) paper.id: paper};
+    final mainSession = sessions
+        .where(
+          (session) => session.paperId == MainAiChatDefinition.sessionId,
+        )
+        .firstOrNull;
+    final visible = sessions
+        .where(
+          (session) =>
+              session.paperId != MainAiChatDefinition.sessionId &&
+              papersById.containsKey(session.paperId),
+        )
+        .toList(growable: false);
+    return ListView.separated(
+      padding: const EdgeInsets.fromLTRB(14, 10, 14, 92),
+      itemCount: visible.length + 1,
+      separatorBuilder: (_, __) => const SizedBox(height: 8),
+      itemBuilder: (context, index) {
+        if (index == 0) {
+          return _MainAiChatCard(
+            session: mainSession,
+            onTap: onOpenMain,
+          );
+        }
+        final session = visible[index - 1];
+        final paper = papersById[session.paperId]!;
+        return Material(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          child: InkWell(
+            key: ValueKey('ai-session-${session.paperId}'),
+            onTap: () => onOpen(session),
+            borderRadius: BorderRadius.circular(16),
+            child: Padding(
+              padding: const EdgeInsets.all(13),
+              child: Row(
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: PaperFlowColors.primarySoft,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.auto_awesome_rounded,
+                      color: PaperFlowColors.primary,
+                      size: 21,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          paper.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: PaperFlowColors.ink,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        const SizedBox(height: 5),
+                        Text(
+                          session.preview.replaceAll('\n', ' '),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: PaperFlowColors.muted,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        _relativeTime(session.updatedAt),
+                        style: const TextStyle(
+                          color: PaperFlowColors.subtle,
+                          fontSize: 10.5,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        '${session.messageCount} 条',
+                        style: const TextStyle(
+                          color: PaperFlowColors.muted,
+                          fontSize: 10.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  static String _relativeTime(DateTime time) {
+    if (time.millisecondsSinceEpoch == 0) return '';
+    final difference = DateTime.now().difference(time.toLocal());
+    if (difference.inMinutes < 1) return '刚刚';
+    if (difference.inHours < 1) return '${difference.inMinutes} 分钟前';
+    if (difference.inDays < 1) return '${difference.inHours} 小时前';
+    return '${difference.inDays} 天前';
+  }
+}
+
+class _MainAiChatCard extends StatelessWidget {
+  const _MainAiChatCard({required this.session, required this.onTap});
+
+  final PaperAiSessionSummary? session;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final currentSession = session;
+    final preview = currentSession?.preview.trim();
+    return Material(
+      color: const Color(0xFFFFF3F6),
+      borderRadius: BorderRadius.circular(18),
+      child: InkWell(
+        key: const ValueKey('main-ai-chat'),
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(18),
+        child: Padding(
+          padding: const EdgeInsets.all(13),
+          child: Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: PaperFlowColors.primary,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.auto_awesome_rounded,
+                  color: Colors.white,
+                  size: 23,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Flexible(
+                          child: Text(
+                            'PaperFlow 主聊天',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: PaperFlowColors.ink,
+                              fontSize: 14.5,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 7),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 7,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.82),
+                            borderRadius: BorderRadius.circular(99),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.push_pin_rounded,
+                                size: 11,
+                                color: PaperFlowColors.primary,
+                              ),
+                              const SizedBox(width: 3),
+                              Text(
+                                '置顶',
+                                style: TextStyle(
+                                  color: PaperFlowColors.primary,
+                                  fontSize: 9.5,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      preview == null || preview.isEmpty
+                          ? '跨论文提问、整理想法和搜索研究信息'
+                          : preview.replaceAll('\n', ' '),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: PaperFlowColors.muted,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              if (currentSession == null)
+                const Icon(
+                  Icons.chevron_right_rounded,
+                  color: PaperFlowColors.muted,
+                )
+              else
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      _AiSessionList._relativeTime(currentSession.updatedAt),
+                      style: const TextStyle(
+                        color: PaperFlowColors.subtle,
+                        fontSize: 10.5,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '${currentSession.messageCount} 条',
+                      style: const TextStyle(
+                        color: PaperFlowColors.muted,
+                        fontSize: 10.5,
+                      ),
+                    ),
+                  ],
+                ),
+            ],
+          ),
         ),
       ),
     );

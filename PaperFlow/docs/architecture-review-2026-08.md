@@ -16,14 +16,18 @@
 - 相关论文从 Markdown 字符串改为结构化 `RelatedPaper`，页面只通过论文 ID 请求 `PaperFeedController` 打开目标。
 - Profile 收藏列表消费真实收藏状态，不在资料页复制收藏业务逻辑。
 - 新增评论控制器和文件型评论 Repository 测试，覆盖计数、排序、级联删除、重建恢复与损坏数据。
+- 新增聊天领域消息、会话摘要和 `ChatSessionRepository` 端口，稳定会话契约不再由论文模块拥有。
+- 新增 `ChatSessionController`，统一负责会话加载、主聊天识别、论文上下文过滤、排序、置顶、删除和错误状态。
+- `MessagesScreen` 不再导入 `PaperRecord` 或直接调用 Repository，只消费聊天会话 ViewModel 与命令。
+- App Shell 作为组合根将论文 ID 和标题映射为 `ChatContextSummary`，并在任意聊天入口返回后刷新全局会话列表。
+- 新增聊天会话控制器测试，覆盖排序、过滤、上下文更新、置顶、删除、错误与异步销毁安全。
 
 ## 高优先级待整改
 
-1. **聊天模块所有权**：`chat` 仍直接复用 `papers/application` 和 `papers/presentation` 类型。应让聊天模块拥有通用消息、会话端口和聊天 UI，论文模块只提供 `PaperChatContext`。
+1. **聊天模块所有权**：通用消息和会话端口已迁入 `chat`，但 ConversationController、Composer 和内容渲染仍复用 `papers` 类型。后续应由聊天模块拥有通用对话流程，论文模块只提供论文聊天上下文。
 2. **唯一组合根**：`PaperFlowShell.initState` 仍创建若干 DeepSeek、搜索和平台实现。具体实现应统一在 `main.dart` 或 `AppDependencies` 创建；`PaperFlowApp` 的内存 fallback 只用于测试和预览。
-3. **依赖方向**：部分 `data` 实现仍导入 `application` 端口。后续应把稳定端口和消息类型移动到 domain，使依赖统一为 `presentation -> application -> domain <- data`。
+3. **依赖方向**：部分 `papers/data` 实现仍通过兼容别名导入 `papers/application` 端口。后续应直接依赖 `chat/domain`，使依赖统一为 `presentation -> application -> domain <- data`。
 4. **数据结构分层**：`PaperRecord` 仍混合原始论文值、Markdown 展示内容和格式化计数字符串。远程接口接入前应拆分 DTO、领域模型和 ViewModel，并把计数恢复为整数。
-5. **Messages 页面用例**：消息页仍直接加载、置顶、删除和排序 AI 会话。应抽出 `ChatSessionController`，页面只组合会话列表与命令回调。
 
 ## 中优先级待整改
 

@@ -111,7 +111,7 @@ class FilePaperAiSessionRepository implements PaperAiSessionRepository {
             rawSession is Map ? rawSession['updatedAt'] as String? : null;
         result.add(
           PaperAiSessionSummary(
-            paperId: entry.key,
+            contextId: entry.key,
             messageCount: messages.length,
             preview: preview.trim(),
             updatedAt: DateTime.tryParse(rawUpdatedAt ?? '') ??

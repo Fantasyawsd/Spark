@@ -7,6 +7,7 @@ import '../core/theme/theme_controller.dart';
 import '../core/widgets/paperflow_bottom_nav.dart';
 import '../core/widgets/paperflow_sheet.dart';
 import '../features/chat/application/main_ai_chat_definition.dart';
+import '../features/chat/application/chat_session_controller.dart';
 import '../features/chat/presentation/main_ai_chat_screen.dart';
 import '../features/chat/presentation/paper_ai_chat_screen.dart';
 import '../features/community/presentation/community_screen.dart';
@@ -258,6 +259,7 @@ class _PaperFlowShellState extends State<PaperFlowShell> {
   late final PaperAiService _mainAiService;
   late final PaperAiService _mainWebSearchAiService;
   late final PaperAiSessionRepository _aiSessionRepository;
+  late final ChatSessionController _chatSessionController;
   late final PaperSearchHistoryRepository _searchHistoryRepository;
   late final PaperTranslationServiceFactory _translationServiceFactory;
   late final PaperLinkService _linkService;
@@ -291,6 +293,12 @@ class _PaperFlowShellState extends State<PaperFlowShell> {
     );
     _aiSessionRepository =
         widget.aiSessionRepository ?? InMemoryPaperAiSessionRepository();
+    _chatSessionController = ChatSessionController(
+      repository: _aiSessionRepository,
+      mainSessionId: MainAiChatDefinition.sessionId,
+      contexts: _paperChatContexts,
+    );
+    unawaited(_chatSessionController.refresh());
     _translationServiceFactory = widget.translationServiceFactory ??
         const DeepSeekPaperTranslationServiceFactory();
     _searchHistoryRepository = widget.searchHistoryRepository ??
@@ -304,6 +312,7 @@ class _PaperFlowShellState extends State<PaperFlowShell> {
       ..removeListener(_handlePaperStateChanged)
       ..dispose();
     _commentController.dispose();
+    _chatSessionController.dispose();
     super.dispose();
   }
 
@@ -332,9 +341,8 @@ class _PaperFlowShellState extends State<PaperFlowShell> {
                 ),
                 CommunityScreen(),
                 MessagesScreen(
-                  aiSessionRepository: _aiSessionRepository,
-                  papers: _paperController.feed.allPapers,
-                  onOpenAiChat: _openAiChat,
+                  chatSessionController: _chatSessionController,
+                  onOpenAiChat: _openAiChatById,
                   onOpenMainAiChat: _openMainAiChat,
                 ),
                 ProfileScreen(
@@ -372,8 +380,14 @@ class _PaperFlowShellState extends State<PaperFlowShell> {
   }
 
   void _handlePaperStateChanged() {
+    _chatSessionController.updateContexts(_paperChatContexts);
     if (mounted) setState(() {});
   }
+
+  Iterable<ChatContextSummary> get _paperChatContexts =>
+      _paperController.feed.allPapers.map(
+        (paper) => ChatContextSummary(id: paper.id, title: paper.title),
+      );
 
   void _openPaperSearch() {
     final controller = PaperSearchController(
@@ -403,6 +417,14 @@ class _PaperFlowShellState extends State<PaperFlowShell> {
         ),
       ),
     );
+    await _chatSessionController.refresh();
+  }
+
+  Future<void> _openAiChatById(String contextId) async {
+    final paper = _paperController.feed.allPapers
+        .where((item) => item.id == contextId)
+        .firstOrNull;
+    if (paper != null) await _openAiChat(paper);
   }
 
   Future<void> _openMainAiChat() async {
@@ -415,6 +437,7 @@ class _PaperFlowShellState extends State<PaperFlowShell> {
         ),
       ),
     );
+    await _chatSessionController.refresh();
   }
 
   void _openSavedPaper(String paperId) {

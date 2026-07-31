@@ -1,4 +1,8 @@
 import '../domain/paper.dart';
+import '../../chat/domain/chat_message.dart';
+
+typedef PaperAiMessage = ChatMessage;
+typedef PaperAiSource = ChatSource;
 
 enum PaperAiReasoningEffort {
   none('none', '关闭'),
@@ -22,40 +26,6 @@ enum PaperAiReasoningEffort {
 
 abstract interface class ConfigurablePaperAiService {
   void setReasoningEffort(PaperAiReasoningEffort effort);
-}
-
-class PaperAiMessage {
-  const PaperAiMessage({
-    required this.fromUser,
-    required this.content,
-    this.reasoningContent = '',
-    this.sources = const [],
-  });
-
-  final bool fromUser;
-  final String content;
-  final String reasoningContent;
-  final List<PaperAiSource> sources;
-
-  PaperAiMessage copyWith({
-    String? content,
-    String? reasoningContent,
-    List<PaperAiSource>? sources,
-  }) {
-    return PaperAiMessage(
-      fromUser: fromUser,
-      content: content ?? this.content,
-      reasoningContent: reasoningContent ?? this.reasoningContent,
-      sources: sources ?? this.sources,
-    );
-  }
-}
-
-class PaperAiSource {
-  const PaperAiSource({required this.title, required this.url});
-
-  final String title;
-  final String url;
 }
 
 abstract interface class PaperAiService {

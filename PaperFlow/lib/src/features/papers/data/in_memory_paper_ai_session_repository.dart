@@ -43,7 +43,7 @@ class InMemoryPaperAiSessionRepository implements PaperAiSessionRepository {
             .firstWhere((content) => content.trim().isNotEmpty,
                 orElse: () => '');
         return PaperAiSessionSummary(
-          paperId: entry.key,
+          contextId: entry.key,
           messageCount: entry.value.length,
           preview: preview,
           updatedAt:

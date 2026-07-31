@@ -3,24 +3,21 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/paperflow_theme.dart';
 import '../../../core/widgets/profile_avatar.dart';
 import '../../../core/widgets/surface_card.dart';
-import '../../chat/application/main_ai_chat_definition.dart';
-import '../../papers/application/paper_ai_session_repository.dart';
-import '../../papers/domain/paper.dart';
+import '../../chat/application/chat_session_controller.dart';
+import '../../chat/domain/chat_session_repository.dart';
 import '../domain/message_item.dart';
 import 'widgets/swipe_action_row.dart';
 
 class MessagesScreen extends StatefulWidget {
   const MessagesScreen({
     super.key,
-    this.aiSessionRepository,
-    this.papers = const [],
+    required this.chatSessionController,
     this.onOpenAiChat,
     this.onOpenMainAiChat,
   });
 
-  final PaperAiSessionRepository? aiSessionRepository;
-  final List<PaperRecord> papers;
-  final Future<void> Function(PaperRecord paper)? onOpenAiChat;
+  final ChatSessionController chatSessionController;
+  final Future<void> Function(String contextId)? onOpenAiChat;
   final Future<void> Function()? onOpenMainAiChat;
 
   @override
@@ -29,20 +26,28 @@ class MessagesScreen extends StatefulWidget {
 
 class _MessagesScreenState extends State<MessagesScreen> {
   int _tabIndex = 0;
-  List<PaperAiSessionSummary> _aiSessions = const [];
-  bool _loadingSessions = false;
   String? _revealedAiSessionId;
 
   @override
   void initState() {
     super.initState();
-    _loadAiSessions();
+    widget.chatSessionController.addListener(_handleSessionStateChanged);
+    widget.chatSessionController.refresh();
   }
 
   @override
   void didUpdateWidget(covariant MessagesScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
-    _loadAiSessions();
+    if (oldWidget.chatSessionController == widget.chatSessionController) return;
+    oldWidget.chatSessionController.removeListener(_handleSessionStateChanged);
+    widget.chatSessionController.addListener(_handleSessionStateChanged);
+    widget.chatSessionController.refresh();
+  }
+
+  @override
+  void dispose() {
+    widget.chatSessionController.removeListener(_handleSessionStateChanged);
+    super.dispose();
   }
 
   @override
@@ -87,9 +92,9 @@ class _MessagesScreenState extends State<MessagesScreen> {
             Expanded(
               child: _tabIndex == 0
                   ? _AiSessionList(
-                      loading: _loadingSessions,
-                      sessions: _aiSessions,
-                      papers: widget.papers,
+                      loading: widget.chatSessionController.loading,
+                      sessions: widget.chatSessionController.entries,
+                      mainSession: widget.chatSessionController.mainSession,
                       onOpen: _openAiSession,
                       onOpenMain: _openMainAiChat,
                       revealedSessionId: _revealedAiSessionId,
@@ -116,45 +121,24 @@ class _MessagesScreenState extends State<MessagesScreen> {
     );
   }
 
-  Future<void> _loadAiSessions() async {
-    final repository = widget.aiSessionRepository;
-    if (repository == null || _loadingSessions) return;
-    _loadingSessions = true;
-    try {
-      final sessions = await repository.listSessions();
-      if (mounted) setState(() => _aiSessions = sessions);
-    } on PaperAiSessionPersistenceException {
-      // Keep the chat page usable even if local history cannot be read.
-    } finally {
-      _loadingSessions = false;
-      if (mounted) setState(() {});
-    }
-  }
-
-  Future<void> _openAiSession(PaperAiSessionSummary session) async {
-    final paper =
-        widget.papers.where((item) => item.id == session.paperId).firstOrNull;
-    if (paper == null || widget.onOpenAiChat == null) return;
-    await widget.onOpenAiChat!(paper);
-    await _loadAiSessions();
+  Future<void> _openAiSession(ChatSessionEntry entry) async {
+    final open = widget.onOpenAiChat;
+    if (open == null) return;
+    await open(entry.context.id);
   }
 
   Future<void> _openMainAiChat() async {
     final open = widget.onOpenMainAiChat;
     if (open == null) return;
     await open();
-    await _loadAiSessions();
   }
 
-  Future<void> _togglePinnedSession(PaperAiSessionSummary session) async {
-    final repository = widget.aiSessionRepository;
-    if (repository == null) return;
-    await repository.setPinned(session.paperId, !session.pinned);
+  Future<void> _togglePinnedSession(ChatSessionEntry entry) async {
+    await widget.chatSessionController.togglePinned(entry.context.id);
     if (mounted) setState(() => _revealedAiSessionId = null);
-    await _loadAiSessions();
   }
 
-  Future<void> _deleteSession(PaperAiSessionSummary session) async {
+  Future<void> _deleteSession(ChatSessionEntry entry) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -177,18 +161,14 @@ class _MessagesScreenState extends State<MessagesScreen> {
       ),
     );
     if (confirmed != true) return;
-    final repository = widget.aiSessionRepository;
-    if (repository == null) return;
-    await repository.clear(session.paperId);
+    await widget.chatSessionController.delete(entry.context.id);
     if (mounted) {
-      setState(() {
-        _revealedAiSessionId = null;
-        _aiSessions = _aiSessions
-            .where((item) => item.paperId != session.paperId)
-            .toList(growable: false);
-      });
+      setState(() => _revealedAiSessionId = null);
     }
-    await _loadAiSessions();
+  }
+
+  void _handleSessionStateChanged() {
+    if (mounted) setState(() {});
   }
 }
 
@@ -196,7 +176,7 @@ class _AiSessionList extends StatelessWidget {
   const _AiSessionList({
     required this.loading,
     required this.sessions,
-    required this.papers,
+    required this.mainSession,
     required this.onOpen,
     required this.onOpenMain,
     required this.revealedSessionId,
@@ -207,41 +187,24 @@ class _AiSessionList extends StatelessWidget {
   });
 
   final bool loading;
-  final List<PaperAiSessionSummary> sessions;
-  final List<PaperRecord> papers;
-  final ValueChanged<PaperAiSessionSummary> onOpen;
+  final List<ChatSessionEntry> sessions;
+  final ChatSessionSummary? mainSession;
+  final ValueChanged<ChatSessionEntry> onOpen;
   final VoidCallback onOpenMain;
   final String? revealedSessionId;
   final ValueChanged<String> onReveal;
   final VoidCallback onCloseActions;
-  final Future<void> Function(PaperAiSessionSummary session) onTogglePinned;
-  final Future<void> Function(PaperAiSessionSummary session) onDelete;
+  final Future<void> Function(ChatSessionEntry session) onTogglePinned;
+  final Future<void> Function(ChatSessionEntry session) onDelete;
 
   @override
   Widget build(BuildContext context) {
     if (loading && sessions.isEmpty) {
       return const Center(child: CircularProgressIndicator(strokeWidth: 2));
     }
-    final papersById = {for (final paper in papers) paper.id: paper};
-    final mainSession = sessions
-        .where(
-          (session) => session.paperId == MainAiChatDefinition.sessionId,
-        )
-        .firstOrNull;
-    final visible = sessions
-        .where(
-          (session) =>
-              session.paperId != MainAiChatDefinition.sessionId &&
-              papersById.containsKey(session.paperId),
-        )
-        .toList(growable: false)
-      ..sort((a, b) {
-        if (a.pinned != b.pinned) return a.pinned ? -1 : 1;
-        return b.updatedAt.compareTo(a.updatedAt);
-      });
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(14, 10, 14, 92),
-      itemCount: visible.length + 1,
+      itemCount: sessions.length + 1,
       separatorBuilder: (_, __) => const SizedBox(height: 8),
       itemBuilder: (context, index) {
         if (index == 0) {
@@ -250,22 +213,23 @@ class _AiSessionList extends StatelessWidget {
             onTap: onOpenMain,
           );
         }
-        final session = visible[index - 1];
-        final paper = papersById[session.paperId]!;
+        final entry = sessions[index - 1];
+        final session = entry.session;
+        final contextId = entry.context.id;
         return SwipeActionRow(
-          sessionId: session.paperId,
-          revealed: revealedSessionId == session.paperId,
+          sessionId: contextId,
+          revealed: revealedSessionId == contextId,
           pinned: session.pinned,
-          onReveal: () => onReveal(session.paperId),
+          onReveal: () => onReveal(contextId),
           onClose: onCloseActions,
-          onTogglePinned: () => onTogglePinned(session),
-          onDelete: () => onDelete(session),
+          onTogglePinned: () => onTogglePinned(entry),
+          onDelete: () => onDelete(entry),
           child: Material(
             color: Colors.white,
             borderRadius: BorderRadius.circular(16),
             child: InkWell(
-              key: ValueKey('ai-session-${session.paperId}'),
-              onTap: () => onOpen(session),
+              key: ValueKey('ai-session-$contextId'),
+              onTap: () => onOpen(entry),
               borderRadius: BorderRadius.circular(16),
               child: Padding(
                 padding: const EdgeInsets.all(13),
@@ -301,7 +265,7 @@ class _AiSessionList extends StatelessWidget {
                               ],
                               Expanded(
                                 child: Text(
-                                  paper.title,
+                                  entry.context.title,
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: const TextStyle(
@@ -370,7 +334,7 @@ class _AiSessionList extends StatelessWidget {
 class _MainAiChatCard extends StatelessWidget {
   const _MainAiChatCard({required this.session, required this.onTap});
 
-  final PaperAiSessionSummary? session;
+  final ChatSessionSummary? session;
   final VoidCallback onTap;
 
   @override

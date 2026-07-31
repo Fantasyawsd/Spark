@@ -10,6 +10,8 @@ export 'src/features/community/presentation/community_screen.dart';
 export 'src/features/messages/domain/message_item.dart';
 export 'src/features/messages/presentation/messages_screen.dart';
 export 'src/features/papers/application/paper_controller.dart';
+export 'src/features/papers/application/paper_ai_service.dart';
+export 'src/features/papers/data/deepseek_paper_ai_service.dart';
 export 'src/features/papers/data/demo_paper_repository.dart';
 export 'src/features/papers/domain/paper.dart';
 export 'src/features/papers/domain/paper_repository.dart';

@@ -9,6 +9,8 @@ class PaperRecord {
     required this.firstAffiliation,
     required this.topics,
     required this.abstractText,
+    required this.chineseAbstractMarkdown,
+    required this.relatedPapersMarkdown,
     required this.readMinutes,
     required this.citations,
     required this.likes,
@@ -25,6 +27,8 @@ class PaperRecord {
   final String firstAffiliation;
   final List<String> topics;
   final String abstractText;
+  final String chineseAbstractMarkdown;
+  final String relatedPapersMarkdown;
   final int readMinutes;
   final String citations;
   final String likes;

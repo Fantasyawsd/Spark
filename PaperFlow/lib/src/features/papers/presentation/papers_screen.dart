@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 
 import '../../../core/motion/motion_tokens.dart';
@@ -735,9 +736,8 @@ class _PaperCardState extends State<_PaperCard> {
   String _tabText(PaperRecord paper, int index) {
     return switch (index) {
       0 => paper.abstractText,
-      1 =>
-        '本文提出一种高效参数微调方法，通过在 Transformer 层中注入可训练的低秩矩阵，显著降低训练参数量和显存开销，同时保持与全量微调相当的效果。',
-      _ => '推荐继续阅读：QLoRA、AdaLoRA、DoRA，以及关于参数高效微调和低秩优化的最新综述。',
+      1 => paper.chineseAbstractMarkdown,
+      _ => paper.relatedPapersMarkdown,
     };
   }
 }
@@ -766,19 +766,16 @@ class _PaperTabBody extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
+        final plainText = _plainText(text);
         final painter = TextPainter(
-          text: TextSpan(text: text, style: _textStyle),
+          text: TextSpan(text: plainText, style: _textStyle),
           textDirection: Directionality.of(context),
         )..layout(maxWidth: constraints.maxWidth);
         final hasOverflow =
             expandable && painter.height > constraints.maxHeight;
 
         if (!hasOverflow && !expanded) {
-          return SelectableText(
-            text,
-            textAlign: TextAlign.left,
-            style: _textStyle,
-          );
+          return _PaperMarkdown(data: text);
         }
 
         if (!expandable || expanded) {
@@ -786,21 +783,11 @@ class _PaperTabBody extends StatelessWidget {
             key: const ValueKey('paper-tab-scroll'),
             padding: const EdgeInsets.only(bottom: 12),
             physics: const ClampingScrollPhysics(),
-            child: SelectableText(
-              text,
-              textAlign: TextAlign.left,
-              style: _textStyle,
-            ),
+            child: _PaperMarkdown(data: text),
           );
         }
 
         const buttonHeight = 34.0;
-        final lineHeight = _textStyle.fontSize! * _textStyle.height!;
-        final visibleLines =
-            ((constraints.maxHeight - buttonHeight) / lineHeight)
-                .floor()
-                .clamp(1, 1000)
-                .toInt();
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -813,11 +800,9 @@ class _PaperTabBody extends StatelessWidget {
                   colors: [Colors.white, Colors.transparent],
                   stops: [0.82, 1],
                 ).createShader(rect),
-                child: SelectableText(
-                  text,
-                  maxLines: visibleLines,
-                  textAlign: TextAlign.left,
-                  style: _textStyle,
+                child: SingleChildScrollView(
+                  physics: const NeverScrollableScrollPhysics(),
+                  child: _PaperMarkdown(data: text),
                 ),
               ),
             ),
@@ -842,6 +827,50 @@ class _PaperTabBody extends StatelessWidget {
           ],
         );
       },
+    );
+  }
+
+  String _plainText(String markdown) {
+    return markdown
+        .replaceAll(RegExp(r'```[\s\S]*?```'), ' code ')
+        .replaceAll(RegExp(r'`([^`]*)`'), r'$1')
+        .replaceAll(RegExp(r'!\[[^\]]*\]\([^)]*\)'), '')
+        .replaceAll(RegExp(r'\[([^\]]+)\]\([^)]*\)'), r'$1')
+        .replaceAll(RegExp(r'^[#>*+\-]+\s*', multiLine: true), '')
+        .replaceAll(RegExp(r'[*_~]'), '');
+  }
+}
+
+class _PaperMarkdown extends StatelessWidget {
+  const _PaperMarkdown({required this.data});
+
+  final String data;
+
+  @override
+  Widget build(BuildContext context) {
+    return MarkdownBody(
+      data: data,
+      selectable: true,
+      softLineBreak: true,
+      styleSheet: MarkdownStyleSheet(
+        p: _PaperTabBody._textStyle,
+        h1: _PaperTabBody._textStyle.copyWith(
+          fontSize: 22,
+          fontWeight: FontWeight.w800,
+        ),
+        h2: _PaperTabBody._textStyle.copyWith(
+          fontSize: 20,
+          fontWeight: FontWeight.w800,
+        ),
+        h3: _PaperTabBody._textStyle.copyWith(
+          fontSize: 18,
+          fontWeight: FontWeight.w700,
+        ),
+        listBullet: _PaperTabBody._textStyle,
+        strong: const TextStyle(fontWeight: FontWeight.w700),
+        blockSpacing: 10,
+        listIndent: 22,
+      ),
     );
   }
 }

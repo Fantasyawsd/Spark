@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 
 import '../../../../core/motion/motion_tokens.dart';
 import '../../../../core/theme/paperflow_theme.dart';
 import '../../../../core/widgets/paperflow_sheet.dart';
 import '../../../../core/widgets/paperflow_tab_bar.dart';
+import '../../application/paper_ai_service.dart';
+import '../../data/deepseek_paper_ai_service.dart';
 import '../../domain/paper.dart';
 
 enum PaperSheetPage { comments, ai }
@@ -12,6 +15,7 @@ Future<void> showPaperCommentsSheet(
   BuildContext context,
   PaperRecord paper, {
   PaperSheetPage initialPage = PaperSheetPage.comments,
+  PaperAiService? aiService,
 }) {
   return showPaperFlowSheet<void>(
     context: context,
@@ -21,6 +25,7 @@ Future<void> showPaperCommentsSheet(
     builder: (context) => _PaperCommentsSheet(
       paper: paper,
       initialPage: initialPage,
+      aiService: aiService ?? DeepSeekPaperAiService(),
     ),
   );
 }
@@ -29,10 +34,12 @@ class _PaperCommentsSheet extends StatefulWidget {
   const _PaperCommentsSheet({
     required this.paper,
     required this.initialPage,
+    required this.aiService,
   });
 
   final PaperRecord paper;
   final PaperSheetPage initialPage;
+  final PaperAiService aiService;
 
   @override
   State<_PaperCommentsSheet> createState() => _PaperCommentsSheetState();
@@ -47,6 +54,7 @@ class _PaperCommentsSheetState extends State<_PaperCommentsSheet> {
   late int _pageIndex;
   bool _sending = false;
   bool _fullscreen = false;
+  String? _sendError;
 
   final List<_CommentData> _comments = [
     const _CommentData(
@@ -177,6 +185,7 @@ class _PaperCommentsSheetState extends State<_PaperCommentsSheet> {
                               paper: widget.paper,
                               messages: _messages,
                               sending: _sending,
+                              error: _sendError,
                               onPrompt: _sendText,
                             ),
                           ],
@@ -245,23 +254,37 @@ class _PaperCommentsSheetState extends State<_PaperCommentsSheet> {
     setState(() {
       _messages.add(_ChatMessage(fromUser: true, text: text));
       _sending = true;
+      _sendError = null;
     });
-    await Future<void>.delayed(const Duration(milliseconds: 650));
-    if (!mounted) return;
-    setState(() {
-      _messages.add(_ChatMessage(fromUser: false, text: _answerFor(text)));
-      _sending = false;
-    });
-  }
-
-  String _answerFor(String question) {
-    if (question.contains('实验') || question.contains('效果')) {
-      return '论文在多个自然语言理解与生成任务上比较了全量微调和参数高效方法。LoRA 只训练少量低秩参数，也能保持接近全量微调的效果，同时显著降低显存与存储开销。';
+    try {
+      final answer = await widget.aiService.answer(
+        paper: widget.paper,
+        conversation: [
+          for (final message in _messages)
+            PaperAiMessage(
+              fromUser: message.fromUser,
+              content: message.text,
+            ),
+        ],
+      );
+      if (!mounted) return;
+      setState(() {
+        _messages.add(_ChatMessage(fromUser: false, text: answer));
+        _sending = false;
+      });
+    } on PaperAiException catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _sendError = error.message;
+        _sending = false;
+      });
+    } on Exception {
+      if (!mounted) return;
+      setState(() {
+        _sendError = 'AI 服务发生未知错误，请稍后重试。';
+        _sending = false;
+      });
     }
-    if (question.contains('区别') || question.contains('QLoRA')) {
-      return 'LoRA 冻结基座权重并训练低秩增量矩阵；QLoRA 在此基础上将冻结的基座模型量化到 4-bit，因此进一步降低了微调显存。';
-    }
-    return 'LoRA 假设模型适配任务时的权重变化具有较低的内在秩，因此把大矩阵更新分解为两个更小的矩阵，只训练这部分增量参数。';
   }
 }
 
@@ -482,12 +505,14 @@ class _AiAnalysisContent extends StatelessWidget {
     required this.paper,
     required this.messages,
     required this.sending,
+    required this.error,
     required this.onPrompt,
   });
 
   final PaperRecord paper;
   final List<_ChatMessage> messages;
   final bool sending;
+  final String? error;
   final ValueChanged<String> onPrompt;
 
   @override
@@ -498,13 +523,10 @@ class _AiAnalysisContent extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            '这篇论文提出 LoRA：冻结预训练模型参数，并在 Transformer 层中注入可训练的低秩矩阵。它显著减少了可训练参数和显存占用，同时保持接近全量微调的任务效果。',
-            style: const TextStyle(
-              color: PaperFlowColors.ink,
-              fontSize: 15,
-              height: 1.7,
-            ),
+          MarkdownBody(
+            data: '**${paper.title}**\n\n${paper.chineseAbstractMarkdown}',
+            selectable: true,
+            styleSheet: _aiMarkdownStyle(),
           ),
           const SizedBox(height: 14),
           const Text(
@@ -568,6 +590,7 @@ class _AiAnalysisContent extends StatelessWidget {
             ),
           ],
           if (sending) const _TypingIndicator(),
+          if (error != null) _AiErrorMessage(message: error!),
         ],
       ),
     );
@@ -614,17 +637,58 @@ class _MessageBubble extends StatelessWidget {
               : PaperFlowColors.canvas,
           borderRadius: BorderRadius.circular(10),
         ),
-        child: Text(
-          message.text,
-          style: TextStyle(
+        child: MarkdownBody(
+          data: message.text,
+          selectable: true,
+          styleSheet: _aiMarkdownStyle(
             color: message.fromUser ? Colors.white : PaperFlowColors.ink,
-            fontSize: 13,
-            height: 1.45,
           ),
         ),
       ),
     );
   }
+}
+
+class _AiErrorMessage extends StatelessWidget {
+  const _AiErrorMessage({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(top: 6),
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF1F1),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        message,
+        style: const TextStyle(
+          color: Color(0xFFB42318),
+          fontSize: 12.5,
+          height: 1.4,
+        ),
+      ),
+    );
+  }
+}
+
+MarkdownStyleSheet _aiMarkdownStyle({
+  Color color = PaperFlowColors.ink,
+}) {
+  final body = TextStyle(color: color, fontSize: 13, height: 1.5);
+  return MarkdownStyleSheet(
+    p: body,
+    h1: body.copyWith(fontSize: 18, fontWeight: FontWeight.w800),
+    h2: body.copyWith(fontSize: 16, fontWeight: FontWeight.w800),
+    h3: body.copyWith(fontSize: 14, fontWeight: FontWeight.w700),
+    listBullet: body,
+    strong: TextStyle(color: color, fontWeight: FontWeight.w700),
+    blockSpacing: 8,
+    listIndent: 20,
+  );
 }
 
 class _TypingIndicator extends StatelessWidget {

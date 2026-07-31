@@ -52,7 +52,7 @@ void main() {
       pagesSize,
     );
     await tester.pumpAndSettle();
-    expect(find.textContaining('本文提出一种高效参数微调方法'), findsOneWidget);
+    expect(find.textContaining('LoRA 是一种参数高效'), findsOneWidget);
 
     await tester.tap(find.byIcon(Icons.favorite_border_rounded).first);
     await tester.pumpAndSettle();
@@ -170,10 +170,23 @@ void main() {
     await tester.binding.setSurfaceSize(const Size(378, 810));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
-    await tester.pumpWidget(const PaperFlowApp(showSplash: false));
-    await tester.pump();
-
-    await tester.tap(find.byIcon(Icons.chat_bubble_outline_rounded).first);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) => Scaffold(
+            body: TextButton(
+              onPressed: () => showPaperCommentsSheet(
+                context,
+                demoPapers.first,
+                aiService: const _FakePaperAiService(),
+              ),
+              child: const Text('打开评论'),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('打开评论'));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField), '这是一条本地评论');
     await tester.pump();
@@ -188,9 +201,9 @@ void main() {
     await tester.tap(find.byTooltip('发送'));
     await tester.pump(const Duration(milliseconds: 100));
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
-    await tester.pump(const Duration(milliseconds: 650));
+    await tester.pump(const Duration(milliseconds: 200));
     await tester.pumpAndSettle();
-    expect(find.textContaining('多个自然语言理解与生成任务'), findsOneWidget);
+    expect(find.textContaining('DeepSeek Markdown'), findsOneWidget);
   });
 
   testWidgets('more paper topics can be selected from the add button',
@@ -214,6 +227,19 @@ void main() {
   });
 }
 
+class _FakePaperAiService implements PaperAiService {
+  const _FakePaperAiService();
+
+  @override
+  Future<String> answer({
+    required PaperRecord paper,
+    required List<PaperAiMessage> conversation,
+  }) async {
+    await Future<void>.delayed(const Duration(milliseconds: 150));
+    return '**DeepSeek Markdown**\n\n- ${paper.title}\n- ${conversation.last.content}';
+  }
+}
+
 class _TestPaperRepository implements PaperRepository {
   const _TestPaperRepository(this.paper);
 
@@ -232,6 +258,8 @@ PaperRecord _testPaper(String abstractText) {
     firstAffiliation: 'PaperFlow Lab',
     topics: const ['Testing'],
     abstractText: abstractText,
+    chineseAbstractMarkdown: '**中文摘要**',
+    relatedPapersMarkdown: '- Related paper',
     readMinutes: 5,
     citations: '0',
     likes: '0',

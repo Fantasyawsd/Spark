@@ -56,6 +56,27 @@ flutter pub get
 flutter run -d windows
 ```
 
+## DeepSeek AI
+
+AI paper conversations use DeepSeek's OpenAI-compatible chat completions API.
+Provide the key at build or run time instead of committing it to the repository:
+
+```powershell
+flutter run -d windows --dart-define=DEEPSEEK_API_KEY=your_key
+flutter build apk --release --dart-define=DEEPSEEK_API_KEY=your_key
+```
+
+Optional configuration:
+
+```text
+DEEPSEEK_BASE_URL=https://api.deepseek.com
+DEEPSEEK_MODEL=deepseek-chat
+```
+
+`dart-define` prevents accidental source-control exposure, but a key embedded in
+a client application can still be extracted. Production releases should call a
+server-side PaperFlow endpoint that stores the DeepSeek key securely.
+
 ## Verify
 
 ```powershell
@@ -64,4 +85,3 @@ flutter analyze
 flutter test
 flutter build windows --release
 ```
-

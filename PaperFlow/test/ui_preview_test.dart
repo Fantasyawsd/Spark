@@ -111,7 +111,7 @@ void main() {
     expect(find.textContaining('被引 1,234'), findsOneWidget);
     expect(find.text('中文摘要'), findsWidgets);
 
-    await tester.tap(find.text('Papers ⇄'));
+    await tester.tap(find.text('论文 ⇄'));
     await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey('paper-grid')), findsOneWidget);
     expect(find.text('‹ 返回'), findsOneWidget);
@@ -120,7 +120,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey('paper-feed')), findsOneWidget);
     expect(find.textContaining('Mamba: Linear-Time'), findsOneWidget);
-    expect(find.text('Papers ⇄'), findsOneWidget);
+    expect(find.text('论文 ⇄'), findsOneWidget);
   });
 
   testWidgets('comments sheet switches to AI conversation', (tester) async {

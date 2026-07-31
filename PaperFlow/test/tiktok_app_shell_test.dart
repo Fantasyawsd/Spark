@@ -14,13 +14,13 @@ void main() {
     expect(find.text('LoRA: Low-Rank Adaptation of Large Language Models'),
         findsOneWidget);
 
-    await tester.tap(find.text('Community'));
+    await tester.tap(find.text('社区'));
     await tester.pump();
-    expect(find.text('Community'), findsWidgets);
+    expect(find.text('社区'), findsOneWidget);
 
-    await tester.tap(find.text('Messages'));
+    await tester.tap(find.text('消息'));
     await tester.pump();
-    expect(find.text('Messages'), findsWidgets);
+    expect(find.text('消息'), findsOneWidget);
 
     await tester.tap(find.text('我的'));
     await tester.pump();

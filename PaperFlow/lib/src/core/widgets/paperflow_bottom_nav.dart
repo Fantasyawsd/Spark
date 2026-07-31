@@ -31,10 +31,10 @@ class PaperFlowBottomNav extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.fromLTRB(4, 4, 4, 3),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.58),
+              color: Colors.white.withValues(alpha: 0.86),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: Colors.white.withValues(alpha: 0.72),
+                color: Colors.white.withValues(alpha: 0.92),
               ),
             ),
             child: SafeArea(
@@ -45,7 +45,7 @@ class PaperFlowBottomNav extends StatelessWidget {
                 child: Row(
                   children: [
                     _NavItem(
-                      label: papersGridMode ? '‹ 返回' : 'Papers ⇄',
+                      label: papersGridMode ? '‹ 返回' : '论文 ⇄',
                       icon: papersGridMode
                           ? Icons.arrow_back_ios_new_rounded
                           : Icons.description_rounded,
@@ -54,7 +54,7 @@ class PaperFlowBottomNav extends StatelessWidget {
                       onSelected: onSelected,
                     ),
                     _NavItem(
-                      label: 'Community',
+                      label: '社区',
                       icon: Icons.group_rounded,
                       index: 1,
                       selectedIndex: selectedIndex,
@@ -87,7 +87,7 @@ class PaperFlowBottomNav extends StatelessWidget {
                       ),
                     ),
                     _NavItem(
-                      label: 'Messages',
+                      label: '消息',
                       icon: Icons.chat_bubble_rounded,
                       index: 2,
                       selectedIndex: selectedIndex,
@@ -132,7 +132,7 @@ class _NavItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final selected = index == selectedIndex;
-    final color = selected ? PaperFlowColors.primary : PaperFlowColors.subtle;
+    final color = selected ? PaperFlowColors.primary : PaperFlowColors.muted;
     return Expanded(
       child: InkResponse(
         onTap: () => onSelected(index),

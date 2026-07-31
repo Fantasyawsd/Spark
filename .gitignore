@@ -1,0 +1,9 @@
+# Independent reference project; keep it outside PaperFlow history.
+/douyin/
+
+# Local editor and operating-system files.
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store

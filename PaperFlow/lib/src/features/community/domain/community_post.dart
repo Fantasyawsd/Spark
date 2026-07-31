@@ -1,0 +1,126 @@
+import 'package:flutter/material.dart';
+
+@immutable
+class CommunityPost {
+  const CommunityPost({
+    required this.author,
+    required this.affiliation,
+    required this.time,
+    required this.avatarUrl,
+    required this.content,
+    required this.tags,
+    required this.likes,
+    required this.comments,
+    required this.saves,
+    required this.shares,
+    this.paperTitle,
+    this.venue,
+    this.attachment,
+    this.verified = false,
+  });
+
+  final String author;
+  final String affiliation;
+  final String time;
+  final String avatarUrl;
+  final String content;
+  final List<String> tags;
+  final String likes;
+  final String comments;
+  final String saves;
+  final String shares;
+  final String? paperTitle;
+  final String? venue;
+  final String? attachment;
+  final bool verified;
+}
+
+const demoCommunityPosts = <CommunityPost>[
+  CommunityPost(
+    author: 'Zeyuan Allen-Zhu',
+    affiliation: 'Stanford University',
+    time: '2h ago',
+    avatarUrl: 'https://i.pravatar.cc/240?img=11',
+    content:
+        'Our ICLR 2024 paper LoRA is out! 🎉 We are excited to share a simple yet effective way to fine-tune large models with low-rank updates.',
+    tags: ['NLP', 'Parameter Efficient Fine-tuning', 'LoRA'],
+    likes: '1.2k',
+    comments: '128',
+    saves: '820',
+    shares: '256',
+    paperTitle: 'LoRA: Low-Rank Adaptation of Large Language Models',
+    venue: 'ICLR 2024',
+    verified: true,
+  ),
+  CommunityPost(
+    author: 'Yelong Shen',
+    affiliation: 'Princeton University',
+    time: '5h ago',
+    avatarUrl: 'https://i.pravatar.cc/240?img=32',
+    content:
+        'Thinking about the trade-off between capacity and generalization in LLMs. Do we really need ever-growing model sizes, or is the bottleneck more about data quality and alignment?',
+    tags: ['LLM', 'Scaling Laws', 'Discussion'],
+    likes: '342',
+    comments: '67',
+    saves: '210',
+    shares: '43',
+    verified: true,
+  ),
+  CommunityPost(
+    author: 'Phillip Wallis',
+    affiliation: 'AI2',
+    time: '1d ago',
+    avatarUrl: 'https://i.pravatar.cc/240?img=13',
+    content:
+        'Notes from the EMNLP tutorial on Efficient Training of LLMs. Covered optimizers, mixed precision, sequence packing, and more.',
+    tags: ['Training', 'Optimization', 'Notes'],
+    likes: '184',
+    comments: '23',
+    saves: '96',
+    shares: '18',
+    attachment: 'EMNLP 2024 Tutorial Notes.pdf',
+    verified: true,
+  ),
+  CommunityPost(
+    author: 'Fei-Fei Li',
+    affiliation: 'Stanford University',
+    time: '1d ago',
+    avatarUrl: 'https://i.pravatar.cc/240?img=44',
+    content:
+        'A visual guide to multimodal tokenization: what changes when images, video, and language share one representation space?',
+    tags: ['CV', 'Multimodal', 'Representation'],
+    likes: '2.4k',
+    comments: '186',
+    saves: '1.1k',
+    shares: '320',
+    verified: true,
+  ),
+  CommunityPost(
+    author: 'Andrej Karpathy',
+    affiliation: 'Eureka Labs',
+    time: '2d ago',
+    avatarUrl: 'https://i.pravatar.cc/240?img=68',
+    content:
+        'Notes on building a small language model from scratch: data curation, tokenizer choices, training curves, and evaluation pitfalls.',
+    tags: ['LLM', 'Training', 'Notes'],
+    likes: '5.8k',
+    comments: '412',
+    saves: '3.2k',
+    shares: '906',
+    attachment: 'Building LLMs from Scratch.pdf',
+    verified: true,
+  ),
+  CommunityPost(
+    author: 'Alex Chen',
+    affiliation: 'Tsinghua University',
+    time: '3d ago',
+    avatarUrl: 'https://i.pravatar.cc/240?img=47',
+    content:
+        'My weekly paper-reading workflow: triage with abstracts, reproduce one key figure, then write a one-page critique.',
+    tags: ['Workflow', 'Research', 'Productivity'],
+    likes: '986',
+    comments: '74',
+    saves: '642',
+    shares: '118',
+  ),
+];

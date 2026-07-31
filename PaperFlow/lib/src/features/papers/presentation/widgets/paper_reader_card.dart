@@ -23,16 +23,24 @@ class PaperReaderCard extends StatefulWidget {
     required this.paper,
     required this.liked,
     required this.saved,
+    required this.read,
+    required this.readLater,
     required this.followed,
     required this.shareCountDelta,
     required this.commentCountDelta,
     required this.onLike,
     required this.onSave,
+    required this.onToggleRead,
+    required this.onToggleReadLater,
     required this.onFollow,
     required this.onComment,
     required this.onAnalyze,
     required this.onShare,
     required this.translationServiceFactory,
+    this.initialTabIndex = 0,
+    this.initialAbstractScrollOffset = 0,
+    this.onTabChanged,
+    this.onAbstractScrollChanged,
     this.translationRepository,
     this.onOpenPaper,
     this.onOpenRelatedPaper,
@@ -41,11 +49,15 @@ class PaperReaderCard extends StatefulWidget {
   final PaperRecord paper;
   final bool liked;
   final bool saved;
+  final bool read;
+  final bool readLater;
   final bool followed;
   final int shareCountDelta;
   final int commentCountDelta;
   final VoidCallback onLike;
   final VoidCallback onSave;
+  final VoidCallback onToggleRead;
+  final VoidCallback onToggleReadLater;
   final VoidCallback onFollow;
   final VoidCallback onComment;
   final VoidCallback onAnalyze;
@@ -54,6 +66,10 @@ class PaperReaderCard extends StatefulWidget {
   final ValueChanged<String>? onOpenRelatedPaper;
   final PaperTranslationServiceFactory translationServiceFactory;
   final PaperTranslationRepository? translationRepository;
+  final int initialTabIndex;
+  final double initialAbstractScrollOffset;
+  final ValueChanged<int>? onTabChanged;
+  final ValueChanged<double>? onAbstractScrollChanged;
 
   @override
   State<PaperReaderCard> createState() => _PaperReaderCardState();
@@ -62,15 +78,17 @@ class PaperReaderCard extends StatefulWidget {
 class _PaperReaderCardState extends State<PaperReaderCard> {
   static const _tabs = ['原文', '中文解读', '相关论文'];
 
-  int _tabIndex = 0;
+  late int _tabIndex;
   late final PageController _tabPageController;
   late PaperTranslationController _translationController;
 
   @override
   void initState() {
     super.initState();
-    _tabPageController = PageController();
+    _tabIndex = widget.initialTabIndex.clamp(0, _tabs.length - 1);
+    _tabPageController = PageController(initialPage: _tabIndex);
     _createTranslationController();
+    if (_tabIndex == 1) _translationController.ensureTranslated();
   }
 
   @override
@@ -91,6 +109,13 @@ class _PaperReaderCardState extends State<PaperReaderCard> {
       ..removeListener(_handleTranslationChanged)
       ..dispose();
     _createTranslationController();
+    if (oldWidget.paper.id != widget.paper.id) {
+      _tabIndex = widget.initialTabIndex.clamp(0, _tabs.length - 1);
+      if (_tabPageController.hasClients) {
+        _tabPageController.jumpToPage(_tabIndex);
+      }
+      if (_tabIndex == 1) _translationController.ensureTranslated();
+    }
   }
 
   @override
@@ -194,6 +219,10 @@ class _PaperReaderCardState extends State<PaperReaderCard> {
               onComment: widget.onComment,
               onSave: widget.onSave,
               onShare: widget.onShare,
+              read: widget.read,
+              readLater: widget.readLater,
+              onToggleRead: widget.onToggleRead,
+              onToggleReadLater: widget.onToggleReadLater,
             ),
           ),
         ],
@@ -203,6 +232,7 @@ class _PaperReaderCardState extends State<PaperReaderCard> {
 
   void _handleTabChanged(int index) {
     setState(() => _tabIndex = index);
+    widget.onTabChanged?.call(index);
     if (index == 1) _translationController.ensureTranslated();
   }
 
@@ -265,6 +295,10 @@ class _PaperReaderCardState extends State<PaperReaderCard> {
           paper: paper,
           markdown: markdown,
           title: title,
+          initialScrollOffset:
+              title == '原文摘要' ? widget.initialAbstractScrollOffset : 0,
+          onScrollOffsetChanged:
+              title == '原文摘要' ? widget.onAbstractScrollChanged : null,
         ),
       ),
     );

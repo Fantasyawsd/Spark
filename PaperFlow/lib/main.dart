@@ -7,6 +7,7 @@ void main() {
       commentRepository: FilePaperCommentRepository(),
       interactionRepository: FilePaperInteractionRepository(),
       preferenceRepository: FilePaperPreferenceRepository(),
+      readingRepository: FilePaperReadingRepository(),
       searchHistoryRepository: FilePaperSearchHistoryRepository(),
       shareService: const PlatformPaperShareService(),
       aiService: DeepSeekPaperAiService(),

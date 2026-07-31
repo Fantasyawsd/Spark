@@ -17,6 +17,7 @@ import '../features/papers/application/paper_ai_session_repository.dart';
 import '../features/papers/application/paper_comment_controller.dart';
 import '../features/papers/application/paper_controller.dart';
 import '../features/papers/application/paper_link_service.dart';
+import '../features/papers/application/paper_reading_controller.dart';
 import '../features/papers/application/paper_share_service.dart';
 import '../features/papers/application/paper_translation_service.dart';
 import '../features/papers/data/arxiv_seed_repository.dart';
@@ -28,6 +29,7 @@ import '../features/papers/domain/paper_comment_repository.dart';
 import '../features/papers/domain/paper.dart';
 import '../features/papers/domain/paper_interaction_repository.dart';
 import '../features/papers/domain/paper_preference_repository.dart';
+import '../features/papers/domain/paper_reading_repository.dart';
 import '../features/papers/presentation/papers_screen.dart';
 import '../features/profile/presentation/profile_screen.dart';
 import '../features/search/application/paper_search_controller.dart';
@@ -42,6 +44,7 @@ class PaperFlowApp extends StatelessWidget {
     this.commentRepository,
     this.interactionRepository,
     this.preferenceRepository,
+    this.readingRepository,
     this.searchHistoryRepository,
     this.shareService,
     this.linkService,
@@ -56,6 +59,7 @@ class PaperFlowApp extends StatelessWidget {
   final PaperCommentRepository? commentRepository;
   final PaperInteractionRepository? interactionRepository;
   final PaperPreferenceRepository? preferenceRepository;
+  final PaperReadingRepository? readingRepository;
   final PaperSearchHistoryRepository? searchHistoryRepository;
   final PaperShareService? shareService;
   final PaperLinkService? linkService;
@@ -78,6 +82,7 @@ class PaperFlowApp extends StatelessWidget {
           commentRepository: commentRepository,
           interactionRepository: interactionRepository,
           preferenceRepository: preferenceRepository,
+          readingRepository: readingRepository,
           searchHistoryRepository: searchHistoryRepository,
           shareService: shareService,
           linkService: linkService,
@@ -98,6 +103,7 @@ class _PaperFlowBootstrap extends StatefulWidget {
     required this.commentRepository,
     required this.interactionRepository,
     required this.preferenceRepository,
+    required this.readingRepository,
     required this.searchHistoryRepository,
     required this.shareService,
     required this.linkService,
@@ -112,6 +118,7 @@ class _PaperFlowBootstrap extends StatefulWidget {
   final PaperCommentRepository? commentRepository;
   final PaperInteractionRepository? interactionRepository;
   final PaperPreferenceRepository? preferenceRepository;
+  final PaperReadingRepository? readingRepository;
   final PaperSearchHistoryRepository? searchHistoryRepository;
   final PaperShareService? shareService;
   final PaperLinkService? linkService;
@@ -181,6 +188,7 @@ class _PaperFlowBootstrapState extends State<_PaperFlowBootstrap>
         commentRepository: widget.commentRepository,
         interactionRepository: widget.interactionRepository,
         preferenceRepository: widget.preferenceRepository,
+        readingRepository: widget.readingRepository,
         searchHistoryRepository: widget.searchHistoryRepository,
         shareService: widget.shareService,
         linkService: widget.linkService,
@@ -224,6 +232,7 @@ class PaperFlowShell extends StatefulWidget {
     this.commentRepository,
     this.interactionRepository,
     this.preferenceRepository,
+    this.readingRepository,
     this.searchHistoryRepository,
     this.shareService,
     this.linkService,
@@ -237,6 +246,7 @@ class PaperFlowShell extends StatefulWidget {
   final PaperCommentRepository? commentRepository;
   final PaperInteractionRepository? interactionRepository;
   final PaperPreferenceRepository? preferenceRepository;
+  final PaperReadingRepository? readingRepository;
   final PaperSearchHistoryRepository? searchHistoryRepository;
   final PaperShareService? shareService;
   final PaperLinkService? linkService;
@@ -254,6 +264,7 @@ class _PaperFlowShellState extends State<PaperFlowShell> {
   int _selectedIndex = 0;
   late final PaperController _paperController;
   late final PaperCommentController _commentController;
+  late final PaperReadingController _readingController;
   late final PaperAiService _paperAiService;
   late final PaperAiService _webSearchAiService;
   late final PaperAiService _mainAiService;
@@ -273,6 +284,10 @@ class _PaperFlowShellState extends State<PaperFlowShell> {
       preferenceRepository: widget.preferenceRepository,
     )..addListener(_handlePaperStateChanged);
     unawaited(_paperController.initialize());
+    _readingController = PaperReadingController(
+      repository: widget.readingRepository,
+    )..addListener(_handleReadingStateChanged);
+    unawaited(_readingController.initialize());
     _commentController = PaperCommentController(
       repository: widget.commentRepository,
     );
@@ -312,6 +327,9 @@ class _PaperFlowShellState extends State<PaperFlowShell> {
       ..removeListener(_handlePaperStateChanged)
       ..dispose();
     _commentController.dispose();
+    _readingController
+      ..removeListener(_handleReadingStateChanged)
+      ..dispose();
     _chatSessionController.dispose();
     super.dispose();
   }
@@ -327,9 +345,11 @@ class _PaperFlowShellState extends State<PaperFlowShell> {
               index: _selectedIndex,
               children: [
                 PapersScreen(
+                  active: _selectedIndex == 0,
                   feedController: _paperController.feed,
                   interactionController: _paperController.interactions,
                   commentController: _commentController,
+                  readingController: _readingController,
                   aiService: _paperAiService,
                   webSearchAiService: _webSearchAiService,
                   aiSessionRepository: _aiSessionRepository,
@@ -352,6 +372,12 @@ class _PaperFlowShellState extends State<PaperFlowShell> {
                             _paperController.interactions.isSaved(paper.id),
                       )
                       .toList(growable: false),
+                  readingHistory: _papersForIds(
+                    _readingController.historyPaperIds,
+                  ),
+                  readLaterPapers: _papersForIds(
+                    _readingController.readLaterPaperIds,
+                  ),
                   onOpenPaper: _openSavedPaper,
                 ),
               ],
@@ -384,10 +410,24 @@ class _PaperFlowShellState extends State<PaperFlowShell> {
     if (mounted) setState(() {});
   }
 
+  void _handleReadingStateChanged() {
+    if (mounted) setState(() {});
+  }
+
   Iterable<ChatContextSummary> get _paperChatContexts =>
       _paperController.feed.allPapers.map(
         (paper) => ChatContextSummary(id: paper.id, title: paper.title),
       );
+
+  List<PaperRecord> _papersForIds(Iterable<String> ids) {
+    final papersById = {
+      for (final paper in _paperController.feed.allPapers) paper.id: paper,
+    };
+    return ids
+        .map((id) => papersById[id])
+        .whereType<PaperRecord>()
+        .toList(growable: false);
+  }
 
   void _openPaperSearch() {
     final controller = PaperSearchController(

@@ -213,5 +213,33 @@ void main() {
       addTearDown(restored.dispose);
       expect(restored.extraCategories, ['AI 安全', '机器人']);
     });
+
+    test('restores the selected filter and paper position after recreation',
+        () async {
+      final repository = InMemoryPaperPreferenceRepository();
+      final first = PaperController(
+        const ArxivSeedRepository(),
+        preferenceRepository: repository,
+      );
+
+      first.selectPaper(2);
+      first.selectPrimaryCategory(2);
+      first.selectPaper(1);
+      await first.feed.flushPreferenceWrites();
+      first.dispose();
+
+      final restored = PaperController(
+        const ArxivSeedRepository(),
+        preferenceRepository: repository,
+      );
+      await restored.initialize();
+      addTearDown(restored.dispose);
+
+      expect(restored.primaryCategoryIndex, 2);
+      expect(restored.currentPaperIndex, 1);
+
+      restored.selectPrimaryCategory(0);
+      expect(restored.currentPaperIndex, 2);
+    });
   });
 }

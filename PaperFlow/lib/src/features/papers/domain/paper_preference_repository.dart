@@ -1,8 +1,16 @@
 class PaperPreferences {
-  PaperPreferences({Iterable<String> extraTopics = const []})
-      : extraTopics = List.unmodifiable(extraTopics);
+  PaperPreferences({
+    Iterable<String> extraTopics = const [],
+    Map<String, int> positions = const {},
+    this.primaryCategoryIndex = 0,
+    this.topicIndex = 0,
+  })  : extraTopics = List.unmodifiable(extraTopics),
+        positions = Map.unmodifiable(positions);
 
   final List<String> extraTopics;
+  final Map<String, int> positions;
+  final int primaryCategoryIndex;
+  final int topicIndex;
 }
 
 abstract interface class PaperPreferenceRepository {

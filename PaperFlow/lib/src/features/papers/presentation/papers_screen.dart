@@ -10,6 +10,7 @@ import '../domain/paper.dart';
 import '../application/paper_feed_controller.dart';
 import '../application/paper_interaction_controller.dart';
 import '../application/paper_link_service.dart';
+import '../application/paper_reading_controller.dart';
 import '../application/paper_share_service.dart';
 import '../application/paper_translation_service.dart';
 import 'widgets/paper_category_picker.dart';
@@ -25,6 +26,8 @@ class PapersScreen extends StatefulWidget {
     required this.feedController,
     required this.interactionController,
     required this.commentController,
+    required this.readingController,
+    this.active = true,
     required this.aiService,
     this.webSearchAiService,
     required this.translationServiceFactory,
@@ -38,6 +41,8 @@ class PapersScreen extends StatefulWidget {
   final PaperFeedController feedController;
   final PaperInteractionController interactionController;
   final PaperCommentController commentController;
+  final PaperReadingController readingController;
+  final bool active;
   final PaperAiService aiService;
   final PaperAiService? webSearchAiService;
   final PaperTranslationServiceFactory translationServiceFactory;
@@ -53,6 +58,8 @@ class PapersScreen extends StatefulWidget {
 
 class _PapersScreenState extends State<PapersScreen> {
   late final PageController _pageController;
+  String? _activePaperId;
+  DateTime? _activeSince;
 
   PaperFeedController get _feed => widget.feedController;
   PaperInteractionController get _interactions => widget.interactionController;
@@ -66,22 +73,34 @@ class _PapersScreenState extends State<PapersScreen> {
     _feed.addListener(_handleControllerChanged);
     _interactions.addListener(_handleControllerChanged);
     widget.commentController.addListener(_handleControllerChanged);
+    widget.readingController.addListener(_handleControllerChanged);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _syncActivePaper());
   }
 
   @override
   void didUpdateWidget(PapersScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.active != widget.active) {
+      if (widget.active) {
+        WidgetsBinding.instance.addPostFrameCallback((_) => _syncActivePaper());
+      } else {
+        _finishActivePaper();
+      }
+    }
     if (oldWidget.feedController == widget.feedController &&
         oldWidget.interactionController == widget.interactionController &&
-        oldWidget.commentController == widget.commentController) {
+        oldWidget.commentController == widget.commentController &&
+        oldWidget.readingController == widget.readingController) {
       return;
     }
     oldWidget.feedController.removeListener(_handleControllerChanged);
     oldWidget.interactionController.removeListener(_handleControllerChanged);
     oldWidget.commentController.removeListener(_handleControllerChanged);
+    oldWidget.readingController.removeListener(_handleControllerChanged);
     _feed.addListener(_handleControllerChanged);
     _interactions.addListener(_handleControllerChanged);
     widget.commentController.addListener(_handleControllerChanged);
+    widget.readingController.addListener(_handleControllerChanged);
   }
 
   @override
@@ -89,6 +108,8 @@ class _PapersScreenState extends State<PapersScreen> {
     _feed.removeListener(_handleControllerChanged);
     _interactions.removeListener(_handleControllerChanged);
     widget.commentController.removeListener(_handleControllerChanged);
+    widget.readingController.removeListener(_handleControllerChanged);
+    _finishActivePaper();
     _pageController.dispose();
     super.dispose();
   }
@@ -171,18 +192,23 @@ class _PapersScreenState extends State<PapersScreen> {
       controller: _pageController,
       scrollDirection: Axis.vertical,
       itemCount: papers.length,
-      onPageChanged: _feed.selectPaper,
+      onPageChanged: _handlePageChanged,
       itemBuilder: (context, index) {
         final paper = papers[index];
         return PaperReaderCard(
           paper: paper,
           liked: _interactions.isLiked(paper.id),
           saved: _interactions.isSaved(paper.id),
+          read: widget.readingController.isRead(paper.id),
+          readLater: widget.readingController.isReadLater(paper.id),
           followed: _interactions.isAuthorFollowed(paper),
           shareCountDelta: _interactions.shareCountDelta(paper.id),
           commentCountDelta: widget.commentController.commentCount(paper.id),
           onLike: () => _interactions.toggleLike(paper.id),
           onSave: () => _interactions.toggleSave(paper.id),
+          onToggleRead: () => widget.readingController.toggleRead(paper.id),
+          onToggleReadLater: () =>
+              widget.readingController.toggleReadLater(paper.id),
           onFollow: () => _interactions.toggleFollowAuthor(paper),
           onComment: () => _openDiscussion(paper.id),
           onAnalyze: () => _openDiscussion(
@@ -193,6 +219,13 @@ class _PapersScreenState extends State<PapersScreen> {
           onOpenPaper:
               widget.linkService == null ? null : (uri) => _openPaperLink(uri),
           onOpenRelatedPaper: _feed.openPaperById,
+          initialTabIndex: widget.readingController.tabIndex(paper.id),
+          initialAbstractScrollOffset:
+              widget.readingController.abstractScrollOffset(paper.id),
+          onTabChanged: (index) =>
+              widget.readingController.selectTab(paper.id, index),
+          onAbstractScrollChanged: (offset) => widget.readingController
+              .saveAbstractScrollOffset(paper.id, offset),
           translationServiceFactory: widget.translationServiceFactory,
           translationRepository: widget.translationRepository,
         );
@@ -260,6 +293,40 @@ class _PapersScreenState extends State<PapersScreen> {
     });
   }
 
+  void _handlePageChanged(int index) {
+    _feed.selectPaper(index);
+    _syncActivePaper();
+  }
+
+  void _syncActivePaper() {
+    if (!mounted ||
+        !widget.active ||
+        !widget.readingController.initialized ||
+        _feed.papers.isEmpty) {
+      return;
+    }
+    final index = _feed.currentPaperIndex.clamp(0, _feed.papers.length - 1);
+    final paperId = _feed.papers[index].id;
+    if (_activePaperId == paperId) return;
+    _finishActivePaper();
+    _activePaperId = paperId;
+    _activeSince = DateTime.now();
+    widget.readingController.recordOpened(paperId);
+  }
+
+  void _finishActivePaper() {
+    final paperId = _activePaperId;
+    final since = _activeSince;
+    if (paperId != null && since != null) {
+      widget.readingController.addDwellTime(
+        paperId,
+        DateTime.now().difference(since),
+      );
+    }
+    _activePaperId = null;
+    _activeSince = null;
+  }
+
   void _openDiscussion(
     String paperId, {
     PaperSheetPage initialPage = PaperSheetPage.comments,
@@ -300,6 +367,7 @@ class _PapersScreenState extends State<PapersScreen> {
       if (page != _feed.currentPaperIndex) {
         _pageController.jumpToPage(_feed.currentPaperIndex);
       }
+      _syncActivePaper();
     });
   }
 }

@@ -21,6 +21,10 @@
 - `MessagesScreen` 不再导入 `PaperRecord` 或直接调用 Repository，只消费聊天会话 ViewModel 与命令。
 - App Shell 作为组合根将论文 ID 和标题映射为 `ChatContextSummary`，并在任意聊天入口返回后刷新全局会话列表。
 - 新增聊天会话控制器测试，覆盖排序、过滤、上下文更新、置顶、删除、错误与异步销毁安全。
+- 新增独立 `PaperReadingRepository` 与 `PaperReadingController`，阅读历史、已读、稍后阅读、内部 Tab、摘要滚动位置和停留时长不再散落于 Widget 状态。
+- Profile 的阅读历史从固定 Demo 统计改为真实论文列表，并增加真实稍后阅读列表；页面只消费领域对象和打开论文回调。
+- 扩展论文偏好快照，按筛选条件保存论文位置及最后选中的一级/二级分类，应用重建后可恢复。
+- 修复 `PaperFeedController` 异步偏好写入在销毁后通知监听器的生命周期错误。
 
 ## 高优先级待整改
 

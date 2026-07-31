@@ -12,10 +12,14 @@ class ProfileScreen extends StatelessWidget {
   const ProfileScreen({
     super.key,
     this.savedPapers = const [],
+    this.readingHistory = const [],
+    this.readLaterPapers = const [],
     this.onOpenPaper,
   });
 
   final List<PaperRecord> savedPapers;
+  final List<PaperRecord> readingHistory;
+  final List<PaperRecord> readLaterPapers;
   final ValueChanged<String>? onOpenPaper;
 
   @override
@@ -39,7 +43,19 @@ class ProfileScreen extends StatelessWidget {
               onOpenPaper: onOpenPaper,
             ),
             const SizedBox(height: 14),
-            const _ReadingHistoryCard(),
+            _PaperShelfCard(
+              icon: Icons.watch_later_outlined,
+              title: '稍后阅读',
+              emptyText: '还没有稍后阅读的论文',
+              keyPrefix: 'profile-read-later-paper',
+              papers: readLaterPapers,
+              onOpenPaper: onOpenPaper,
+            ),
+            const SizedBox(height: 14),
+            _ReadingHistoryCard(
+              papers: readingHistory,
+              onOpenPaper: onOpenPaper,
+            ),
             const SizedBox(height: 14),
             const Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -404,112 +420,120 @@ class _FavoritesCard extends StatelessWidget {
 }
 
 class _ReadingHistoryCard extends StatelessWidget {
-  const _ReadingHistoryCard();
+  const _ReadingHistoryCard({required this.papers, required this.onOpenPaper});
+
+  final List<PaperRecord> papers;
+  final ValueChanged<String>? onOpenPaper;
 
   @override
   Widget build(BuildContext context) {
-    const heights = [36.0, 52.0, 68.0, 38.0, 41.0, 22.0, 25.0];
-    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    return _PaperShelfCard(
+      icon: Icons.schedule_rounded,
+      title: '阅读历史',
+      emptyText: '还没有阅读记录',
+      keyPrefix: 'profile-history-paper',
+      papers: papers,
+      onOpenPaper: onOpenPaper,
+    );
+  }
+}
+
+class _PaperShelfCard extends StatelessWidget {
+  const _PaperShelfCard({
+    required this.icon,
+    required this.title,
+    required this.emptyText,
+    required this.keyPrefix,
+    required this.papers,
+    required this.onOpenPaper,
+  });
+
+  final IconData icon;
+  final String title;
+  final String emptyText;
+  final String keyPrefix;
+  final List<PaperRecord> papers;
+  final ValueChanged<String>? onOpenPaper;
+
+  @override
+  Widget build(BuildContext context) {
     return SurfaceCard(
       padding: const EdgeInsets.all(16),
       child: Column(
         children: [
-          const _SectionHeader(icon: Icons.schedule_rounded, title: '阅读历史'),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              const SizedBox(
-                width: 68,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('23',
-                        style: TextStyle(
-                            color: PaperFlowColors.ink,
-                            fontSize: 27,
-                            fontWeight: FontWeight.w800)),
-                    Text('papers',
-                        style: TextStyle(
-                            color: PaperFlowColors.muted, fontSize: 11)),
-                    SizedBox(height: 10),
-                    Text('本周阅读',
-                        style: TextStyle(
-                            color: PaperFlowColors.muted, fontSize: 11)),
-                  ],
-                ),
-              ),
-              Expanded(
-                child: SizedBox(
-                  height: 104,
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: List.generate(heights.length, (index) {
-                      final active = index < 3;
-                      return Expanded(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            Container(
-                              width: 10,
-                              height: heights[index],
-                              decoration: BoxDecoration(
-                                color: active
-                                    ? PaperFlowColors.primary
-                                        .withValues(alpha: 0.82)
-                                    : PaperFlowColors.line,
-                                borderRadius: BorderRadius.circular(99),
-                              ),
-                            ),
-                            const SizedBox(height: 5),
-                            Text(days[index],
-                                style: TextStyle(
-                                    color: index == 2
-                                        ? PaperFlowColors.primary
-                                        : PaperFlowColors.muted,
-                                    fontSize: 9.5)),
-                          ],
-                        ),
-                      );
-                    }),
+          _SectionHeader(
+            icon: icon,
+            title: title,
+            action: papers.isEmpty ? '' : '共 ${papers.length} 篇',
+          ),
+          const SizedBox(height: 14),
+          if (papers.isEmpty)
+            SizedBox(
+              height: 72,
+              child: Center(
+                child: Text(
+                  emptyText,
+                  style: const TextStyle(
+                    color: PaperFlowColors.muted,
+                    fontSize: 12.5,
                   ),
                 ),
               ),
-              const SizedBox(width: 12),
-              SizedBox(
-                width: 64,
-                child: Column(
-                  children: [
-                    Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        SizedBox(
-                          width: 58,
-                          height: 58,
-                          child: CircularProgressIndicator(
-                            value: 0.68,
-                            strokeWidth: 6,
-                            backgroundColor: PaperFlowColors.primarySoft,
-                            color: PaperFlowColors.primary,
+            )
+          else
+            SizedBox(
+              height: 116,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: papers.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 9),
+                itemBuilder: (context, index) {
+                  final paper = papers[index];
+                  return InkWell(
+                    key: ValueKey('$keyPrefix-${paper.id}'),
+                    onTap: onOpenPaper == null
+                        ? null
+                        : () => onOpenPaper!(paper.id),
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      width: 224,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: PaperFlowColors.line),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            paper.title,
+                            maxLines: 3,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: PaperFlowColors.ink,
+                              fontSize: 13,
+                              height: 1.3,
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
-                        ),
-                        const Text('68%',
-                            style: TextStyle(
-                                color: PaperFlowColors.ink,
-                                fontSize: 15,
-                                fontWeight: FontWeight.w800)),
-                      ],
+                          const Spacer(),
+                          Text(
+                            paper.venue,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: PaperFlowColors.muted,
+                              fontSize: 11,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                    const SizedBox(height: 5),
-                    const Text('周阅读目标',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                            color: PaperFlowColors.muted, fontSize: 9.5)),
-                  ],
-                ),
+                  );
+                },
               ),
-            ],
-          ),
+            ),
         ],
       ),
     );

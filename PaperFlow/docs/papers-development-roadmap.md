@@ -1,6 +1,6 @@
 # PaperFlow 论文页开发路线
 
-> 状态：本地 P0 功能闭环基本完成
+> 状态：本地 P0 功能闭环完成，继续推进可离线验证的 P2/P3 能力
 > 最近更新：2026-08-01
 > 适用范围：`lib/src/features/papers/`
 > 视觉与阅读体验改造：[`paper-experience-redesign.md`](paper-experience-redesign.md)
@@ -43,6 +43,7 @@
 - [x] DeepSeek 原生联网搜索开关、流式回答和网络来源展示
 - [x] 主题选择弹窗
 - [x] Flutter Widget 测试覆盖主要 UI 流程
+- [x] 阅读状态、阅读历史、稍后阅读和阅读位置本地持久化
 
 ## 3. 当前实现边界
 
@@ -354,10 +355,10 @@ createdAt / updatedAt 创建和更新时间
 
 建议扩展 `PaperRecord` 或拆分 `PaperSummary` 与 `PaperDetail`，增加：
 
-- [ ] DOI
-- [ ] arXiv ID
-- [ ] 论文主页 URL
-- [ ] PDF URL
+- [x] DOI
+- [x] arXiv ID
+- [x] 论文主页 URL
+- [x] PDF URL
 - [ ] HTML 全文 URL
 - [ ] 发布日期和版本
 - [ ] 结构化作者信息
@@ -404,13 +405,13 @@ class RelatedPaper {
 
 ### 7.2 阅读状态
 
-- [ ] 记录已读和未读
-- [ ] 保存当前论文位置
-- [ ] 保存论文内部 Tab
-- [ ] 保存摘要滚动位置
-- [ ] 阅读历史
-- [ ] 稍后阅读
-- [ ] 标记已读
+- [x] 记录已读和未读
+- [x] 保存当前论文位置
+- [x] 保存论文内部 Tab
+- [x] 保存摘要滚动位置
+- [x] 阅读历史
+- [x] 稍后阅读
+- [x] 标记已读
 - [ ] 跨设备同步
 
 ### 7.3 完整状态反馈
@@ -568,13 +569,12 @@ PaperInteractionState
 - Android 小屏和常见屏幕尺寸
 - 系统减少动画设置
 
-每个阶段完成后执行：
+每个阶段完成后执行静态分析和自动化测试：
 
 ```text
 flutter analyze
 flutter test
-flutter build apk --debug
-flutter build windows --release
+git diff --check
 ```
 
-视觉验收继续以 Android 手机为主要平台，Windows 用于快速检查和回归构建。
+当前开发阶段不自动构建 APK/Windows 产物，也不自动启动界面。平台构建、真机分享面板和人工视觉检查作为发布前独立验收，不阻塞本地代码与结构整改。

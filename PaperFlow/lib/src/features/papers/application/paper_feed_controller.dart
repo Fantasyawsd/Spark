@@ -47,6 +47,7 @@ class PaperFeedController extends ChangeNotifier {
   int _topicIndex = 0;
   int _currentPaperIndex = 0;
   bool _gridMode = false;
+  bool _disposed = false;
 
   List<PaperRecord> get papers => _visiblePapers;
   List<PaperRecord> get allPapers => _allPapers;
@@ -65,6 +66,14 @@ class PaperFeedController extends ChangeNotifier {
     try {
       final preferences = await repository.load();
       _extraCategories = List.of(preferences.extraTopics);
+      _positions
+        ..clear()
+        ..addAll(preferences.positions);
+      _primaryCategoryIndex = preferences.primaryCategoryIndex.clamp(
+        0,
+        primaryCategories.length - 1,
+      );
+      _topicIndex = preferences.topicIndex.clamp(0, topics.length - 1);
       _preferenceError = null;
       _restorePosition();
     } on PaperPreferencePersistenceException catch (error) {
@@ -83,6 +92,7 @@ class PaperFeedController extends ChangeNotifier {
     _currentPaperIndex = index;
     _gridMode = false;
     notifyListeners();
+    _queuePreferencePersistence();
   }
 
   void openPaperById(String paperId) {
@@ -97,6 +107,7 @@ class PaperFeedController extends ChangeNotifier {
     _positions[_filterKey] = _currentPaperIndex;
     _gridMode = false;
     notifyListeners();
+    _queuePreferencePersistence();
   }
 
   void selectPaper(int index) {
@@ -108,6 +119,7 @@ class PaperFeedController extends ChangeNotifier {
     _currentPaperIndex = index;
     _positions[_filterKey] = index;
     notifyListeners();
+    _queuePreferencePersistence();
   }
 
   void selectPrimaryCategory(int index) {
@@ -120,6 +132,7 @@ class PaperFeedController extends ChangeNotifier {
     _primaryCategoryIndex = index;
     _restorePosition();
     notifyListeners();
+    _queuePreferencePersistence();
   }
 
   void selectTopic(int index) {
@@ -130,6 +143,7 @@ class PaperFeedController extends ChangeNotifier {
     _topicIndex = index;
     _restorePosition();
     notifyListeners();
+    _queuePreferencePersistence();
   }
 
   void selectTopicByName(String topic) {
@@ -204,7 +218,12 @@ class PaperFeedController extends ChangeNotifier {
   void _queuePreferencePersistence() {
     final repository = _preferenceRepository;
     if (repository == null) return;
-    final preferences = PaperPreferences(extraTopics: _extraCategories);
+    final preferences = PaperPreferences(
+      extraTopics: _extraCategories,
+      positions: _positions,
+      primaryCategoryIndex: _primaryCategoryIndex,
+      topicIndex: _topicIndex,
+    );
     _preferenceWriteQueue = _preferenceWriteQueue.then((_) async {
       try {
         await repository.save(preferences);
@@ -212,7 +231,13 @@ class PaperFeedController extends ChangeNotifier {
       } on PaperPreferencePersistenceException catch (error) {
         _preferenceError = error.message;
       }
-      notifyListeners();
+      if (!_disposed) notifyListeners();
     });
+  }
+
+  @override
+  void dispose() {
+    _disposed = true;
+    super.dispose();
   }
 }

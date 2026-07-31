@@ -163,6 +163,45 @@ void main() {
     );
   });
 
+  testWidgets('read later and reading history appear in profile',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(378, 810));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final repository = InMemoryPaperReadingRepository();
+
+    await tester.pumpWidget(
+      PaperFlowApp(
+        showSplash: false,
+        readingRepository: repository,
+      ),
+    );
+    await tester.pumpAndSettle();
+    final paper = const ArxivSeedRepository().getAll().first;
+
+    await tester.tap(find.byKey(const ValueKey('paper-action-more')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('加入稍后阅读'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('我的'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(ValueKey('profile-read-later-paper-${paper.id}')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(ValueKey('profile-history-paper-${paper.id}')),
+      findsOneWidget,
+    );
+
+    await tester.tap(
+      find.byKey(ValueKey('profile-read-later-paper-${paper.id}')),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byKey(ValueKey('paper-title-${paper.id}')), findsOneWidget);
+  });
+
   testWidgets('long Chinese interpretation can open the full reader',
       (tester) async {
     await tester.binding.setSurfaceSize(const Size(378, 810));
@@ -202,6 +241,7 @@ void main() {
       MaterialApp(
         home: Scaffold(
           body: PapersScreen(
+            readingController: PaperReadingController(),
             feedController: longController.feed,
             interactionController: longController.interactions,
             commentController: longComments,
@@ -230,6 +270,7 @@ void main() {
       MaterialApp(
         home: Scaffold(
           body: PapersScreen(
+            readingController: PaperReadingController(),
             feedController: shortController.feed,
             interactionController: shortController.interactions,
             commentController: shortComments,
@@ -497,6 +538,7 @@ void main() {
       MaterialApp(
         home: Scaffold(
           body: PapersScreen(
+            readingController: PaperReadingController(),
             feedController: feed,
             interactionController: interactions,
             commentController: comments,

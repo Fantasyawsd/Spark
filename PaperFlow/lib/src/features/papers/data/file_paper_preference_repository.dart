@@ -20,6 +20,9 @@ class FilePaperPreferenceRepository implements PaperPreferenceRepository {
         extraTopics: topics is List
             ? topics.whereType<String>().toList(growable: false)
             : const [],
+        positions: _intMap(json['positions']),
+        primaryCategoryIndex: json['primaryCategoryIndex'] as int? ?? 0,
+        topicIndex: json['topicIndex'] as int? ?? 0,
       );
     } catch (error) {
       throw PaperPreferencePersistenceException('无法读取论文偏好。', error);
@@ -29,9 +32,23 @@ class FilePaperPreferenceRepository implements PaperPreferenceRepository {
   @override
   Future<void> save(PaperPreferences preferences) async {
     try {
-      await _store.write({'extraTopics': preferences.extraTopics});
+      await _store.write({
+        'extraTopics': preferences.extraTopics,
+        'positions': preferences.positions,
+        'primaryCategoryIndex': preferences.primaryCategoryIndex,
+        'topicIndex': preferences.topicIndex,
+      });
     } catch (error) {
       throw PaperPreferencePersistenceException('无法保存论文偏好。', error);
     }
+  }
+
+  static Map<String, int> _intMap(Object? value) {
+    if (value is! Map) return const {};
+    return {
+      for (final entry in value.entries)
+        if (entry.key is String && entry.value is int)
+          entry.key as String: entry.value as int,
+    };
   }
 }

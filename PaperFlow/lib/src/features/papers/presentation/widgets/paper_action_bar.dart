@@ -13,9 +13,13 @@ class PaperActionBar extends StatelessWidget {
     required this.saved,
     required this.shareCountDelta,
     required this.commentCountDelta,
+    required this.read,
+    required this.readLater,
     required this.onLike,
     required this.onComment,
     required this.onSave,
+    required this.onToggleRead,
+    required this.onToggleReadLater,
     this.onShare,
   });
 
@@ -24,9 +28,13 @@ class PaperActionBar extends StatelessWidget {
   final bool saved;
   final int shareCountDelta;
   final int commentCountDelta;
+  final bool read;
+  final bool readLater;
   final VoidCallback onLike;
   final VoidCallback onComment;
   final VoidCallback onSave;
+  final VoidCallback onToggleRead;
+  final VoidCallback onToggleReadLater;
   final VoidCallback? onShare;
 
   @override
@@ -75,12 +83,61 @@ class PaperActionBar extends StatelessWidget {
               ),
               onTap: onShare,
             ),
+            Expanded(
+              child: PopupMenuButton<_PaperMoreAction>(
+                key: const ValueKey('paper-action-more'),
+                tooltip: '更多',
+                icon: const Icon(
+                  Icons.more_horiz_rounded,
+                  color: PaperFlowColors.ink,
+                  size: 23,
+                ),
+                onSelected: (action) {
+                  switch (action) {
+                    case _PaperMoreAction.read:
+                      onToggleRead();
+                    case _PaperMoreAction.readLater:
+                      onToggleReadLater();
+                  }
+                },
+                itemBuilder: (context) => [
+                  PopupMenuItem(
+                    value: _PaperMoreAction.read,
+                    child: ListTile(
+                      dense: true,
+                      contentPadding: EdgeInsets.zero,
+                      leading: Icon(
+                        read
+                            ? Icons.mark_email_unread_outlined
+                            : Icons.done_all_rounded,
+                      ),
+                      title: Text(read ? '标记为未读' : '标记为已读'),
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: _PaperMoreAction.readLater,
+                    child: ListTile(
+                      dense: true,
+                      contentPadding: EdgeInsets.zero,
+                      leading: Icon(
+                        readLater
+                            ? Icons.playlist_remove_rounded
+                            : Icons.watch_later_outlined,
+                      ),
+                      title: Text(readLater ? '移出稍后阅读' : '加入稍后阅读'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
       ),
     );
   }
 }
+
+enum _PaperMoreAction { read, readLater }
 
 class _PaperActionButton extends StatefulWidget {
   const _PaperActionButton({

@@ -5,8 +5,8 @@ import '../../../core/motion/motion_tokens.dart';
 import '../../../core/theme/paperflow_theme.dart';
 import '../application/paper_ai_service.dart';
 import '../application/paper_ai_session_repository.dart';
+import '../application/paper_comment_controller.dart';
 import '../domain/paper.dart';
-import '../domain/paper_comment_repository.dart';
 import '../application/paper_feed_controller.dart';
 import '../application/paper_interaction_controller.dart';
 import '../application/paper_link_service.dart';
@@ -24,12 +24,12 @@ class PapersScreen extends StatefulWidget {
     super.key,
     required this.feedController,
     required this.interactionController,
+    required this.commentController,
     required this.aiService,
     this.webSearchAiService,
     required this.translationServiceFactory,
     this.translationRepository,
     this.aiSessionRepository,
-    this.commentRepository,
     this.shareService,
     this.linkService,
     this.onSearch,
@@ -37,12 +37,12 @@ class PapersScreen extends StatefulWidget {
 
   final PaperFeedController feedController;
   final PaperInteractionController interactionController;
+  final PaperCommentController commentController;
   final PaperAiService aiService;
   final PaperAiService? webSearchAiService;
   final PaperTranslationServiceFactory translationServiceFactory;
   final PaperTranslationRepository? translationRepository;
   final PaperAiSessionRepository? aiSessionRepository;
-  final PaperCommentRepository? commentRepository;
   final PaperShareService? shareService;
   final PaperLinkService? linkService;
   final VoidCallback? onSearch;
@@ -65,25 +65,30 @@ class _PapersScreenState extends State<PapersScreen> {
     );
     _feed.addListener(_handleControllerChanged);
     _interactions.addListener(_handleControllerChanged);
+    widget.commentController.addListener(_handleControllerChanged);
   }
 
   @override
   void didUpdateWidget(PapersScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.feedController == widget.feedController &&
-        oldWidget.interactionController == widget.interactionController) {
+        oldWidget.interactionController == widget.interactionController &&
+        oldWidget.commentController == widget.commentController) {
       return;
     }
     oldWidget.feedController.removeListener(_handleControllerChanged);
     oldWidget.interactionController.removeListener(_handleControllerChanged);
+    oldWidget.commentController.removeListener(_handleControllerChanged);
     _feed.addListener(_handleControllerChanged);
     _interactions.addListener(_handleControllerChanged);
+    widget.commentController.addListener(_handleControllerChanged);
   }
 
   @override
   void dispose() {
     _feed.removeListener(_handleControllerChanged);
     _interactions.removeListener(_handleControllerChanged);
+    widget.commentController.removeListener(_handleControllerChanged);
     _pageController.dispose();
     super.dispose();
   }
@@ -175,6 +180,7 @@ class _PapersScreenState extends State<PapersScreen> {
           saved: _interactions.isSaved(paper.id),
           followed: _interactions.isAuthorFollowed(paper),
           shareCountDelta: _interactions.shareCountDelta(paper.id),
+          commentCountDelta: widget.commentController.commentCount(paper.id),
           onLike: () => _interactions.toggleLike(paper.id),
           onSave: () => _interactions.toggleSave(paper.id),
           onFollow: () => _interactions.toggleFollowAuthor(paper),
@@ -186,6 +192,7 @@ class _PapersScreenState extends State<PapersScreen> {
           onShare: () => _sharePaper(paper),
           onOpenPaper:
               widget.linkService == null ? null : (uri) => _openPaperLink(uri),
+          onOpenRelatedPaper: _feed.openPaperById,
           translationServiceFactory: widget.translationServiceFactory,
           translationRepository: widget.translationRepository,
         );
@@ -265,7 +272,7 @@ class _PapersScreenState extends State<PapersScreen> {
       aiService: widget.aiService,
       webSearchAiService: widget.webSearchAiService,
       aiSessionRepository: widget.aiSessionRepository,
-      commentRepository: widget.commentRepository,
+      commentController: widget.commentController,
     );
   }
 

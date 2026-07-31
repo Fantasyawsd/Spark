@@ -7,6 +7,7 @@ import '../../chat/application/main_ai_chat_definition.dart';
 import '../../papers/application/paper_ai_session_repository.dart';
 import '../../papers/domain/paper.dart';
 import '../domain/message_item.dart';
+import 'widgets/swipe_action_row.dart';
 
 class MessagesScreen extends StatefulWidget {
   const MessagesScreen({
@@ -30,6 +31,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
   int _tabIndex = 0;
   List<PaperAiSessionSummary> _aiSessions = const [];
   bool _loadingSessions = false;
+  String? _revealedAiSessionId;
 
   @override
   void initState() {
@@ -90,6 +92,13 @@ class _MessagesScreenState extends State<MessagesScreen> {
                       papers: widget.papers,
                       onOpen: _openAiSession,
                       onOpenMain: _openMainAiChat,
+                      revealedSessionId: _revealedAiSessionId,
+                      onReveal: (id) =>
+                          setState(() => _revealedAiSessionId = id),
+                      onCloseActions: () =>
+                          setState(() => _revealedAiSessionId = null),
+                      onTogglePinned: _togglePinnedSession,
+                      onDelete: _deleteSession,
                     )
                   : ListView.separated(
                       padding: const EdgeInsets.fromLTRB(14, 10, 14, 92),
@@ -136,6 +145,51 @@ class _MessagesScreenState extends State<MessagesScreen> {
     await open();
     await _loadAiSessions();
   }
+
+  Future<void> _togglePinnedSession(PaperAiSessionSummary session) async {
+    final repository = widget.aiSessionRepository;
+    if (repository == null) return;
+    await repository.setPinned(session.paperId, !session.pinned);
+    if (mounted) setState(() => _revealedAiSessionId = null);
+    await _loadAiSessions();
+  }
+
+  Future<void> _deleteSession(PaperAiSessionSummary session) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('删除对话？'),
+        content: const Text('该论文的本地 AI 对话记录将被清除。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            key: const ValueKey('confirm-delete-ai-session'),
+            onPressed: () => Navigator.pop(context, true),
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFFD92D20),
+            ),
+            child: const Text('删除'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    final repository = widget.aiSessionRepository;
+    if (repository == null) return;
+    await repository.clear(session.paperId);
+    if (mounted) {
+      setState(() {
+        _revealedAiSessionId = null;
+        _aiSessions = _aiSessions
+            .where((item) => item.paperId != session.paperId)
+            .toList(growable: false);
+      });
+    }
+    await _loadAiSessions();
+  }
 }
 
 class _AiSessionList extends StatelessWidget {
@@ -145,6 +199,11 @@ class _AiSessionList extends StatelessWidget {
     required this.papers,
     required this.onOpen,
     required this.onOpenMain,
+    required this.revealedSessionId,
+    required this.onReveal,
+    required this.onCloseActions,
+    required this.onTogglePinned,
+    required this.onDelete,
   });
 
   final bool loading;
@@ -152,6 +211,11 @@ class _AiSessionList extends StatelessWidget {
   final List<PaperRecord> papers;
   final ValueChanged<PaperAiSessionSummary> onOpen;
   final VoidCallback onOpenMain;
+  final String? revealedSessionId;
+  final ValueChanged<String> onReveal;
+  final VoidCallback onCloseActions;
+  final Future<void> Function(PaperAiSessionSummary session) onTogglePinned;
+  final Future<void> Function(PaperAiSessionSummary session) onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -170,7 +234,11 @@ class _AiSessionList extends StatelessWidget {
               session.paperId != MainAiChatDefinition.sessionId &&
               papersById.containsKey(session.paperId),
         )
-        .toList(growable: false);
+        .toList(growable: false)
+      ..sort((a, b) {
+        if (a.pinned != b.pinned) return a.pinned ? -1 : 1;
+        return b.updatedAt.compareTo(a.updatedAt);
+      });
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(14, 10, 14, 92),
       itemCount: visible.length + 1,
@@ -184,80 +252,103 @@ class _AiSessionList extends StatelessWidget {
         }
         final session = visible[index - 1];
         final paper = papersById[session.paperId]!;
-        return Material(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          child: InkWell(
-            key: ValueKey('ai-session-${session.paperId}'),
-            onTap: () => onOpen(session),
+        return SwipeActionRow(
+          sessionId: session.paperId,
+          revealed: revealedSessionId == session.paperId,
+          pinned: session.pinned,
+          onReveal: () => onReveal(session.paperId),
+          onClose: onCloseActions,
+          onTogglePinned: () => onTogglePinned(session),
+          onDelete: () => onDelete(session),
+          child: Material(
+            color: Colors.white,
             borderRadius: BorderRadius.circular(16),
-            child: Padding(
-              padding: const EdgeInsets.all(13),
-              child: Row(
-                children: [
-                  Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: PaperFlowColors.primarySoft,
-                      shape: BoxShape.circle,
+            child: InkWell(
+              key: ValueKey('ai-session-${session.paperId}'),
+              onTap: () => onOpen(session),
+              borderRadius: BorderRadius.circular(16),
+              child: Padding(
+                padding: const EdgeInsets.all(13),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: PaperFlowColors.primarySoft,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.auto_awesome_rounded,
+                        color: PaperFlowColors.primary,
+                        size: 21,
+                      ),
                     ),
-                    child: Icon(
-                      Icons.auto_awesome_rounded,
-                      color: PaperFlowColors.primary,
-                      size: 21,
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              if (session.pinned) ...[
+                                Icon(
+                                  Icons.push_pin_rounded,
+                                  color: PaperFlowColors.primary,
+                                  size: 14,
+                                ),
+                                const SizedBox(width: 5),
+                              ],
+                              Expanded(
+                                child: Text(
+                                  paper.title,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    color: PaperFlowColors.ink,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 5),
+                          Text(
+                            session.preview.replaceAll('\n', ' '),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: PaperFlowColors.muted,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    const SizedBox(width: 8),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         Text(
-                          paper.title,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                          _relativeTime(session.updatedAt),
                           style: const TextStyle(
-                            color: PaperFlowColors.ink,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w800,
+                            color: PaperFlowColors.subtle,
+                            fontSize: 10.5,
                           ),
                         ),
-                        const SizedBox(height: 5),
+                        const SizedBox(height: 8),
                         Text(
-                          session.preview.replaceAll('\n', ' '),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                          '${session.messageCount} 条',
                           style: const TextStyle(
                             color: PaperFlowColors.muted,
-                            fontSize: 12,
+                            fontSize: 10.5,
                           ),
                         ),
                       ],
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        _relativeTime(session.updatedAt),
-                        style: const TextStyle(
-                          color: PaperFlowColors.subtle,
-                          fontSize: 10.5,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        '${session.messageCount} 条',
-                        style: const TextStyle(
-                          color: PaperFlowColors.muted,
-                          fontSize: 10.5,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),

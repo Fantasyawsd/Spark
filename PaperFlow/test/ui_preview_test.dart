@@ -108,6 +108,61 @@ void main() {
     expect(find.byIcon(Icons.bookmark_rounded), findsWidgets);
   });
 
+  testWidgets('structured related paper opens its local reading page',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(378, 810));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(const PaperFlowApp(showSplash: false));
+    await tester.pump();
+    await tester.tap(find.text('相关论文').first);
+    await tester.pumpAndSettle();
+
+    final related = find.byKey(
+      const ValueKey('related-paper-2404.01356'),
+    );
+    expect(related, findsOneWidget);
+    await tester.tap(related);
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey('paper-title-2404.01356')),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('saved papers appear in profile and reopen the reading page',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(378, 810));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final interactions = InMemoryPaperInteractionRepository(
+      PaperInteractionSnapshot(savedPaperIds: {'2404.01356'}),
+    );
+
+    await tester.pumpWidget(
+      PaperFlowApp(
+        showSplash: false,
+        interactionRepository: interactions,
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('我的'));
+    await tester.pumpAndSettle();
+
+    final savedPaper = find.byKey(
+      const ValueKey('profile-saved-paper-2404.01356'),
+    );
+    expect(savedPaper, findsOneWidget);
+    expect(find.text('1'), findsWidgets);
+
+    await tester.tap(savedPaper);
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const ValueKey('paper-title-2404.01356')),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('long Chinese interpretation can open the full reader',
       (tester) async {
     await tester.binding.setSurfaceSize(const Size(378, 810));
@@ -140,13 +195,16 @@ void main() {
     final longController = PaperController(
       _TestPaperRepository(_testPaper(List.filled(120, 'LoRA').join(' '))),
     );
+    final longComments = PaperCommentController();
     addTearDown(longController.dispose);
+    addTearDown(longComments.dispose);
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
           body: PapersScreen(
             feedController: longController.feed,
             interactionController: longController.interactions,
+            commentController: longComments,
             aiService: const _FakePaperAiService(),
             translationServiceFactory:
                 const _FakePaperTranslationServiceFactory(),
@@ -165,13 +223,16 @@ void main() {
     final shortController = PaperController(
       _TestPaperRepository(_testPaper('A short abstract.')),
     );
+    final shortComments = PaperCommentController();
     addTearDown(shortController.dispose);
+    addTearDown(shortComments.dispose);
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
           body: PapersScreen(
             feedController: shortController.feed,
             interactionController: shortController.interactions,
+            commentController: shortComments,
             aiService: const _FakePaperAiService(),
             translationServiceFactory:
                 const _FakePaperTranslationServiceFactory(),
@@ -280,6 +341,8 @@ void main() {
     await tester.binding.setSurfaceSize(const Size(378, 810));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
+    final comments = PaperCommentController();
+    addTearDown(comments.dispose);
     await tester.pumpWidget(
       MaterialApp(
         home: Builder(
@@ -289,6 +352,7 @@ void main() {
                 context,
                 demoPapers.first,
                 aiService: const _FakePaperAiService(),
+                commentController: comments,
               ),
               child: const Text('打开评论'),
             ),
@@ -316,10 +380,45 @@ void main() {
     expect(find.textContaining('DeepSeek Markdown'), findsOneWidget);
   });
 
+  testWidgets('paper action count updates after a local comment is sent',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(378, 810));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final repository = InMemoryPaperCommentRepository();
+
+    await tester.pumpWidget(
+      PaperFlowApp(
+        showSplash: false,
+        commentRepository: repository,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final action = find.byKey(const ValueKey('paper-action-comment'));
+    expect(
+        find.descendant(of: action, matching: find.text('0')), findsOneWidget);
+
+    await tester.tap(action);
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), '计数同步评论');
+    await tester.pump();
+    await tester.tap(find.byTooltip('发送'));
+    await tester.pumpAndSettle();
+    Navigator.of(
+      tester.element(find.byKey(const ValueKey('paper-comments-sheet'))),
+    ).pop();
+    await tester.pumpAndSettle();
+
+    expect(
+        find.descendant(of: action, matching: find.text('1')), findsOneWidget);
+  });
+
   testWidgets('comments, replies and likes persist per paper', (tester) async {
     await tester.binding.setSurfaceSize(const Size(378, 810));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     final repository = InMemoryPaperCommentRepository();
+    final comments = PaperCommentController(repository: repository);
+    addTearDown(comments.dispose);
 
     await tester.pumpWidget(
       MaterialApp(
@@ -330,7 +429,7 @@ void main() {
                 context,
                 demoPapers.first,
                 aiService: const _FakePaperAiService(),
-                commentRepository: repository,
+                commentController: comments,
               ),
               child: const Text('打开持久评论'),
             ),
@@ -388,9 +487,11 @@ void main() {
     addTearDown(() => tester.binding.setSurfaceSize(null));
     final feed = PaperFeedController(const ArxivSeedRepository());
     final interactions = PaperInteractionController();
+    final comments = PaperCommentController();
     final shareService = _FakePaperShareService(PaperShareResult.copied);
     addTearDown(feed.dispose);
     addTearDown(interactions.dispose);
+    addTearDown(comments.dispose);
 
     await tester.pumpWidget(
       MaterialApp(
@@ -398,6 +499,7 @@ void main() {
           body: PapersScreen(
             feedController: feed,
             interactionController: interactions,
+            commentController: comments,
             aiService: const _FakePaperAiService(),
             translationServiceFactory:
                 const _FakePaperTranslationServiceFactory(),
@@ -549,6 +651,58 @@ void main() {
     expect(find.text('今天想研究什么？'), findsOneWidget);
     expect(find.byKey(const ValueKey('paper-ai-input')), findsOneWidget);
   });
+  testWidgets('AI session left swipe can pin and delete', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(378, 810));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final repository = InMemoryPaperAiSessionRepository();
+    final paper = const ArxivSeedRepository().getAll().first;
+    await repository.save(paper.id, const [
+      PaperAiMessage(fromUser: true, content: '分析这篇论文'),
+      PaperAiMessage(fromUser: false, content: '会话回答'),
+    ]);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: PaperFlowShell(
+          aiService: const _FakePaperAiService(),
+          aiSessionRepository: repository,
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.tap(find.text('聊天'));
+    await tester.pumpAndSettle();
+
+    final sessionCard = find.byKey(ValueKey('ai-session-${paper.id}'));
+    await tester.drag(sessionCard, const Offset(-180, 0));
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(ValueKey('ai-session-pin-${paper.id}')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(ValueKey('ai-session-delete-${paper.id}')),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.byKey(ValueKey('ai-session-pin-${paper.id}')));
+    await tester.pumpAndSettle();
+    expect((await repository.listSessions()).single.pinned, isTrue);
+
+    await tester.drag(sessionCard, const Offset(-180, 0));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(ValueKey('ai-session-delete-${paper.id}')));
+    await tester.pumpAndSettle();
+    expect(find.text('删除对话？'), findsOneWidget);
+    await tester.tap(
+      find.byKey(const ValueKey('confirm-delete-ai-session')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(await repository.listSessions(), isEmpty);
+    expect(sessionCard, findsNothing);
+    expect(find.byKey(const ValueKey('main-ai-chat')), findsOneWidget);
+  });
 }
 
 class _FakePaperLinkService implements PaperLinkService {
@@ -632,7 +786,7 @@ PaperRecord _testPaper(String abstractText) {
     topics: const ['Testing'],
     abstractText: abstractText,
     chineseAbstractMarkdown: '**中文摘要**',
-    relatedPapersMarkdown: '- Related paper',
+    relatedPapers: const [],
     readMinutes: 5,
     citations: '0',
     likes: '0',

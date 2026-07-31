@@ -2,7 +2,10 @@ import '../domain/paper.dart';
 import '../domain/paper_source.dart';
 
 extension ArxivPaperMapping on ArxivMetadata {
-  PaperRecord toPaperRecord({int? citationCount}) {
+  PaperRecord toPaperRecord({
+    int? citationCount,
+    List<RelatedPaper> relatedPapers = const [],
+  }) {
     final topicLabels = <String>{
       ...categories,
       if (primaryCategory != null) primaryCategory!,
@@ -16,7 +19,7 @@ extension ArxivPaperMapping on ArxivMetadata {
       topics: topicLabels.isEmpty ? const ['arXiv'] : topicLabels,
       abstractText: abstractText,
       chineseAbstractMarkdown: '中文摘要尚未生成。',
-      relatedPapersMarkdown: '相关论文将在数据增强后提供。',
+      relatedPapers: relatedPapers,
       readMinutes: _estimateReadMinutes(abstractText),
       citations: _formatCount(citationCount ?? 0),
       likes: '0',
@@ -48,7 +51,7 @@ extension PaperEnhancementMapping on PaperRecord {
       topics: {...topics, ...enhancement.concepts}.toList(growable: false),
       abstractText: abstractText,
       chineseAbstractMarkdown: chineseAbstractMarkdown,
-      relatedPapersMarkdown: relatedPapersMarkdown,
+      relatedPapers: relatedPapers,
       readMinutes: readMinutes,
       citations: enhancement.citationCount == null
           ? citations

@@ -11,9 +11,39 @@ class ArxivSeedRepository implements PaperRepository {
   const ArxivSeedRepository();
 
   @override
-  List<PaperRecord> getAll() => arxivSeedMetadata
-      .map((metadata) => metadata.toPaperRecord())
-      .toList(growable: false);
+  List<PaperRecord> getAll() {
+    return arxivSeedMetadata.map((metadata) {
+      return metadata.toPaperRecord(
+        relatedPapers: _relatedPapersFor(metadata),
+      );
+    }).toList(growable: false);
+  }
+
+  List<RelatedPaper> _relatedPapersFor(ArxivMetadata source) {
+    final candidates = arxivSeedMetadata
+        .where((candidate) => candidate.normalizedId != source.normalizedId)
+        .map((candidate) {
+      final sharedCategories = source.categories
+          .where(candidate.categories.contains)
+          .toList(growable: false);
+      return (metadata: candidate, shared: sharedCategories);
+    }).toList(growable: false)
+      ..sort((a, b) {
+        final sharedComparison = b.shared.length.compareTo(a.shared.length);
+        if (sharedComparison != 0) return sharedComparison;
+        return b.metadata.publishedAt.compareTo(a.metadata.publishedAt);
+      });
+
+    return candidates.take(3).map((candidate) {
+      final shared = candidate.shared;
+      return RelatedPaper(
+        id: candidate.metadata.normalizedId,
+        title: candidate.metadata.title,
+        venue: candidate.metadata.journalReference ?? 'arXiv',
+        relation: shared.isEmpty ? '同属近期研究' : '共同领域 ${shared.join(' / ')}',
+      );
+    }).toList(growable: false);
+  }
 }
 
 final arxivSeedMetadata = <ArxivMetadata>[

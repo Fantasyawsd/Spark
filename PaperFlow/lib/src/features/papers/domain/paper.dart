@@ -8,7 +8,7 @@ class PaperRecord {
     required this.topics,
     required this.abstractText,
     required this.chineseAbstractMarkdown,
-    required this.relatedPapersMarkdown,
+    this.relatedPapers = const [],
     required this.readMinutes,
     required this.citations,
     required this.likes,
@@ -33,7 +33,7 @@ class PaperRecord {
   final List<String> topics;
   final String abstractText;
   final String chineseAbstractMarkdown;
-  final String relatedPapersMarkdown;
+  final List<RelatedPaper> relatedPapers;
   final int readMinutes;
   final String citations;
   final String likes;
@@ -48,6 +48,20 @@ class PaperRecord {
   final DateTime? updatedAt;
   final String? license;
   final String source;
+}
+
+class RelatedPaper {
+  const RelatedPaper({
+    required this.id,
+    required this.title,
+    required this.venue,
+    required this.relation,
+  });
+
+  final String id;
+  final String title;
+  final String venue;
+  final String relation;
 }
 
 extension PaperAuthorIdentity on PaperRecord {

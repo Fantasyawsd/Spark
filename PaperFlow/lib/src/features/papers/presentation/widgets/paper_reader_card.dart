@@ -13,6 +13,7 @@ import 'paper_action_bar.dart';
 import 'paper_full_reader_page.dart';
 import 'paper_metadata.dart';
 import 'paper_pdf_button.dart';
+import 'paper_related_papers.dart';
 import 'paper_tab_body.dart';
 import 'paper_translation_content.dart';
 
@@ -24,6 +25,7 @@ class PaperReaderCard extends StatefulWidget {
     required this.saved,
     required this.followed,
     required this.shareCountDelta,
+    required this.commentCountDelta,
     required this.onLike,
     required this.onSave,
     required this.onFollow,
@@ -33,6 +35,7 @@ class PaperReaderCard extends StatefulWidget {
     required this.translationServiceFactory,
     this.translationRepository,
     this.onOpenPaper,
+    this.onOpenRelatedPaper,
   });
 
   final PaperRecord paper;
@@ -40,6 +43,7 @@ class PaperReaderCard extends StatefulWidget {
   final bool saved;
   final bool followed;
   final int shareCountDelta;
+  final int commentCountDelta;
   final VoidCallback onLike;
   final VoidCallback onSave;
   final VoidCallback onFollow;
@@ -47,6 +51,7 @@ class PaperReaderCard extends StatefulWidget {
   final VoidCallback onAnalyze;
   final VoidCallback onShare;
   final ValueChanged<Uri>? onOpenPaper;
+  final ValueChanged<String>? onOpenRelatedPaper;
   final PaperTranslationServiceFactory translationServiceFactory;
   final PaperTranslationRepository? translationRepository;
 
@@ -184,6 +189,7 @@ class _PaperReaderCardState extends State<PaperReaderCard> {
               liked: widget.liked,
               saved: widget.saved,
               shareCountDelta: widget.shareCountDelta,
+              commentCountDelta: widget.commentCountDelta,
               onLike: widget.onLike,
               onComment: widget.onComment,
               onSave: widget.onSave,
@@ -227,15 +233,23 @@ class _PaperReaderCardState extends State<PaperReaderCard> {
         ),
       );
     }
+    if (index == 2) {
+      return PaperRelatedPapers(
+        key: ValueKey('${paper.id}-related-papers'),
+        papers: paper.relatedPapers,
+        topics: paper.topics,
+        onOpen: widget.onOpenRelatedPaper,
+      );
+    }
     return PaperTabBody(
       key: ValueKey('${paper.id}-tab-$index'),
-      text: index == 0 ? paper.abstractText : paper.relatedPapersMarkdown,
-      expandable: index == 0,
-      topics: index == 2 ? paper.topics : const [],
+      text: paper.abstractText,
+      expandable: true,
+      topics: const [],
       onExpand: () => _openFullReader(
         paper,
-        index == 0 ? paper.abstractText : paper.relatedPapersMarkdown,
-        title: index == 0 ? '原文摘要' : '相关论文',
+        paper.abstractText,
+        title: '原文摘要',
       ),
     );
   }

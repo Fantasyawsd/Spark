@@ -52,6 +52,10 @@ void main() {
     expect(sessions, hasLength(1));
     expect(sessions.single.paperId, demoPapers.first.id);
     expect(sessions.single.preview, '回答');
+    expect(sessions.single.pinned, isFalse);
+
+    await repository.setPinned(demoPapers.first.id, true);
+    expect((await repository.listSessions()).single.pinned, isTrue);
 
     await restored.clear();
     expect(restored.messages, isEmpty);

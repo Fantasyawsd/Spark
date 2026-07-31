@@ -108,6 +108,21 @@ void main() {
           controller.papers.first.paperUrl, 'https://arxiv.org/abs/2402.06734');
     });
 
+    test('exposes structured related papers with valid local targets', () {
+      final ids = controller.papers.map((paper) => paper.id).toSet();
+
+      expect(controller.papers.every((paper) => paper.relatedPapers.isNotEmpty),
+          isTrue);
+      for (final paper in controller.papers) {
+        expect(
+          paper.relatedPapers.every(
+            (related) => ids.contains(related.id) && related.id != paper.id,
+          ),
+          isTrue,
+        );
+      }
+    });
+
     test('restores persisted interaction state after recreation', () async {
       final repository = InMemoryPaperInteractionRepository();
       final first = PaperController(

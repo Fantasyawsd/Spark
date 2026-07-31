@@ -13,6 +13,7 @@ import '../features/community/presentation/community_screen.dart';
 import '../features/messages/presentation/messages_screen.dart';
 import '../features/papers/application/paper_ai_service.dart';
 import '../features/papers/application/paper_ai_session_repository.dart';
+import '../features/papers/application/paper_comment_controller.dart';
 import '../features/papers/application/paper_controller.dart';
 import '../features/papers/application/paper_link_service.dart';
 import '../features/papers/application/paper_share_service.dart';
@@ -251,6 +252,7 @@ class PaperFlowShell extends StatefulWidget {
 class _PaperFlowShellState extends State<PaperFlowShell> {
   int _selectedIndex = 0;
   late final PaperController _paperController;
+  late final PaperCommentController _commentController;
   late final PaperAiService _paperAiService;
   late final PaperAiService _webSearchAiService;
   late final PaperAiService _mainAiService;
@@ -269,6 +271,14 @@ class _PaperFlowShellState extends State<PaperFlowShell> {
       preferenceRepository: widget.preferenceRepository,
     )..addListener(_handlePaperStateChanged);
     unawaited(_paperController.initialize());
+    _commentController = PaperCommentController(
+      repository: widget.commentRepository,
+    );
+    unawaited(
+      _commentController.initialize(
+        _paperController.feed.allPapers.map((paper) => paper.id),
+      ),
+    );
     _paperAiService = widget.aiService ?? DeepSeekPaperAiService();
     _webSearchAiService =
         widget.webSearchAiService ?? DeepSeekWebSearchAiService();
@@ -293,6 +303,7 @@ class _PaperFlowShellState extends State<PaperFlowShell> {
     _paperController
       ..removeListener(_handlePaperStateChanged)
       ..dispose();
+    _commentController.dispose();
     super.dispose();
   }
 
@@ -309,12 +320,12 @@ class _PaperFlowShellState extends State<PaperFlowShell> {
                 PapersScreen(
                   feedController: _paperController.feed,
                   interactionController: _paperController.interactions,
+                  commentController: _commentController,
                   aiService: _paperAiService,
                   webSearchAiService: _webSearchAiService,
                   aiSessionRepository: _aiSessionRepository,
                   translationServiceFactory: _translationServiceFactory,
                   translationRepository: widget.translationRepository,
-                  commentRepository: widget.commentRepository,
                   shareService: widget.shareService,
                   linkService: _linkService,
                   onSearch: _openPaperSearch,
@@ -326,7 +337,15 @@ class _PaperFlowShellState extends State<PaperFlowShell> {
                   onOpenAiChat: _openAiChat,
                   onOpenMainAiChat: _openMainAiChat,
                 ),
-                ProfileScreen(),
+                ProfileScreen(
+                  savedPapers: _paperController.feed.allPapers
+                      .where(
+                        (paper) =>
+                            _paperController.interactions.isSaved(paper.id),
+                      )
+                      .toList(growable: false),
+                  onOpenPaper: _openSavedPaper,
+                ),
               ],
             ),
           ),
@@ -396,6 +415,11 @@ class _PaperFlowShellState extends State<PaperFlowShell> {
         ),
       ),
     );
+  }
+
+  void _openSavedPaper(String paperId) {
+    _paperController.openPaperById(paperId);
+    setState(() => _selectedIndex = 0);
   }
 
   void _showCreateSheet(BuildContext context) {

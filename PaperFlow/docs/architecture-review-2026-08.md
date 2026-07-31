@@ -1,0 +1,41 @@
+# PaperFlow 架构审查记录
+
+> 日期：2026-08-01
+> 状态：持续整改
+> 依据：`code-structure-principles.md`
+
+## 本轮结论
+
+当前项目已按业务模块组织，并建立 Repository、Service 和 Controller 边界，但仍存在应用组合根分散、聊天反向依赖论文实现、领域类型混合展示字段等结构风险。本轮优先整改会直接阻碍本地功能继续开发的评论模块。
+
+## 已整改
+
+- 新增 `PaperCommentController`，评论加载、发送、回复、点赞、删除、排序和串行持久化不再由 Bottom Sheet Widget 实现。
+- 论文操作栏与评论 Sheet 共享同一评论状态源，发送和删除后计数即时更新。
+- 评论 Repository 通过领域接口注入，正式入口使用文件实现，测试使用内存实现。
+- 相关论文从 Markdown 字符串改为结构化 `RelatedPaper`，页面只通过论文 ID 请求 `PaperFeedController` 打开目标。
+- Profile 收藏列表消费真实收藏状态，不在资料页复制收藏业务逻辑。
+- 新增评论控制器和文件型评论 Repository 测试，覆盖计数、排序、级联删除、重建恢复与损坏数据。
+
+## 高优先级待整改
+
+1. **聊天模块所有权**：`chat` 仍直接复用 `papers/application` 和 `papers/presentation` 类型。应让聊天模块拥有通用消息、会话端口和聊天 UI，论文模块只提供 `PaperChatContext`。
+2. **唯一组合根**：`PaperFlowShell.initState` 仍创建若干 DeepSeek、搜索和平台实现。具体实现应统一在 `main.dart` 或 `AppDependencies` 创建；`PaperFlowApp` 的内存 fallback 只用于测试和预览。
+3. **依赖方向**：部分 `data` 实现仍导入 `application` 端口。后续应把稳定端口和消息类型移动到 domain，使依赖统一为 `presentation -> application -> domain <- data`。
+4. **数据结构分层**：`PaperRecord` 仍混合原始论文值、Markdown 展示内容和格式化计数字符串。远程接口接入前应拆分 DTO、领域模型和 ViewModel，并把计数恢复为整数。
+5. **Messages 页面用例**：消息页仍直接加载、置顶、删除和排序 AI 会话。应抽出 `ChatSessionController`，页面只组合会话列表与命令回调。
+
+## 中优先级待整改
+
+- `PaperController` 当前是 `PaperFeedController` 与 `PaperInteractionController` 的兼容外观。保留用于过渡，待调用方全部改为窄接口后再删除，不立即重构。
+- `paper_markdown.dart` 同时承担渲染、代码块解析、LaTeX 预处理、流式修复和剪贴板操作。后续出现第三个调用方或新增解析能力时再按职责拆分。
+- `community` 与 `messages` 的领域文件仍包含 Flutter 类型和 demo 数据，应在对应业务功能化时拆出 ViewModel 与 seed data。
+- 仅由单个业务模块使用的组件不应继续放入 `core/widgets`；迁移时以真实复用关系为准，不进行批量目录改名。
+
+## 继续开发约束
+
+- 新功能先定义领域对象和端口，再实现 Controller，用 Widget 测试验证界面接线。
+- Widget 不直接读写文件、HTTP、系统插件或 Repository。
+- 正式依赖在组合根创建；测试通过构造参数注入内存实现。
+- 不为一次或两次重复提前抽象；稳定出现三次后再建立 shared 能力。
+- 每次结构调整必须保持现有交互，并至少执行 `flutter analyze`、相关测试和全量测试。

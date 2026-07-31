@@ -19,7 +19,7 @@ class MainAiChatDefinition {
     topics: ['Research Assistant'],
     abstractText: '',
     chineseAbstractMarkdown: '',
-    relatedPapersMarkdown: '',
+    relatedPapers: [],
     readMinutes: 0,
     citations: '0',
     likes: '0',

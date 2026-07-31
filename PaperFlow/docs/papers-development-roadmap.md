@@ -1,7 +1,7 @@
 # PaperFlow 论文页开发路线
 
-> 状态：规划中  
-> 最近更新：2026-07-31  
+> 状态：本地 P0 功能闭环基本完成
+> 最近更新：2026-08-01
 > 适用范围：`lib/src/features/papers/`
 > 视觉与阅读体验改造：[`paper-experience-redesign.md`](paper-experience-redesign.md)
 
@@ -9,7 +9,7 @@
 
 本文记录 PaperFlow 论文页在完成 UI 原型后的功能缺口、技术边界、开发优先级和验收标准。
 
-当前论文页已经具备完整的视觉和本地演示交互，但核心数据仍来自 Demo，搜索、分类、分享、评论、用户关系和持久化尚未形成真实业务闭环。后续开发应保留现有 Flutter UI 和交互结构，逐步替换本地模拟实现，不在页面组件中继续堆叠业务逻辑。
+当前论文页使用内置 arXiv 种子数据，分类、搜索、点赞、收藏、评论、分享和 AI 已形成可测试的本地业务闭环。远程论文接口、账号、跨设备同步和服务端 AI 代理仍未实现。后续通过替换 Repository 或 Service 实现接入远程能力，不在页面组件中继续堆叠业务逻辑。
 
 ### 核心开发原则
 
@@ -48,7 +48,7 @@
 
 ### 3.1 数据源
 
-`PaperRepository` 当前只有同步的 `getAll()`，实际实现返回固定 Demo 数据：
+`PaperRepository` 当前只有同步的 `getAll()`，正式入口读取应用内置的 arXiv 种子数据：
 
 ```dart
 abstract interface class PaperRepository {
@@ -77,18 +77,16 @@ abstract interface class PaperRepository {
 - 点赞状态
 - 收藏状态
 
-其中点赞、收藏和自定义主题只存在内存中，应用重启后会丢失。
+论文流与互动状态已拆为 `PaperFeedController` 和 `PaperInteractionController`，评论由独立的 `PaperCommentController` 管理。正式入口注入文件型 Repository，本地状态可跨重启恢复；测试和预览可显式注入内存实现。
 
-### 3.3 可见但尚未生效的入口
+### 3.3 当前本地边界
 
-- 搜索按钮回调为空。
-- 分享按钮回调为空。
-- 分类切换只改变选中索引，不过滤论文。
-- “关注”没有作者、主题或会议关注数据。
-- 相关论文是 Markdown 文本，不能打开对应论文。
-- 评论已支持本地回复、展开、点赞、删除和持久化；排序及服务端同步尚未实现。
-- AI 分析区部分工具图标没有行为。
-- 语音输入图标没有语音能力。
+- 搜索只检索本地 arXiv 种子数据，不访问远程索引。
+- 分类、关注、点赞、收藏、评论、排序和分享计数均为本地状态，不跨设备同步。
+- 相关论文使用结构化本地关系并可打开对应论文，但尚未接入真实引用图谱。
+- 分享已接入平台服务；Android 系统分享面板仍需真机人工验收。
+- 评论支持发送、回复、展开、点赞、删除、最新/最热排序和本地持久化，尚未接入账号或服务端。
+- AI 对话和翻译由客户端开发配置直连 DeepSeek，正式发布前必须迁移到后端代理。
 
 ### 3.4 DeepSeek
 
@@ -179,7 +177,7 @@ PaperAiService           调用 DeepSeek
 - [x] 单页和双栏共享同一状态
 - [x] 应用重启后状态恢复
 - [x] 防止快速重复点击造成计数错误
-- [ ] 收藏内容可以在“我的”页面查看
+- [x] 收藏内容可以在“我的”页面查看
 
 第一阶段不需要账号，也不需要云端同步。
 
@@ -193,8 +191,8 @@ PaperAiService           调用 DeepSeek
 - [x] 回复评论
 - [x] 展开回复列表
 - [x] 评论点赞和取消点赞
-- [ ] 评论数随发送和删除即时变化
-- [ ] 评论排序
+- [x] 评论数随发送和删除即时变化
+- [x] 评论排序（最新 / 最热）
 - [x] 应用重启后评论仍然存在
 - [x] 空评论状态
 
@@ -229,7 +227,7 @@ AI 功能继续通过现有 `PaperAiService` 调用 DeepSeek，但不依赖数�
 - [x] 可选开启 DeepSeek 原生联网搜索，限制每轮最多 3 次搜索
 - [x] 联网回答保存来源标题和 URL，并随会话持久化
 
-开发版本只读取独立的用户级 `DEEPSEEK_*` 环境变量，不读取 Claude、Codex 或本地代理配置。`tool/flutter_with_deepseek.ps1` 固定校验 DeepSeek 官方地址，并通过 `--dart-define` 注入 `deepseek-v4-flash` 配置。普通对话与联网搜索均使用 DeepSeek 官方的 Anthropic 兼容 Messages 接口；联网搜索只是在同一请求中增加 `web_search_20250305` 工具。界面提供 `none / medium / max` 三档思考强度，默认 `medium`；SSE 流分别接收思考、正文和搜索来源。正式发布前仍需增加 PaperFlow 服务端代理，避免客户端包含 API Key。
+开发版本只读取独立的用户级 `DEEPSEEK_*` 环境变量，不读取 Claude、Codex 或本地代理配置。`tool/flutter_with_deepseek.ps1` 固定校验 DeepSeek 官方地址，并通过 `--dart-define` 注入 `deepseek-v4-flash` 配置。普通对话与联网搜索均使用 DeepSeek 官方的 Anthropic 兼容 Messages 接口；联网搜索只是在同一请求中增加 `web_search_20250305` 工具。界面按 DeepSeek App 的交互提供“深度思考”二态开关，关闭对应 `none`，开启对应 `high`；SSE 流分别接收思考、正文和搜索来源。正式发布前仍需增加 PaperFlow 服务端代理，避免客户端包含 API Key。
 
 ## 5. P1 数据库与服务端接入
 
@@ -425,7 +423,7 @@ class RelatedPaper {
 - [ ] 评论发送状态
 - [ ] AI 请求取消状态
 - [ ] PDF 下载失败重试
-- [ ] 空收藏、空关注、空搜索结果页面
+- [x] 空收藏、空关注、空搜索结果页面
 
 ## 8. 推荐架构调整
 
@@ -502,7 +500,7 @@ PaperInteractionState
 - [x] 系统转发和分享（Android 分享面板待真机人工验收）
 - [x] DeepSeek 对话、错误重试和会话管理
 - [x] 自定义主题持久化
-- [ ] 相关论文结构化并可点击
+- [x] 相关论文结构化并可点击
 
 交付标准：关闭数据库和业务后端后，论文页所有可见入口仍有真实行为；需要保留的状态在应用重启后不丢失。
 
@@ -533,7 +531,7 @@ PaperInteractionState
 
 - [ ] 后端代理 DeepSeek
 - [x] 流式对话（本地直连阶段）
-- [ ] 会话持久化
+- [x] 会话本地持久化
 - [ ] 全文检索增强
 - [ ] 原文引用
 - [ ] AI 摘要和实验解读缓存

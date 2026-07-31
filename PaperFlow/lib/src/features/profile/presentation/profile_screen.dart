@@ -6,9 +6,17 @@ import '../../../core/widgets/paperflow_sheet.dart';
 import '../../../core/widgets/profile_avatar.dart';
 import '../../../core/widgets/surface_card.dart';
 import '../../../core/widgets/topic_chip.dart';
+import '../../papers/domain/paper.dart';
 
 class ProfileScreen extends StatelessWidget {
-  const ProfileScreen({super.key});
+  const ProfileScreen({
+    super.key,
+    this.savedPapers = const [],
+    this.onOpenPaper,
+  });
+
+  final List<PaperRecord> savedPapers;
+  final ValueChanged<String>? onOpenPaper;
 
   @override
   Widget build(BuildContext context) {
@@ -19,18 +27,21 @@ class ProfileScreen extends StatelessWidget {
         child: ListView(
           key: const ValueKey('profile-scroll'),
           padding: const EdgeInsets.fromLTRB(14, 10, 14, 94),
-          children: const [
-            _ProfileToolbar(),
-            SizedBox(height: 14),
-            _ProfileIdentity(),
-            SizedBox(height: 18),
-            _ProfileStats(),
-            SizedBox(height: 18),
-            _FavoritesCard(),
-            SizedBox(height: 14),
-            _ReadingHistoryCard(),
-            SizedBox(height: 14),
-            Row(
+          children: [
+            const _ProfileToolbar(),
+            const SizedBox(height: 14),
+            const _ProfileIdentity(),
+            const SizedBox(height: 18),
+            _ProfileStats(savedCount: savedPapers.length),
+            const SizedBox(height: 18),
+            _FavoritesCard(
+              papers: savedPapers,
+              onOpenPaper: onOpenPaper,
+            ),
+            const SizedBox(height: 14),
+            const _ReadingHistoryCard(),
+            const SizedBox(height: 14),
+            const Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(child: _InterestsCard()),
@@ -38,8 +49,8 @@ class ProfileScreen extends StatelessWidget {
                 Expanded(child: _PostsCard()),
               ],
             ),
-            SizedBox(height: 14),
-            _QuickActionsCard(),
+            const SizedBox(height: 14),
+            const _QuickActionsCard(),
           ],
         ),
       ),
@@ -203,19 +214,21 @@ class _VipBadge extends StatelessWidget {
 }
 
 class _ProfileStats extends StatelessWidget {
-  const _ProfileStats();
+  const _ProfileStats({required this.savedCount});
+
+  final int savedCount;
 
   @override
   Widget build(BuildContext context) {
-    return const Row(
+    return Row(
       children: [
-        _ProfileStat(value: '128', label: 'Following'),
-        _StatDivider(),
-        _ProfileStat(value: '1.2k', label: 'Followers'),
-        _StatDivider(),
-        _ProfileStat(value: '342', label: 'Saved Papers'),
-        _StatDivider(),
-        _ProfileStat(value: '56', label: 'Posts'),
+        const _ProfileStat(value: '128', label: 'Following'),
+        const _StatDivider(),
+        const _ProfileStat(value: '1.2k', label: 'Followers'),
+        const _StatDivider(),
+        _ProfileStat(value: '$savedCount', label: 'Saved Papers'),
+        const _StatDivider(),
+        const _ProfileStat(value: '56', label: 'Posts'),
       ],
     );
   }
@@ -280,26 +293,30 @@ class _SectionHeader extends StatelessWidget {
                   fontSize: 16,
                   fontWeight: FontWeight.w800)),
         ),
-        Text(action,
-            style:
-                const TextStyle(color: PaperFlowColors.muted, fontSize: 11.5)),
-        const Icon(Icons.chevron_right_rounded,
-            color: PaperFlowColors.muted, size: 19),
+        if (action.isNotEmpty) ...[
+          Text(
+            action,
+            style: const TextStyle(
+              color: PaperFlowColors.muted,
+              fontSize: 11.5,
+            ),
+          ),
+          const Icon(
+            Icons.chevron_right_rounded,
+            color: PaperFlowColors.muted,
+            size: 19,
+          ),
+        ],
       ],
     );
   }
 }
 
 class _FavoritesCard extends StatelessWidget {
-  const _FavoritesCard();
+  const _FavoritesCard({required this.papers, required this.onOpenPaper});
 
-  static List<(String, String, IconData, Color)> get items => [
-        ('NLP', '156', Icons.chat_bubble_rounded, PaperFlowColors.primary),
-        ('CV', '98', Icons.photo_camera_rounded, PaperFlowColors.blue),
-        ('RL', '64', Icons.query_stats_rounded, PaperFlowColors.purple),
-        ('LLM', '112', Icons.psychology_rounded, PaperFlowColors.green),
-        ('Agents', '47', Icons.smart_toy_rounded, PaperFlowColors.orange),
-      ];
+  final List<PaperRecord> papers;
+  final ValueChanged<String>? onOpenPaper;
 
   @override
   Widget build(BuildContext context) {
@@ -307,47 +324,79 @@ class _FavoritesCard extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       child: Column(
         children: [
-          const _SectionHeader(icon: Icons.bookmark_rounded, title: '我的收藏'),
+          _SectionHeader(
+            icon: Icons.bookmark_rounded,
+            title: '我的收藏',
+            action: papers.isEmpty ? '' : '共 ${papers.length} 篇',
+          ),
           const SizedBox(height: 14),
-          SizedBox(
-            height: 82,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              itemCount: items.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 9),
-              itemBuilder: (context, index) {
-                final item = items[index];
-                return Container(
-                  width: 92,
-                  padding: const EdgeInsets.all(11),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: PaperFlowColors.line),
+          if (papers.isEmpty)
+            const SizedBox(
+              height: 72,
+              child: Center(
+                child: Text(
+                  '还没有收藏论文',
+                  style: TextStyle(
+                    color: PaperFlowColors.muted,
+                    fontSize: 12.5,
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
+                ),
+              ),
+            )
+          else
+            SizedBox(
+              height: 116,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: papers.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 9),
+                itemBuilder: (context, index) {
+                  final paper = papers[index];
+                  return InkWell(
+                    key: ValueKey('profile-saved-paper-${paper.id}'),
+                    onTap: onOpenPaper == null
+                        ? null
+                        : () => onOpenPaper!(paper.id),
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      width: 224,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: PaperFlowColors.line),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Icon(item.$3, color: item.$4, size: 20),
-                          const SizedBox(width: 7),
-                          Text(item.$1,
-                              style: const TextStyle(
-                                  color: PaperFlowColors.ink,
-                                  fontWeight: FontWeight.w700)),
+                          Text(
+                            paper.title,
+                            maxLines: 3,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: PaperFlowColors.ink,
+                              fontSize: 13,
+                              height: 1.3,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const Spacer(),
+                          Text(
+                            paper.venue,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: PaperFlowColors.muted,
+                              fontSize: 11,
+                            ),
+                          ),
                         ],
                       ),
-                      const Spacer(),
-                      Text(item.$2,
-                          style: const TextStyle(
-                              color: PaperFlowColors.muted, fontSize: 11)),
-                    ],
-                  ),
-                );
-              },
+                    ),
+                  );
+                },
+              ),
             ),
-          ),
         ],
       ),
     );

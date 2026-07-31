@@ -12,6 +12,7 @@ export 'src/features/chat/presentation/paper_ai_chat_screen.dart';
 export 'src/features/messages/domain/message_item.dart';
 export 'src/features/messages/presentation/messages_screen.dart';
 export 'src/features/papers/application/paper_controller.dart';
+export 'src/features/papers/application/paper_comment_controller.dart';
 export 'src/features/papers/application/paper_feed_controller.dart';
 export 'src/features/papers/application/paper_interaction_controller.dart';
 export 'src/features/papers/application/paper_link_service.dart';

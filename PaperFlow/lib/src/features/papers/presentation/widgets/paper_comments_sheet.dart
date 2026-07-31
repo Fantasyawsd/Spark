@@ -7,8 +7,8 @@ import '../../../../core/widgets/paperflow_tab_bar.dart';
 import '../../application/paper_ai_conversation_controller.dart';
 import '../../application/paper_ai_service.dart';
 import '../../application/paper_ai_session_repository.dart';
+import '../../application/paper_comment_controller.dart';
 import '../../domain/paper.dart';
-import '../../domain/paper_comment_repository.dart';
 import 'paper_ai_content.dart';
 import 'paper_ai_composer.dart';
 import 'paper_comments_content.dart';
@@ -23,7 +23,7 @@ Future<void> showPaperCommentsSheet(
   required PaperAiService aiService,
   PaperAiService? webSearchAiService,
   PaperAiSessionRepository? aiSessionRepository,
-  PaperCommentRepository? commentRepository,
+  required PaperCommentController commentController,
   PaperSheetPage initialPage = PaperSheetPage.comments,
 }) {
   return showPaperFlowSheet<void>(
@@ -37,7 +37,7 @@ Future<void> showPaperCommentsSheet(
       aiService: aiService,
       webSearchAiService: webSearchAiService,
       aiSessionRepository: aiSessionRepository,
-      commentRepository: commentRepository,
+      commentController: commentController,
     ),
   );
 }
@@ -49,7 +49,7 @@ class _PaperCommentsSheet extends StatefulWidget {
     required this.aiService,
     required this.webSearchAiService,
     required this.aiSessionRepository,
-    required this.commentRepository,
+    required this.commentController,
   });
 
   final PaperRecord paper;
@@ -57,7 +57,7 @@ class _PaperCommentsSheet extends StatefulWidget {
   final PaperAiService aiService;
   final PaperAiService? webSearchAiService;
   final PaperAiSessionRepository? aiSessionRepository;
-  final PaperCommentRepository? commentRepository;
+  final PaperCommentController commentController;
 
   @override
   State<_PaperCommentsSheet> createState() => _PaperCommentsSheetState();
@@ -73,12 +73,8 @@ class _PaperCommentsSheetState extends State<_PaperCommentsSheet> {
 
   late int _pageIndex;
   bool _fullscreen = false;
-  String? _sendError;
   String? _replyingToId;
   final Set<String> _expandedCommentIds = {};
-  Future<void> _commentWriteQueue = Future.value();
-
-  List<PaperCommentData> _comments = [];
 
   @override
   void initState() {
@@ -91,8 +87,9 @@ class _PaperCommentsSheetState extends State<_PaperCommentsSheet> {
       webSearchService: widget.webSearchAiService,
       sessionRepository: widget.aiSessionRepository,
     )..addListener(_handleAiChanged);
+    widget.commentController.addListener(_handleCommentsChanged);
     _aiController.initialize();
-    _loadComments();
+    widget.commentController.loadPaper(widget.paper.id);
   }
 
   @override
@@ -100,6 +97,7 @@ class _PaperCommentsSheetState extends State<_PaperCommentsSheet> {
     _composerController.dispose();
     _sheetController.dispose();
     _pageController.dispose();
+    widget.commentController.removeListener(_handleCommentsChanged);
     _aiController
       ..removeListener(_handleAiChanged)
       ..dispose();
@@ -148,7 +146,7 @@ class _PaperCommentsSheetState extends State<_PaperCommentsSheet> {
           _SheetHeader(
             pageIndex: _pageIndex,
             commentCount:
-                '${_comments.where((comment) => comment.parentId == null).length}',
+                '${widget.commentController.rootCommentCount(widget.paper.id)}',
             fullscreen: _fullscreen,
             pageController: _pageController,
             onPageSelected: _selectPage,
@@ -167,6 +165,11 @@ class _PaperCommentsSheetState extends State<_PaperCommentsSheet> {
                   controller: _pageIndex == 0 ? scrollController : null,
                   padding: EdgeInsets.zero,
                   children: [
+                    _CommentSortMenu(
+                      value: widget.commentController.sortFor(widget.paper.id),
+                      onSelected: (sort) => widget.commentController
+                          .setSort(widget.paper.id, sort),
+                    ),
                     PaperCommentsContent(
                       comments: _commentsForDisplay,
                       expandedCommentIds: _expandedCommentIds,
@@ -175,11 +178,11 @@ class _PaperCommentsSheetState extends State<_PaperCommentsSheet> {
                       onDelete: _deleteComment,
                       onToggleReplies: _toggleReplies,
                     ),
-                    if (_sendError != null)
+                    if (widget.commentController.persistenceError != null)
                       Padding(
                         padding: const EdgeInsets.fromLTRB(18, 0, 18, 12),
                         child: Text(
-                          _sendError!,
+                          widget.commentController.persistenceError!,
                           style: const TextStyle(
                             color: Color(0xFFB42318),
                             fontSize: 12.5,
@@ -210,7 +213,8 @@ class _PaperCommentsSheetState extends State<_PaperCommentsSheet> {
             ),
           ),
           SizedBox(
-            height: 112 + MediaQuery.paddingOf(context).bottom,
+            height: PaperAiComposer.preferredHeight +
+                MediaQuery.paddingOf(context).bottom,
             child: _pageIndex == 1
                 ? PaperAiComposer(
                     controller: _composerController,
@@ -245,11 +249,25 @@ class _PaperCommentsSheetState extends State<_PaperCommentsSheet> {
   }
 
   List<PaperCommentData> get _commentsForDisplay {
-    return _comments.map((comment) {
-      if (comment.parentId != null) return comment;
-      final replies =
-          _comments.where((item) => item.parentId == comment.id).length;
-      return _copyComment(comment, replies: replies);
+    final comments = widget.commentController.commentsFor(widget.paper.id);
+    return comments.map((comment) {
+      final replies = comment.parentId == null
+          ? comments.where((item) => item.parentId == comment.id).length
+          : 0;
+      return PaperCommentData(
+        id: comment.id,
+        name: comment.name,
+        initials: comment.initials,
+        time: comment.time,
+        location: comment.location,
+        body: comment.body,
+        likes: comment.likes,
+        replies: replies,
+        color: PaperFlowColors.primary,
+        parentId: comment.parentId,
+        canDelete: comment.isLocalUser,
+        liked: comment.likedByLocalUser,
+      );
     }).toList(growable: false);
   }
 
@@ -285,33 +303,19 @@ class _PaperCommentsSheetState extends State<_PaperCommentsSheet> {
     _composerController.clear();
 
     if (_pageIndex == 0) {
-      _addLocalComment(text);
+      final parentId = _replyingToId;
+      setState(() {
+        _replyingToId = null;
+        if (parentId != null) _expandedCommentIds.add(parentId);
+      });
+      await widget.commentController.addComment(
+        widget.paper.id,
+        text,
+        parentId: parentId,
+      );
       return;
     }
     await _aiController.send(text);
-  }
-
-  void _addLocalComment(String text) {
-    final parentId = _replyingToId;
-    final comment = PaperCommentData(
-      id: 'local-${DateTime.now().microsecondsSinceEpoch}',
-      name: 'Alex Chen',
-      initials: 'AC',
-      time: '刚刚',
-      location: '北京',
-      body: text,
-      likes: 0,
-      replies: 0,
-      color: PaperFlowColors.primary,
-      parentId: parentId,
-      canDelete: true,
-    );
-    setState(() {
-      _comments.insert(0, comment);
-      _replyingToId = null;
-      if (parentId != null) _expandedCommentIds.add(parentId);
-    });
-    _persistComments();
   }
 
   Future<void> _confirmClearAiContext() async {
@@ -335,53 +339,8 @@ class _PaperCommentsSheetState extends State<_PaperCommentsSheet> {
     if (confirmed == true) await _aiController.clear();
   }
 
-  Future<void> _loadComments() async {
-    final repository = widget.commentRepository;
-    if (repository == null) return;
-    try {
-      final snapshot = await repository.load(widget.paper.id);
-      if (!mounted) return;
-      if (snapshot.hasStoredValue) {
-        final comments = snapshot.comments
-            .where((comment) => !comment.id.startsWith('seed-'))
-            .toList(growable: false);
-        setState(() => _comments = comments.map(_toView).toList());
-        if (comments.length != snapshot.comments.length) {
-          await repository.save(widget.paper.id, comments);
-        }
-      } else {
-        await repository.save(widget.paper.id, const []);
-      }
-    } on PaperCommentPersistenceException catch (error) {
-      if (mounted) setState(() => _sendError = error.message);
-    }
-  }
-
-  void _persistComments() {
-    final repository = widget.commentRepository;
-    if (repository == null) return;
-    final records = _comments.map(_toRecord).toList(growable: false);
-    _commentWriteQueue = _commentWriteQueue.then((_) async {
-      try {
-        await repository.save(widget.paper.id, records);
-      } on PaperCommentPersistenceException catch (error) {
-        if (mounted) setState(() => _sendError = error.message);
-      }
-    });
-  }
-
   void _toggleCommentLike(String id) {
-    final index = _comments.indexWhere((comment) => comment.id == id);
-    if (index < 0) return;
-    final current = _comments[index];
-    setState(() {
-      _comments[index] = _copyComment(
-        current,
-        liked: !current.liked,
-        likes: current.likes + (current.liked ? -1 : 1),
-      );
-    });
-    _persistComments();
+    widget.commentController.toggleLike(widget.paper.id, id);
   }
 
   void _beginReply(String id) => setState(() => _replyingToId = id);
@@ -393,71 +352,7 @@ class _PaperCommentsSheetState extends State<_PaperCommentsSheet> {
   }
 
   void _deleteComment(String id) {
-    final canDelete = _comments.any(
-      (comment) => comment.id == id && comment.canDelete,
-    );
-    if (!canDelete) return;
-    setState(() {
-      _comments.removeWhere(
-        (comment) => comment.id == id || comment.parentId == id,
-      );
-    });
-    _persistComments();
-  }
-
-  PaperCommentRecord _toRecord(PaperCommentData comment) {
-    return PaperCommentRecord(
-      id: comment.id,
-      paperId: widget.paper.id,
-      name: comment.name,
-      initials: comment.initials,
-      time: comment.time,
-      location: comment.location,
-      body: comment.body,
-      likes: comment.likes,
-      parentId: comment.parentId,
-      isLocalUser: comment.canDelete,
-      likedByLocalUser: comment.liked,
-    );
-  }
-
-  PaperCommentData _toView(PaperCommentRecord comment) {
-    return PaperCommentData(
-      id: comment.id,
-      name: comment.name,
-      initials: comment.initials,
-      time: comment.time,
-      location: comment.location,
-      body: comment.body,
-      likes: comment.likes,
-      replies: 0,
-      color: PaperFlowColors.primary,
-      parentId: comment.parentId,
-      canDelete: comment.isLocalUser,
-      liked: comment.likedByLocalUser,
-    );
-  }
-
-  PaperCommentData _copyComment(
-    PaperCommentData comment, {
-    int? likes,
-    bool? liked,
-    int? replies,
-  }) {
-    return PaperCommentData(
-      id: comment.id,
-      name: comment.name,
-      initials: comment.initials,
-      time: comment.time,
-      location: comment.location,
-      body: comment.body,
-      likes: likes ?? comment.likes,
-      replies: replies ?? comment.replies,
-      color: comment.color,
-      parentId: comment.parentId,
-      canDelete: comment.canDelete,
-      liked: liked ?? comment.liked,
-    );
+    widget.commentController.deleteComment(widget.paper.id, id);
   }
 
   void _handleAiChanged() {
@@ -477,6 +372,62 @@ class _PaperCommentsSheetState extends State<_PaperCommentsSheet> {
         curve: Curves.easeOut,
       );
     });
+  }
+
+  void _handleCommentsChanged() {
+    if (mounted) setState(() {});
+  }
+}
+
+class _CommentSortMenu extends StatelessWidget {
+  const _CommentSortMenu({required this.value, required this.onSelected});
+
+  final PaperCommentSort value;
+  final ValueChanged<PaperCommentSort> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: Alignment.centerRight,
+      child: PopupMenuButton<PaperCommentSort>(
+        key: const ValueKey('paper-comment-sort'),
+        tooltip: '评论排序',
+        initialValue: value,
+        onSelected: onSelected,
+        itemBuilder: (context) => const [
+          PopupMenuItem(
+            value: PaperCommentSort.newest,
+            child: Text('最新'),
+          ),
+          PopupMenuItem(
+            value: PaperCommentSort.hottest,
+            child: Text('最热'),
+          ),
+        ],
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 2, 16, 0),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                value == PaperCommentSort.newest ? '最新' : '最热',
+                style: const TextStyle(
+                  color: PaperFlowColors.muted,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(width: 2),
+              const Icon(
+                Icons.keyboard_arrow_down_rounded,
+                color: PaperFlowColors.muted,
+                size: 18,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 

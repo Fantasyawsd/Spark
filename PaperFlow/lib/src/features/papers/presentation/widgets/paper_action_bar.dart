@@ -12,6 +12,7 @@ class PaperActionBar extends StatelessWidget {
     required this.liked,
     required this.saved,
     required this.shareCountDelta,
+    required this.commentCountDelta,
     required this.onLike,
     required this.onComment,
     required this.onSave,
@@ -22,6 +23,7 @@ class PaperActionBar extends StatelessWidget {
   final bool liked;
   final bool saved;
   final int shareCountDelta;
+  final int commentCountDelta;
   final VoidCallback onLike;
   final VoidCallback onComment;
   final VoidCallback onSave;
@@ -45,9 +47,13 @@ class PaperActionBar extends StatelessWidget {
               onTap: onLike,
             ),
             _PaperActionButton(
+              key: const ValueKey('paper-action-comment'),
               tooltip: '评论',
               icon: Icons.chat_bubble_outline_rounded,
-              label: adjustedCompactCount(paper.comments),
+              label: adjustedCompactCount(
+                paper.comments,
+                delta: commentCountDelta,
+              ),
               onTap: onComment,
             ),
             _PaperActionButton(

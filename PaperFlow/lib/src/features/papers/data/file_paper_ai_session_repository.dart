@@ -41,8 +41,11 @@ class FilePaperAiSessionRepository implements PaperAiSessionRepository {
       final json = current is Map<String, dynamic>
           ? Map<String, dynamic>.from(current)
           : <String, dynamic>{};
+      final previous = json[paperId];
+      final pinned = previous is Map && previous['pinned'] == true;
       json[paperId] = {
         'updatedAt': DateTime.now().toUtc().toIso8601String(),
+        'pinned': pinned,
         'messages': messages.map(_messageToJson).toList(growable: false),
       };
       await _store.write(json);
@@ -60,6 +63,30 @@ class FilePaperAiSessionRepository implements PaperAiSessionRepository {
       await _store.write(json);
     } catch (error) {
       throw PaperAiSessionPersistenceException('无法清空 AI 对话记录。', error);
+    }
+  }
+
+  @override
+  Future<void> setPinned(String paperId, bool pinned) async {
+    try {
+      final current = await _store.read();
+      if (current is! Map<String, dynamic>) return;
+      final json = Map<String, dynamic>.from(current);
+      final rawSession = json[paperId];
+      if (rawSession == null) return;
+      if (rawSession is Map) {
+        json[paperId] = Map<String, dynamic>.from(rawSession)
+          ..['pinned'] = pinned;
+      } else if (rawSession is List) {
+        json[paperId] = {
+          'updatedAt': DateTime.now().toUtc().toIso8601String(),
+          'pinned': pinned,
+          'messages': rawSession,
+        };
+      }
+      await _store.write(json);
+    } catch (error) {
+      throw PaperAiSessionPersistenceException('无法更新 AI 会话置顶状态。', error);
     }
   }
 
@@ -89,10 +116,14 @@ class FilePaperAiSessionRepository implements PaperAiSessionRepository {
             preview: preview.trim(),
             updatedAt: DateTime.tryParse(rawUpdatedAt ?? '') ??
                 DateTime.fromMillisecondsSinceEpoch(0),
+            pinned: rawSession is Map && rawSession['pinned'] == true,
           ),
         );
       }
-      result.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+      result.sort((a, b) {
+        if (a.pinned != b.pinned) return a.pinned ? -1 : 1;
+        return b.updatedAt.compareTo(a.updatedAt);
+      });
       return List.unmodifiable(result);
     } catch (error) {
       throw PaperAiSessionPersistenceException('无法读取 AI 会话列表。', error);

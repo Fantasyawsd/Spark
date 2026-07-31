@@ -4,6 +4,61 @@ import 'package:paperflow/paperflow.dart';
 import 'package:paperflow/src/features/papers/presentation/widgets/paper_ai_composer.dart';
 
 void main() {
+  testWidgets('toolbar stays pinned when multiline input scrolls',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(378, 300));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final controller = TextEditingController();
+    addTearDown(controller.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Align(
+            alignment: Alignment.bottomCenter,
+            child: PaperAiComposer(
+              controller: controller,
+              enabled: true,
+              sending: false,
+              reasoningEffort: PaperAiReasoningEffort.high,
+              onReasoningEffortChanged: (_) {},
+              webSearchAvailable: true,
+              webSearchEnabled: false,
+              onWebSearchChanged: (_) {},
+              hasContext: false,
+              onClearContext: () {},
+              onChanged: (_) {},
+              onSend: () {},
+              onCancel: () {},
+            ),
+          ),
+        ),
+      ),
+    );
+
+    final surface = find.byKey(
+      const ValueKey('paper-ai-composer-surface'),
+    );
+    final toolbar = find.byKey(
+      const ValueKey('paper-ai-composer-toolbar'),
+    );
+    final initialToolbarRect = tester.getRect(toolbar);
+    final surfaceRect = tester.getRect(surface);
+    expect(
+      surfaceRect.bottom - initialToolbarRect.bottom,
+      inInclusiveRange(6, 8),
+    );
+
+    await tester.enterText(
+      find.byKey(const ValueKey('paper-ai-input')),
+      '第一行\n第二行\n第三行\n第四行\n第五行',
+    );
+    await tester.pump();
+
+    expect(tester.getRect(toolbar), initialToolbarRect);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('clear context remains visible on a narrow phone',
       (tester) async {
     await tester.binding.setSurfaceSize(const Size(378, 810));

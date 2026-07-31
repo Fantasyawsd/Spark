@@ -4,6 +4,7 @@ import '../application/paper_ai_session_repository.dart';
 class InMemoryPaperAiSessionRepository implements PaperAiSessionRepository {
   final Map<String, List<PaperAiMessage>> _sessions = {};
   final Map<String, DateTime> _updatedAt = {};
+  final Set<String> _pinned = {};
 
   @override
   Future<List<PaperAiMessage>> load(String paperId) async =>
@@ -19,6 +20,17 @@ class InMemoryPaperAiSessionRepository implements PaperAiSessionRepository {
   Future<void> clear(String paperId) async {
     _sessions.remove(paperId);
     _updatedAt.remove(paperId);
+    _pinned.remove(paperId);
+  }
+
+  @override
+  Future<void> setPinned(String paperId, bool pinned) async {
+    if (!_sessions.containsKey(paperId)) return;
+    if (pinned) {
+      _pinned.add(paperId);
+    } else {
+      _pinned.remove(paperId);
+    }
   }
 
   @override
@@ -36,10 +48,14 @@ class InMemoryPaperAiSessionRepository implements PaperAiSessionRepository {
           preview: preview,
           updatedAt:
               _updatedAt[entry.key] ?? DateTime.fromMillisecondsSinceEpoch(0),
+          pinned: _pinned.contains(entry.key),
         );
       },
     ).toList()
-          ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+          ..sort((a, b) {
+            if (a.pinned != b.pinned) return a.pinned ? -1 : 1;
+            return b.updatedAt.compareTo(a.updatedAt);
+          });
     return List.unmodifiable(result);
   }
 }

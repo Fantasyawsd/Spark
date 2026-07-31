@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -421,6 +423,85 @@ void main() {
     expect(find.textContaining('DeepSeek Markdown'), findsOneWidget);
   });
 
+  testWidgets('failed comment restores only the comment composer',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(378, 810));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final repository = _ControlledCommentWidgetRepository();
+    final comments = PaperCommentController(repository: repository);
+    addTearDown(comments.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) => Scaffold(
+            body: TextButton(
+              onPressed: () => showPaperCommentsSheet(
+                context,
+                demoPapers.first,
+                aiService: const _FakePaperAiService(),
+                commentController: comments,
+              ),
+              child: const Text('打开失败评论'),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('打开失败评论'));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const ValueKey('paper-comment-input')),
+      '需要重试的评论',
+    );
+    await tester.pump();
+    await tester.tap(find.byKey(const ValueKey('paper-comment-send')));
+    await tester.pump();
+
+    await tester.tap(find.text('AI 解析'));
+    await tester.pumpAndSettle();
+    repository.failSave();
+    await tester.pumpAndSettle();
+
+    final aiInput = tester.widget<TextField>(
+      find.byKey(const ValueKey('paper-ai-input')),
+    );
+    expect(aiInput.controller!.text, isEmpty);
+
+    await tester.tap(find.textContaining('评论 '));
+    await tester.pumpAndSettle();
+    expect(find.text('需要重试的评论'), findsOneWidget);
+  });
+
+  testWidgets('interaction failure is reported after papers reactivate',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(378, 810));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final repository = _ControlledInteractionWidgetRepository();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: PaperFlowShell(
+          interactionRepository: repository,
+          aiService: const _FakePaperAiService(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('点赞').first);
+    await tester.pump();
+    await tester.tap(find.text('社区'));
+    await tester.pumpAndSettle();
+    repository.failSave();
+    await tester.pump();
+    expect(find.text('保存互动失败'), findsNothing);
+
+    await tester.tap(find.textContaining('论文'));
+    await tester.pumpAndSettle();
+    expect(find.text('保存互动失败'), findsOneWidget);
+  });
+
   testWidgets('paper action count updates after a local comment is sent',
       (tester) async {
     await tester.binding.setSurfaceSize(const Size(378, 810));
@@ -755,6 +836,41 @@ class _FakePaperLinkService implements PaperLinkService {
     opened.add(uri);
     return true;
   }
+}
+
+class _ControlledCommentWidgetRepository implements PaperCommentRepository {
+  final Completer<void> _saveCompleter = Completer<void>();
+
+  @override
+  Future<PaperCommentSnapshot> load(String paperId) async =>
+      const PaperCommentSnapshot(comments: [], hasStoredValue: false);
+
+  @override
+  Future<void> save(
+    String paperId,
+    List<PaperCommentRecord> comments,
+  ) async {
+    await _saveCompleter.future;
+    throw const PaperCommentPersistenceException('保存评论失败');
+  }
+
+  void failSave() => _saveCompleter.complete();
+}
+
+class _ControlledInteractionWidgetRepository
+    implements PaperInteractionRepository {
+  final Completer<void> _saveCompleter = Completer<void>();
+
+  @override
+  Future<PaperInteractionSnapshot> load() async => PaperInteractionSnapshot();
+
+  @override
+  Future<void> save(PaperInteractionSnapshot snapshot) async {
+    await _saveCompleter.future;
+    throw const PaperInteractionPersistenceException('保存互动失败');
+  }
+
+  void failSave() => _saveCompleter.complete();
 }
 
 class _FakePaperShareService implements PaperShareService {

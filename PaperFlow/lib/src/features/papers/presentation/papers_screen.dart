@@ -60,6 +60,7 @@ class _PapersScreenState extends State<PapersScreen> {
   late final PageController _pageController;
   String? _activePaperId;
   DateTime? _activeSince;
+  int _lastInteractionErrorRevision = 0;
 
   PaperFeedController get _feed => widget.feedController;
   PaperInteractionController get _interactions => widget.interactionController;
@@ -82,7 +83,10 @@ class _PapersScreenState extends State<PapersScreen> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.active != widget.active) {
       if (widget.active) {
-        WidgetsBinding.instance.addPostFrameCallback((_) => _syncActivePaper());
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _syncActivePaper();
+          _showInteractionErrorIfNeeded();
+        });
       } else {
         _finishActivePaper();
       }
@@ -97,6 +101,9 @@ class _PapersScreenState extends State<PapersScreen> {
     oldWidget.interactionController.removeListener(_handleControllerChanged);
     oldWidget.commentController.removeListener(_handleControllerChanged);
     oldWidget.readingController.removeListener(_handleControllerChanged);
+    if (oldWidget.interactionController != widget.interactionController) {
+      _lastInteractionErrorRevision = 0;
+    }
     _feed.addListener(_handleControllerChanged);
     _interactions.addListener(_handleControllerChanged);
     widget.commentController.addListener(_handleControllerChanged);
@@ -359,6 +366,7 @@ class _PapersScreenState extends State<PapersScreen> {
   void _handleControllerChanged() {
     if (!mounted) return;
     setState(() {});
+    _showInteractionErrorIfNeeded();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || !_pageController.hasClients || _feed.papers.isEmpty) {
         return;
@@ -368,6 +376,23 @@ class _PapersScreenState extends State<PapersScreen> {
         _pageController.jumpToPage(_feed.currentPaperIndex);
       }
       _syncActivePaper();
+    });
+  }
+
+  void _showInteractionErrorIfNeeded() {
+    final revision = _interactions.errorRevision;
+    final message = _interactions.persistenceError;
+    if (!widget.active ||
+        message == null ||
+        revision <= _lastInteractionErrorRevision) {
+      return;
+    }
+    _lastInteractionErrorRevision = revision;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !widget.active) return;
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(message)));
     });
   }
 }

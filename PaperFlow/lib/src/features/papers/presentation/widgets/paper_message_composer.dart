@@ -35,6 +35,8 @@ class PaperMessageComposer extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
           color: Colors.white,
           child: TextField(
+            key: ValueKey(
+                aiMode ? 'paper-ai-message-input' : 'paper-comment-input'),
             controller: controller,
             readOnly: !enabled,
             onChanged: onChanged,
@@ -58,15 +60,29 @@ class PaperMessageComposer extends StatelessWidget {
                       size: 20,
                     )
                   : null,
-              suffixIcon: aiMode && sending
-                  ? IconButton(
-                      key: const ValueKey('paper-ai-composer-stop'),
-                      tooltip: '停止生成',
-                      onPressed: onCancel,
-                      icon: const Icon(Icons.stop_rounded),
-                    )
+              suffixIcon: sending
+                  ? aiMode
+                      ? IconButton(
+                          key: const ValueKey('paper-ai-composer-stop'),
+                          tooltip: '停止生成',
+                          onPressed: onCancel,
+                          icon: const Icon(Icons.stop_rounded),
+                        )
+                      : const Padding(
+                          key: ValueKey('paper-comment-sending'),
+                          padding: EdgeInsets.all(14),
+                          child: SizedBox.square(
+                            dimension: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                        )
                   : canSend
                       ? IconButton(
+                          key: ValueKey(
+                            aiMode
+                                ? 'paper-ai-message-send'
+                                : 'paper-comment-send',
+                          ),
                           tooltip: '发送',
                           onPressed: onSend,
                           icon: const Icon(Icons.arrow_upward_rounded),

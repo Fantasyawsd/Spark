@@ -64,7 +64,9 @@ class _PaperCommentsSheet extends StatefulWidget {
 }
 
 class _PaperCommentsSheetState extends State<_PaperCommentsSheet> {
-  final TextEditingController _composerController = TextEditingController();
+  final TextEditingController _commentComposerController =
+      TextEditingController();
+  final TextEditingController _aiComposerController = TextEditingController();
   final DraggableScrollableController _sheetController =
       DraggableScrollableController();
   late final PageController _pageController;
@@ -94,7 +96,8 @@ class _PaperCommentsSheetState extends State<_PaperCommentsSheet> {
 
   @override
   void dispose() {
-    _composerController.dispose();
+    _commentComposerController.dispose();
+    _aiComposerController.dispose();
     _sheetController.dispose();
     _pageController.dispose();
     widget.commentController.removeListener(_handleCommentsChanged);
@@ -178,11 +181,16 @@ class _PaperCommentsSheetState extends State<_PaperCommentsSheet> {
                       onDelete: _deleteComment,
                       onToggleReplies: _toggleReplies,
                     ),
-                    if (widget.commentController.persistenceError != null)
+                    if (widget.commentController.persistenceErrorFor(
+                          widget.paper.id,
+                        ) !=
+                        null)
                       Padding(
                         padding: const EdgeInsets.fromLTRB(18, 0, 18, 12),
                         child: Text(
-                          widget.commentController.persistenceError!,
+                          widget.commentController.persistenceErrorFor(
+                            widget.paper.id,
+                          )!,
                           style: const TextStyle(
                             color: Color(0xFFB42318),
                             fontSize: 12.5,
@@ -202,7 +210,7 @@ class _PaperCommentsSheetState extends State<_PaperCommentsSheet> {
                       loading: _aiController.loading,
                       sending: _aiController.sending,
                       error: _aiController.error,
-                      onPrompt: _sendText,
+                      onPrompt: _sendAiText,
                       onRetry: _aiController.retry,
                       onCancel: _aiController.cancel,
                       searching: _aiController.searching,
@@ -217,7 +225,7 @@ class _PaperCommentsSheetState extends State<_PaperCommentsSheet> {
                 MediaQuery.paddingOf(context).bottom,
             child: _pageIndex == 1
                 ? PaperAiComposer(
-                    controller: _composerController,
+                    controller: _aiComposerController,
                     enabled: !_aiController.sending,
                     sending: _aiController.sending,
                     reasoningEffort: _aiController.reasoningEffort,
@@ -228,18 +236,24 @@ class _PaperCommentsSheetState extends State<_PaperCommentsSheet> {
                     hasContext: _aiController.messages.isNotEmpty,
                     onClearContext: _confirmClearAiContext,
                     onChanged: (_) => setState(() {}),
-                    onSend: () => _sendText(_composerController.text),
+                    onSend: () => _sendAiText(_aiComposerController.text),
                     onCancel: _aiController.cancel,
                   )
                 : Align(
                     alignment: Alignment.bottomCenter,
                     child: PaperMessageComposer(
-                      controller: _composerController,
+                      controller: _commentComposerController,
                       aiMode: false,
                       replyTarget: _replyingToId == null ? null : '回复评论',
-                      enabled: true,
+                      enabled: !widget.commentController.isSending(
+                        widget.paper.id,
+                      ),
+                      sending: widget.commentController.isSending(
+                        widget.paper.id,
+                      ),
                       onChanged: (_) => setState(() {}),
-                      onSend: () => _sendText(_composerController.text),
+                      onSend: () =>
+                          _sendComment(_commentComposerController.text),
                     ),
                   ),
           ),
@@ -297,24 +311,35 @@ class _PaperCommentsSheetState extends State<_PaperCommentsSheet> {
     );
   }
 
-  Future<void> _sendText(String rawText) async {
+  Future<void> _sendComment(String rawText) async {
     final text = rawText.trim();
-    if (text.isEmpty || (_pageIndex == 1 && _aiController.sending)) return;
-    _composerController.clear();
-
-    if (_pageIndex == 0) {
-      final parentId = _replyingToId;
-      setState(() {
-        _replyingToId = null;
-        if (parentId != null) _expandedCommentIds.add(parentId);
-      });
-      await widget.commentController.addComment(
-        widget.paper.id,
-        text,
-        parentId: parentId,
-      );
+    if (text.isEmpty || widget.commentController.isSending(widget.paper.id)) {
       return;
     }
+    _commentComposerController.clear();
+    final parentId = _replyingToId;
+    setState(() {
+      _replyingToId = null;
+      if (parentId != null) _expandedCommentIds.add(parentId);
+    });
+    final sent = await widget.commentController.addComment(
+      widget.paper.id,
+      text,
+      parentId: parentId,
+    );
+    if (!sent && mounted) {
+      _commentComposerController.text = text;
+      _commentComposerController.selection = TextSelection.collapsed(
+        offset: text.length,
+      );
+      setState(() => _replyingToId = parentId);
+    }
+  }
+
+  Future<void> _sendAiText(String rawText) async {
+    final text = rawText.trim();
+    if (text.isEmpty || _aiController.sending) return;
+    _aiComposerController.clear();
     await _aiController.send(text);
   }
 

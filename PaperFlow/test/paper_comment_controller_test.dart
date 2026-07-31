@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:paperflow/paperflow.dart';
 
@@ -36,4 +38,105 @@ void main() {
     expect(restored.commentCount('paper-1'), 1);
     expect(restored.commentsFor('paper-1').single.body, 'second');
   });
+
+  test('comment send exposes progress and rejects duplicate submissions',
+      () async {
+    final repository = _ControlledCommentRepository()..holdSaves = true;
+    final controller = PaperCommentController(repository: repository);
+    addTearDown(controller.dispose);
+    await controller.loadPaper('paper-1');
+
+    final firstSend = controller.addComment('paper-1', 'first');
+    await Future<void>.delayed(Duration.zero);
+
+    expect(controller.sendStatusFor('paper-1'), PaperCommentSendStatus.sending);
+    expect(await controller.addComment('paper-1', 'duplicate'), isFalse);
+    expect(controller.commentCount('paper-1'), 1);
+
+    repository.completeSave();
+    expect(await firstSend, isTrue);
+    expect(controller.sendStatusFor('paper-1'), PaperCommentSendStatus.idle);
+  });
+
+  test('failed comment send rolls back and remains retryable', () async {
+    final repository = _ControlledCommentRepository()..failNextSave = true;
+    final controller = PaperCommentController(repository: repository);
+    addTearDown(controller.dispose);
+    await controller.loadPaper('paper-1');
+
+    expect(await controller.addComment('paper-1', 'first'), isFalse);
+    expect(controller.commentsFor('paper-1'), isEmpty);
+    expect(controller.sendStatusFor('paper-1'), PaperCommentSendStatus.failed);
+    expect(controller.persistenceErrorFor('paper-1'), '保存评论失败');
+
+    expect(await controller.addComment('paper-1', 'first'), isTrue);
+    expect(controller.commentsFor('paper-1').single.body, 'first');
+    expect(controller.sendStatusFor('paper-1'), PaperCommentSendStatus.idle);
+    expect(controller.persistenceErrorFor('paper-1'), isNull);
+  });
+
+  test('a successful write for another paper does not clear its error',
+      () async {
+    final repository = _ControlledCommentRepository()..failNextSave = true;
+    final controller = PaperCommentController(repository: repository);
+    addTearDown(controller.dispose);
+    await controller.initialize(['paper-1', 'paper-2']);
+
+    expect(await controller.addComment('paper-1', 'first'), isFalse);
+    expect(await controller.addComment('paper-2', 'second'), isTrue);
+
+    expect(controller.persistenceErrorFor('paper-1'), '保存评论失败');
+    expect(controller.persistenceErrorFor('paper-2'), isNull);
+  });
+
+  test('a load failure cannot overwrite unknown stored comments', () async {
+    final repository = _ControlledCommentRepository()..failNextLoad = true;
+    final controller = PaperCommentController(repository: repository);
+    addTearDown(controller.dispose);
+
+    expect(await controller.addComment('paper-1', 'first'), isFalse);
+
+    expect(controller.commentsFor('paper-1'), isEmpty);
+    expect(controller.persistenceErrorFor('paper-1'), '读取评论失败');
+    expect(repository.saveCalls, 0);
+  });
+}
+
+class _ControlledCommentRepository implements PaperCommentRepository {
+  final Map<String, List<PaperCommentRecord>> _comments = {};
+  bool failNextSave = false;
+  bool failNextLoad = false;
+  bool holdSaves = false;
+  int saveCalls = 0;
+  Completer<void>? _saveCompleter;
+
+  @override
+  Future<PaperCommentSnapshot> load(String paperId) async {
+    if (failNextLoad) {
+      failNextLoad = false;
+      throw const PaperCommentPersistenceException('读取评论失败');
+    }
+    final comments = _comments[paperId];
+    return PaperCommentSnapshot(
+      comments: List.unmodifiable(comments ?? const []),
+      hasStoredValue: comments != null,
+    );
+  }
+
+  @override
+  Future<void> save(String paperId, List<PaperCommentRecord> comments) async {
+    saveCalls++;
+    if (failNextSave) {
+      failNextSave = false;
+      throw const PaperCommentPersistenceException('保存评论失败');
+    }
+    if (holdSaves) {
+      _saveCompleter = Completer<void>();
+      await _saveCompleter!.future;
+      holdSaves = false;
+    }
+    _comments[paperId] = List.of(comments);
+  }
+
+  void completeSave() => _saveCompleter?.complete();
 }

@@ -4,20 +4,30 @@ import '../domain/paper_comment_repository.dart';
 
 enum PaperCommentSort { newest, hottest }
 
+enum PaperCommentSendStatus { idle, sending, failed }
+
 class PaperCommentController extends ChangeNotifier {
   PaperCommentController({PaperCommentRepository? repository})
       : _repository = repository;
 
   final PaperCommentRepository? _repository;
   final Map<String, List<PaperCommentRecord>> _commentsByPaper = {};
+  final Map<String, List<PaperCommentRecord>> _committedCommentsByPaper = {};
   final Map<String, PaperCommentSort> _sortByPaper = {};
+  final Map<String, PaperCommentSendStatus> _sendStatusByPaper = {};
+  final Map<String, int> _revisionByPaper = {};
   final Set<String> _loadedPaperIds = {};
   final Map<String, Future<void>> _loadOperations = {};
+  final Map<String, String> _persistenceErrorsByPaper = {};
   Future<void> _writeQueue = Future.value();
-  String? _persistenceError;
   bool _disposed = false;
 
-  String? get persistenceError => _persistenceError;
+  String? persistenceErrorFor(String paperId) =>
+      _persistenceErrorsByPaper[paperId];
+  PaperCommentSendStatus sendStatusFor(String paperId) =>
+      _sendStatusByPaper[paperId] ?? PaperCommentSendStatus.idle;
+  bool isSending(String paperId) =>
+      sendStatusFor(paperId) == PaperCommentSendStatus.sending;
 
   List<PaperCommentRecord> commentsFor(String paperId) {
     final comments = List<PaperCommentRecord>.of(
@@ -82,26 +92,30 @@ class PaperCommentController extends ChangeNotifier {
       _commentsByPaper[paperId] = snapshot.comments
           .where((comment) => !comment.id.startsWith('seed-'))
           .toList(growable: true);
+      _committedCommentsByPaper[paperId] = _rawCommentsFor(paperId);
       _loadedPaperIds.add(paperId);
-      _persistenceError = null;
+      _persistenceErrorsByPaper.remove(paperId);
       if (repository != null &&
           _commentsByPaper[paperId]!.length != snapshot.comments.length) {
         await repository.save(paperId, _rawCommentsFor(paperId));
       }
     } on PaperCommentPersistenceException catch (error) {
-      _persistenceError = error.message;
+      _persistenceErrorsByPaper[paperId] = error.message;
     }
     _notifyListeners();
   }
 
-  Future<void> addComment(
+  Future<bool> addComment(
     String paperId,
     String body, {
     String? parentId,
   }) async {
     final text = body.trim();
-    if (text.isEmpty) return;
+    if (text.isEmpty || isSending(paperId)) return false;
     await loadPaper(paperId);
+    if (!_loadedPaperIds.contains(paperId) || isSending(paperId)) return false;
+    _sendStatusByPaper[paperId] = PaperCommentSendStatus.sending;
+    _persistenceErrorsByPaper.remove(paperId);
     final comments = _commentsByPaper.putIfAbsent(paperId, () => []);
     comments.insert(
       0,
@@ -119,10 +133,15 @@ class PaperCommentController extends ChangeNotifier {
       ),
     );
     _notifyListeners();
-    _queuePersistence(paperId);
+    final saved = await _queuePersistence(paperId);
+    _sendStatusByPaper[paperId] =
+        saved ? PaperCommentSendStatus.idle : PaperCommentSendStatus.failed;
+    _notifyListeners();
+    return saved;
   }
 
   void toggleLike(String paperId, String commentId) {
+    if (isSending(paperId)) return;
     final comments = _commentsByPaper[paperId];
     if (comments == null) return;
     final index = comments.indexWhere((comment) => comment.id == commentId);
@@ -146,6 +165,7 @@ class PaperCommentController extends ChangeNotifier {
   }
 
   void deleteComment(String paperId, String commentId) {
+    if (isSending(paperId)) return;
     final comments = _commentsByPaper[paperId];
     if (comments == null) return;
     final canDelete = comments.any(
@@ -161,19 +181,34 @@ class PaperCommentController extends ChangeNotifier {
 
   Future<void> flushPendingWrites() => _writeQueue;
 
-  void _queuePersistence(String paperId) {
+  Future<bool> _queuePersistence(String paperId) {
     final repository = _repository;
-    if (repository == null) return;
+    if (repository == null) return Future.value(true);
+    final revision = (_revisionByPaper[paperId] ?? 0) + 1;
+    _revisionByPaper[paperId] = revision;
     final snapshot = _rawCommentsFor(paperId);
-    _writeQueue = _writeQueue.then((_) async {
+    late final bool saved;
+    final operation = _writeQueue.then((_) async {
       try {
         await repository.save(paperId, snapshot);
-        _persistenceError = null;
+        _committedCommentsByPaper[paperId] = snapshot;
+        if (_revisionByPaper[paperId] == revision) {
+          _persistenceErrorsByPaper.remove(paperId);
+        }
+        saved = true;
       } on PaperCommentPersistenceException catch (error) {
-        _persistenceError = error.message;
+        if (_revisionByPaper[paperId] == revision) {
+          _commentsByPaper[paperId] = List.of(
+            _committedCommentsByPaper[paperId] ?? const [],
+          );
+          _persistenceErrorsByPaper[paperId] = error.message;
+        }
+        saved = false;
       }
       _notifyListeners();
     });
+    _writeQueue = operation;
+    return operation.then((_) => saved);
   }
 
   List<PaperCommentRecord> _rawCommentsFor(String paperId) =>

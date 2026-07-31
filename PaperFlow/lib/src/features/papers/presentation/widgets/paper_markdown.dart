@@ -34,61 +34,116 @@ class PaperMarkdown extends StatelessWidget {
     );
     final bodyStyle = styleSheet.p ?? DefaultTextStyle.of(context).style;
 
-    return MarkdownBody(
-      data: markdown,
-      selectable: selectable,
-      // Source abstracts are often line-wrapped by an upstream API. Markdown
-      // soft breaks should therefore flow as spaces instead of forced rows.
-      softLineBreak: false,
-      extensionSet: md.ExtensionSet(
-        <md.BlockSyntax>[
-          LatexBlockSyntax(),
-          ...md.ExtensionSet.gitHubFlavored.blockSyntaxes,
-        ],
-        <md.InlineSyntax>[
-          LatexInlineSyntax(),
-          ...md.ExtensionSet.gitHubFlavored.inlineSyntaxes,
-        ],
-      ),
-      builders: <String, MarkdownElementBuilder>{
-        'latex': LatexElementBuilder(textStyle: bodyStyle),
-        'pre': _CodeBlockBuilder(),
-      },
-      styleSheet: styleSheet,
+    Widget markdownBody(String value) {
+      return MarkdownBody(
+        data: value,
+        selectable: selectable,
+        softLineBreak: false,
+        extensionSet: md.ExtensionSet(
+          <md.BlockSyntax>[
+            LatexBlockSyntax(),
+            ...md.ExtensionSet.gitHubFlavored.blockSyntaxes,
+          ],
+          <md.InlineSyntax>[
+            LatexInlineSyntax(),
+            ...md.ExtensionSet.gitHubFlavored.inlineSyntaxes,
+          ],
+        ),
+        builders: <String, MarkdownElementBuilder>{
+          'latex': LatexElementBuilder(textStyle: bodyStyle),
+        },
+        styleSheet: styleSheet,
+      );
+    }
+
+    final segments = _MarkdownCodeFenceParser.split(markdown);
+    if (segments.length == 1 && !segments.first.isCode) {
+      return markdownBody(markdown);
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (final segment in segments)
+          segment.isCode
+              ? _MarkdownCodeBlock(
+                  code: segment.content,
+                  language: segment.language,
+                  textStyle: styleSheet.code,
+                )
+              : markdownBody(segment.content),
+      ],
     );
   }
 }
 
-class _CodeBlockBuilder extends MarkdownElementBuilder {
-  @override
-  bool isBlockElement() => true;
+class _MarkdownCodeFenceParser {
+  const _MarkdownCodeFenceParser._();
 
-  @override
-  Widget? visitElementAfterWithContext(
-    BuildContext context,
-    md.Element element,
-    TextStyle? preferredStyle,
-    TextStyle? parentStyle,
-  ) {
-    final code = element.textContent.trimRight();
-    if (code.isEmpty) return const SizedBox.shrink();
-    return _MarkdownCodeBlock(
-      code: code,
-      language: _language(element),
-      textStyle: preferredStyle ?? parentStyle,
-    );
-  }
+  static List<_MarkdownSegment> split(String source) {
+    final segments = <_MarkdownSegment>[];
+    final plain = StringBuffer();
+    final code = StringBuffer();
+    var inCode = false;
+    String? language;
 
-  String? _language(md.Element element) {
-    final codeElement = element.children
-        ?.whereType<md.Element>()
-        .cast<md.Element?>()
-        .firstWhere((child) => child != null && child.tag == 'code',
-            orElse: () => null);
-    final className = codeElement?.attributes['class'];
-    if (className == null) return null;
-    return className.replaceFirst(RegExp(r'^language-'), '').trim();
+    void flushPlain() {
+      if (plain.isEmpty) return;
+      segments.add(_MarkdownSegment.plain(plain.toString()));
+      plain.clear();
+    }
+
+    void flushCode() {
+      final value = code.toString().trimRight();
+      if (value.isNotEmpty) {
+        segments.add(_MarkdownSegment.code(value, language));
+      }
+      code.clear();
+      language = null;
+    }
+
+    for (final line in source.split('\n')) {
+      final trimmed = line.trimLeft();
+      if (trimmed.startsWith('```')) {
+        if (!inCode) {
+          flushPlain();
+          inCode = true;
+          language = trimmed.substring(3).trim();
+        } else {
+          flushCode();
+          inCode = false;
+        }
+        continue;
+      }
+      if (inCode) {
+        code.writeln(line);
+      } else {
+        plain.writeln(line);
+      }
+    }
+    if (inCode) {
+      flushCode();
+    }
+    flushPlain();
+    return segments.isEmpty ? [_MarkdownSegment.plain('')] : segments;
   }
+}
+
+class _MarkdownSegment {
+  const _MarkdownSegment._({
+    required this.content,
+    required this.isCode,
+    this.language,
+  });
+
+  const _MarkdownSegment.plain(String content)
+      : this._(content: content, isCode: false);
+
+  const _MarkdownSegment.code(String content, String? language)
+      : this._(content: content, isCode: true, language: language);
+
+  final String content;
+  final bool isCode;
+  final String? language;
 }
 
 class _MarkdownCodeBlock extends StatelessWidget {

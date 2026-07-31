@@ -34,6 +34,8 @@ void main() {
                 onRetry: () {},
                 onCancel: () {},
                 searching: false,
+                requestStatus: PaperAiRequestStatus.completed,
+                canRetryRequestError: false,
               ),
             ],
           ),
@@ -82,6 +84,10 @@ void main() {
                     onRetry: () {},
                     onCancel: () {},
                     searching: false,
+                    requestStatus: sending
+                        ? PaperAiRequestStatus.sending
+                        : PaperAiRequestStatus.completed,
+                    canRetryRequestError: false,
                   ),
                 ],
               );
@@ -126,6 +132,8 @@ void main() {
                     onRetry: () {},
                     onCancel: () {},
                     searching: searching,
+                    requestStatus: PaperAiRequestStatus.sending,
+                    canRetryRequestError: false,
                   ),
                 ],
               );
@@ -141,5 +149,108 @@ void main() {
     update(() => searching = false);
     await tester.pump();
     expect(find.text('正在生成'), findsOneWidget);
+  });
+
+  testWidgets('cancelled AI request shows a neutral regenerate action',
+      (tester) async {
+    var retries = 0;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ListView(
+            children: [
+              PaperAiContent(
+                paper: demoPapers.first,
+                messages: const [
+                  PaperAiMessage(fromUser: true, content: '分析论文'),
+                  PaperAiMessage(fromUser: false, content: '部分回答'),
+                ],
+                loading: false,
+                sending: false,
+                error: null,
+                onPrompt: (_) {},
+                onRetry: () => retries++,
+                onCancel: () {},
+                searching: false,
+                requestStatus: PaperAiRequestStatus.cancelled,
+                canRetryRequestError: false,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    expect(find.byKey(const ValueKey('paper-ai-cancelled')), findsOneWidget);
+    expect(find.text('已停止生成'), findsOneWidget);
+    expect(find.byKey(const ValueKey('paper-ai-regenerate')), findsOneWidget);
+    expect(find.byIcon(Icons.error_outline), findsNothing);
+
+    await tester.tap(find.byKey(const ValueKey('paper-ai-regenerate')));
+    expect(retries, 1);
+  });
+
+  testWidgets('persistence error hides cancelled state and invalid retry',
+      (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ListView(
+            children: [
+              PaperAiContent(
+                paper: demoPapers.first,
+                messages: const [],
+                loading: false,
+                sending: false,
+                error: '无法清空 AI 对话记录。',
+                onPrompt: (_) {},
+                onRetry: () {},
+                onCancel: () {},
+                searching: false,
+                requestStatus: PaperAiRequestStatus.cancelled,
+                canRetryRequestError: false,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    expect(find.byKey(const ValueKey('paper-ai-error')), findsOneWidget);
+    expect(find.byKey(const ValueKey('paper-ai-cancelled')), findsNothing);
+    expect(find.byKey(const ValueKey('paper-ai-retry')), findsNothing);
+  });
+
+  testWidgets('request error exposes the AI retry action', (tester) async {
+    var retries = 0;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ListView(
+            children: [
+              PaperAiContent(
+                paper: demoPapers.first,
+                messages: const [
+                  PaperAiMessage(fromUser: true, content: '问题'),
+                ],
+                loading: false,
+                sending: false,
+                error: '网络失败',
+                onPrompt: (_) {},
+                onRetry: () => retries++,
+                onCancel: () {},
+                searching: false,
+                requestStatus: PaperAiRequestStatus.failed,
+                canRetryRequestError: true,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.byKey(const ValueKey('paper-ai-retry')));
+    expect(retries, 1);
   });
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/paperflow_theme.dart';
+import '../../application/paper_ai_conversation_controller.dart';
 import '../../application/paper_ai_service.dart';
 import '../../domain/paper.dart';
 import 'paper_ai_message_view.dart';
@@ -18,6 +19,8 @@ class PaperAiContent extends StatelessWidget {
     required this.onRetry,
     required this.onCancel,
     required this.searching,
+    required this.requestStatus,
+    required this.canRetryRequestError,
     this.welcomeTitle,
     this.welcomeDescription,
     this.prompts = const ['解释核心方法', '总结实验结果', '分析贡献与局限'],
@@ -32,6 +35,8 @@ class PaperAiContent extends StatelessWidget {
   final VoidCallback onRetry;
   final VoidCallback onCancel;
   final bool searching;
+  final PaperAiRequestStatus requestStatus;
+  final bool canRetryRequestError;
   final String? welcomeTitle;
   final String? welcomeDescription;
   final List<String> prompts;
@@ -60,14 +65,17 @@ class PaperAiContent extends StatelessWidget {
             ),
           if (messages.isNotEmpty) ...[
             for (var index = 0; index < messages.length; index++)
-              PaperEntryAnimation(
-                key: ValueKey('ai-message-$index-${messages[index].fromUser}'),
-                child: PaperAiMessageView(
-                  message: messages[index],
-                  streaming: sending && index == messages.length - 1,
-                  searching: searching && index == messages.length - 1,
+              if (!_isEmptyAssistant(messages[index]))
+                PaperEntryAnimation(
+                  key: ValueKey(
+                    'ai-message-$index-${messages[index].fromUser}',
+                  ),
+                  child: PaperAiMessageView(
+                    message: messages[index],
+                    streaming: sending && index == messages.length - 1,
+                    searching: searching && index == messages.length - 1,
+                  ),
                 ),
-              ),
           ],
           if (sending &&
               (searching ||
@@ -75,7 +83,13 @@ class PaperAiContent extends StatelessWidget {
                   messages.last.fromUser ||
                   _isEmptyAssistant(messages.last)))
             _TypingIndicator(onCancel: onCancel, searching: searching),
-          if (error != null) _AiErrorMessage(message: error!, onRetry: onRetry),
+          if (error != null)
+            _AiErrorMessage(
+              message: error!,
+              onRetry: canRetryRequestError ? onRetry : null,
+            ),
+          if (error == null && requestStatus == PaperAiRequestStatus.cancelled)
+            _AiStoppedMessage(onRetry: onRetry),
         ],
       ),
     );
@@ -86,6 +100,49 @@ class PaperAiContent extends StatelessWidget {
         message.content.isEmpty &&
         message.reasoningContent.isEmpty &&
         message.sources.isEmpty;
+  }
+}
+
+class _AiStoppedMessage extends StatelessWidget {
+  const _AiStoppedMessage({required this.onRetry});
+
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      key: const ValueKey('paper-ai-cancelled'),
+      margin: const EdgeInsets.only(top: 6, bottom: 8),
+      padding: const EdgeInsets.fromLTRB(12, 8, 8, 8),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF3F4F6),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.stop_circle_outlined,
+            size: 18,
+            color: PaperFlowColors.muted,
+          ),
+          const SizedBox(width: 8),
+          const Expanded(
+            child: Text(
+              '已停止生成',
+              style: TextStyle(
+                color: PaperFlowColors.muted,
+                fontSize: 12.5,
+              ),
+            ),
+          ),
+          TextButton(
+            key: const ValueKey('paper-ai-regenerate'),
+            onPressed: onRetry,
+            child: const Text('重新生成'),
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -238,7 +295,7 @@ class _AiErrorMessage extends StatelessWidget {
   const _AiErrorMessage({required this.message, required this.onRetry});
 
   final String message;
-  final VoidCallback onRetry;
+  final VoidCallback? onRetry;
 
   @override
   Widget build(BuildContext context) {
@@ -262,11 +319,12 @@ class _AiErrorMessage extends StatelessWidget {
               ),
             ),
           ),
-          TextButton(
-            key: const ValueKey('paper-ai-retry'),
-            onPressed: onRetry,
-            child: const Text('重试'),
-          ),
+          if (onRetry != null)
+            TextButton(
+              key: const ValueKey('paper-ai-retry'),
+              onPressed: onRetry,
+              child: const Text('重试'),
+            ),
         ],
       ),
     );

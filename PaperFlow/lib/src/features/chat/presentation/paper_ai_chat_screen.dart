@@ -120,6 +120,8 @@ class _PaperAiChatScreenState extends State<PaperAiChatScreen> {
                   onRetry: _conversation.retry,
                   onCancel: _conversation.cancel,
                   searching: _conversation.searching,
+                  requestStatus: _conversation.requestStatus,
+                  canRetryRequestError: _conversation.canRetryRequestError,
                   welcomeTitle: widget.welcomeTitle,
                   welcomeDescription: widget.welcomeDescription,
                   prompts: widget.suggestedPrompts,

@@ -18,7 +18,9 @@ void main() {
 
     await controller.send('解释方法');
     expect(controller.error, '网络失败');
-    expect(controller.messages, hasLength(1));
+    expect(controller.messages, hasLength(2));
+    expect(controller.messages.last.status, PaperAiMessageStatus.failed);
+    expect(controller.canRetryRequestError, isTrue);
 
     await controller.retry();
     expect(controller.error, isNull);
@@ -64,6 +66,30 @@ void main() {
     restored.dispose();
   });
 
+  test('clearing a conversation waits for queued saves before deletion',
+      () async {
+    final repository = _DelayedSaveAiSessionRepository();
+    final controller = PaperAiConversationController(
+      paper: demoPapers.first,
+      service: _QueueAiService(['回答']),
+      sessionRepository: repository,
+    );
+
+    await controller.send('问题');
+    await repository.firstSaveStarted.future;
+
+    final clear = controller.clear();
+    await Future<void>.delayed(Duration.zero);
+    expect(repository.clearCalls, 0);
+
+    repository.releaseSaves.complete();
+    await clear;
+
+    expect(repository.clearCalls, 1);
+    expect(await repository.load(demoPapers.first.id), isEmpty);
+    controller.dispose();
+  });
+
   test('AI conversation can stop an active request', () async {
     final service = _CancellableAiService();
     final controller = PaperAiConversationController(
@@ -79,7 +105,232 @@ void main() {
     expect(service.cancelled, isTrue);
     expect(controller.sending, isFalse);
     expect(controller.error, isNull);
-    expect(controller.messages, hasLength(1));
+    expect(controller.messages, hasLength(2));
+    expect(controller.messages.last.status, PaperAiMessageStatus.cancelled);
+    expect(controller.requestStatus, PaperAiRequestStatus.cancelled);
+    expect(controller.canRetry, isTrue);
+    controller.dispose();
+  });
+
+  test('cancel before the first token restores as cancelled', () async {
+    final repository = InMemoryPaperAiSessionRepository();
+    final controller = PaperAiConversationController(
+      paper: demoPapers.first,
+      service: _CancellableAiService(),
+      sessionRepository: repository,
+    );
+
+    final request = controller.send('问题');
+    controller.cancel();
+    await request;
+    await Future<void>.delayed(Duration.zero);
+
+    final restored = PaperAiConversationController(
+      paper: demoPapers.first,
+      service: _QueueAiService(['回答']),
+      sessionRepository: repository,
+    );
+    await restored.initialize();
+
+    expect(restored.requestStatus, PaperAiRequestStatus.cancelled);
+    expect(restored.messages.last.status, PaperAiMessageStatus.cancelled);
+    await restored.retry();
+    expect(restored.messages.last.content, '回答');
+    controller.dispose();
+    restored.dispose();
+  });
+
+  test('failure before the first token restores as failed', () async {
+    final repository = InMemoryPaperAiSessionRepository();
+    final controller = PaperAiConversationController(
+      paper: demoPapers.first,
+      service: _QueueAiService([const PaperAiException('网络失败')]),
+      sessionRepository: repository,
+    );
+
+    await controller.send('问题');
+    await Future<void>.delayed(Duration.zero);
+
+    final restored = PaperAiConversationController(
+      paper: demoPapers.first,
+      service: _QueueAiService(['回答']),
+      sessionRepository: repository,
+    );
+    await restored.initialize();
+
+    expect(restored.requestStatus, PaperAiRequestStatus.failed);
+    expect(restored.error, '上次回答未完成，请重新生成。');
+    expect(restored.canRetryRequestError, isTrue);
+    await restored.retry();
+    expect(restored.messages.last.content, '回答');
+    controller.dispose();
+    restored.dispose();
+  });
+
+  test('a new question omits an empty terminal marker from AI context',
+      () async {
+    final repository = InMemoryPaperAiSessionRepository();
+    await repository.save(demoPapers.first.id, const [
+      PaperAiMessage(fromUser: true, content: '旧问题'),
+      PaperAiMessage(
+        fromUser: false,
+        content: '',
+        status: PaperAiMessageStatus.cancelled,
+      ),
+    ]);
+    final service = _QueueAiService(['新回答']);
+    final controller = PaperAiConversationController(
+      paper: demoPapers.first,
+      service: service,
+      sessionRepository: repository,
+    );
+    await controller.initialize();
+
+    await controller.send('新问题');
+
+    final conversation = service.conversations.single;
+    expect(
+      conversation.where(
+        (message) =>
+            !message.fromUser &&
+            message.content.isEmpty &&
+            message.reasoningContent.isEmpty &&
+            message.sources.isEmpty,
+      ),
+      isEmpty,
+    );
+    expect(conversation.map((message) => message.content), ['旧问题', '新问题']);
+    controller.dispose();
+  });
+
+  test('cancelled AI conversation restores its regenerate state', () async {
+    final repository = InMemoryPaperAiSessionRepository();
+    final service = _RegeneratingStreamingAiService();
+    final controller = PaperAiConversationController(
+      paper: demoPapers.first,
+      service: service,
+      sessionRepository: repository,
+    );
+
+    final request = controller.send('分析论文');
+    await service.firstChunkSent.future;
+    await Future<void>.delayed(Duration.zero);
+    controller.cancel();
+    await request;
+    await Future<void>.delayed(Duration.zero);
+
+    final restored = PaperAiConversationController(
+      paper: demoPapers.first,
+      service: _QueueAiService(['完整回答']),
+      sessionRepository: repository,
+    );
+    await restored.initialize();
+
+    expect(restored.requestStatus, PaperAiRequestStatus.cancelled);
+    expect(restored.canRetry, isTrue);
+    expect(restored.messages.last.status, PaperAiMessageStatus.cancelled);
+
+    await restored.retry();
+    expect(restored.messages, hasLength(2));
+    expect(restored.messages.last.content, '完整回答');
+    controller.dispose();
+    restored.dispose();
+  });
+
+  test('an obsolete persistence failure does not pollute a newer save',
+      () async {
+    final repository = _ObsoleteFailureAiSessionRepository();
+    final controller = PaperAiConversationController(
+      paper: demoPapers.first,
+      service: _QueueAiService(['回答']),
+      sessionRepository: repository,
+    );
+
+    await controller.send('问题');
+    await repository.firstSaveStarted.future;
+    repository.releaseFirstSave.complete();
+    await repository.latestSaveCompleted.future;
+
+    expect(controller.requestStatus, PaperAiRequestStatus.completed);
+    expect(controller.error, isNull);
+    controller.dispose();
+  });
+
+  test('cancel persistence failure does not masquerade as request retry',
+      () async {
+    final repository = _CancelSaveFailureAiSessionRepository();
+    final service = _CancellableAiService();
+    final controller = PaperAiConversationController(
+      paper: demoPapers.first,
+      service: service,
+      sessionRepository: repository,
+    );
+
+    final request = controller.send('问题');
+    controller.cancel();
+    await request;
+    await repository.cancelSaveFailed.future;
+    await Future<void>.delayed(Duration.zero);
+
+    expect(controller.requestStatus, PaperAiRequestStatus.cancelled);
+    expect(controller.error, '无法保存取消状态');
+    expect(controller.canRetry, isTrue);
+    expect(controller.canRetryRequestError, isFalse);
+    controller.dispose();
+  });
+
+  test('clear persistence failure does not expose AI regenerate', () async {
+    final repository = _ClearFailureAiSessionRepository();
+    await repository.save(
+      demoPapers.first.id,
+      const [PaperAiMessage(fromUser: true, content: '问题')],
+    );
+    final controller = PaperAiConversationController(
+      paper: demoPapers.first,
+      service: _QueueAiService([]),
+      sessionRepository: repository,
+    );
+    await controller.initialize();
+
+    await controller.clear();
+
+    expect(controller.requestStatus, PaperAiRequestStatus.idle);
+    expect(controller.canRetry, isFalse);
+    expect(controller.error, '无法清空 AI 对话记录。');
+    controller.dispose();
+  });
+
+  test(
+      'AI conversation preserves a partial stream and replaces it when regenerated',
+      () async {
+    final service = _RegeneratingStreamingAiService();
+    final controller = PaperAiConversationController(
+      paper: demoPapers.first,
+      service: service,
+    );
+
+    final request = controller.send('分析论文');
+    await service.firstChunkSent.future;
+    await Future<void>.delayed(Duration.zero);
+
+    controller.cancel();
+    await request;
+
+    expect(controller.requestStatus, PaperAiRequestStatus.cancelled);
+    expect(controller.canRetry, isTrue);
+    expect(controller.messages, hasLength(2));
+    expect(controller.messages.last.content, '部分回答');
+
+    await controller.retry();
+
+    expect(controller.requestStatus, PaperAiRequestStatus.completed);
+    expect(controller.canRetry, isFalse);
+    expect(controller.messages, hasLength(2));
+    expect(controller.messages.last.content, '完整回答');
+
+    await controller.clear();
+    expect(controller.requestStatus, PaperAiRequestStatus.idle);
+    expect(controller.messages, isEmpty);
     controller.dispose();
   });
 
@@ -187,6 +438,78 @@ class _CancellableAiService implements CancellablePaperAiService {
   }
 }
 
+class _DelayedSaveAiSessionRepository extends InMemoryPaperAiSessionRepository {
+  final Completer<void> firstSaveStarted = Completer<void>();
+  final Completer<void> releaseSaves = Completer<void>();
+  int clearCalls = 0;
+
+  @override
+  Future<void> save(
+    String paperId,
+    List<PaperAiMessage> messages,
+  ) async {
+    if (!firstSaveStarted.isCompleted) firstSaveStarted.complete();
+    await releaseSaves.future;
+    await super.save(paperId, messages);
+  }
+
+  @override
+  Future<void> clear(String paperId) async {
+    clearCalls++;
+    await super.clear(paperId);
+  }
+}
+
+class _ObsoleteFailureAiSessionRepository
+    extends InMemoryPaperAiSessionRepository {
+  final Completer<void> firstSaveStarted = Completer<void>();
+  final Completer<void> releaseFirstSave = Completer<void>();
+  final Completer<void> latestSaveCompleted = Completer<void>();
+  var _saveCalls = 0;
+
+  @override
+  Future<void> save(
+    String paperId,
+    List<PaperAiMessage> messages,
+  ) async {
+    _saveCalls++;
+    if (_saveCalls == 1) {
+      firstSaveStarted.complete();
+      await releaseFirstSave.future;
+      throw const PaperAiSessionPersistenceException('旧写入失败');
+    }
+    await super.save(paperId, messages);
+    if (!latestSaveCompleted.isCompleted) latestSaveCompleted.complete();
+  }
+}
+
+class _ClearFailureAiSessionRepository
+    extends InMemoryPaperAiSessionRepository {
+  @override
+  Future<void> clear(String paperId) async {
+    throw const PaperAiSessionPersistenceException('无法清空 AI 对话记录。');
+  }
+}
+
+class _CancelSaveFailureAiSessionRepository
+    extends InMemoryPaperAiSessionRepository {
+  final Completer<void> cancelSaveFailed = Completer<void>();
+  var _saveCalls = 0;
+
+  @override
+  Future<void> save(
+    String paperId,
+    List<PaperAiMessage> messages,
+  ) async {
+    _saveCalls++;
+    if (_saveCalls == 2) {
+      if (!cancelSaveFailed.isCompleted) cancelSaveFailed.complete();
+      throw const PaperAiSessionPersistenceException('无法保存取消状态');
+    }
+    await super.save(paperId, messages);
+  }
+}
+
 class _StreamingAiService implements StreamingPaperAiService {
   const _StreamingAiService();
 
@@ -205,6 +528,43 @@ class _StreamingAiService implements StreamingPaperAiService {
     yield const PaperAiStreamChunk(reasoningDelta: '先阅读摘要，');
     yield const PaperAiStreamChunk(reasoningDelta: '再核对结论。');
     yield const PaperAiStreamChunk(contentDelta: '**最终回答**');
+  }
+}
+
+class _RegeneratingStreamingAiService
+    implements StreamingPaperAiService, CancellablePaperAiService {
+  final Completer<void> firstChunkSent = Completer<void>();
+  Completer<void>? _cancelled;
+  int _requests = 0;
+
+  @override
+  Future<String> answer({
+    required PaperRecord paper,
+    required List<PaperAiMessage> conversation,
+  }) async =>
+      '完整回答';
+
+  @override
+  Stream<PaperAiStreamChunk> answerStream({
+    required PaperRecord paper,
+    required List<PaperAiMessage> conversation,
+  }) async* {
+    _requests++;
+    if (_requests > 1) {
+      yield const PaperAiStreamChunk(contentDelta: '完整回答');
+      return;
+    }
+
+    _cancelled = Completer<void>();
+    yield const PaperAiStreamChunk(contentDelta: '部分回答');
+    if (!firstChunkSent.isCompleted) firstChunkSent.complete();
+    await _cancelled!.future;
+    throw const PaperAiCancelledException();
+  }
+
+  @override
+  void cancelActiveRequest() {
+    if (!(_cancelled?.isCompleted ?? true)) _cancelled!.complete();
   }
 }
 

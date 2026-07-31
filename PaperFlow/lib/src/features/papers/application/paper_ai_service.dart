@@ -3,6 +3,7 @@ import '../../chat/domain/chat_message.dart';
 
 typedef PaperAiMessage = ChatMessage;
 typedef PaperAiSource = ChatSource;
+typedef PaperAiMessageStatus = ChatMessageStatus;
 
 enum PaperAiReasoningEffort {
   none('none', '关闭'),

@@ -214,6 +214,8 @@ class _PaperCommentsSheetState extends State<_PaperCommentsSheet> {
                       onRetry: _aiController.retry,
                       onCancel: _aiController.cancel,
                       searching: _aiController.searching,
+                      requestStatus: _aiController.requestStatus,
+                      canRetryRequestError: _aiController.canRetryRequestError,
                     ),
                   ],
                 ),

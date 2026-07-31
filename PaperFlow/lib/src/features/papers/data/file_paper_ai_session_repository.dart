@@ -25,9 +25,10 @@ class FilePaperAiSessionRepository implements PaperAiSessionRepository {
               content: raw['content'] as String? ?? '',
               reasoningContent: raw['reasoningContent'] as String? ?? '',
               sources: _sourcesFromJson(raw['sources']),
+              status: _statusFromJson(raw['status']),
             ),
           )
-          .where((message) => message.content.trim().isNotEmpty)
+          .where(_hasPersistableContent)
           .toList(growable: false);
     } catch (error) {
       throw PaperAiSessionPersistenceException('无法读取 AI 对话记录。', error);
@@ -135,11 +136,26 @@ class FilePaperAiSessionRepository implements PaperAiSessionRepository {
       'fromUser': message.fromUser,
       'content': message.content,
       'reasoningContent': message.reasoningContent,
+      'status': message.status.name,
       'sources': [
         for (final source in message.sources)
           {'title': source.title, 'url': source.url},
       ],
     };
+  }
+
+  static PaperAiMessageStatus _statusFromJson(Object? rawStatus) {
+    return PaperAiMessageStatus.values.firstWhere(
+      (status) => status.name == rawStatus,
+      orElse: () => PaperAiMessageStatus.complete,
+    );
+  }
+
+  static bool _hasPersistableContent(PaperAiMessage message) {
+    return message.content.trim().isNotEmpty ||
+        message.reasoningContent.trim().isNotEmpty ||
+        message.sources.isNotEmpty ||
+        message.status != PaperAiMessageStatus.complete;
   }
 
   static List<PaperAiSource> _sourcesFromJson(Object? rawSources) {

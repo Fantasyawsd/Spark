@@ -1,26 +1,38 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/motion/motion_tokens.dart';
 import '../../../../core/theme/paperflow_theme.dart';
+import '../../../../core/widgets/paperflow_sheet.dart';
+import '../../../../core/widgets/paperflow_tab_bar.dart';
 import '../../domain/paper.dart';
+
+enum PaperSheetPage { comments, ai }
 
 Future<void> showPaperCommentsSheet(
   BuildContext context,
-  PaperRecord paper,
-) {
-  return showModalBottomSheet<void>(
+  PaperRecord paper, {
+  PaperSheetPage initialPage = PaperSheetPage.comments,
+}) {
+  return showPaperFlowSheet<void>(
     context: context,
     isScrollControlled: true,
     useSafeArea: true,
-    backgroundColor: Colors.transparent,
     barrierColor: const Color(0x660B1020),
-    builder: (context) => _PaperCommentsSheet(paper: paper),
+    builder: (context) => _PaperCommentsSheet(
+      paper: paper,
+      initialPage: initialPage,
+    ),
   );
 }
 
 class _PaperCommentsSheet extends StatefulWidget {
-  const _PaperCommentsSheet({required this.paper});
+  const _PaperCommentsSheet({
+    required this.paper,
+    required this.initialPage,
+  });
 
   final PaperRecord paper;
+  final PaperSheetPage initialPage;
 
   @override
   State<_PaperCommentsSheet> createState() => _PaperCommentsSheetState();
@@ -30,8 +42,9 @@ class _PaperCommentsSheetState extends State<_PaperCommentsSheet> {
   final TextEditingController _composerController = TextEditingController();
   final DraggableScrollableController _sheetController =
       DraggableScrollableController();
+  late final PageController _pageController;
 
-  int _pageIndex = 0;
+  late int _pageIndex;
   bool _sending = false;
   bool _fullscreen = false;
 
@@ -81,9 +94,17 @@ class _PaperCommentsSheetState extends State<_PaperCommentsSheet> {
   final List<_ChatMessage> _messages = [];
 
   @override
+  void initState() {
+    super.initState();
+    _pageIndex = widget.initialPage.index;
+    _pageController = PageController(initialPage: _pageIndex);
+  }
+
+  @override
   void dispose() {
     _composerController.dispose();
     _sheetController.dispose();
+    _pageController.dispose();
     super.dispose();
   }
 
@@ -109,9 +130,11 @@ class _PaperCommentsSheetState extends State<_PaperCommentsSheet> {
           maxChildSize: 1.0,
           snap: true,
           snapSizes: const [0.50, 1.0],
+          shouldCloseOnMinExtent: false,
           expand: false,
           builder: (context, scrollController) {
             return Container(
+              key: const ValueKey('paper-comments-sheet'),
               clipBehavior: Clip.antiAlias,
               decoration: const BoxDecoration(
                 color: Colors.white,
@@ -119,25 +142,37 @@ class _PaperCommentsSheetState extends State<_PaperCommentsSheet> {
               ),
               child: Column(
                 children: [
+                  const PaperFlowSheetHandle(),
                   _SheetHeader(
                     pageIndex: _pageIndex,
                     commentCount: widget.paper.comments,
                     fullscreen: _fullscreen,
-                    onPageSelected: (index) =>
-                        setState(() => _pageIndex = index),
+                    pageController: _pageController,
+                    onPageSelected: _selectPage,
                     onFullscreen: _toggleFullscreen,
                     onClose: () => Navigator.pop(context),
                   ),
                   Expanded(
-                    child: ListView(
-                      controller: scrollController,
-                      padding: EdgeInsets.zero,
+                    child: PageView(
+                      key: const ValueKey('paper-sheet-pages'),
+                      controller: _pageController,
+                      physics: const NeverScrollableScrollPhysics(),
+                      onPageChanged: (index) =>
+                          setState(() => _pageIndex = index),
                       children: [
-                        IndexedStack(
-                          index: _pageIndex,
-                          alignment: Alignment.topCenter,
+                        ListView(
+                          key: const PageStorageKey('paper-comments-page'),
+                          controller: _pageIndex == 0 ? scrollController : null,
+                          padding: EdgeInsets.zero,
                           children: [
                             _CommentsContent(comments: _comments),
+                          ],
+                        ),
+                        ListView(
+                          key: const PageStorageKey('paper-ai-page'),
+                          controller: _pageIndex == 1 ? scrollController : null,
+                          padding: EdgeInsets.zero,
+                          children: [
                             _AiAnalysisContent(
                               paper: widget.paper,
                               messages: _messages,
@@ -169,8 +204,17 @@ class _PaperCommentsSheetState extends State<_PaperCommentsSheet> {
     if (!_sheetController.isAttached) return;
     await _sheetController.animateTo(
       _fullscreen ? 0.50 : 1.0,
-      duration: const Duration(milliseconds: 260),
-      curve: Curves.easeOutCubic,
+      duration: MotionTokens.duration(context, MotionTokens.sheetDuration),
+      curve: MotionTokens.pageCurve,
+    );
+  }
+
+  void _selectPage(int index) {
+    if (index == _pageIndex || !_pageController.hasClients) return;
+    _pageController.animateToPage(
+      index,
+      duration: MotionTokens.duration(context, MotionTokens.tabDuration),
+      curve: MotionTokens.pageCurve,
     );
   }
 
@@ -226,6 +270,7 @@ class _SheetHeader extends StatelessWidget {
     required this.pageIndex,
     required this.commentCount,
     required this.fullscreen,
+    required this.pageController,
     required this.onPageSelected,
     required this.onFullscreen,
     required this.onClose,
@@ -234,6 +279,7 @@ class _SheetHeader extends StatelessWidget {
   final int pageIndex;
   final String commentCount;
   final bool fullscreen;
+  final PageController pageController;
   final ValueChanged<int> onPageSelected;
   final VoidCallback onFullscreen;
   final VoidCallback onClose;
@@ -241,24 +287,22 @@ class _SheetHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 58,
+      height: 50,
       padding: const EdgeInsets.only(left: 16, right: 6),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(bottom: BorderSide(color: PaperFlowColors.line)),
-      ),
+      color: Colors.white,
       child: Row(
         children: [
-          _HeaderTab(
-            label: '评论 $commentCount',
-            selected: pageIndex == 0,
-            onTap: () => onPageSelected(0),
-          ),
-          const SizedBox(width: 24),
-          _HeaderTab(
-            label: 'AI 解析',
-            selected: pageIndex == 1,
-            onTap: () => onPageSelected(1),
+          SizedBox(
+            width: 184,
+            child: PaperFlowTabBar(
+              tabs: ['评论 $commentCount', 'AI 解析'],
+              selectedIndex: pageIndex,
+              pageController: pageController,
+              height: 44,
+              indicatorWidth: 56,
+              textSize: 15,
+              onSelected: onPageSelected,
+            ),
           ),
           const Spacer(),
           IconButton(
@@ -282,48 +326,6 @@ class _SheetHeader extends StatelessWidget {
   }
 }
 
-class _HeaderTab extends StatelessWidget {
-  const _HeaderTab({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: SizedBox(
-        height: 58,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            Text(
-              label,
-              style: TextStyle(
-                color: selected ? PaperFlowColors.ink : PaperFlowColors.muted,
-                fontSize: 15,
-                fontWeight: selected ? FontWeight.w800 : FontWeight.w500,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Container(
-              width: 62,
-              height: 3,
-              color: selected ? PaperFlowColors.ink : Colors.transparent,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 class _CommentsContent extends StatelessWidget {
   const _CommentsContent({required this.comments});
 
@@ -336,7 +338,10 @@ class _CommentsContent extends StatelessWidget {
       child: Column(
         children: [
           for (var index = 0; index < comments.length; index++)
-            _CommentTile(comment: comments[index]),
+            _EntryAnimation(
+              key: ValueKey('${comments[index].time}-${comments[index].body}'),
+              child: _CommentTile(comment: comments[index]),
+            ),
         ],
       ),
     );
@@ -555,7 +560,12 @@ class _AiAnalysisContent extends StatelessWidget {
             const SizedBox(height: 8),
             const Divider(),
             const SizedBox(height: 10),
-            ...messages.map((message) => _MessageBubble(message: message)),
+            ...messages.map(
+              (message) => _EntryAnimation(
+                key: ValueKey('${message.fromUser}-${message.text}'),
+                child: _MessageBubble(message: message),
+              ),
+            ),
           ],
           if (sending) const _TypingIndicator(),
         ],
@@ -633,6 +643,33 @@ class _TypingIndicator extends StatelessWidget {
   }
 }
 
+class _EntryAnimation extends StatelessWidget {
+  const _EntryAnimation({super.key, required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final duration = MotionTokens.duration(
+      context,
+      MotionTokens.pageDuration,
+    );
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: 1),
+      duration: duration,
+      curve: MotionTokens.enterCurve,
+      builder: (context, value, child) => Opacity(
+        opacity: value,
+        child: Transform.translate(
+          offset: Offset(0, 8 * (1 - value)),
+          child: child,
+        ),
+      ),
+      child: child,
+    );
+  }
+}
+
 class _MessageComposer extends StatelessWidget {
   const _MessageComposer({
     required this.controller,
@@ -653,54 +690,54 @@ class _MessageComposer extends StatelessWidget {
     final canSend = enabled && controller.text.trim().isNotEmpty;
     return SafeArea(
       top: false,
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
-        decoration: const BoxDecoration(
+      child: SizedBox(
+        height: 64,
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
           color: Colors.white,
-          border: Border(top: BorderSide(color: PaperFlowColors.line)),
-        ),
-        child: TextField(
-          controller: controller,
-          enabled: enabled,
-          onChanged: onChanged,
-          onSubmitted: (_) {
-            if (canSend) onSend();
-          },
-          textInputAction: TextInputAction.send,
-          minLines: 1,
-          maxLines: 3,
-          style: const TextStyle(fontSize: 13.5),
-          decoration: InputDecoration(
-            hintText: aiMode ? '问 AI 或按住说话' : '有价值的讨论更容易被看见',
-            hintStyle: const TextStyle(
-              color: PaperFlowColors.subtle,
-              fontSize: 13,
-            ),
-            prefixIcon: aiMode
-                ? const Icon(Icons.auto_awesome_rounded,
-                    color: PaperFlowColors.ink, size: 20)
-                : null,
-            suffixIcon: canSend
-                ? IconButton(
-                    tooltip: '发送',
-                    onPressed: onSend,
-                    icon: const Icon(Icons.arrow_upward_rounded),
-                  )
-                : Icon(
-                    aiMode
-                        ? Icons.graphic_eq_rounded
-                        : Icons.sentiment_satisfied_alt_rounded,
-                    color: PaperFlowColors.muted,
-                    size: 22,
-                  ),
-            filled: true,
-            fillColor: PaperFlowColors.canvas,
-            isDense: true,
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(24),
-              borderSide: BorderSide.none,
+          child: TextField(
+            controller: controller,
+            enabled: enabled,
+            onChanged: onChanged,
+            onSubmitted: (_) {
+              if (canSend) onSend();
+            },
+            textInputAction: TextInputAction.send,
+            minLines: 1,
+            maxLines: 1,
+            style: const TextStyle(fontSize: 13.5),
+            decoration: InputDecoration(
+              hintText: aiMode ? '问 AI 或按住说话' : '有价值的讨论更容易被看见',
+              hintStyle: const TextStyle(
+                color: PaperFlowColors.subtle,
+                fontSize: 13,
+              ),
+              prefixIcon: aiMode
+                  ? const Icon(Icons.auto_awesome_rounded,
+                      color: PaperFlowColors.ink, size: 20)
+                  : null,
+              suffixIcon: canSend
+                  ? IconButton(
+                      tooltip: '发送',
+                      onPressed: onSend,
+                      icon: const Icon(Icons.arrow_upward_rounded),
+                    )
+                  : Icon(
+                      aiMode
+                          ? Icons.graphic_eq_rounded
+                          : Icons.sentiment_satisfied_alt_rounded,
+                      color: PaperFlowColors.muted,
+                      size: 22,
+                    ),
+              filled: true,
+              fillColor: PaperFlowColors.canvas,
+              isDense: true,
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(24),
+                borderSide: BorderSide.none,
+              ),
             ),
           ),
         ),

@@ -3,6 +3,29 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:paperflow/paperflow.dart';
 
 void main() {
+  testWidgets('motion tokens honor the system reduce-motion setting',
+      (tester) async {
+    Duration? resolvedDuration;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: MediaQuery(
+          data: const MediaQueryData(disableAnimations: true),
+          child: Builder(
+            builder: (context) {
+              resolvedDuration = MotionTokens.duration(
+                context,
+                MotionTokens.pageDuration,
+              );
+              return const SizedBox.shrink();
+            },
+          ),
+        ),
+      ),
+    );
+
+    expect(resolvedDuration, Duration.zero);
+  });
+
   testWidgets('startup shows the PaperFlow logo before opening the feed',
       (tester) async {
     await tester.binding.setSurfaceSize(const Size(390, 844));

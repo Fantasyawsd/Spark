@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 
+import '../../../core/motion/motion_tokens.dart';
 import '../../../core/theme/paperflow_theme.dart';
 import '../../../core/widgets/paper_diagram.dart';
+import '../../../core/widgets/paperflow_tab_bar.dart';
 import '../../../core/widgets/profile_avatar.dart';
 import '../domain/community_post.dart';
 
@@ -15,6 +17,19 @@ class CommunityScreen extends StatefulWidget {
 
 class _CommunityScreenState extends State<CommunityScreen> {
   int _feedIndex = 1;
+  late final PageController _feedController;
+
+  @override
+  void initState() {
+    super.initState();
+    _feedController = PageController(initialPage: _feedIndex);
+  }
+
+  @override
+  void dispose() {
+    _feedController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -30,27 +45,42 @@ class _CommunityScreenState extends State<CommunityScreen> {
                 alignment: Alignment.bottomCenter,
                 child: _CommunityFilters(
                   feedIndex: _feedIndex,
-                  onFeedSelected: (index) => setState(() => _feedIndex = index),
+                  pageController: _feedController,
+                  onFeedSelected: _selectFeed,
                 ),
               ),
             ),
             Expanded(
-              child: MasonryGridView.count(
-                key: const ValueKey('community-feed'),
-                crossAxisCount: 2,
-                mainAxisSpacing: 10,
-                crossAxisSpacing: 10,
-                padding: const EdgeInsets.fromLTRB(12, 12, 12, 92),
-                itemCount: demoCommunityPosts.length,
-                itemBuilder: (context, index) => _DiscoveryCard(
-                  post: demoCommunityPosts[index],
-                  index: index,
+              child: PageView.builder(
+                controller: _feedController,
+                itemCount: _CommunityFilters.feeds.length,
+                onPageChanged: (index) => setState(() => _feedIndex = index),
+                itemBuilder: (context, feedIndex) => MasonryGridView.count(
+                  key: ValueKey('community-feed-$feedIndex'),
+                  crossAxisCount: 2,
+                  mainAxisSpacing: 10,
+                  crossAxisSpacing: 10,
+                  padding: const EdgeInsets.fromLTRB(12, 12, 12, 92),
+                  itemCount: demoCommunityPosts.length,
+                  itemBuilder: (context, index) => _DiscoveryCard(
+                    post: demoCommunityPosts[index],
+                    index: index,
+                  ),
                 ),
               ),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  void _selectFeed(int index) {
+    if (index == _feedIndex || !_feedController.hasClients) return;
+    _feedController.animateToPage(
+      index,
+      duration: MotionTokens.duration(context, MotionTokens.tabDuration),
+      curve: MotionTokens.pageCurve,
     );
   }
 }
@@ -58,10 +88,12 @@ class _CommunityScreenState extends State<CommunityScreen> {
 class _CommunityFilters extends StatelessWidget {
   const _CommunityFilters({
     required this.feedIndex,
+    required this.pageController,
     required this.onFeedSelected,
   });
 
   final int feedIndex;
+  final PageController pageController;
   final ValueChanged<int> onFeedSelected;
 
   static const feeds = ['关注', '热门', '最新'];
@@ -69,61 +101,16 @@ class _CommunityFilters extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 53,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          for (var index = 0; index < feeds.length; index++) ...[
-            GestureDetector(
-              onTap: () => onFeedSelected(index),
-              behavior: HitTestBehavior.opaque,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: _CommunityFilterLabel(
-                  label: feeds[index],
-                  selected: feedIndex == index,
-                ),
-              ),
-            ),
-            if (index < feeds.length - 1) const SizedBox(width: 16),
-          ],
-        ],
+      width: 260,
+      child: PaperFlowTabBar(
+        tabs: feeds,
+        selectedIndex: feedIndex,
+        pageController: pageController,
+        height: 44,
+        indicatorWidth: 24,
+        textSize: 13,
+        onSelected: onFeedSelected,
       ),
-    );
-  }
-}
-
-class _CommunityFilterLabel extends StatelessWidget {
-  const _CommunityFilterLabel({required this.label, required this.selected});
-
-  final String label;
-  final bool selected;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.end,
-      children: [
-        Text(
-          label,
-          style: TextStyle(
-            color: selected ? PaperFlowColors.primary : PaperFlowColors.muted,
-            fontSize: 13,
-            fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-          ),
-        ),
-        const SizedBox(height: 8),
-        AnimatedContainer(
-          duration: const Duration(milliseconds: 160),
-          width: selected ? 24 : 0,
-          height: 3,
-          decoration: BoxDecoration(
-            color: PaperFlowColors.primary,
-            borderRadius: BorderRadius.circular(99),
-          ),
-        ),
-        const SizedBox(height: 5),
-      ],
     );
   }
 }
@@ -140,6 +127,7 @@ class _DiscoveryCard extends StatefulWidget {
 
 class _DiscoveryCardState extends State<_DiscoveryCard> {
   bool _liked = false;
+  bool _likePressed = false;
 
   @override
   Widget build(BuildContext context) {
@@ -209,15 +197,30 @@ class _DiscoveryCardState extends State<_DiscoveryCard> {
                       ),
                     ),
                     GestureDetector(
-                      onTap: () => setState(() => _liked = !_liked),
-                      child: Icon(
-                        _liked
-                            ? Icons.favorite_rounded
-                            : Icons.favorite_border_rounded,
-                        color: _liked
-                            ? PaperFlowColors.primary
-                            : PaperFlowColors.muted,
-                        size: 17,
+                      onTap: _toggleLike,
+                      child: AnimatedScale(
+                        scale: _likePressed ? 0.86 : 1,
+                        duration: MotionTokens.duration(
+                          context,
+                          MotionTokens.feedbackDuration,
+                        ),
+                        curve: MotionTokens.pageCurve,
+                        child: AnimatedSwitcher(
+                          duration: MotionTokens.duration(
+                            context,
+                            MotionTokens.feedbackDuration,
+                          ),
+                          child: Icon(
+                            _liked
+                                ? Icons.favorite_rounded
+                                : Icons.favorite_border_rounded,
+                            key: ValueKey(_liked),
+                            color: _liked
+                                ? PaperFlowColors.primary
+                                : PaperFlowColors.muted,
+                            size: 17,
+                          ),
+                        ),
                       ),
                     ),
                     const SizedBox(width: 3),
@@ -236,6 +239,16 @@ class _DiscoveryCardState extends State<_DiscoveryCard> {
         ],
       ),
     );
+  }
+
+  void _toggleLike() {
+    setState(() {
+      _liked = !_liked;
+      _likePressed = true;
+    });
+    Future<void>.delayed(MotionTokens.feedbackDuration, () {
+      if (mounted) setState(() => _likePressed = false);
+    });
   }
 }
 

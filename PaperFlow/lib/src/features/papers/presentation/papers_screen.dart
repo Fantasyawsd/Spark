@@ -3,12 +3,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 
+import '../../../core/motion/motion_tokens.dart';
 import '../../../core/theme/paperflow_theme.dart';
+import '../../../core/widgets/paperflow_tab_bar.dart';
 import '../../../core/widgets/topic_chip.dart';
 import '../application/paper_controller.dart';
 import '../data/demo_paper_repository.dart';
 import '../domain/paper.dart';
 import 'paper_accent.dart';
+import 'widgets/paper_action_bar.dart';
 import 'widgets/paper_comments_sheet.dart';
 
 class PapersScreen extends StatefulWidget {
@@ -67,44 +70,59 @@ class _PapersScreenState extends State<PapersScreen> {
       child: Stack(
         children: [
           Positioned.fill(
-            child: _controller.gridMode
-                ? MasonryGridView.count(
-                    key: const ValueKey('paper-grid'),
-                    crossAxisCount: 2,
-                    mainAxisSpacing: 10,
-                    crossAxisSpacing: 10,
-                    padding: EdgeInsets.fromLTRB(
-                      12,
-                      MediaQuery.paddingOf(context).top + 64,
-                      12,
-                      80,
+            child: AnimatedSwitcher(
+              duration: MotionTokens.duration(
+                context,
+                MotionTokens.pageDuration,
+              ),
+              switchInCurve: MotionTokens.enterCurve,
+              switchOutCurve: MotionTokens.exitCurve,
+              transitionBuilder: (child, animation) => FadeTransition(
+                opacity: animation,
+                child: ScaleTransition(
+                  scale: Tween(begin: 0.985, end: 1.0).animate(animation),
+                  child: child,
+                ),
+              ),
+              child: _controller.gridMode
+                  ? MasonryGridView.count(
+                      key: const ValueKey('paper-grid'),
+                      crossAxisCount: 2,
+                      mainAxisSpacing: 10,
+                      crossAxisSpacing: 10,
+                      padding: EdgeInsets.fromLTRB(
+                        12,
+                        MediaQuery.paddingOf(context).top + 64,
+                        12,
+                        80,
+                      ),
+                      itemCount: papers.length,
+                      itemBuilder: (context, index) => _PaperGridCard(
+                        paper: papers[index],
+                        index: index,
+                        liked: _controller.isLiked(papers[index].id),
+                        saved: _controller.isSaved(papers[index].id),
+                        onOpen: () => _openPaper(index),
+                        onLike: () => _controller.toggleLike(papers[index].id),
+                        onSave: () => _controller.toggleSave(papers[index].id),
+                      ),
+                    )
+                  : PageView.builder(
+                      key: const ValueKey('paper-feed'),
+                      controller: _pageController,
+                      scrollDirection: Axis.vertical,
+                      itemCount: papers.length,
+                      onPageChanged: _controller.selectPaper,
+                      itemBuilder: (context, index) => _PaperCard(
+                        paper: papers[index],
+                        index: index,
+                        liked: _controller.isLiked(papers[index].id),
+                        saved: _controller.isSaved(papers[index].id),
+                        onLike: () => _controller.toggleLike(papers[index].id),
+                        onSave: () => _controller.toggleSave(papers[index].id),
+                      ),
                     ),
-                    itemCount: papers.length,
-                    itemBuilder: (context, index) => _PaperGridCard(
-                      paper: papers[index],
-                      index: index,
-                      liked: _controller.isLiked(papers[index].id),
-                      saved: _controller.isSaved(papers[index].id),
-                      onOpen: () => _openPaper(index),
-                      onLike: () => _controller.toggleLike(papers[index].id),
-                      onSave: () => _controller.toggleSave(papers[index].id),
-                    ),
-                  )
-                : PageView.builder(
-                    key: const ValueKey('paper-feed'),
-                    controller: _pageController,
-                    scrollDirection: Axis.vertical,
-                    itemCount: papers.length,
-                    onPageChanged: _controller.selectPaper,
-                    itemBuilder: (context, index) => _PaperCard(
-                      paper: papers[index],
-                      index: index,
-                      liked: _controller.isLiked(papers[index].id),
-                      saved: _controller.isSaved(papers[index].id),
-                      onLike: () => _controller.toggleLike(papers[index].id),
-                      onSave: () => _controller.toggleSave(papers[index].id),
-                    ),
-                  ),
+            ),
           ),
           Positioned(
             top: 0,
@@ -310,8 +328,7 @@ class _PapersHeader extends StatelessWidget {
                                 selected ? FontWeight.w800 : FontWeight.w500,
                             // 中英文统一到同一 CJK 字体，避免 Roboto 与中文
                             // fallback 字体的行高/基线差异造成的视觉错位。
-                            fontFamily:
-                                PaperFlowTheme.platformCjkFontFamily(),
+                            fontFamily: PaperFlowTheme.platformCjkFontFamily(),
                           ),
                         ),
                         const SizedBox(height: 8),
@@ -552,8 +569,21 @@ class _PaperCard extends StatefulWidget {
 class _PaperCardState extends State<_PaperCard> {
   int _tabIndex = 0;
   bool _abstractExpanded = false;
+  late final PageController _tabPageController;
 
   static const _tabs = ['摘要', '中文摘要', '相关论文'];
+
+  @override
+  void initState() {
+    super.initState();
+    _tabPageController = PageController();
+  }
+
+  @override
+  void dispose() {
+    _tabPageController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -627,100 +657,31 @@ class _PaperCardState extends State<_PaperCard> {
                     ],
                   ),
                   const SizedBox(height: 7),
-                  _PaperTabs(
+                  PaperFlowTabBar(
+                    key: const ValueKey('paper-tabs'),
                     tabs: _tabs,
                     selectedIndex: _tabIndex,
-                    onSelected: (index) => setState(() {
-                      _tabIndex = index;
-                      _abstractExpanded = false;
-                    }),
+                    pageController: _tabPageController,
+                    onSelected: _selectTab,
                   ),
                   const SizedBox(height: 9),
                   Expanded(
-                    child: LayoutBuilder(
-                      builder: (context, constraints) {
-                        final text = _tabText(paper, _tabIndex);
-                        const textStyle = TextStyle(
-                          color: PaperFlowColors.ink,
-                          fontSize: 17,
-                          height: 1.58,
-                        );
-                        final painter = TextPainter(
-                          text: TextSpan(text: text, style: textStyle),
-                          textDirection: Directionality.of(context),
-                        );
-                        painter.layout(maxWidth: constraints.maxWidth);
-                        final hasOverflow = _tabIndex == 0 &&
-                            painter.height > constraints.maxHeight;
-
-                        if (_tabIndex != 0 || _abstractExpanded) {
-                          return SingleChildScrollView(
-                            padding: const EdgeInsets.only(bottom: 12),
-                            child: SelectableText(
-                              text,
-                              textAlign: TextAlign.left,
-                              style: textStyle,
-                            ),
-                          );
-                        }
-
-                        if (!hasOverflow) {
-                          return SelectableText(
-                            text,
-                            textAlign: TextAlign.left,
-                            style: textStyle,
-                          );
-                        }
-
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            ShaderMask(
-                              blendMode: BlendMode.dstIn,
-                              shaderCallback: (rect) => const LinearGradient(
-                                begin: Alignment.topCenter,
-                                end: Alignment.bottomCenter,
-                                colors: [Colors.white, Colors.transparent],
-                                stops: [0.78, 1],
-                              ).createShader(rect),
-                              child: SelectableText(
-                                text,
-                                maxLines: 8,
-                                textAlign: TextAlign.left,
-                                style: textStyle,
-                              ),
-                            ),
-                            Align(
-                              alignment: Alignment.centerRight,
-                              child: TextButton(
-                                onPressed: () =>
-                                    setState(() => _abstractExpanded = true),
-                                style: TextButton.styleFrom(
-                                  foregroundColor: PaperFlowColors.primary,
-                                  padding:
-                                      const EdgeInsets.symmetric(horizontal: 4),
-                                  minimumSize: const Size(0, 34),
-                                  tapTargetSize:
-                                      MaterialTapTargetSize.shrinkWrap,
-                                ),
-                                child: const Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Text(
-                                      '展开全文',
-                                      style: TextStyle(
-                                          fontWeight: FontWeight.w700),
-                                    ),
-                                    SizedBox(width: 3),
-                                    Icon(Icons.keyboard_arrow_down_rounded,
-                                        size: 18),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ],
-                        );
-                      },
+                    child: PageView.builder(
+                      key: const ValueKey('paper-tab-pages'),
+                      controller: _tabPageController,
+                      itemCount: _tabs.length,
+                      onPageChanged: (index) => setState(() {
+                        _tabIndex = index;
+                        _abstractExpanded = false;
+                      }),
+                      itemBuilder: (context, index) => _PaperTabBody(
+                        key: ValueKey('${paper.id}-tab-$index'),
+                        text: _tabText(paper, index),
+                        expandable: index == 0,
+                        expanded: index == 0 && _abstractExpanded,
+                        onExpand: () =>
+                            setState(() => _abstractExpanded = true),
+                      ),
                     ),
                   ),
                 ],
@@ -732,13 +693,19 @@ class _PaperCardState extends State<_PaperCard> {
             right: 16,
             bottom: safePadding.bottom + 74,
             height: 52,
-            child: _HorizontalPaperActions(
+            child: PaperActionBar(
               paper: paper,
               liked: widget.liked,
               saved: widget.saved,
               onLike: widget.onLike,
               onComment: () => showPaperCommentsSheet(context, paper),
               onSave: widget.onSave,
+              onShare: () {},
+              onAnalyze: () => showPaperCommentsSheet(
+                context,
+                paper,
+                initialPage: PaperSheetPage.ai,
+              ),
             ),
           ),
         ],
@@ -756,6 +723,15 @@ class _PaperCardState extends State<_PaperCard> {
     Clipboard.setData(ClipboardData(text: title));
   }
 
+  void _selectTab(int index) {
+    if (index == _tabIndex || !_tabPageController.hasClients) return;
+    _tabPageController.animateToPage(
+      index,
+      duration: MotionTokens.duration(context, MotionTokens.tabDuration),
+      curve: MotionTokens.pageCurve,
+    );
+  }
+
   String _tabText(PaperRecord paper, int index) {
     return switch (index) {
       0 => paper.abstractText,
@@ -763,6 +739,110 @@ class _PaperCardState extends State<_PaperCard> {
         '本文提出一种高效参数微调方法，通过在 Transformer 层中注入可训练的低秩矩阵，显著降低训练参数量和显存开销，同时保持与全量微调相当的效果。',
       _ => '推荐继续阅读：QLoRA、AdaLoRA、DoRA，以及关于参数高效微调和低秩优化的最新综述。',
     };
+  }
+}
+
+class _PaperTabBody extends StatelessWidget {
+  const _PaperTabBody({
+    super.key,
+    required this.text,
+    required this.expandable,
+    required this.expanded,
+    required this.onExpand,
+  });
+
+  final String text;
+  final bool expandable;
+  final bool expanded;
+  final VoidCallback onExpand;
+
+  static const _textStyle = TextStyle(
+    color: PaperFlowColors.ink,
+    fontSize: 17,
+    height: 1.58,
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final painter = TextPainter(
+          text: TextSpan(text: text, style: _textStyle),
+          textDirection: Directionality.of(context),
+        )..layout(maxWidth: constraints.maxWidth);
+        final hasOverflow =
+            expandable && painter.height > constraints.maxHeight;
+
+        if (!hasOverflow && !expanded) {
+          return SelectableText(
+            text,
+            textAlign: TextAlign.left,
+            style: _textStyle,
+          );
+        }
+
+        if (!expandable || expanded) {
+          return SingleChildScrollView(
+            key: const ValueKey('paper-tab-scroll'),
+            padding: const EdgeInsets.only(bottom: 12),
+            physics: const ClampingScrollPhysics(),
+            child: SelectableText(
+              text,
+              textAlign: TextAlign.left,
+              style: _textStyle,
+            ),
+          );
+        }
+
+        const buttonHeight = 34.0;
+        final lineHeight = _textStyle.fontSize! * _textStyle.height!;
+        final visibleLines =
+            ((constraints.maxHeight - buttonHeight) / lineHeight)
+                .floor()
+                .clamp(1, 1000)
+                .toInt();
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Expanded(
+              child: ShaderMask(
+                blendMode: BlendMode.dstIn,
+                shaderCallback: (rect) => const LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Colors.white, Colors.transparent],
+                  stops: [0.82, 1],
+                ).createShader(rect),
+                child: SelectableText(
+                  text,
+                  maxLines: visibleLines,
+                  textAlign: TextAlign.left,
+                  style: _textStyle,
+                ),
+              ),
+            ),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton.icon(
+                onPressed: onExpand,
+                style: TextButton.styleFrom(
+                  foregroundColor: PaperFlowColors.primary,
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  minimumSize: const Size(0, buttonHeight),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                iconAlignment: IconAlignment.end,
+                icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 18),
+                label: const Text(
+                  '展开全文',
+                  style: TextStyle(fontWeight: FontWeight.w700),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 }
 
@@ -807,151 +887,6 @@ class _MobileSelectableText extends StatelessWidget {
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
       child: child,
-    );
-  }
-}
-
-class _PaperTabs extends StatelessWidget {
-  const _PaperTabs(
-      {required this.tabs,
-      required this.selectedIndex,
-      required this.onSelected});
-
-  final List<String> tabs;
-  final int selectedIndex;
-  final ValueChanged<int> onSelected;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 38,
-      child: Row(
-        children: List.generate(tabs.length, (index) {
-          final selected = selectedIndex == index;
-          return Expanded(
-            child: InkWell(
-              onTap: () => onSelected(index),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  Text(
-                    tabs[index],
-                    maxLines: 1,
-                    style: TextStyle(
-                      color: selected
-                          ? PaperFlowColors.primary
-                          : PaperFlowColors.muted,
-                      fontSize: 12,
-                      fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 7),
-                  AnimatedContainer(
-                    duration: const Duration(milliseconds: 180),
-                    height: 2.5,
-                    width: selected ? 38 : 0,
-                    decoration: BoxDecoration(
-                      color: PaperFlowColors.primary,
-                      borderRadius: BorderRadius.circular(99),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        }),
-      ),
-    );
-  }
-}
-
-class _HorizontalPaperActions extends StatelessWidget {
-  const _HorizontalPaperActions({
-    required this.paper,
-    required this.liked,
-    required this.saved,
-    required this.onLike,
-    required this.onComment,
-    required this.onSave,
-  });
-
-  final PaperRecord paper;
-  final bool liked;
-  final bool saved;
-  final VoidCallback onLike;
-  final VoidCallback onComment;
-  final VoidCallback onSave;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 52,
-      child: Row(
-        children: [
-          _ActionItem(
-            icon:
-                liked ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-            label: paper.likes,
-            active: liked,
-            onTap: onLike,
-          ),
-          _ActionItem(
-            icon: Icons.chat_bubble_outline_rounded,
-            label: paper.comments,
-            onTap: onComment,
-          ),
-          _ActionItem(
-            icon:
-                saved ? Icons.bookmark_rounded : Icons.bookmark_border_rounded,
-            label: paper.saves,
-            active: saved,
-            onTap: onSave,
-          ),
-          _ActionItem(icon: Icons.reply_rounded, label: paper.shares),
-        ],
-      ),
-    );
-  }
-}
-
-class _ActionItem extends StatelessWidget {
-  const _ActionItem({
-    required this.icon,
-    required this.label,
-    this.active = false,
-    this.onTap,
-  });
-
-  final IconData icon;
-  final String label;
-  final bool active;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: InkResponse(
-        onTap: onTap,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              icon,
-              color: active ? PaperFlowColors.primary : PaperFlowColors.ink,
-              size: 20,
-            ),
-            const SizedBox(width: 5),
-            Text(
-              label,
-              style: const TextStyle(
-                color: PaperFlowColors.ink,
-                fontSize: 10.5,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

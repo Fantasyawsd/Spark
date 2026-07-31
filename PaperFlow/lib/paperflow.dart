@@ -1,7 +1,10 @@
 export 'src/app/paperflow_app.dart';
+export 'src/core/motion/motion_tokens.dart';
 export 'src/core/theme/paperflow_theme.dart';
 export 'src/core/theme/theme_controller.dart';
 export 'src/core/widgets/paperflow_bottom_nav.dart';
+export 'src/core/widgets/paperflow_sheet.dart';
+export 'src/core/widgets/paperflow_tab_bar.dart';
 export 'src/features/community/domain/community_post.dart';
 export 'src/features/community/presentation/community_screen.dart';
 export 'src/features/messages/domain/message_item.dart';
@@ -11,4 +14,6 @@ export 'src/features/papers/data/demo_paper_repository.dart';
 export 'src/features/papers/domain/paper.dart';
 export 'src/features/papers/domain/paper_repository.dart';
 export 'src/features/papers/presentation/papers_screen.dart';
+export 'src/features/papers/presentation/widgets/paper_action_bar.dart';
+export 'src/features/papers/presentation/widgets/paper_comments_sheet.dart';
 export 'src/features/profile/presentation/profile_screen.dart';

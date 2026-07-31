@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/theme/paperflow_theme.dart';
 import '../../../core/theme/theme_controller.dart';
+import '../../../core/widgets/paperflow_sheet.dart';
 import '../../../core/widgets/profile_avatar.dart';
 import '../../../core/widgets/surface_card.dart';
 import '../../../core/widgets/topic_chip.dart';
@@ -622,9 +623,8 @@ class _QuickActionsCard extends StatelessWidget {
 
 /// 打开设置底部面板，目前提供主题色切换。
 void showPaperThemeSheet(BuildContext context) {
-  showModalBottomSheet<void>(
+  showPaperFlowSheet<void>(
     context: context,
-    backgroundColor: Colors.transparent,
     builder: (context) => Container(
       margin: const EdgeInsets.all(14),
       padding: const EdgeInsets.fromLTRB(22, 18, 22, 26),

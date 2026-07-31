@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../core/theme/paperflow_theme.dart';
 import '../core/theme/theme_controller.dart';
 import '../core/widgets/paperflow_bottom_nav.dart';
+import '../core/widgets/paperflow_sheet.dart';
 import '../features/community/presentation/community_screen.dart';
 import '../features/messages/presentation/messages_screen.dart';
 import '../features/papers/application/paper_controller.dart';
@@ -187,9 +188,8 @@ class _PaperFlowShellState extends State<PaperFlowShell> {
   }
 
   void _showCreateSheet(BuildContext context) {
-    showModalBottomSheet<void>(
+    showPaperFlowSheet<void>(
       context: context,
-      backgroundColor: Colors.transparent,
       builder: (context) => Container(
         margin: const EdgeInsets.all(14),
         padding: const EdgeInsets.fromLTRB(22, 18, 22, 24),

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:paperflow/paperflow.dart';
 
@@ -241,5 +243,46 @@ void main() {
       restored.selectPrimaryCategory(0);
       expect(restored.currentPaperIndex, 2);
     });
+
+    test('exposes a barrier for active catalog writes', () async {
+      final catalog = _BlockingPaperCatalogRepository();
+      final controller = PaperController(
+        const ArxivSeedRepository(),
+        catalogRepository: catalog,
+      );
+      addTearDown(controller.dispose);
+
+      final refresh = controller.feed.refreshCatalog();
+      var barrierCompleted = false;
+      final barrier = controller.feed.flushCatalogOperations().then(
+            (_) => barrierCompleted = true,
+          );
+      await Future<void>.delayed(Duration.zero);
+      expect(barrierCompleted, isFalse);
+
+      catalog.complete();
+      await Future.wait([refresh, barrier]);
+      expect(barrierCompleted, isTrue);
+    });
   });
+}
+
+class _BlockingPaperCatalogRepository implements PaperCatalogRepository {
+  final _feed = Completer<PaperPage>();
+
+  void complete() {
+    _feed.complete(
+      PaperPage(papers: const [], source: PaperPageSource.remote),
+    );
+  }
+
+  @override
+  Future<Paper?> findById(String paperId) async => null;
+
+  @override
+  Future<PaperPage> loadFeed(PaperFeedQuery query) => _feed.future;
+
+  @override
+  Future<PaperPage> search(PaperSearchQuery query) async =>
+      PaperPage(papers: const [], source: PaperPageSource.remote);
 }

@@ -59,6 +59,7 @@ class PaperFeedController extends ChangeNotifier {
   bool _catalogLoadingMore = false;
   bool _catalogOffline = false;
   bool _catalogStale = false;
+  final Set<Future<void>> _catalogOperations = {};
   int? _catalogNextOffset;
   PaperCatalogError? _catalogError;
   bool _disposed = false;
@@ -82,9 +83,18 @@ class PaperFeedController extends ChangeNotifier {
 
   Future<void> initializeCatalog() => refreshCatalog(forceRefresh: false);
 
-  Future<void> refreshCatalog({bool forceRefresh = true}) async {
+  Future<void> refreshCatalog({bool forceRefresh = true}) {
     final repository = _catalogRepository;
-    if (repository == null || _catalogLoading) return;
+    if (repository == null || _catalogLoading) return Future.value();
+    return _trackCatalogOperation(
+      _refreshCatalog(repository, forceRefresh: forceRefresh),
+    );
+  }
+
+  Future<void> _refreshCatalog(
+    PaperCatalogRepository repository, {
+    required bool forceRefresh,
+  }) async {
     _catalogLoading = true;
     notifyListeners();
     try {
@@ -103,15 +113,24 @@ class PaperFeedController extends ChangeNotifier {
     }
   }
 
-  Future<void> loadMoreCatalog() async {
+  Future<void> loadMoreCatalog() {
     final repository = _catalogRepository;
     final nextOffset = _catalogNextOffset;
     if (repository == null ||
         nextOffset == null ||
         _catalogLoading ||
         _catalogLoadingMore) {
-      return;
+      return Future.value();
     }
+    return _trackCatalogOperation(
+      _loadMoreCatalog(repository, nextOffset),
+    );
+  }
+
+  Future<void> _loadMoreCatalog(
+    PaperCatalogRepository repository,
+    int nextOffset,
+  ) async {
     _catalogLoadingMore = true;
     notifyListeners();
     try {
@@ -321,6 +340,18 @@ class PaperFeedController extends ChangeNotifier {
       : '$_primaryCategoryIndex';
 
   Future<void> flushPreferenceWrites() => _preferenceWriteQueue;
+
+  Future<void> flushCatalogOperations() async {
+    while (_catalogOperations.isNotEmpty) {
+      await Future.wait(_catalogOperations.toList(growable: false));
+    }
+  }
+
+  Future<void> _trackCatalogOperation(Future<void> operation) {
+    _catalogOperations.add(operation);
+    operation.whenComplete(() => _catalogOperations.remove(operation));
+    return operation;
+  }
 
   Future<void> reloadPreferences() async {
     await flushPreferenceWrites();

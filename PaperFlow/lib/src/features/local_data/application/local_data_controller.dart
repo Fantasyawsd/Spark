@@ -68,22 +68,36 @@ class LocalDataController extends ChangeNotifier {
     _mutating = true;
     _error = null;
     _notify();
+    var succeeded = true;
     try {
       await beforeClear?.call(target);
       await operation();
-      await afterClear?.call(target);
-      _usage = await _repository.inspect();
-      return true;
     } on LocalDataException catch (error) {
       _error = error.message;
-      return false;
+      succeeded = false;
     } on Object {
       _error = '本地数据操作失败，请稍后重试。';
-      return false;
+      succeeded = false;
     } finally {
+      try {
+        await afterClear?.call(target);
+      } on Object {
+        _error ??= '本地数据已变更，但页面状态刷新失败，请重启应用。';
+        succeeded = false;
+      }
+      try {
+        _usage = await _repository.inspect();
+      } on LocalDataException catch (error) {
+        _error ??= error.message;
+        succeeded = false;
+      } on Object {
+        _error ??= '无法重新统计本地数据占用。';
+        succeeded = false;
+      }
       _mutating = false;
       _notify();
     }
+    return succeeded;
   }
 
   void _notify() {

@@ -442,6 +442,7 @@ class _PaperFlowShellState extends State<PaperFlowShell> {
     await Future.wait([
       _paperController.interactions.flushPendingWrites(),
       _paperController.feed.flushPreferenceWrites(),
+      _paperController.feed.flushCatalogOperations(),
       _commentController.flushPendingWrites(),
       _readingController.flushPendingWrites(),
     ]);

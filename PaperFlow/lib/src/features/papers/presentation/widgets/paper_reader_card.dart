@@ -112,6 +112,9 @@ class _PaperReaderCardState extends State<PaperReaderCard> {
         ..dispose();
       _createTranslationController();
     }
+    if (oldWidget.active && !widget.active) {
+      _translationController.cancel();
+    }
     if (paperChanged || (!oldWidget.active && widget.active)) {
       _resetToOriginal();
     }

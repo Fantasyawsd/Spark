@@ -11,8 +11,8 @@
 分支名中的 `/` 替换为 `--`。例如：
 
 ```text
-codex/paper-channels
--> codex--paper-channels/
+codex/feature-paper-channels
+-> codex--feature-paper-channels/
 ```
 
 `status.md` 从 [`../templates/workstream-status.md`](../templates/workstream-status.md) 创建，开发中持续维护。`report.md` 从 [`../templates/development-report.md`](../templates/development-report.md) 创建，合并前完成。

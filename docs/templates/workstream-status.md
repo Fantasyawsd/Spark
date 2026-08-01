@@ -6,7 +6,7 @@
 
 - Workstream：`<name>`
 - 目标发布或里程碑：`<optional-release-or-milestone>`
-- 分支：`<agent>/<workstream>`
+- 分支：`<agent>/<type>-<workstream>`
 - Worktree：`<absolute-or-relative-path>`
 - 基线提交：`<sha>`
 - 负责人：`<human-or-agent>`

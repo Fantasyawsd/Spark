@@ -9,6 +9,7 @@
 - [开发总路线](development-roadmap.md)：产品边界、长期能力、优先级和持续技术路线。
 - [代码结构原则](standards/code-structure.md)：所有开发必须遵守的架构与代码质量约束。
 - [Git 与多 Agent 集成管理](standards/version-control.md)：分支、worktree、提交、验证、回滚和集成规则。
+- [发布与兼容性管理](standards/release-management.md)：五层版本、环境渠道、数据/API 兼容和 Feature Flag 规则。
 - [Workstream 状态模板](templates/workstream-status.md)和[开发报告模板](templates/development-report.md)：分支事实记录。
 
 ## 产品开发文档

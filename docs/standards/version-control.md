@@ -29,9 +29,9 @@ Git 与集成管理需要同时保证：
 一个分支只交付一个主要业务结果：
 
 ```text
-<agent>/<workstream>
-codex/paper-channels
-claude/pdf-ai
+<agent>/<type>-<workstream>
+codex/feature-paper-channels
+claude/fix-pdf-cache
 ```
 
 分支必须从人类或集成负责人批准的提交创建。分支名发生失真时应结束当前分支，不继续叠加无关功能。
@@ -41,8 +41,8 @@ claude/pdf-ai
 每个独立 workstream 使用独立 worktree；即使当前只有一个 Agent，也不直接把新任务叠加到控制工作树：
 
 ```powershell
-git worktree add ..\PaperFlow-worktrees\codex-paper-channels `
-  -b codex/paper-channels <approved-base>
+git worktree add ..\PaperFlow-worktrees\codex-feature-paper-channels `
+  -b codex/feature-paper-channels <approved-base>
 ```
 
 创建前检查：
@@ -178,6 +178,8 @@ Workstream 需要其他分支能力时：
 7. 更新开发路线和产品领域文档；关联发布时再更新发布进度与清单。
 8. 形成集成提交或明确的合并提交。
 
+普通开发必须通过 Pull Request 合并到 `main`。GitHub 上的 `main` 禁止强推，并要求 `Flutter CI / verify` 状态检查通过；不得以本地管理员权限绕过门禁。
+
 功能分支不得以“本地测试通过”替代集成分支回归。
 
 ## 10. 冲突处理
@@ -194,10 +196,10 @@ Workstream 需要其他分支能力时：
 工作分支至少执行定向验证；集成分支默认执行：
 
 ```powershell
-dart format --output=none --set-exit-if-changed lib test
+.\tool\verify_changed_dart_format.ps1
 flutter analyze
 flutter test
-flutter build apk --debug
+flutter build apk --debug --flavor development --dart-define=PAPERFLOW_ENV=development
 git diff --check
 ```
 

@@ -42,7 +42,9 @@ PaperFlow 是面向个人研究者的 Flutter 论文发现、阅读和 AI 研究
 
 ```text
 |-- AGENTS.md                  AI Agent 开发、协作和交付规范
+|-- CHANGELOG.md               用户可见版本变更记录
 |-- README.md                  项目背景、功能、结构和运行方式
+|-- .github/workflows/         Pull Request 与 main 持续集成
 |-- assets/                    Logo、启动图和应用静态资源
 |-- android/                   Android 工程、清单和签名配置入口
 |-- windows/                   Windows 桌面宿主工程
@@ -81,13 +83,14 @@ PaperFlow 是面向个人研究者的 Flutter 论文发现、阅读和 AI 研究
 presentation -> application -> domain <- data
 ```
 
-完整架构约束见 [代码结构原则](docs/standards/code-structure.md)。
+完整架构约束见 [代码结构原则](docs/standards/code-structure.md)，发布、环境和兼容规则见 [发布与兼容性管理](docs/standards/release-management.md)。
 
 ## 开发文档
 
 - [文档总入口](docs/README.md)
 - [开发总路线](docs/development-roadmap.md)
 - [论文频道与阅读计划](docs/product/papers/channels-and-reading.md)
+- [发布与兼容性管理](docs/standards/release-management.md)
 - [0.1.0 发布资料](docs/releases/0.1.0/README.md)
 - [AI Agent 协作规范](AGENTS.md)
 
@@ -99,13 +102,13 @@ presentation -> application -> domain <- data
 
 ```powershell
 flutter pub get
-flutter run -d windows
+flutter run -d windows --dart-define=PAPERFLOW_ENV=development
 ```
 
 本地调试 DeepSeek 可以使用拒绝 release 的辅助脚本：
 
 ```powershell
-.\tool\flutter_with_deepseek.ps1 -FlutterCommand run -FlutterArguments @('-d', 'windows')
+.\tool\flutter_with_deepseek.ps1 -FlutterCommand run -FlutterArguments @('-d', 'windows', '--dart-define=PAPERFLOW_ENV=development')
 ```
 
 正式 Android 构建只读取用户在设备安全存储中配置的 Key。
@@ -113,10 +116,10 @@ flutter run -d windows
 ## 验证
 
 ```powershell
-dart format --output=none --set-exit-if-changed lib test
+.\tool\verify_changed_dart_format.ps1
 flutter analyze
 flutter test
-flutter build apk --debug
+flutter build apk --debug --flavor development --dart-define=PAPERFLOW_ENV=development
 ```
 
 项目不使用 Android 模拟器作为日常验收方式。Android 正式签名、真机验收和 Play Console 发布门见 [0.1.0 发布检查清单](docs/releases/0.1.0/release-checklist.md)。

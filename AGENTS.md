@@ -35,8 +35,9 @@
 4. `docs/product/` 下与任务相关的产品领域文档。
 5. `docs/standards/code-structure.md`：架构强制约束。
 6. `docs/standards/version-control.md`：Git、worktree、提交和集成规则。
-7. 与本任务可能重叠的 `docs/workstreams/*/status.md` 和 `report.md`。
-8. 只有任务明确面向某次发布时，才读取 `docs/releases/<version>/` 下的发布计划和检查清单。
+7. `docs/standards/release-management.md`：发布版本、环境、数据/API 兼容和功能开关规则。
+8. 与本任务可能重叠的 `docs/workstreams/*/status.md` 和 `report.md`。
+9. 只有任务明确面向某次发布时，才读取 `docs/releases/<version>/` 下的发布计划和检查清单。
 
 不得依据过时对话、旧文件路径或记忆中的进度直接开始修改。
 
@@ -88,9 +89,9 @@
 分支格式：
 
 ```text
-<agent>/<workstream>
-codex/paper-channels
-claude/pdf-ai
+<agent>/<type>-<workstream>
+codex/feature-paper-channels
+claude/fix-pdf-cache
 ```
 
 建议 worktree 位置：
@@ -113,8 +114,8 @@ git worktree list
 由控制工作树创建：
 
 ```powershell
-git worktree add ..\PaperFlow-worktrees\codex-paper-channels `
-  -b codex/paper-channels <approved-base>
+git worktree add ..\PaperFlow-worktrees\codex-feature-paper-channels `
+  -b codex/feature-paper-channels <approved-base>
 ```
 
 约束：
@@ -138,8 +139,8 @@ docs/workstreams/<branch-slug>/
 `branch-slug` 将分支名中的 `/` 替换为 `--`，例如：
 
 ```text
-codex/paper-channels
--> docs/workstreams/codex--paper-channels/
+codex/feature-paper-channels
+-> docs/workstreams/codex--feature-paper-channels/
 ```
 
 开始开发时从 `docs/templates/workstream-status.md` 创建 `status.md`，记录：
@@ -197,6 +198,7 @@ codex/paper-channels
 - 不提交 build、缓存、日志、临时截图、设备数据、密钥或本机配置。
 - 不修改、回退或重新格式化其他 Agent 或人类的无关改动。
 - 已共享提交使用 `git revert` 回滚；是否 rebase、merge 或 cherry-pick 由集成负责人决定。
+- 普通开发通过 Pull Request 合并到 `main`，且必须通过所需 CI；不得直接强推或绕过保护规则。
 - 合并前分支必须工作区干净、提交可解释、报告完整。
 
 完整规则见 `docs/standards/version-control.md`。
@@ -217,10 +219,10 @@ codex/paper-channels
 Workstream 分支按风险运行定向验证，并在状态与报告中记录。集成负责人合并后默认执行完整验证：
 
 ```powershell
-dart format --output=none --set-exit-if-changed lib test
+.\tool\verify_changed_dart_format.ps1
 flutter analyze
 flutter test
-flutter build apk --debug
+flutter build apk --debug --flavor development --dart-define=PAPERFLOW_ENV=development
 ```
 
 纯文档任务至少执行 Markdown 链接检查和 `git diff --check`，不需要无意义地运行 Flutter 构建。

@@ -15,17 +15,20 @@
 - [x] 应用内隐私入口说明本地存储与 DeepSeek 数据传输。
 - [x] 论文远程目录、缓存、离线种子回退、ChatPaper、本地互动和本地数据清理均有自动化测试。
 - [x] `flutter analyze` 通过，完整 Flutter 测试 191 项通过，`git diff --check` 通过。
-- [x] Android debug APK 已构建：`build/app/outputs/flutter-apk/app-debug.apk`。
+- [x] Android development、staging、production debug APK 均已构建并核对包名、版本和应用名称。
 - [x] 未配置签名时 `gradlew bundleRelease` 按预期失败，防止误把未签名产物当成发布包。
 
 ### 当前内部验证产物
 
-- 构建时间：2026-08-01 23:52:08（本机时间）。
-- 文件：`build/app/outputs/flutter-apk/app-debug.apk`，大小 184,073,018 字节。
-- SHA-256：`839ACE4EED30C3B9AC0EF9B11AE77BA2F37345AF1B3088FF64CE2772E73BBBB1`。
-- `aapt dump badging` 已确认包内 `versionName='0.1.0'`、`versionCode='1'`。
-- `apksigner verify --verbose --print-certs` 已通过，使用 APK Signature Scheme v2，证书为 Android Debug。
-- 该文件只用于开发和真机验收，不是可提交商店的正式签名包；目录中的任何旧 `app-release.apk` 均不得作为当前发布产物。
+构建日期：2026-08-02（本机时间）。
+
+| 渠道 | APK | 包名 / 版本 / 标签 | 大小 | SHA-256 |
+| --- | --- | --- | ---: | --- |
+| development | `app-development-debug.apk` | `app.paperflow.reader.dev` / `0.1.0-dev (1)` / PaperFlow Dev | 159,606,512 字节 | `CA6703DA5AE00563F1653DDC1D328399651F4749BE10661BC1BCEDA331FA4737` |
+| staging | `app-staging-debug.apk` | `app.paperflow.reader.staging` / `0.1.0-beta (1)` / PaperFlow Beta | 159,606,624 字节 | `23862B3E5DE9C0F895358095A9B3BFFC6CCE751A786D89433D211C401375BED0` |
+| production | `app-production-debug.apk` | `app.paperflow.reader` / `0.1.0 (1)` / PaperFlow | 159,606,468 字节 | `0FEE22D56D97FFCA1FB8D243963E8EE7059AD82C7D118B4997A1D217F90FB472` |
+
+以上元数据由 `aapt dump badging` 核对。三个文件均为 debug 产物，只用于开发和真机验收，不是可提交商店的正式签名包；目录中的旧 `app-debug.apk` 或任何 `app-release.apk` 均不得作为当前发布产物。
 
 ## 2. Android 构建环境
 
@@ -41,8 +44,8 @@
 4. 构建：
 
 ```powershell
-flutter build appbundle --release
-flutter build apk --release
+flutter build appbundle --release --flavor production --dart-define=PAPERFLOW_ENV=production
+flutter build apk --release --flavor production --dart-define=PAPERFLOW_ENV=production
 ```
 
 5. 使用 Android Build Tools 的 `apksigner verify --verbose --print-certs <apk>` 验证 APK 签名；AAB 上传到 Play 内部测试轨道验证。

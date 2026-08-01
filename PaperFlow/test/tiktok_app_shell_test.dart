@@ -30,6 +30,6 @@ void main() {
 
     await tester.tap(find.byKey(const ValueKey('bottom-nav-2')));
     await tester.pump();
-    expect(find.text('Alex Chen'), findsOneWidget);
+    expect(find.text('我的研究库'), findsOneWidget);
   });
 }

@@ -3,9 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/paperflow_theme.dart';
 import '../../../core/theme/theme_controller.dart';
 import '../../../core/widgets/paperflow_sheet.dart';
-import '../../../core/widgets/profile_avatar.dart';
 import '../../../core/widgets/surface_card.dart';
-import '../../../core/widgets/topic_chip.dart';
 import '../../ai_settings/application/deepseek_credential_controller.dart';
 import '../../papers/domain/favorite_group.dart';
 import '../../papers/domain/paper.dart';
@@ -46,16 +44,16 @@ class ProfileScreen extends StatelessWidget {
           key: const ValueKey('profile-scroll'),
           padding: const EdgeInsets.fromLTRB(14, 10, 14, 94),
           children: [
-            const _ProfileToolbar(),
-            const SizedBox(height: 14),
-            const _ProfileIdentity(),
-            const SizedBox(height: 18),
-            _ProfileStats(savedCount: savedCount),
+            _ProfileHeader(
+              savedCount: savedCount,
+              readLaterCount: readLaterPapers.length,
+              historyCount: readingHistory.length,
+            ),
             if (credentialController case final controller?) ...[
-              const SizedBox(height: 14),
+              const SizedBox(height: 16),
               _DeepSeekSettingsCard(controller: controller),
             ],
-            const SizedBox(height: 18),
+            const SizedBox(height: 14),
             _FavoritesCard(
               groups: favoriteGroups,
               papersByGroup: favoritePapersByGroup,
@@ -79,19 +77,70 @@ class ProfileScreen extends StatelessWidget {
               onOpenPaper: onOpenPaper,
             ),
             const SizedBox(height: 14),
-            const Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(child: _InterestsCard()),
-                SizedBox(width: 10),
-                Expanded(child: _PostsCard()),
-              ],
+            _AppSettingsCard(
+              savedCount: savedCount,
+              readLaterCount: readLaterPapers.length,
+              historyCount: readingHistory.length,
             ),
-            const SizedBox(height: 14),
-            const _QuickActionsCard(),
           ],
         ),
       ),
+    );
+  }
+}
+
+class _ProfileHeader extends StatelessWidget {
+  const _ProfileHeader({
+    required this.savedCount,
+    required this.readLaterCount,
+    required this.historyCount,
+  });
+
+  final int savedCount;
+  final int readLaterCount;
+  final int historyCount;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Expanded(
+              child: Text(
+                '我的研究库',
+                style: TextStyle(
+                  color: PaperFlowColors.ink,
+                  fontSize: 24,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+            IconButton(
+              key: const ValueKey('profile-theme-settings'),
+              tooltip: '主题',
+              onPressed: () => showPaperThemeSheet(context),
+              icon: const Icon(Icons.palette_outlined),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        const Text(
+          '本地论文、阅读记录与 AI 配置',
+          style: TextStyle(color: PaperFlowColors.muted, fontSize: 12.5),
+        ),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            _ProfileStat(value: '$savedCount', label: '收藏'),
+            const _StatDivider(),
+            _ProfileStat(value: '$readLaterCount', label: '稍后阅读'),
+            const _StatDivider(),
+            _ProfileStat(value: '$historyCount', label: '阅读历史'),
+          ],
+        ),
+      ],
     );
   }
 }
@@ -340,182 +389,6 @@ class _DeepSeekCredentialSheetState extends State<_DeepSeekCredentialSheet> {
     Navigator.pop(context);
     messenger.showSnackBar(
       const SnackBar(content: Text('DeepSeek API Key 已删除')),
-    );
-  }
-}
-
-class _ProfileToolbar extends StatelessWidget {
-  const _ProfileToolbar();
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.end,
-      children: [
-        const _ToolbarIcon(icon: Icons.notifications_none_rounded, badge: 2),
-        const SizedBox(width: 12),
-        _ToolbarIcon(
-          icon: Icons.settings_outlined,
-          onTap: () => showPaperThemeSheet(context),
-        ),
-      ],
-    );
-  }
-}
-
-class _ToolbarIcon extends StatelessWidget {
-  const _ToolbarIcon({required this.icon, this.badge = 0, this.onTap});
-
-  final IconData icon;
-  final int badge;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: SizedBox(
-        width: 38,
-        height: 38,
-        child: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            Center(child: Icon(icon, color: PaperFlowColors.ink, size: 27)),
-            if (badge > 0)
-              Positioned(
-                right: -1,
-                top: -3,
-                child: Container(
-                  width: 20,
-                  height: 20,
-                  decoration: BoxDecoration(
-                      color: PaperFlowColors.primary, shape: BoxShape.circle),
-                  child: Center(
-                    child: Text('$badge',
-                        style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w800)),
-                  ),
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ProfileIdentity extends StatelessWidget {
-  const _ProfileIdentity();
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Stack(
-          clipBehavior: Clip.none,
-          children: [
-            const ProfileAvatar(
-              imageUrl: 'https://i.pravatar.cc/300?img=47',
-              radius: 54,
-            ),
-            Positioned(
-              right: 1,
-              bottom: 3,
-              child: Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                    color: PaperFlowColors.primary, shape: BoxShape.circle),
-                child: const Icon(Icons.edit_rounded,
-                    color: Colors.white, size: 17),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(width: 17),
-        const Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Wrap(
-                spacing: 8,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                children: [
-                  Text(
-                    'Alex Chen',
-                    style: TextStyle(
-                      color: PaperFlowColors.ink,
-                      fontSize: 24,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  _VipBadge(),
-                ],
-              ),
-              SizedBox(height: 6),
-              Text(
-                'PhD Student @ Tsinghua University',
-                style: TextStyle(color: PaperFlowColors.muted, fontSize: 13),
-              ),
-              SizedBox(height: 7),
-              Text(
-                'Exploring the intelligence of models and the boundaries of reasoning.',
-                style: TextStyle(
-                    color: PaperFlowColors.muted, fontSize: 12, height: 1.45),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _VipBadge extends StatelessWidget {
-  const _VipBadge();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-      decoration: BoxDecoration(
-        color: PaperFlowColors.primarySoft,
-        borderRadius: BorderRadius.circular(6),
-        border:
-            Border.all(color: PaperFlowColors.primary.withValues(alpha: 0.55)),
-      ),
-      child: Text(
-        '◇ VIP',
-        style: TextStyle(
-            color: PaperFlowColors.primary,
-            fontSize: 10,
-            fontWeight: FontWeight.w700),
-      ),
-    );
-  }
-}
-
-class _ProfileStats extends StatelessWidget {
-  const _ProfileStats({required this.savedCount});
-
-  final int savedCount;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        const _ProfileStat(value: '128', label: 'Following'),
-        const _StatDivider(),
-        const _ProfileStat(value: '1.2k', label: 'Followers'),
-        const _StatDivider(),
-        _ProfileStat(value: '$savedCount', label: 'Saved Papers'),
-        const _StatDivider(),
-        const _ProfileStat(value: '56', label: 'Posts'),
-      ],
     );
   }
 }
@@ -971,155 +844,75 @@ class _PaperShelfCard extends StatelessWidget {
   }
 }
 
-class _InterestsCard extends StatelessWidget {
-  const _InterestsCard();
+class _AppSettingsCard extends StatelessWidget {
+  const _AppSettingsCard({
+    required this.savedCount,
+    required this.readLaterCount,
+    required this.historyCount,
+  });
+
+  final int savedCount;
+  final int readLaterCount;
+  final int historyCount;
 
   @override
   Widget build(BuildContext context) {
     return SurfaceCard(
-      padding: const EdgeInsets.all(14),
-      child: const Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _SectionHeader(
-              icon: Icons.explore_rounded, title: '兴趣方向', action: '编辑'),
-          SizedBox(height: 14),
-          Wrap(
-            spacing: 6,
-            runSpacing: 8,
-            children: [
-              TopicChip(label: 'NLP', compact: true, selected: true),
-              TopicChip(label: 'LLM', compact: true, selected: true),
-              TopicChip(label: 'Agents', compact: true, selected: true),
-              TopicChip(
-                  label: 'RL',
-                  compact: true,
-                  selected: true,
-                  color: PaperFlowColors.blue),
-              TopicChip(
-                  label: 'Alignment',
-                  compact: true,
-                  selected: true,
-                  color: PaperFlowColors.purple),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _PostsCard extends StatelessWidget {
-  const _PostsCard();
-
-  @override
-  Widget build(BuildContext context) {
-    return const SurfaceCard(
-      padding: EdgeInsets.all(14),
-      child: Column(
-        children: [
-          _SectionHeader(icon: Icons.edit_square, title: '我的帖子'),
-          SizedBox(height: 12),
-          _PostMetric(icon: Icons.edit_note_rounded, label: '发布', value: '56'),
-          _PostMetric(
-              icon: Icons.thumb_up_alt_rounded, label: '获得点赞', value: '1.2k'),
-          _PostMetric(
-              icon: Icons.favorite_border_rounded, label: '收藏', value: '342'),
-          _PostMetric(
-              icon: Icons.chat_bubble_rounded, label: '评论', value: '198'),
-        ],
-      ),
-    );
-  }
-}
-
-class _PostMetric extends StatelessWidget {
-  const _PostMetric(
-      {required this.icon, required this.label, required this.value});
-
-  final IconData icon;
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 3),
-      child: Row(
-        children: [
-          Icon(icon, color: PaperFlowColors.muted, size: 15),
-          const SizedBox(width: 7),
-          Expanded(
-              child: Text(label,
-                  style: const TextStyle(
-                      color: PaperFlowColors.muted, fontSize: 10.5))),
-          Text(value,
-              style: const TextStyle(
-                  color: PaperFlowColors.muted, fontSize: 10.5)),
-        ],
-      ),
-    );
-  }
-}
-
-class _QuickActionsCard extends StatelessWidget {
-  const _QuickActionsCard();
-
-  static const items = [
-    (Icons.drafts_outlined, '草稿箱', '3'),
-    (Icons.note_alt_outlined, '我的笔记', '128'),
-    (Icons.download_rounded, '下载管理', '24'),
-    (Icons.language_rounded, '语言 / 偏好', '简体中文'),
-    (Icons.dark_mode_outlined, '夜间模式', '跟随系统'),
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    return SurfaceCard(
-      padding: const EdgeInsets.all(15),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text('快捷入口',
-              style: TextStyle(
-                  color: PaperFlowColors.ink,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w800)),
-          const SizedBox(height: 14),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: List.generate(items.length, (index) {
-              final item = items[index];
-              return Expanded(
-                child: Container(
-                  decoration: BoxDecoration(
-                    border: index == items.length - 1
-                        ? null
-                        : const Border(
-                            right: BorderSide(color: PaperFlowColors.line)),
-                  ),
-                  child: Column(
-                    children: [
-                      Icon(item.$1, color: PaperFlowColors.muted, size: 22),
-                      const SizedBox(height: 7),
-                      Text(item.$2,
-                          maxLines: 1,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                              color: PaperFlowColors.ink, fontSize: 9.5)),
-                      const SizedBox(height: 3),
-                      Text(item.$3,
-                          maxLines: 1,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                              color: PaperFlowColors.muted, fontSize: 8.5)),
-                    ],
-                  ),
+      padding: EdgeInsets.zero,
+      child: Material(
+        color: Colors.transparent,
+        child: Column(
+          children: [
+            ListTile(
+              key: const ValueKey('profile-theme-row'),
+              leading: const Icon(Icons.palette_outlined),
+              title: const Text('主题'),
+              trailing: ListenableBuilder(
+                listenable: ThemeController.instance,
+                builder: (context, _) => Text(
+                  ThemeController.instance.color.label,
+                  style: const TextStyle(color: PaperFlowColors.muted),
                 ),
-              );
-            }),
-          ),
-        ],
+              ),
+              onTap: () => showPaperThemeSheet(context),
+            ),
+            const Divider(height: 1),
+            ListTile(
+              leading: const Icon(Icons.storage_outlined),
+              title: const Text('本地数据'),
+              subtitle: Text(
+                '收藏 $savedCount · 稍后阅读 $readLaterCount · 阅读历史 $historyCount',
+              ),
+            ),
+            const Divider(height: 1),
+            ListTile(
+              leading: const Icon(Icons.privacy_tip_outlined),
+              title: const Text('隐私'),
+              subtitle: const Text('阅读、互动与聊天数据保存在当前设备'),
+            ),
+            const Divider(height: 1),
+            ListTile(
+              key: const ValueKey('profile-open-source-licenses'),
+              leading: const Icon(Icons.article_outlined),
+              title: const Text('开源许可'),
+              trailing: const Icon(Icons.chevron_right_rounded),
+              onTap: () => showLicensePage(
+                context: context,
+                applicationName: 'PaperFlow',
+                applicationVersion: '1.0.0 (1)',
+              ),
+            ),
+            const Divider(height: 1),
+            const ListTile(
+              leading: Icon(Icons.info_outline_rounded),
+              title: Text('PaperFlow'),
+              trailing: Text(
+                '1.0.0 (1)',
+                style: TextStyle(color: PaperFlowColors.muted),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

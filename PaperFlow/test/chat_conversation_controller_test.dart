@@ -19,6 +19,7 @@ void main() {
       service: service,
     );
 
+    expect(controller.reasoningEffort, ChatReasoningEffort.high);
     await controller.send('比较两种方法');
 
     expect(service.context, same(context));

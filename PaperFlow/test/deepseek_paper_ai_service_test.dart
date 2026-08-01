@@ -42,8 +42,8 @@ void main() {
     final body = jsonDecode(captured.body) as Map<String, dynamic>;
     expect(body['model'], 'deepseek-v4-flash');
     expect(body['stream'], isTrue);
-    expect(body['thinking'], {'type': 'enabled', 'budget_tokens': 1024});
-    expect(body['output_config'], {'effort': 'medium'});
+    expect(body['thinking'], {'type': 'enabled', 'budget_tokens': 2048});
+    expect(body['output_config'], {'effort': 'high'});
     expect(body, isNot(contains('temperature')));
     expect(body['system'], contains(demoPapers.first.title));
     final messages = body['messages'] as List<dynamic>;

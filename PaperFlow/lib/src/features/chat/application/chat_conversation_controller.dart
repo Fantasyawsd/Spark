@@ -30,7 +30,7 @@ class ChatConversationController extends ChangeNotifier {
   bool _disposed = false;
   bool _webSearchEnabled = false;
   bool _searching = false;
-  ChatReasoningEffort _reasoningEffort = ChatReasoningEffort.medium;
+  ChatReasoningEffort _reasoningEffort = ChatReasoningEffort.high;
   ChatRequestStatus _requestStatus = ChatRequestStatus.idle;
   String? _requestError;
   String? _persistenceError;

@@ -31,7 +31,7 @@ class DeepSeekWebSearchAiService
     ),
     String reasoningEffort = const String.fromEnvironment(
       'DEEPSEEK_REASONING_EFFORT',
-      defaultValue: 'medium',
+      defaultValue: 'high',
     ),
     this.maxSearches = 3,
     this.systemPromptBuilder,

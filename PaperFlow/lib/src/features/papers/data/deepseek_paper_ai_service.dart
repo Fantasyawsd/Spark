@@ -31,7 +31,7 @@ class DeepSeekPaperAiService
     ),
     String reasoningEffort = const String.fromEnvironment(
       'DEEPSEEK_REASONING_EFFORT',
-      defaultValue: 'medium',
+      defaultValue: 'high',
     ),
     this.thinkingEnabled = true,
     this.systemPromptBuilder,

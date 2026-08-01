@@ -66,7 +66,7 @@ void main() {
     expect(captured.headers['x-api-key'], 'test-key');
     final body = jsonDecode(captured.body) as Map<String, dynamic>;
     expect(body['stream'], isTrue);
-    expect(body['output_config'], {'effort': 'medium'});
+    expect(body['output_config'], {'effort': 'high'});
     expect((body['tools'] as List).first['type'], 'web_search_20250305');
     expect(chunks.any((chunk) => chunk.searchStarted), isTrue);
     expect(chunks.map((chunk) => chunk.reasoningDelta).join(), '核对来源');

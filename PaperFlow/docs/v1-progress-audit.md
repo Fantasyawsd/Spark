@@ -49,7 +49,7 @@ V1.0 只交付三个一级页面：
 - Android release 缺少正式签名时会失败；签名文件已被 Git 忽略，明文流量和应用备份已关闭。
 - release 模式不读取编译期 DeepSeek Key，开发辅助脚本禁止用于 release 构建。
 - 本机已安装 Android Command-line Tools 并接受全部 SDK licenses；`flutter doctor -v` 无问题。
-- `flutter analyze`、180 项 Flutter 测试、`git diff --check` 和 Android debug APK 构建已通过；Windows release 回归因本机缺少 ATL 组件而未通过。
+- `flutter analyze`、181 项 Flutter 测试、`git diff --check` 和 Android debug APK 构建已通过；最新 debug APK 已完成 SHA-256 和 v2 调试签名校验。Windows release 回归因本机缺少 ATL 组件而未通过。
 
 ### 我的
 

@@ -32,9 +32,26 @@ void main() {
 
   test('production config and version expose user-facing metadata', () {
     const config = AppConfig.production();
+    const version = AppVersion(name: '1.2.3', buildNumber: 42);
 
     expect(config.applicationTitle, 'PaperFlow');
     expect(config.showDebugBanner, isFalse);
-    expect(AppVersion.current.display, '0.1.0 (1)');
+    expect(version.display, '1.2.3 (42)');
+  });
+
+  test('platform flavor and requested environment must match', () {
+    final development = AppConfig.resolve(
+      platformFlavor: 'development',
+      requestedEnvironment: 'dev',
+    );
+
+    expect(development.environment, AppEnvironment.development);
+    expect(
+      () => AppConfig.resolve(
+        platformFlavor: 'production',
+        requestedEnvironment: 'development',
+      ),
+      throwsStateError,
+    );
   });
 }

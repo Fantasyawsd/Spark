@@ -18,17 +18,6 @@ val hasReleaseSigning = listOf(
     "keyAlias",
     "keyPassword",
 ).all { !keystoreProperties.getProperty(it).isNullOrBlank() }
-val requestsReleaseBuild = gradle.startParameter.taskNames.any {
-    it.contains("release", ignoreCase = true)
-}
-
-if (requestsReleaseBuild && !hasReleaseSigning) {
-    throw GradleException(
-        "Release signing is not configured. Copy android/key.properties.example " +
-            "to android/key.properties and provide the upload keystore credentials.",
-    )
-}
-
 android {
     namespace = "app.paperflow.reader"
     compileSdk = flutter.compileSdkVersion
@@ -55,13 +44,11 @@ android {
         create("development") {
             dimension = "environment"
             applicationIdSuffix = ".dev"
-            versionNameSuffix = "-dev"
             manifestPlaceholders["appLabel"] = "PaperFlow Dev"
         }
         create("staging") {
             dimension = "environment"
             applicationIdSuffix = ".staging"
-            versionNameSuffix = "-beta"
             manifestPlaceholders["appLabel"] = "PaperFlow Beta"
         }
         create("production") {
@@ -86,6 +73,17 @@ android {
             if (hasReleaseSigning) {
                 signingConfig = signingConfigs.getByName("release")
             }
+        }
+    }
+}
+
+if (!hasReleaseSigning) {
+    tasks.matching { it.name.contains("release", ignoreCase = true) }.configureEach {
+        doFirst {
+            throw GradleException(
+                "Release signing is not configured. Copy android/key.properties.example " +
+                    "to android/key.properties and provide the upload keystore credentials.",
+            )
         }
     }
 }

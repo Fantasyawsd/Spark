@@ -8,10 +8,37 @@ final class AppConfig {
       : environment = AppEnvironment.production,
         features = const FeatureFlags();
 
-  factory AppConfig.fromEnvironment() {
-    final environment = AppEnvironment.parse(
-      const String.fromEnvironment('PAPERFLOW_ENV', defaultValue: 'production'),
+  factory AppConfig.fromEnvironment({String? platformFlavor}) {
+    return AppConfig.resolve(
+      platformFlavor: platformFlavor,
+      requestedEnvironment: const String.fromEnvironment('PAPERFLOW_ENV'),
     );
+  }
+
+  factory AppConfig.resolve({
+    String? platformFlavor,
+    String? requestedEnvironment,
+  }) {
+    final flavor = platformFlavor?.trim();
+    final requested = requestedEnvironment?.trim();
+    final environment = AppEnvironment.parse(
+      flavor?.isNotEmpty == true
+          ? flavor!
+          : requested?.isNotEmpty == true
+              ? requested!
+              : 'production',
+    );
+
+    if (flavor?.isNotEmpty == true && requested?.isNotEmpty == true) {
+      final requestedValue = AppEnvironment.parse(requested!);
+      if (requestedValue != environment) {
+        throw StateError(
+          'Android flavor "$flavor" does not match '
+          'PAPERFLOW_ENV "$requested".',
+        );
+      }
+    }
+
     return AppConfig(
       environment: environment,
       features: FeatureFlags.fromEnvironment(environment),

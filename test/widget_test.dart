@@ -89,6 +89,6 @@ void main() {
 
     await tester.tap(find.byKey(const ValueKey('bottom-nav-2')));
     await tester.pumpAndSettle();
-    expect(find.text('0.1.0 (1)'), findsOneWidget);
+    expect(find.text(AppVersion.current.display), findsOneWidget);
   });
 }

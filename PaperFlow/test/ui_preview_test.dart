@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:paperflow/paperflow.dart';
 import 'package:paperflow/src/features/chat/domain/chat_context.dart';
+import 'package:paperflow/src/features/papers/presentation/widgets/paper_reader_view.dart';
 
 void main() {
   testWidgets('paper title copies on tap while body remains selectable',
@@ -109,6 +110,72 @@ void main() {
     await tester.tap(find.byIcon(Icons.bookmark_border_rounded).first);
     await tester.pumpAndSettle();
     expect(find.byIcon(Icons.bookmark_rounded), findsWidgets);
+  });
+
+  testWidgets('each paper in the vertical feed starts on the original tab',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(378, 810));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(const PaperFlowApp(showSplash: false));
+    await tester.pump();
+
+    final firstReader = find.byType(PaperReaderView).first;
+    await tester.tap(
+      find.descendant(
+        of: firstReader,
+        matching: find.text('相关论文'),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      find.descendant(
+        of: firstReader,
+        matching: find.byWidgetPredicate(
+          (widget) =>
+              widget is PaperFlowSegmentedControl && widget.selectedIndex == 2,
+        ),
+      ),
+      findsOneWidget,
+    );
+
+    final feed = tester.widget<PageView>(
+      find.byKey(const ValueKey('paper-feed')),
+    );
+    unawaited(
+      feed.controller!.animateToPage(
+        1,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOutCubic,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      tester
+          .widget<PaperFlowSegmentedControl>(
+            find.byType(PaperFlowSegmentedControl).hitTestable(),
+          )
+          .selectedIndex,
+      0,
+    );
+
+    unawaited(
+      feed.controller!.animateToPage(
+        0,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOutCubic,
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      tester
+          .widget<PaperFlowSegmentedControl>(
+            find.byType(PaperFlowSegmentedControl).hitTestable(),
+          )
+          .selectedIndex,
+      0,
+    );
   });
 
   testWidgets('related paper opens a fullscreen detail and returns to feed',

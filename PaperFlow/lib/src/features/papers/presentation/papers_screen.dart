@@ -217,6 +217,7 @@ class _PapersScreenState extends State<PapersScreen> {
       itemBuilder: (context, index) {
         final paper = papers[index];
         return PaperReaderView(
+          key: ValueKey('paper-reader-${paper.id}'),
           paper: paper,
           interactionController: _interactions,
           commentController: widget.commentController,
@@ -229,6 +230,7 @@ class _PapersScreenState extends State<PapersScreen> {
           shareService: widget.shareService,
           linkService: widget.linkService,
           onOpenRelatedPaper: widget.onOpenPaperDetail ?? _feed.openPaperById,
+          active: widget.active && index == _feed.currentPaperIndex,
         );
       },
     );

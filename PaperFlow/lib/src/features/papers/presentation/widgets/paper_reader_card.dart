@@ -38,9 +38,8 @@ class PaperReaderCard extends StatefulWidget {
     required this.onAnalyze,
     required this.onShare,
     required this.translationServiceFactory,
-    this.initialTabIndex = 0,
+    this.active = true,
     this.initialAbstractScrollOffset = 0,
-    this.onTabChanged,
     this.onAbstractScrollChanged,
     this.translationRepository,
     this.onOpenPaper,
@@ -70,9 +69,8 @@ class PaperReaderCard extends StatefulWidget {
   final ValueChanged<String>? onOpenRelatedPaper;
   final PaperTranslationServiceFactory translationServiceFactory;
   final PaperTranslationRepository? translationRepository;
-  final int initialTabIndex;
+  final bool active;
   final double initialAbstractScrollOffset;
-  final ValueChanged<int>? onTabChanged;
   final ValueChanged<double>? onAbstractScrollChanged;
   final double contentTopInset;
   final double actionBarBottomInset;
@@ -91,36 +89,31 @@ class _PaperReaderCardState extends State<PaperReaderCard> {
   @override
   void initState() {
     super.initState();
-    _tabIndex = widget.initialTabIndex.clamp(0, _tabs.length - 1);
-    _tabPageController = PageController(initialPage: _tabIndex);
+    _tabIndex = 0;
+    _tabPageController = PageController();
     _createTranslationController();
-    if (_tabIndex == 1) _translationController.ensureTranslated();
   }
 
   @override
   void didUpdateWidget(covariant PaperReaderCard oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.paper.id == widget.paper.id &&
-        identical(
+    final paperChanged = oldWidget.paper.id != widget.paper.id;
+    final translationDependencyChanged = !identical(
           oldWidget.translationServiceFactory,
           widget.translationServiceFactory,
-        ) &&
-        identical(
+        ) ||
+        !identical(
           oldWidget.translationRepository,
           widget.translationRepository,
-        )) {
-      return;
+        );
+    if (paperChanged || translationDependencyChanged) {
+      _translationController
+        ..removeListener(_handleTranslationChanged)
+        ..dispose();
+      _createTranslationController();
     }
-    _translationController
-      ..removeListener(_handleTranslationChanged)
-      ..dispose();
-    _createTranslationController();
-    if (oldWidget.paper.id != widget.paper.id) {
-      _tabIndex = widget.initialTabIndex.clamp(0, _tabs.length - 1);
-      if (_tabPageController.hasClients) {
-        _tabPageController.jumpToPage(_tabIndex);
-      }
-      if (_tabIndex == 1) _translationController.ensureTranslated();
+    if (paperChanged || (!oldWidget.active && widget.active)) {
+      _resetToOriginal();
     }
   }
 
@@ -239,8 +232,14 @@ class _PaperReaderCardState extends State<PaperReaderCard> {
 
   void _handleTabChanged(int index) {
     setState(() => _tabIndex = index);
-    widget.onTabChanged?.call(index);
     if (index == 1) _translationController.ensureTranslated();
+  }
+
+  void _resetToOriginal() {
+    _tabIndex = 0;
+    if (_tabPageController.hasClients) {
+      _tabPageController.jumpToPage(0);
+    }
   }
 
   void _selectTab(int index) {

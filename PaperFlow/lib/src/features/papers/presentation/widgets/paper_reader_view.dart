@@ -29,6 +29,7 @@ class PaperReaderView extends StatelessWidget {
     this.shareService,
     this.linkService,
     this.onOpenRelatedPaper,
+    this.active = true,
     this.contentTopInset = 8,
     this.actionBarBottomInset = 72,
   });
@@ -45,6 +46,7 @@ class PaperReaderView extends StatelessWidget {
   final PaperShareService? shareService;
   final PaperLinkService? linkService;
   final ValueChanged<String>? onOpenRelatedPaper;
+  final bool active;
   final double contentTopInset;
   final double actionBarBottomInset;
 
@@ -74,10 +76,9 @@ class PaperReaderView extends StatelessWidget {
       onOpenPaper:
           linkService == null ? null : (uri) => _openPaperLink(context, uri),
       onOpenRelatedPaper: onOpenRelatedPaper,
-      initialTabIndex: readingController.tabIndex(paper.id),
+      active: active,
       initialAbstractScrollOffset:
           readingController.abstractScrollOffset(paper.id),
-      onTabChanged: (index) => readingController.selectTab(paper.id, index),
       onAbstractScrollChanged: (offset) =>
           readingController.saveAbstractScrollOffset(paper.id, offset),
       translationServiceFactory: translationServiceFactory,

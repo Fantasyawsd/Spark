@@ -1,35 +1,101 @@
 # PaperFlow
 
-PaperFlow 是面向个人研究者的 Flutter 论文阅读器。0.1.0 聚焦三个页面：
+PaperFlow 是面向个人研究者的 Flutter 论文发现、阅读和 AI 研究助手。产品希望把论文信息流的快速发现、结构化阅读、中文理解和围绕论文的持续对话整合到一个移动端应用中。
 
-- **论文**：arXiv 论文流、领域筛选、搜索、Markdown/公式阅读、中文解读、相关论文和本地互动。
-- **ChatPaper**：主聊天与论文聊天、流式回答、深度思考、联网搜索和本地会话管理。
-- **我的**：收藏分组、阅读记录、主题、DeepSeek API Key 和本地数据管理。
+当前版本为 `0.1.0+1`，第一验收平台是 Android 手机。
 
-社区、私信、账号、云同步和内容发布不属于 0.1.0 范围。
+## 当前功能
+
+### 论文
+
+- arXiv 远程论文流、分页、搜索和离线缓存。
+- 单页刷论文与双栏浏览选择。
+- Markdown、LaTeX、英文 Abstract、中文摘要和相关论文。
+- 点赞、评论、分享、已读、稍后阅读和收藏分组。
+- 从搜索、收藏、历史和相关论文进入独立全屏阅读页。
+
+### ChatPaper
+
+- 置顶主聊天和按论文创建的聊天。
+- DeepSeek 流式回答、深度思考、联网搜索、停止和重试。
+- Markdown、公式、代码块和会话本地保存。
+- 左滑置顶或删除论文会话。
+
+### 我的
+
+- 默认收藏与自定义收藏分组。
+- 阅读历史、稍后阅读、主题设置和本地数据管理。
+- DeepSeek API Key 验证、保存、替换和删除。
+- 应用版本、隐私说明和开源许可。
+
+社区、私信、通知、账号、云同步和内容发布不属于 0.1.0 生产范围。后续论文发现与阅读改进见 [论文频道、索引与阅读计划](docs/product/papers/channels-and-reading.md)。
 
 ## 数据与隐私
 
-- 论文目录使用 arXiv Atom API；联网失败时回退到设备缓存或内置种子论文。
-- 阅读记录、互动、评论、搜索历史、中文解读和聊天会话只保存在当前设备，可从“我的 > 本地数据”清理。
-- AI 功能采用 BYOK：用户在“我的 > AI 设置”保存自己的 DeepSeek API Key。正式 release 不包含共享 Key，也不接受 `--dart-define` 注入 Key。
-- 使用 ChatPaper 或中文解读时，问题、论文标题/摘要和必要上下文会发送到 DeepSeek 官方接口。应用内“隐私”入口有简要说明；公开发布前必须按 [隐私政策草案](docs/versions/0.1.0/privacy-policy-draft.md) 提供可访问的正式 URL。
+- 论文目录使用 arXiv Atom API；失败时依次回退到设备缓存和内置种子论文。
+- 阅读状态、互动、评论、搜索历史、中文摘要和聊天会话保存在当前设备。
+- AI 采用 BYOK，用户 Key 存入设备安全存储；正式 APK 不包含共享 Key。
+- ChatPaper 和中文摘要请求会把必要的论文内容发送到 DeepSeek 官方接口。
+- 正式发布前必须完成并公开 [0.1.0 隐私政策](docs/releases/0.1.0/privacy-policy-draft.md)。
 
-## 目录
+## 项目结构
 
 ```text
-lib/src/
-|-- app/        应用组合根、导航和依赖装配
-|-- core/       跨业务模块复用的主题、动画、存储和基础组件
-`-- features/   按论文、聊天、AI 设置、搜索、我的等业务划分
+PaperFlow/
+|-- AGENTS.md                  AI Agent 开发、协作和交付规范
+|-- README.md                  项目背景、功能、结构和运行方式
+|-- assets/                    Logo、启动图和应用静态资源
+|-- android/                   Android 工程、清单和签名配置入口
+|-- windows/                   Windows 桌面宿主工程
+|-- docs/
+|   |-- README.md              开发文档总入口
+|   |-- development-roadmap.md 持续开发总路线
+|   |-- product/               按产品领域维护的持续开发文档
+|   |-- standards/             架构、协作和版本管理规范
+|   |-- templates/             Workstream 状态和开发报告模板
+|   |-- workstreams/           各开发分支的状态与报告
+|   |-- reviews/               架构和质量审查记录
+|   `-- releases/<version>/    仅保存版本发布资料
+|-- lib/
+|   |-- main.dart              应用入口和生产依赖装配
+|   `-- src/
+|       |-- app/               应用壳、导航和组合根
+|       |-- core/              真正跨业务复用的主题、动画、存储和组件
+|       `-- features/
+|           |-- papers/        论文目录、阅读、互动和评论
+|           |-- chat/          ChatPaper 会话与界面
+|           |-- ai_settings/   DeepSeek 凭据配置
+|           |-- search/        论文搜索和历史
+|           |-- profile/       我的页面与个人研究数据入口
+|           |-- local_data/    本地数据统计和清理
+|           |-- community/     延期模块，不进入 0.1.0 生产导航
+|           `-- messages/      旧模块，不进入 0.1.0 生产导航
+|-- test/                      单元测试和 Widget 测试
+|-- tool/                      开发、构建和密钥安全辅助脚本
+|-- pubspec.yaml               Flutter 包、资源和版本配置
+`-- analysis_options.yaml      Dart/Flutter 静态分析规则
 ```
 
-开发文档从 [文档总入口](docs/README.md) 进入。详细架构约束见 [代码结构原则](docs/code-structure-principles.md)，0.1.0 范围与发布状态见 [发布计划](docs/versions/0.1.0/release-plan.md)。
+代码采用 feature-first + 分层架构：
+
+```text
+presentation -> application -> domain <- data
+```
+
+完整架构约束见 [代码结构原则](docs/standards/code-structure.md)。
+
+## 开发文档
+
+- [文档总入口](docs/README.md)
+- [开发总路线](docs/development-roadmap.md)
+- [论文频道与阅读计划](docs/product/papers/channels-and-reading.md)
+- [0.1.0 发布资料](docs/releases/0.1.0/README.md)
+- [AI Agent 协作规范](AGENTS.md)
 
 ## 开发环境
 
 - Flutter 3.44.8 / Dart 3.12.2
-- Android SDK：`D:\app\Android\Sdk`
+- Android SDK：`D:\App\Android\Sdk`
 - Windows 构建需要 Visual Studio Build Tools 的 Desktop C++ 组件
 
 ```powershell
@@ -37,13 +103,13 @@ flutter pub get
 flutter run -d windows
 ```
 
-本地开发若需通过环境变量临时注入 DeepSeek Key，可使用：
+本地调试 DeepSeek 可以使用拒绝 release 的辅助脚本：
 
 ```powershell
 .\tool\flutter_with_deepseek.ps1 -FlutterCommand run -FlutterArguments @('-d', 'windows')
 ```
 
-该脚本会拒绝 `--release`，防止把 Key 编译进正式安装包。正式 Android 构建只使用用户在设备安全存储中配置的 Key。
+正式 Android 构建只读取用户在设备安全存储中配置的 Key。
 
 ## 验证
 
@@ -51,7 +117,7 @@ flutter run -d windows
 dart format --output=none --set-exit-if-changed lib test
 flutter analyze
 flutter test
-flutter build windows --release
+flutter build apk --debug
 ```
 
-Android 上线步骤、签名配置、真机验收与 Play Console 发布门见 [0.1.0 发布检查清单](docs/versions/0.1.0/release-checklist.md)。
+项目不使用 Android 模拟器作为日常验收方式。Android 正式签名、真机验收和 Play Console 发布门见 [0.1.0 发布检查清单](docs/releases/0.1.0/release-checklist.md)。

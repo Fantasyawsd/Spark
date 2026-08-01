@@ -2,7 +2,7 @@
 
 > 日期：2026-08-01
 > 状态：持续整改
-> 依据：`code-structure-principles.md`
+> 依据：[`../standards/code-structure.md`](../standards/code-structure.md)
 
 ## 本轮结论
 

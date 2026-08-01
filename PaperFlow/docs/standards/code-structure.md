@@ -299,8 +299,6 @@ UI -> Controller -> Repository interface <- Remote implementation
 
 Git 的预检、分支、worktree、原子提交、暂存、回滚和交付规则统一定义在：
 
-```text
-docs/version-management.md
-```
+[`version-control.md`](version-control.md)
 
 本文件只保留与代码结构相关的提交前检查项。版本管理文档是强制门禁；如果当前工作区无法明确区分任务归属，必须停止新增功能，不得以一次“大 checkpoint”替代真实的版本边界。

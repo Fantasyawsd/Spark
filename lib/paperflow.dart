@@ -1,5 +1,9 @@
 export 'src/app/paperflow_app.dart';
 export 'src/app/paperflow_dependencies.dart';
+export 'src/core/config/app_config.dart';
+export 'src/core/config/app_environment.dart';
+export 'src/core/config/app_version.dart';
+export 'src/core/config/feature_flags.dart';
 export 'src/features/ai_settings/application/deepseek_credential_controller.dart';
 export 'src/features/ai_settings/data/in_memory_deepseek_credential_repository.dart';
 export 'src/features/ai_settings/domain/deepseek_credential_repository.dart';

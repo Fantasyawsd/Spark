@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../core/config/app_config.dart';
 import '../core/motion/motion_tokens.dart';
 import '../core/navigation/paperflow_route_observer.dart';
 import '../core/theme/paperflow_theme.dart';
@@ -41,6 +42,7 @@ import 'paperflow_dependencies.dart';
 class PaperFlowApp extends StatefulWidget {
   const PaperFlowApp({
     super.key,
+    this.config = const AppConfig.production(),
     this.showSplash = true,
     this.dependencies,
     this.commentRepository,
@@ -57,6 +59,7 @@ class PaperFlowApp extends StatefulWidget {
     this.webSearchAiService,
   });
 
+  final AppConfig config;
   final bool showSplash;
   final PaperFlowDependencies? dependencies;
   final PaperCommentRepository? commentRepository;
@@ -109,8 +112,8 @@ class _PaperFlowAppState extends State<PaperFlowApp> {
     return ListenableBuilder(
       listenable: ThemeController.instance,
       builder: (context, _) => MaterialApp(
-        title: 'PaperFlow',
-        debugShowCheckedModeBanner: false,
+        title: widget.config.applicationTitle,
+        debugShowCheckedModeBanner: widget.config.showDebugBanner,
         theme: PaperFlowTheme.light(),
         navigatorObservers: [PaperFlowRouteObserver.instance],
         home: _PaperFlowBootstrap(

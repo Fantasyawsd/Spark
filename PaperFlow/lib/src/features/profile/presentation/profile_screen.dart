@@ -5,6 +5,8 @@ import '../../../core/theme/theme_controller.dart';
 import '../../../core/widgets/paperflow_sheet.dart';
 import '../../../core/widgets/surface_card.dart';
 import '../../ai_settings/application/deepseek_credential_controller.dart';
+import '../../local_data/application/local_data_controller.dart';
+import '../../local_data/presentation/local_data_sheet.dart';
 import '../../papers/domain/favorite_group.dart';
 import '../../papers/domain/paper.dart';
 
@@ -12,6 +14,7 @@ class ProfileScreen extends StatelessWidget {
   const ProfileScreen({
     super.key,
     this.credentialController,
+    this.localDataController,
     this.favoriteGroups = const [FavoriteGroup.defaultGroup()],
     this.favoritePapersByGroup = const {},
     this.savedCount = 0,
@@ -24,6 +27,7 @@ class ProfileScreen extends StatelessWidget {
   });
 
   final DeepSeekCredentialController? credentialController;
+  final LocalDataController? localDataController;
   final List<FavoriteGroup> favoriteGroups;
   final Map<String, List<Paper>> favoritePapersByGroup;
   final int savedCount;
@@ -78,6 +82,7 @@ class ProfileScreen extends StatelessWidget {
             ),
             const SizedBox(height: 14),
             _AppSettingsCard(
+              localDataController: localDataController,
               savedCount: savedCount,
               readLaterCount: readLaterPapers.length,
               historyCount: readingHistory.length,
@@ -846,11 +851,13 @@ class _PaperShelfCard extends StatelessWidget {
 
 class _AppSettingsCard extends StatelessWidget {
   const _AppSettingsCard({
+    required this.localDataController,
     required this.savedCount,
     required this.readLaterCount,
     required this.historyCount,
   });
 
+  final LocalDataController? localDataController;
   final int savedCount;
   final int readLaterCount;
   final int historyCount;
@@ -878,11 +885,28 @@ class _AppSettingsCard extends StatelessWidget {
             ),
             const Divider(height: 1),
             ListTile(
+              key: const ValueKey('profile-local-data'),
               leading: const Icon(Icons.storage_outlined),
               title: const Text('本地数据'),
-              subtitle: Text(
-                '收藏 $savedCount · 稍后阅读 $readLaterCount · 阅读历史 $historyCount',
-              ),
+              subtitle: localDataController == null
+                  ? Text(
+                      '收藏 $savedCount · 稍后阅读 $readLaterCount · 阅读历史 $historyCount',
+                    )
+                  : ListenableBuilder(
+                      listenable: localDataController!,
+                      builder: (context, _) => Text(
+                        '占用 ${formatLocalDataBytes(localDataController!.usage.totalBytes)}',
+                      ),
+                    ),
+              trailing: localDataController == null
+                  ? null
+                  : const Icon(Icons.chevron_right_rounded),
+              onTap: localDataController == null
+                  ? null
+                  : () => showLocalDataSheet(
+                        context,
+                        controller: localDataController!,
+                      ),
             ),
             const Divider(height: 1),
             ListTile(

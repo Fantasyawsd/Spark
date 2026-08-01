@@ -6,9 +6,10 @@ import '../domain/paper_search_history_repository.dart';
 import 'paper_search_history_json_mapper.dart';
 
 class FilePaperSearchHistoryRepository implements PaperSearchHistoryRepository {
-  FilePaperSearchHistoryRepository({File? file})
-      : _store = VersionedLocalJsonStore(
-          LocalJsonStore(fileName: 'search_history.json', file: file),
+  FilePaperSearchHistoryRepository({LocalJsonStore? store, File? file})
+      : assert(store == null || file == null),
+        _store = VersionedLocalJsonStore(
+          store ?? LocalJsonStore(fileName: 'search_history.json', file: file),
           schemaId: 'search.history',
           validatePayload: PaperSearchHistoryJsonMapper.validatePayload,
         );

@@ -2,6 +2,10 @@ import '../features/ai_settings/data/deepseek_api_credential_validator.dart';
 import '../features/ai_settings/data/in_memory_deepseek_credential_repository.dart';
 import '../features/ai_settings/data/secure_deepseek_credential_repository.dart';
 import '../features/ai_settings/domain/deepseek_credential_repository.dart';
+import '../core/storage/local_json_store.dart';
+import '../features/local_data/data/in_memory_local_data_repository.dart';
+import '../features/local_data/data/json_local_data_repository.dart';
+import '../features/local_data/domain/local_data_repository.dart';
 import '../features/papers/application/paper_ai_service.dart';
 import '../features/papers/application/paper_ai_session_repository.dart';
 import '../features/papers/application/paper_link_service.dart';
@@ -57,25 +61,43 @@ class PaperFlowDependencies {
     required this.translationRepository,
     required this.mainAiService,
     required this.mainWebSearchAiService,
+    required this.localDataRepository,
   });
 
   factory PaperFlowDependencies.production() {
     const seedRepository = ArxivSeedRepository();
     final credentialRepository = SecureDeepSeekCredentialRepository();
+    final paperCacheStore = LocalJsonStore(
+      fileName: 'paper_catalog_cache.json',
+    );
+    final commentStore = LocalJsonStore(fileName: 'paper_comments.json');
+    final interactionStore = LocalJsonStore(
+      fileName: 'paper_interactions.json',
+    );
+    final preferenceStore = LocalJsonStore(fileName: 'paper_preferences.json');
+    final readingStore = LocalJsonStore(fileName: 'paper_reading.json');
+    final searchHistoryStore = LocalJsonStore(fileName: 'search_history.json');
+    final aiSessionStore = LocalJsonStore(fileName: 'paper_ai_sessions.json');
+    final translationStore = LocalJsonStore(
+      fileName: 'paper_translations.json',
+    );
     return PaperFlowDependencies(
       paperRepository: seedRepository,
       paperCatalogRepository: OfflineFirstPaperCatalogRepository(
         remoteSource: ArxivAtomClient(),
-        cacheStore: FilePaperCacheStore(),
+        cacheStore: FilePaperCacheStore(store: paperCacheStore),
         seedRepository: seedRepository,
       ),
       deepSeekCredentialRepository: credentialRepository,
       deepSeekCredentialValidator: DeepSeekApiCredentialValidator(),
-      commentRepository: FilePaperCommentRepository(),
-      interactionRepository: FilePaperInteractionRepository(),
-      preferenceRepository: FilePaperPreferenceRepository(),
-      readingRepository: FilePaperReadingRepository(),
-      searchHistoryRepository: FilePaperSearchHistoryRepository(),
+      commentRepository: FilePaperCommentRepository(store: commentStore),
+      interactionRepository:
+          FilePaperInteractionRepository(store: interactionStore),
+      preferenceRepository:
+          FilePaperPreferenceRepository(store: preferenceStore),
+      readingRepository: FilePaperReadingRepository(store: readingStore),
+      searchHistoryRepository:
+          FilePaperSearchHistoryRepository(store: searchHistoryStore),
       shareService: const PlatformPaperShareService(),
       linkService: const PlatformPaperLinkService(),
       aiService: DeepSeekPaperAiService(
@@ -84,16 +106,28 @@ class PaperFlowDependencies {
       webSearchAiService: DeepSeekWebSearchAiService(
         credentialRepository: credentialRepository,
       ),
-      aiSessionRepository: FilePaperAiSessionRepository(),
+      aiSessionRepository: FilePaperAiSessionRepository(store: aiSessionStore),
       translationServiceFactory: DeepSeekPaperTranslationServiceFactory(
         credentialRepository: credentialRepository,
       ),
-      translationRepository: FilePaperTranslationRepository(),
+      translationRepository:
+          FilePaperTranslationRepository(store: translationStore),
       mainAiService: DeepSeekPaperAiService(
         credentialRepository: credentialRepository,
       ),
       mainWebSearchAiService: DeepSeekWebSearchAiService(
         credentialRepository: credentialRepository,
+      ),
+      localDataRepository: JsonLocalDataRepository(
+        paperCacheStores: [paperCacheStore, translationStore],
+        chatStores: [aiSessionStore],
+        businessDataStores: [
+          commentStore,
+          interactionStore,
+          preferenceStore,
+          readingStore,
+          searchHistoryStore,
+        ],
       ),
     );
   }
@@ -117,6 +151,7 @@ class PaperFlowDependencies {
     PaperTranslationRepository? translationRepository,
     PaperAiService? mainAiService,
     PaperAiService? mainWebSearchAiService,
+    LocalDataRepository? localDataRepository,
   }) {
     final resolvedCredentialRepository =
         deepSeekCredentialRepository ?? InMemoryDeepSeekCredentialRepository();
@@ -156,6 +191,7 @@ class PaperFlowDependencies {
       mainAiService: mainAiService ?? resolvedAiService,
       mainWebSearchAiService:
           mainWebSearchAiService ?? resolvedWebSearchService,
+      localDataRepository: localDataRepository ?? InMemoryLocalDataRepository(),
     );
   }
 
@@ -177,4 +213,5 @@ class PaperFlowDependencies {
   final PaperTranslationRepository translationRepository;
   final PaperAiService mainAiService;
   final PaperAiService mainWebSearchAiService;
+  final LocalDataRepository localDataRepository;
 }

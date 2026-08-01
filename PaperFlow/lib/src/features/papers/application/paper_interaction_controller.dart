@@ -262,6 +262,23 @@ class PaperInteractionController extends ChangeNotifier {
     await _writeQueue;
   }
 
+  Future<void> reload() async {
+    await flushPendingWrites();
+    _pendingMutations.clear();
+    _initialized = false;
+    final empty = PaperInteractionSnapshot();
+    _restore(empty);
+    _committedSnapshot = empty;
+    final repository = _repository;
+    if (repository == null) {
+      _initialized = true;
+      _persistenceError = null;
+      _notifyListeners();
+      return;
+    }
+    await _initialize(repository);
+  }
+
   void _queuePersistence() {
     final repository = _repository;
     if (repository == null) return;

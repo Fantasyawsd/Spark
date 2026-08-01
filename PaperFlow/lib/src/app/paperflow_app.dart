@@ -12,6 +12,8 @@ import '../features/chat/application/main_ai_chat_definition.dart';
 import '../features/chat/presentation/ai_chat_home_screen.dart';
 import '../features/chat/presentation/main_ai_chat_screen.dart';
 import '../features/chat/presentation/paper_ai_chat_screen.dart';
+import '../features/local_data/application/local_data_controller.dart';
+import '../features/local_data/domain/local_data_repository.dart';
 import '../features/papers/application/paper_ai_service.dart';
 import '../features/papers/application/paper_ai_session_repository.dart';
 import '../features/papers/application/paper_comment_controller.dart';
@@ -250,6 +252,7 @@ class _PaperFlowShellState extends State<PaperFlowShell> {
   late final PaperTranslationServiceFactory _translationServiceFactory;
   late final PaperLinkService _linkService;
   late final DeepSeekCredentialController _credentialController;
+  late final LocalDataController _localDataController;
 
   @override
   void initState() {
@@ -301,6 +304,12 @@ class _PaperFlowShellState extends State<PaperFlowShell> {
       validator: _dependencies.deepSeekCredentialValidator,
     );
     unawaited(_credentialController.initialize());
+    _localDataController = LocalDataController(
+      repository: _dependencies.localDataRepository,
+      beforeClear: _prepareLocalDataMutation,
+      afterClear: _reloadAfterLocalDataMutation,
+    );
+    unawaited(_localDataController.initialize());
     unawaited(_initializePaperState());
   }
 
@@ -315,6 +324,7 @@ class _PaperFlowShellState extends State<PaperFlowShell> {
       ..dispose();
     _chatSessionController.dispose();
     _credentialController.dispose();
+    _localDataController.dispose();
     super.dispose();
   }
 
@@ -352,6 +362,7 @@ class _PaperFlowShellState extends State<PaperFlowShell> {
                 ),
                 ProfileScreen(
                   credentialController: _credentialController,
+                  localDataController: _localDataController,
                   favoriteGroups: _paperController.interactions.favoriteGroups,
                   favoritePapersByGroup: {
                     for (final group
@@ -425,6 +436,37 @@ class _PaperFlowShellState extends State<PaperFlowShell> {
     );
     if (!mounted) return;
     _chatSessionController.updateContexts(_paperChatContexts);
+  }
+
+  Future<void> _prepareLocalDataMutation(LocalDataClearTarget target) async {
+    await Future.wait([
+      _paperController.interactions.flushPendingWrites(),
+      _paperController.feed.flushPreferenceWrites(),
+      _commentController.flushPendingWrites(),
+      _readingController.flushPendingWrites(),
+    ]);
+  }
+
+  Future<void> _reloadAfterLocalDataMutation(
+    LocalDataClearTarget target,
+  ) async {
+    switch (target) {
+      case LocalDataClearTarget.paperCache:
+        return;
+      case LocalDataClearTarget.chats:
+        await _chatSessionController.reload();
+        return;
+      case LocalDataClearTarget.allBusinessData:
+        await Future.wait([
+          _paperController.reloadLocalState(),
+          _readingController.reload(),
+          _commentController.reload(
+            _paperController.feed.allPapers.map((paper) => paper.id),
+          ),
+          _chatSessionController.reload(),
+        ]);
+        return;
+    }
   }
 
   List<Paper> _papersForIds(Iterable<String> ids) {

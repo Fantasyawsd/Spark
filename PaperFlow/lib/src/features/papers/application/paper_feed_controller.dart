@@ -322,6 +322,22 @@ class PaperFeedController extends ChangeNotifier {
 
   Future<void> flushPreferenceWrites() => _preferenceWriteQueue;
 
+  Future<void> reloadPreferences() async {
+    await flushPreferenceWrites();
+    _extraCategories = [];
+    _positions.clear();
+    _primaryCategoryIndex = 0;
+    _topicIndex = 0;
+    _currentPaperIndex = 0;
+    final repository = _preferenceRepository;
+    if (repository == null) {
+      _refreshVisiblePapers();
+      notifyListeners();
+      return;
+    }
+    await initializePreferences();
+  }
+
   void _queuePreferencePersistence() {
     final repository = _preferenceRepository;
     if (repository == null) return;

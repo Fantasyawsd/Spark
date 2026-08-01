@@ -1,0 +1,58 @@
+import 'dart:io';
+
+import 'package:flutter_test/flutter_test.dart';
+import 'package:paperflow/src/core/storage/local_json_store.dart';
+import 'package:paperflow/src/features/local_data/data/json_local_data_repository.dart';
+
+void main() {
+  test('inspects and clears local JSON stores by data category', () async {
+    final directory = await Directory.systemTemp.createTemp(
+      'paperflow-local-data-',
+    );
+    addTearDown(() => directory.delete(recursive: true));
+    LocalJsonStore store(String name) => LocalJsonStore(
+          fileName: name,
+          file: File('${directory.path}${Platform.pathSeparator}$name'),
+        );
+
+    final paperCache = store('paper-cache.json');
+    final chats = store('chats.json');
+    final businessData = store('business.json');
+    await paperCache.write({'papers': List.filled(12, 'paper')});
+    await chats.write({'messages': List.filled(8, 'message')});
+    await businessData.write({'saved': List.filled(4, 'paper-id')});
+    final repository = JsonLocalDataRepository(
+      paperCacheStores: [paperCache],
+      chatStores: [chats],
+      businessDataStores: [businessData],
+    );
+
+    final initial = await repository.inspect();
+    expect(initial.paperCacheBytes, greaterThan(0));
+    expect(initial.chatBytes, greaterThan(0));
+    expect(initial.businessDataBytes, greaterThan(0));
+    expect(
+      initial.totalBytes,
+      initial.paperCacheBytes + initial.chatBytes + initial.businessDataBytes,
+    );
+
+    await repository.clearPaperCache();
+    final afterPaperClear = await repository.inspect();
+    expect(afterPaperClear.paperCacheBytes, 0);
+    expect(afterPaperClear.chatBytes, initial.chatBytes);
+    expect(afterPaperClear.businessDataBytes, initial.businessDataBytes);
+
+    await repository.clearChats();
+    final afterChatClear = await repository.inspect();
+    expect(afterChatClear.chatBytes, 0);
+    expect(afterChatClear.businessDataBytes, initial.businessDataBytes);
+
+    await chats.write({
+      'messages': ['new message']
+    });
+    expect((await repository.inspect()).chatBytes, greaterThan(0));
+
+    await repository.resetAllBusinessData();
+    expect((await repository.inspect()).totalBytes, 0);
+  });
+}

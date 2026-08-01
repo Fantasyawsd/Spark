@@ -59,6 +59,13 @@ class PaperController extends ChangeNotifier {
     ]);
   }
 
+  Future<void> reloadLocalState() async {
+    await Future.wait([
+      interactions.reload(),
+      feed.reloadPreferences(),
+    ]);
+  }
+
   bool isLiked(String paperId) => interactions.isLiked(paperId);
   bool isSaved(String paperId) => interactions.isSaved(paperId);
   bool isFollowed(String paperId) => interactions.isFollowed(paperId);

@@ -69,6 +69,11 @@ class ChatSessionController extends ChangeNotifier {
     return operation;
   }
 
+  Future<void> reload() async {
+    await _activeLoad;
+    await _load();
+  }
+
   Future<void> togglePinned(String contextId) async {
     final session =
         _rawSessions.where((item) => item.contextId == contextId).firstOrNull;

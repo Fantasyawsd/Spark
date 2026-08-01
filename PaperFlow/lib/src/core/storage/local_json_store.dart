@@ -40,6 +40,14 @@ class LocalJsonStore {
     return transaction((transaction) => transaction.write(value));
   }
 
+  Future<int> sizeInBytes() {
+    return transaction((transaction) => transaction.sizeInBytes());
+  }
+
+  Future<void> clear() {
+    return transaction((transaction) => transaction.clear());
+  }
+
   Future<String?> quarantineCorruptFile() {
     return transaction(
       (transaction) => transaction.quarantineCorruptFile(),
@@ -107,6 +115,34 @@ class LocalJsonStoreTransaction {
     } finally {
       await _deleteBestEffort(temporary);
     }
+  }
+
+  Future<int> sizeInBytes() async {
+    await _recoverInterruptedReplacement();
+    final exists = await _storageOperation(
+      _file.exists,
+      message: '无法检查本地数据。',
+    );
+    if (!exists) return 0;
+    return _storageOperation(
+      _file.length,
+      message: '无法统计本地数据占用。',
+    );
+  }
+
+  Future<void> clear() async {
+    await _recoverInterruptedReplacement();
+    final exists = await _storageOperation(
+      _file.exists,
+      message: '无法检查本地数据。',
+    );
+    if (exists) {
+      await _storageOperation(
+        _file.delete,
+        message: '无法清除本地数据。',
+      );
+    }
+    await _deleteBestEffort(_recoveryFile);
   }
 
   Future<String?> quarantineCorruptFile() async {

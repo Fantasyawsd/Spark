@@ -179,7 +179,24 @@ class PaperCommentController extends ChangeNotifier {
     _queuePersistence(paperId);
   }
 
-  Future<void> flushPendingWrites() => _writeQueue;
+  Future<void> flushPendingWrites() async {
+    await Future.wait(_loadOperations.values);
+    await _writeQueue;
+  }
+
+  Future<void> reload(Iterable<String> paperIds) async {
+    await flushPendingWrites();
+    _commentsByPaper.clear();
+    _committedCommentsByPaper.clear();
+    _sortByPaper.clear();
+    _sendStatusByPaper.clear();
+    _revisionByPaper.clear();
+    _loadedPaperIds.clear();
+    _loadOperations.clear();
+    _persistenceErrorsByPaper.clear();
+    _notifyListeners();
+    await initialize(paperIds);
+  }
 
   Future<bool> _queuePersistence(String paperId) {
     final repository = _repository;

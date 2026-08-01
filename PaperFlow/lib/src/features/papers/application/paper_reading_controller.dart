@@ -121,6 +121,11 @@ class PaperReadingController extends ChangeNotifier {
 
   Future<void> flushPendingWrites() => _writeQueue;
 
+  Future<void> reload() async {
+    await flushPendingWrites();
+    await initialize();
+  }
+
   void _commit() {
     _notify();
     _queuePersistence();

@@ -1,0 +1,65 @@
+name: Flutter CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: flutter-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.44.8
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Verify version metadata
+        shell: pwsh
+        run: ./tool/verify_version.ps1
+
+      - name: Check changed Dart formatting
+        shell: pwsh
+        env:
+          BASE_REVISION: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: ./tool/verify_changed_dart_format.ps1 -BaseRevision $env:BASE_REVISION
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test
+        run: flutter test
+
+      - name: Build development APK
+        run: >-
+          flutter build apk --debug
+          --flavor development
+          --dart-define=PAPERFLOW_ENV=development
+
+      - name: Upload development APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: paperflow-development-${{ github.sha }}
+          path: build/app/outputs/flutter-apk/app-development-debug.apk
+          if-no-files-found: error
+          retention-days: 7

@@ -111,7 +111,7 @@
 
 1. 由发布者生成并离线备份正式 upload keystore，创建本机 `android/key.properties`。
 2. 执行全量静态检查、测试和签名 APK/AAB 构建，记录产物哈希与签名验证结果。
-3. 按 `docs/v1-release-checklist.md` 完成 Android 真机网络、AI、密钥、分享、键盘和升级验收。
+3. 按 [`release-checklist.md`](release-checklist.md) 完成 Android 真机网络、AI、密钥、分享、键盘和升级验收。
 4. 发布正式隐私政策 URL，填写 Play Data Safety，并通过内部测试轨道与预发布报告。
 
 长期路线图中的账号、云同步、共享翻译库、服务端 DeepSeek 代理、全文/PDF 阅读器、推荐系统、BibTeX 与引用图谱属于 0.1.0 之后的能力，不计入单机版上线缺口。

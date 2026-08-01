@@ -64,7 +64,7 @@ Windows release 回归当前受本机 Visual Studio Build Tools 缺少 ATL 头�
 ## 5. Play Console 发布门
 
 - [ ] 创建 Play App Signing 配置并保存 upload key 备份。
-- [ ] 发布可访问的 HTTPS 隐私政策 URL，补全 `docs/privacy-policy-draft.md` 的运营者和联系方式。
+- [ ] 发布可访问的 HTTPS 隐私政策 URL，补全 [`privacy-policy-draft.md`](privacy-policy-draft.md) 的运营者和联系方式。
 - [ ] 根据真实数据流填写 Data Safety：设备本地研究数据、用户提供 API Key、发送给 DeepSeek 的聊天/论文上下文，以及 arXiv 请求。
 - [ ] 上传签名 AAB 至内部测试，完成预发布报告、安装、升级和崩溃检查。
 - [ ] 准备商店名称、简介、截图、512x512 图标、功能图和内容分级问卷。

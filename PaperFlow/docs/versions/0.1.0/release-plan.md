@@ -130,4 +130,4 @@ Android 0.1.0 身份已固定为 `app.paperflow.reader`，正式 release 不再�
 - `dart analyze`、全量 `flutter test` 和静态发布检查通过。
 - Android 真机完成网络、键盘、分享、后台恢复和低网速人工验收。
 
-逐项操作和证据要求见 `docs/v1-release-checklist.md`。正式隐私政策仍需补充运营者、联系邮箱并发布为 HTTPS URL；当前 `docs/privacy-policy-draft.md` 仅为草案。
+逐项操作和证据要求见 [`release-checklist.md`](release-checklist.md)。正式隐私政策仍需补充运营者、联系邮箱并发布为 HTTPS URL；当前 [`privacy-policy-draft.md`](privacy-policy-draft.md) 仅为草案。

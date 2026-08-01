@@ -1,10 +1,18 @@
-# PaperFlow 论文页开发路线
+# PaperFlow 开发总路线
 
-> 状态：本地 P0 功能闭环完成，继续推进可离线验证的 P2/P3 能力
-> 最近更新：2026-08-01
-> 适用范围：`lib/src/features/papers/`
-> 视觉与阅读体验改造：[`paper-experience-redesign.md`](paper-experience-redesign.md)
-> 0.1.0 三页上线范围：[`v1-release-plan.md`](v1-release-plan.md)
+> 状态：0.1.0 功能代码候选；0.2.0 论文索引与阅读改造规划中
+> 最近更新：2026-08-02
+> 文档入口：[`README.md`](README.md)
+> 0.1.0：[`versions/0.1.0/README.md`](versions/0.1.0/README.md)
+> 0.2.0：[`versions/0.2.0/README.md`](versions/0.2.0/README.md)
+
+## 文档分层
+
+- 本文只维护跨版本产品方向、能力边界和长期技术路线。
+- 具体设计、发布计划、进度审计和验收证据写入对应的 `versions/<version>/` 目录。
+- 0.1.0 保持“论文、ChatPaper、我的”单机发布范围，不再加入大规模信息架构改造。
+- 0.2.0 重点实现用户论文频道、时间索引、结构化元数据、六页阅读区和 PDF 六问 AI 解读。
+- 代码结构和 Git 管理继续分别遵守 [`code-structure-principles.md`](code-structure-principles.md) 与 [`version-management.md`](version-management.md)。
 
 ## 1. 文档目标
 
@@ -12,7 +20,7 @@
 
 当前论文页使用内置 arXiv 种子数据保证冷启动首屏，同时生产组合根已经接入 arXiv Atom 远程目录、版本化论文缓存和离线回退。分类、搜索、点赞、收藏、评论、分享和 AI 已形成可测试的本地业务闭环。账号、跨设备同步和服务端 AI 代理仍未实现；后续继续通过替换 Repository 或 Service 实现接入远程能力，不在页面组件中堆叠业务逻辑。
 
-0.1.0 已收敛为“论文、ChatPaper、我的”三个一级页面。社区、私信和通知不进入本版本；远程论文源与单机安全凭据配置按 `v1-release-plan.md` 实施。
+0.1.0 已收敛为“论文、ChatPaper、我的”三个一级页面。社区、私信和通知不进入本版本；远程论文源与单机安全凭据配置按 [`versions/0.1.0/release-plan.md`](versions/0.1.0/release-plan.md) 实施。后续论文频道与深度阅读改造按 [`versions/0.2.0/paper-channels-and-reading.md`](versions/0.2.0/paper-channels-and-reading.md) 实施。
 
 ### 核心开发原则
 

@@ -13,7 +13,7 @@ PaperFlow 是面向个人研究者的 Flutter 论文阅读器。0.1.0 聚焦三�
 - 论文目录使用 arXiv Atom API；联网失败时回退到设备缓存或内置种子论文。
 - 阅读记录、互动、评论、搜索历史、中文解读和聊天会话只保存在当前设备，可从“我的 > 本地数据”清理。
 - AI 功能采用 BYOK：用户在“我的 > AI 设置”保存自己的 DeepSeek API Key。正式 release 不包含共享 Key，也不接受 `--dart-define` 注入 Key。
-- 使用 ChatPaper 或中文解读时，问题、论文标题/摘要和必要上下文会发送到 DeepSeek 官方接口。应用内“隐私”入口有简要说明；公开发布前必须按 [隐私政策草案](docs/privacy-policy-draft.md) 提供可访问的正式 URL。
+- 使用 ChatPaper 或中文解读时，问题、论文标题/摘要和必要上下文会发送到 DeepSeek 官方接口。应用内“隐私”入口有简要说明；公开发布前必须按 [隐私政策草案](docs/versions/0.1.0/privacy-policy-draft.md) 提供可访问的正式 URL。
 
 ## 目录
 
@@ -24,7 +24,7 @@ lib/src/
 `-- features/   按论文、聊天、AI 设置、搜索、我的等业务划分
 ```
 
-详细架构约束见 [代码结构原则](docs/code-structure-principles.md)，0.1.0 范围与发布状态见 [发布计划](docs/v1-release-plan.md)。
+开发文档从 [文档总入口](docs/README.md) 进入。详细架构约束见 [代码结构原则](docs/code-structure-principles.md)，0.1.0 范围与发布状态见 [发布计划](docs/versions/0.1.0/release-plan.md)。
 
 ## 开发环境
 
@@ -54,4 +54,4 @@ flutter test
 flutter build windows --release
 ```
 
-Android 上线步骤、签名配置、真机验收与 Play Console 发布门见 [0.1.0 发布检查清单](docs/v1-release-checklist.md)。
+Android 上线步骤、签名配置、真机验收与 Play Console 发布门见 [0.1.0 发布检查清单](docs/versions/0.1.0/release-checklist.md)。

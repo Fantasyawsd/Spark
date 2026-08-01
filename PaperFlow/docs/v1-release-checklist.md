@@ -20,9 +20,9 @@
 
 ### 当前内部验证产物
 
-- 构建时间：2026-08-01 20:15:35（本机时间）。
+- 构建时间：2026-08-01 20:30:10（本机时间）。
 - 文件：`build/app/outputs/flutter-apk/app-debug.apk`，大小 159,610,812 字节。
-- SHA-256：`C0B5A107AC477E995F0FB7CCD7FDB0A2F15CF1CD8D41FECF0FF8A2C3DEF3549A`。
+- SHA-256：`15C2F26014D1657254DAC46CDF6DDF599D661D630FB475ACAA76198BB098C9F1`。
 - `apksigner verify --verbose --print-certs` 已通过，使用 APK Signature Scheme v2，证书为 Android Debug。
 - 该文件只用于开发和真机验收，不是可提交商店的正式签名包；目录中的任何旧 `app-release.apk` 均不得作为当前发布产物。
 

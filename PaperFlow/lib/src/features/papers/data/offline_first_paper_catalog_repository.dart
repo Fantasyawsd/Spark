@@ -236,7 +236,12 @@ class OfflineFirstPaperCatalogRepository implements PaperCatalogRepository {
           PaperCatalogErrorKind.invalidResponse,
         ArxivApiErrorKind.http => PaperCatalogErrorKind.network,
       };
-      return PaperCatalogError(kind: kind, message: error.message);
+      final message = switch (error.kind) {
+        ArxivApiErrorKind.timeout => 'arXiv 响应超时，已显示本地数据。',
+        ArxivApiErrorKind.invalidResponse => 'arXiv 数据暂时无法读取，已显示本地数据。',
+        ArxivApiErrorKind.http => 'arXiv 服务暂时不可用，已显示本地数据。',
+      };
+      return PaperCatalogError(kind: kind, message: message);
     }
     return const PaperCatalogError(
       kind: PaperCatalogErrorKind.unavailable,

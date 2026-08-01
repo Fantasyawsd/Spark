@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:paperflow/src/features/papers/data/cache/in_memory_paper_cache_store.dart';
 import 'package:paperflow/src/features/papers/data/offline_first_paper_catalog_repository.dart';
 import 'package:paperflow/src/features/papers/data/providers/arxiv/arxiv_atom_dto.dart';
+import 'package:paperflow/src/features/papers/data/providers/arxiv/arxiv_atom_client.dart';
 import 'package:paperflow/src/features/papers/data/providers/arxiv/arxiv_catalog_source.dart';
 import 'package:paperflow/src/features/papers/data/arxiv_seed_repository.dart';
 import 'package:paperflow/src/features/papers/domain/paper_catalog.dart';
@@ -68,6 +69,20 @@ void main() {
     expect(page.isOffline, isTrue);
     expect(page.papers, hasLength(2));
     expect(page.error, isNotNull);
+  });
+
+  test('server failures use a user-facing fallback message', () async {
+    remote.error = const ArxivApiException(
+      ArxivApiErrorKind.http,
+      'arXiv 请求失败（HTTP 500）。',
+    );
+
+    final page = await repository.loadFeed(
+      const PaperFeedQuery(limit: 2),
+    );
+
+    expect(page.error?.message, contains('已显示本地数据'));
+    expect(page.error?.message, isNot(contains('HTTP 500')));
   });
 
   test('search falls back to matching seed papers', () async {

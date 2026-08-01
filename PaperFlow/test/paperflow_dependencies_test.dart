@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:paperflow/src/app/paperflow_dependencies.dart';
+import 'package:paperflow/src/features/ai_settings/data/secure_deepseek_credential_repository.dart';
 import 'package:paperflow/src/features/chat/domain/chat_context.dart';
 import 'package:paperflow/src/features/papers/application/paper_ai_service.dart';
 import 'package:paperflow/src/features/papers/domain/paper.dart';
@@ -24,6 +25,10 @@ void main() {
     expect(
       dependencies.paperCatalogRepository,
       isA<OfflineFirstPaperCatalogRepository>(),
+    );
+    expect(
+      dependencies.deepSeekCredentialRepository,
+      isA<SecureDeepSeekCredentialRepository>(),
     );
     expect(dependencies.commentRepository, isA<FilePaperCommentRepository>());
     expect(

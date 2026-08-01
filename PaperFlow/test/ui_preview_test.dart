@@ -310,16 +310,37 @@ void main() {
       find.byKey(ValueKey('profile-read-later-paper-${paper.id}')),
       findsOneWidget,
     );
-    expect(
-      find.byKey(ValueKey('profile-history-paper-${paper.id}')),
-      findsOneWidget,
-    );
 
+    await tester.ensureVisible(
+      find.byKey(ValueKey('profile-read-later-paper-${paper.id}')),
+    );
+    await tester.drag(
+      find.byKey(const ValueKey('profile-scroll')),
+      const Offset(0, -140),
+    );
+    await tester.pumpAndSettle();
     await tester.tap(
       find.byKey(ValueKey('profile-read-later-paper-${paper.id}')),
     );
     await tester.pumpAndSettle();
     expect(find.byKey(ValueKey('paper-title-${paper.id}')), findsOneWidget);
+
+    await tester.tap(find.byTooltip('返回'));
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.byKey(ValueKey('profile-history-paper-${paper.id}')),
+      220,
+      scrollable: find
+          .descendant(
+            of: find.byKey(const ValueKey('profile-scroll')),
+            matching: find.byType(Scrollable),
+          )
+          .first,
+    );
+    expect(
+      find.byKey(ValueKey('profile-history-paper-${paper.id}')),
+      findsOneWidget,
+    );
   });
 
   testWidgets('long Chinese interpretation can open the full reader',

@@ -1,6 +1,7 @@
 import '../../chat/domain/chat_context.dart';
 import '../../chat/application/chat_ai_service.dart';
 import '../../chat/domain/chat_message.dart';
+import '../../ai_settings/domain/deepseek_credential_repository.dart';
 import '../application/paper_translation_service.dart';
 import '../domain/paper.dart';
 import 'deepseek_paper_ai_service.dart';
@@ -51,8 +52,15 @@ ${paper.content.originalAbstractMarkdown}
 
 class DeepSeekPaperTranslationServiceFactory
     implements PaperTranslationServiceFactory {
-  const DeepSeekPaperTranslationServiceFactory();
+  const DeepSeekPaperTranslationServiceFactory({this.credentialRepository});
+
+  final DeepSeekCredentialRepository? credentialRepository;
 
   @override
-  PaperTranslationService create() => DeepSeekPaperTranslationService();
+  PaperTranslationService create() => DeepSeekPaperTranslationService(
+        client: DeepSeekPaperAiService(
+          credentialRepository: credentialRepository,
+          thinkingEnabled: false,
+        ),
+      );
 }

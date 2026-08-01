@@ -117,10 +117,33 @@ void main() {
         isA<PaperAiException>().having(
           (error) => error.message,
           'message',
-          contains('DEEPSEEK_API_KEY'),
+          contains('我的'),
         ),
       ),
     );
+  });
+
+  test('reads the latest API key from the credential repository', () async {
+    late http.Request captured;
+    final credentials = InMemoryDeepSeekCredentialRepository('sk-first');
+    final service = DeepSeekPaperAiService(
+      apiKey: '',
+      credentialRepository: credentials,
+      client: MockClient((request) async {
+        captured = request;
+        return _sseResponse('${_event(content: 'ok')}$_stopEvent');
+      }),
+    );
+
+    await credentials.saveApiKey('sk-replaced');
+    await service.answer(
+      context: PaperChatContext.fromPaper(demoPapers.first),
+      conversation: const [
+        PaperAiMessage(fromUser: true, content: 'test'),
+      ],
+    );
+
+    expect(captured.headers['x-api-key'], 'sk-replaced');
   });
 
   test('DeepSeek service maps authentication errors', () async {

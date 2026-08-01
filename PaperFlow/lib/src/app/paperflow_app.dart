@@ -6,6 +6,7 @@ import '../core/navigation/paperflow_route_observer.dart';
 import '../core/theme/paperflow_theme.dart';
 import '../core/theme/theme_controller.dart';
 import '../core/widgets/paperflow_bottom_nav.dart';
+import '../features/ai_settings/application/deepseek_credential_controller.dart';
 import '../features/chat/application/chat_session_controller.dart';
 import '../features/chat/application/main_ai_chat_definition.dart';
 import '../features/chat/presentation/ai_chat_home_screen.dart';
@@ -248,6 +249,7 @@ class _PaperFlowShellState extends State<PaperFlowShell> {
   late final PaperSearchHistoryRepository _searchHistoryRepository;
   late final PaperTranslationServiceFactory _translationServiceFactory;
   late final PaperLinkService _linkService;
+  late final DeepSeekCredentialController _credentialController;
 
   @override
   void initState() {
@@ -294,6 +296,11 @@ class _PaperFlowShellState extends State<PaperFlowShell> {
     _translationServiceFactory = _dependencies.translationServiceFactory;
     _searchHistoryRepository = _dependencies.searchHistoryRepository;
     _linkService = _dependencies.linkService;
+    _credentialController = DeepSeekCredentialController(
+      repository: _dependencies.deepSeekCredentialRepository,
+      validator: _dependencies.deepSeekCredentialValidator,
+    );
+    unawaited(_credentialController.initialize());
     unawaited(_initializePaperState());
   }
 
@@ -307,6 +314,7 @@ class _PaperFlowShellState extends State<PaperFlowShell> {
       ..removeListener(_handleReadingStateChanged)
       ..dispose();
     _chatSessionController.dispose();
+    _credentialController.dispose();
     super.dispose();
   }
 
@@ -343,6 +351,7 @@ class _PaperFlowShellState extends State<PaperFlowShell> {
                   onOpenMainChat: _openMainAiChat,
                 ),
                 ProfileScreen(
+                  credentialController: _credentialController,
                   favoriteGroups: _paperController.interactions.favoriteGroups,
                   favoritePapersByGroup: {
                     for (final group

@@ -94,15 +94,16 @@ abstract interface class PaperRepository {
 
 ### 3.4 DeepSeek
 
-DeepSeek 请求代码已经存在，但仍属于开发接入状态：
+DeepSeek 请求已进入 V1.0 单机凭据模式：
 
-- API Key 通过 `--dart-define` 编译进客户端。
+- 正式组合根通过 `DeepSeekCredentialRepository` 从安全存储动态读取用户 Key；`--dart-define` 只保留为私人开发构建回退。
+- “我的”页面支持验证、保存、替换和删除，Key 只以掩码展示。
 - 回复使用 OpenAI 兼容 SSE 流式输出，并分别展示思考过程和最终答案。
 - 会话已按论文保存到本地，重新打开 Bottom Sheet 后可以恢复。
 - 已支持请求取消和错误重试；限流和额度控制仍应由后端实现。
 - AI 上下文只有论文元信息和摘要，不包含全文、图表或参考文献。
 
-正式发布时不能将共享 DeepSeek API Key 放在 APK 中。V1.0 单机版采用用户自行配置 Key；未来提供平台共享额度时再通过 PaperFlow 后端代理请求。
+正式发布不会在 APK 中包含共享 DeepSeek API Key。V1.0 单机版采用用户自行配置 Key；未来提供平台共享额度时再通过 PaperFlow 后端代理请求。Android Keystore 的重启、升级、卸载和备份行为仍需真机验收。
 
 ## 4. P0 本地功能闭环
 

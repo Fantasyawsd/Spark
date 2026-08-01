@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import '../../chat/application/chat_ai_service.dart';
 import '../../chat/domain/chat_context.dart';
 import '../../chat/domain/chat_message.dart';
+import '../../ai_settings/domain/deepseek_credential_repository.dart';
 
 class DeepSeekPaperAiService
     implements
@@ -15,6 +16,7 @@ class DeepSeekPaperAiService
         ConfigurableChatAiService {
   DeepSeekPaperAiService({
     this.apiKey = const String.fromEnvironment('DEEPSEEK_API_KEY'),
+    this.credentialRepository,
     this.baseUrl = const String.fromEnvironment(
       'DEEPSEEK_BASE_URL',
       defaultValue: 'https://api.deepseek.com',
@@ -36,6 +38,7 @@ class DeepSeekPaperAiService
         _injectedClient = client;
 
   final String apiKey;
+  final DeepSeekCredentialRepository? credentialRepository;
   final String baseUrl;
   final String model;
   final bool thinkingEnabled;
@@ -77,7 +80,8 @@ class DeepSeekPaperAiService
     required ChatContext context,
     required List<ChatMessage> conversation,
   }) async* {
-    _validateConfiguration();
+    final resolvedApiKey = await _resolveApiKey();
+    _validateConfiguration(resolvedApiKey);
     final requestId = ++_requestSerial;
     final client = _injectedClient ?? http.Client();
     _activeClient = client;
@@ -85,7 +89,7 @@ class DeepSeekPaperAiService
     try {
       final request = http.Request('POST', _endpoint())
         ..headers.addAll({
-          'x-api-key': apiKey,
+          'x-api-key': resolvedApiKey,
           'anthropic-version': '2023-06-01',
           'Content-Type': 'application/json',
           'Accept': 'text/event-stream',
@@ -140,10 +144,22 @@ class DeepSeekPaperAiService
     _activeClient = null;
   }
 
-  void _validateConfiguration() {
-    if (apiKey.trim().isEmpty) {
+  Future<String> _resolveApiKey() async {
+    try {
+      final storedApiKey = await credentialRepository?.readApiKey();
+      if (storedApiKey != null && storedApiKey.trim().isNotEmpty) {
+        return storedApiKey.trim();
+      }
+      return apiKey.trim();
+    } on DeepSeekCredentialException catch (error) {
+      throw ChatAiException(error.message);
+    }
+  }
+
+  void _validateConfiguration(String resolvedApiKey) {
+    if (resolvedApiKey.isEmpty) {
       throw const ChatAiException(
-        '尚未配置 DeepSeek API Key（DEEPSEEK_API_KEY），请使用本地 DeepSeek 启动脚本运行应用。',
+        '尚未配置 DeepSeek API Key，请前往“我的”完成配置。',
       );
     }
   }

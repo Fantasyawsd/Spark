@@ -51,10 +51,13 @@
 - 新增 `PaperCatalogRepository` 异步分页端口；arXiv Atom Provider DTO、论文缓存 Record 和领域 `Paper` 通过 Mapper 分层转换，远程 JSON/XML 不进入 Controller 或 Widget。
 - 新增 `OfflineFirstPaperCatalogRepository`，按远程、查询缓存、内置种子顺序提供 Feed/Search/详情；生产组合根注入该目录仓储，预览与测试默认仍使用同步种子避免隐式网络请求。
 - `PaperFeedController` 保留冷启动同步种子视图，并在目录仓储可用时异步刷新和接近末尾加载更多；`PaperSearchController` 保留本地即时搜索兼容路径，并在生产入口使用远程搜索结果更新。
+- 新增独立 `ai_settings` 业务模块：领域层定义 DeepSeek 凭据与验证端口，数据层分别实现安全存储和远程验证，应用层控制配置状态；Profile 只消费控制器，不读取 Key 或平台插件。
+- DeepSeek 聊天、联网搜索和翻译服务在每次请求前通过凭据端口读取当前 Key，同时保留显式构造参数供协议测试和私人开发构建使用。
+- Android 最低版本调整为 API 23，并关闭应用备份，避免 Keystore 密文被恢复到不匹配设备。
 
 ## 高优先级待整改
 
-1. **DeepSeek 凭据分层**：AI 服务仍主要依赖开发期 `dart-define`，V1.0 发布前必须新增安全凭据端口、Android Keystore 实现和“我的”页面配置入口。
+1. **Profile V1 收敛**：当前仍包含身份、VIP、社交统计、通知和帖子 Demo；必须替换为收藏、阅读、AI 配置、本地数据、主题和应用信息组成的真实单机工作台。
 
 ## 中优先级待整改
 

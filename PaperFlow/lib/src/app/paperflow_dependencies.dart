@@ -1,3 +1,7 @@
+import '../features/ai_settings/data/deepseek_api_credential_validator.dart';
+import '../features/ai_settings/data/in_memory_deepseek_credential_repository.dart';
+import '../features/ai_settings/data/secure_deepseek_credential_repository.dart';
+import '../features/ai_settings/domain/deepseek_credential_repository.dart';
 import '../features/papers/application/paper_ai_service.dart';
 import '../features/papers/application/paper_ai_session_repository.dart';
 import '../features/papers/application/paper_link_service.dart';
@@ -37,6 +41,8 @@ class PaperFlowDependencies {
   const PaperFlowDependencies({
     required this.paperRepository,
     this.paperCatalogRepository,
+    required this.deepSeekCredentialRepository,
+    this.deepSeekCredentialValidator,
     required this.commentRepository,
     required this.interactionRepository,
     required this.preferenceRepository,
@@ -55,6 +61,7 @@ class PaperFlowDependencies {
 
   factory PaperFlowDependencies.production() {
     const seedRepository = ArxivSeedRepository();
+    final credentialRepository = SecureDeepSeekCredentialRepository();
     return PaperFlowDependencies(
       paperRepository: seedRepository,
       paperCatalogRepository: OfflineFirstPaperCatalogRepository(
@@ -62,6 +69,8 @@ class PaperFlowDependencies {
         cacheStore: FilePaperCacheStore(),
         seedRepository: seedRepository,
       ),
+      deepSeekCredentialRepository: credentialRepository,
+      deepSeekCredentialValidator: DeepSeekApiCredentialValidator(),
       commentRepository: FilePaperCommentRepository(),
       interactionRepository: FilePaperInteractionRepository(),
       preferenceRepository: FilePaperPreferenceRepository(),
@@ -69,19 +78,31 @@ class PaperFlowDependencies {
       searchHistoryRepository: FilePaperSearchHistoryRepository(),
       shareService: const PlatformPaperShareService(),
       linkService: const PlatformPaperLinkService(),
-      aiService: DeepSeekPaperAiService(),
-      webSearchAiService: DeepSeekWebSearchAiService(),
+      aiService: DeepSeekPaperAiService(
+        credentialRepository: credentialRepository,
+      ),
+      webSearchAiService: DeepSeekWebSearchAiService(
+        credentialRepository: credentialRepository,
+      ),
       aiSessionRepository: FilePaperAiSessionRepository(),
-      translationServiceFactory: const DeepSeekPaperTranslationServiceFactory(),
+      translationServiceFactory: DeepSeekPaperTranslationServiceFactory(
+        credentialRepository: credentialRepository,
+      ),
       translationRepository: FilePaperTranslationRepository(),
-      mainAiService: DeepSeekPaperAiService(),
-      mainWebSearchAiService: DeepSeekWebSearchAiService(),
+      mainAiService: DeepSeekPaperAiService(
+        credentialRepository: credentialRepository,
+      ),
+      mainWebSearchAiService: DeepSeekWebSearchAiService(
+        credentialRepository: credentialRepository,
+      ),
     );
   }
 
   factory PaperFlowDependencies.preview({
     PaperRepository? paperRepository,
     PaperCatalogRepository? paperCatalogRepository,
+    DeepSeekCredentialRepository? deepSeekCredentialRepository,
+    DeepSeekCredentialValidator? deepSeekCredentialValidator,
     PaperCommentRepository? commentRepository,
     PaperInteractionRepository? interactionRepository,
     PaperPreferenceRepository? preferenceRepository,
@@ -97,12 +118,21 @@ class PaperFlowDependencies {
     PaperAiService? mainAiService,
     PaperAiService? mainWebSearchAiService,
   }) {
-    final resolvedAiService = aiService ?? DeepSeekPaperAiService();
-    final resolvedWebSearchService =
-        webSearchAiService ?? DeepSeekWebSearchAiService();
+    final resolvedCredentialRepository =
+        deepSeekCredentialRepository ?? InMemoryDeepSeekCredentialRepository();
+    final resolvedAiService = aiService ??
+        DeepSeekPaperAiService(
+          credentialRepository: resolvedCredentialRepository,
+        );
+    final resolvedWebSearchService = webSearchAiService ??
+        DeepSeekWebSearchAiService(
+          credentialRepository: resolvedCredentialRepository,
+        );
     return PaperFlowDependencies(
       paperRepository: paperRepository ?? const ArxivSeedRepository(),
       paperCatalogRepository: paperCatalogRepository,
+      deepSeekCredentialRepository: resolvedCredentialRepository,
+      deepSeekCredentialValidator: deepSeekCredentialValidator,
       commentRepository: commentRepository ?? InMemoryPaperCommentRepository(),
       interactionRepository:
           interactionRepository ?? InMemoryPaperInteractionRepository(),
@@ -118,7 +148,9 @@ class PaperFlowDependencies {
       aiSessionRepository:
           aiSessionRepository ?? InMemoryPaperAiSessionRepository(),
       translationServiceFactory: translationServiceFactory ??
-          const DeepSeekPaperTranslationServiceFactory(),
+          DeepSeekPaperTranslationServiceFactory(
+            credentialRepository: resolvedCredentialRepository,
+          ),
       translationRepository:
           translationRepository ?? InMemoryPaperTranslationRepository(),
       mainAiService: mainAiService ?? resolvedAiService,
@@ -129,6 +161,8 @@ class PaperFlowDependencies {
 
   final PaperRepository paperRepository;
   final PaperCatalogRepository? paperCatalogRepository;
+  final DeepSeekCredentialRepository deepSeekCredentialRepository;
+  final DeepSeekCredentialValidator? deepSeekCredentialValidator;
   final PaperCommentRepository commentRepository;
   final PaperInteractionRepository interactionRepository;
   final PaperPreferenceRepository preferenceRepository;

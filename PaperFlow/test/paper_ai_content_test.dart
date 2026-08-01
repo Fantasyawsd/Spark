@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:paperflow/paperflow.dart';
+import 'package:paperflow/src/features/papers/application/paper_chat_context.dart';
 import 'package:paperflow/src/features/papers/presentation/widgets/paper_ai_content.dart';
 
 void main() {
@@ -12,7 +13,7 @@ void main() {
           body: ListView(
             children: [
               PaperAiContent(
-                paper: demoPapers.first,
+                chatContext: PaperChatContext.fromPaper(demoPapers.first),
                 messages: const [
                   PaperAiMessage(fromUser: true, content: '分析论文'),
                   PaperAiMessage(
@@ -69,7 +70,7 @@ void main() {
               return ListView(
                 children: [
                   PaperAiContent(
-                    paper: demoPapers.first,
+                    chatContext: PaperChatContext.fromPaper(demoPapers.first),
                     messages: const [
                       PaperAiMessage(
                         fromUser: false,
@@ -120,7 +121,7 @@ void main() {
               return ListView(
                 children: [
                   PaperAiContent(
-                    paper: demoPapers.first,
+                    chatContext: PaperChatContext.fromPaper(demoPapers.first),
                     messages: const [
                       PaperAiMessage(fromUser: true, content: '查找最新资料'),
                       PaperAiMessage(fromUser: false, content: '正在整理'),
@@ -161,7 +162,7 @@ void main() {
           body: ListView(
             children: [
               PaperAiContent(
-                paper: demoPapers.first,
+                chatContext: PaperChatContext.fromPaper(demoPapers.first),
                 messages: const [
                   PaperAiMessage(fromUser: true, content: '分析论文'),
                   PaperAiMessage(fromUser: false, content: '部分回答'),
@@ -199,7 +200,7 @@ void main() {
           body: ListView(
             children: [
               PaperAiContent(
-                paper: demoPapers.first,
+                chatContext: PaperChatContext.fromPaper(demoPapers.first),
                 messages: const [],
                 loading: false,
                 sending: false,
@@ -230,7 +231,7 @@ void main() {
           body: ListView(
             children: [
               PaperAiContent(
-                paper: demoPapers.first,
+                chatContext: PaperChatContext.fromPaper(demoPapers.first),
                 messages: const [
                   PaperAiMessage(fromUser: true, content: '问题'),
                 ],

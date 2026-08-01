@@ -16,6 +16,7 @@ import '../features/papers/application/paper_ai_service.dart';
 import '../features/papers/application/paper_ai_session_repository.dart';
 import '../features/papers/application/paper_comment_controller.dart';
 import '../features/papers/application/paper_controller.dart';
+import '../features/papers/application/paper_chat_context.dart';
 import '../features/papers/application/paper_link_service.dart';
 import '../features/papers/application/paper_reading_controller.dart';
 import '../features/papers/application/paper_share_service.dart';
@@ -427,7 +428,7 @@ class _PaperFlowShellState extends State<PaperFlowShell> {
     await Navigator.of(context).push<void>(
       MaterialPageRoute(
         builder: (context) => PaperAiChatScreen(
-          paper: paper,
+          chatContext: PaperChatContext.fromPaper(paper),
           aiService: _paperAiService,
           webSearchAiService: _webSearchAiService,
           sessionRepository: _aiSessionRepository,

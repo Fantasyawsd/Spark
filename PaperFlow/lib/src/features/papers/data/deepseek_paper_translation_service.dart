@@ -1,4 +1,6 @@
-import '../application/paper_ai_service.dart';
+import '../../chat/domain/chat_context.dart';
+import '../../chat/application/chat_ai_service.dart';
+import '../../chat/domain/chat_message.dart';
 import '../application/paper_translation_service.dart';
 import '../domain/paper.dart';
 import 'deepseek_paper_ai_service.dart';
@@ -13,9 +15,13 @@ class DeepSeekPaperTranslationService implements PaperTranslationService {
   Stream<String> translateAbstract(PaperRecord paper) async* {
     try {
       await for (final chunk in _client.answerStream(
-        paper: paper,
+        context: ChatContext(
+          id: 'translation:${paper.id}',
+          title: paper.title,
+          systemPrompt: '你是论文摘要翻译助手，只输出忠实、专业的简体中文译文。',
+        ),
         conversation: [
-          PaperAiMessage(
+          ChatMessage(
             fromUser: true,
             content: '''
 请将下面的英文论文摘要忠实翻译为简体中文。
@@ -34,7 +40,7 @@ ${paper.abstractText}
       )) {
         if (chunk.contentDelta.isNotEmpty) yield chunk.contentDelta;
       }
-    } on PaperAiException catch (error) {
+    } on ChatAiException catch (error) {
       throw PaperTranslationException(error.message);
     }
   }

@@ -1,32 +1,18 @@
-import '../../papers/domain/paper.dart';
+import '../domain/chat_context.dart';
 
 /// Stable identity and prompt configuration for the app-wide AI conversation.
 ///
-/// The current AI service API is paper-oriented, so [contextRecord] supplies a
-/// private context record. It is never shown as a paper and its stable id keeps
-/// the main conversation separate from per-paper sessions.
 class MainAiChatDefinition {
   const MainAiChatDefinition._();
 
   static const sessionId = 'paperflow-main-ai-chat';
 
-  static const contextRecord = PaperRecord(
+  static final context = ChatContext(
     id: sessionId,
-    venue: 'PaperFlow',
     title: 'PaperFlow 主聊天',
-    authors: 'PaperFlow AI',
-    firstAffiliation: 'PaperFlow',
-    topics: ['Research Assistant'],
-    abstractText: '',
-    chineseAbstractMarkdown: '',
-    relatedPapers: [],
-    readMinutes: 0,
-    citations: '0',
-    likes: '0',
-    comments: '0',
-    saves: '0',
-    shares: '0',
-    source: 'system',
+    subtitle: 'PaperFlow AI',
+    systemPrompt: systemPrompt(),
+    webSearchSystemPrompt: systemPrompt(webSearch: true),
   );
 
   static String systemPrompt({bool webSearch = false}) {

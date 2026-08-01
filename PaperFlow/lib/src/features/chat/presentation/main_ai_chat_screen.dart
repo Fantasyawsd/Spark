@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../../papers/application/paper_ai_service.dart';
-import '../../papers/application/paper_ai_session_repository.dart';
+import '../application/chat_ai_service.dart';
 import '../application/main_ai_chat_definition.dart';
+import '../domain/chat_session_repository.dart';
 import 'paper_ai_chat_screen.dart';
 
 class MainAiChatScreen extends StatelessWidget {
@@ -13,14 +13,14 @@ class MainAiChatScreen extends StatelessWidget {
     required this.sessionRepository,
   });
 
-  final PaperAiService aiService;
-  final PaperAiService? webSearchAiService;
-  final PaperAiSessionRepository sessionRepository;
+  final ChatAiService aiService;
+  final ChatAiService? webSearchAiService;
+  final ChatSessionRepository sessionRepository;
 
   @override
   Widget build(BuildContext context) {
     return PaperAiChatScreen(
-      paper: MainAiChatDefinition.contextRecord,
+      chatContext: MainAiChatDefinition.context,
       aiService: aiService,
       webSearchAiService: webSearchAiService,
       sessionRepository: sessionRepository,

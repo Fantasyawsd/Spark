@@ -28,7 +28,6 @@ import '../features/papers/domain/paper_repository.dart';
 import '../features/search/data/file_paper_search_history_repository.dart';
 import '../features/search/data/in_memory_paper_search_history_repository.dart';
 import '../features/search/domain/paper_search_history_repository.dart';
-import '../features/chat/application/main_ai_chat_definition.dart';
 
 class PaperFlowDependencies {
   const PaperFlowDependencies({
@@ -64,13 +63,8 @@ class PaperFlowDependencies {
       aiSessionRepository: FilePaperAiSessionRepository(),
       translationServiceFactory: const DeepSeekPaperTranslationServiceFactory(),
       translationRepository: FilePaperTranslationRepository(),
-      mainAiService: DeepSeekPaperAiService(
-        systemPromptBuilder: (_) => MainAiChatDefinition.systemPrompt(),
-      ),
-      mainWebSearchAiService: DeepSeekWebSearchAiService(
-        systemPromptBuilder: (_) =>
-            MainAiChatDefinition.systemPrompt(webSearch: true),
-      ),
+      mainAiService: DeepSeekPaperAiService(),
+      mainWebSearchAiService: DeepSeekWebSearchAiService(),
     );
   }
 

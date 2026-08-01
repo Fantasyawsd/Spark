@@ -7,6 +7,7 @@ import '../../../../core/widgets/paperflow_tab_bar.dart';
 import '../../application/paper_ai_conversation_controller.dart';
 import '../../application/paper_ai_service.dart';
 import '../../application/paper_ai_session_repository.dart';
+import '../../application/paper_chat_context.dart';
 import '../../application/paper_comment_controller.dart';
 import '../../domain/paper.dart';
 import 'paper_ai_content.dart';
@@ -205,7 +206,7 @@ class _PaperCommentsSheetState extends State<_PaperCommentsSheet> {
                   padding: EdgeInsets.zero,
                   children: [
                     PaperAiContent(
-                      paper: widget.paper,
+                      chatContext: PaperChatContext.fromPaper(widget.paper),
                       messages: _aiController.messages,
                       loading: _aiController.loading,
                       sending: _aiController.sending,

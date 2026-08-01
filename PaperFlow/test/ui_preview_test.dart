@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:paperflow/paperflow.dart';
+import 'package:paperflow/src/features/chat/domain/chat_context.dart';
 
 void main() {
   testWidgets('paper title copies on tap while body remains selectable',
@@ -891,11 +892,11 @@ class _FakePaperAiService implements PaperAiService {
 
   @override
   Future<String> answer({
-    required PaperRecord paper,
+    required ChatContext context,
     required List<PaperAiMessage> conversation,
   }) async {
     await Future<void>.delayed(const Duration(milliseconds: 150));
-    return '**DeepSeek Markdown**\n\n- ${paper.title}\n- ${conversation.last.content}';
+    return '**DeepSeek Markdown**\n\n- ${context.title}\n- ${conversation.last.content}';
   }
 }
 

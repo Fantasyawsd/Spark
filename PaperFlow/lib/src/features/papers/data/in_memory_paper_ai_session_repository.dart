@@ -1,17 +1,17 @@
-import '../application/paper_ai_service.dart';
-import '../application/paper_ai_session_repository.dart';
+import '../../chat/domain/chat_message.dart';
+import '../../chat/domain/chat_session_repository.dart';
 
-class InMemoryPaperAiSessionRepository implements PaperAiSessionRepository {
-  final Map<String, List<PaperAiMessage>> _sessions = {};
+class InMemoryPaperAiSessionRepository implements ChatSessionRepository {
+  final Map<String, List<ChatMessage>> _sessions = {};
   final Map<String, DateTime> _updatedAt = {};
   final Set<String> _pinned = {};
 
   @override
-  Future<List<PaperAiMessage>> load(String paperId) async =>
+  Future<List<ChatMessage>> load(String paperId) async =>
       List.unmodifiable(_sessions[paperId] ?? const []);
 
   @override
-  Future<void> save(String paperId, List<PaperAiMessage> messages) async {
+  Future<void> save(String paperId, List<ChatMessage> messages) async {
     _sessions[paperId] = List.from(messages);
     _updatedAt[paperId] = DateTime.now();
   }
@@ -34,7 +34,7 @@ class InMemoryPaperAiSessionRepository implements PaperAiSessionRepository {
   }
 
   @override
-  Future<List<PaperAiSessionSummary>> listSessions() async {
+  Future<List<ChatSessionSummary>> listSessions() async {
     final result =
         _sessions.entries.where((entry) => entry.value.isNotEmpty).map(
       (entry) {
@@ -42,7 +42,7 @@ class InMemoryPaperAiSessionRepository implements PaperAiSessionRepository {
             .map((message) => message.content)
             .firstWhere((content) => content.trim().isNotEmpty,
                 orElse: () => '');
-        return PaperAiSessionSummary(
+        return ChatSessionSummary(
           contextId: entry.key,
           messageCount: entry.value.length,
           preview: preview,

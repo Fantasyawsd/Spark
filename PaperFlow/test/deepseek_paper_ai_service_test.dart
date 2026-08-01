@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:paperflow/paperflow.dart';
+import 'package:paperflow/src/features/papers/application/paper_chat_context.dart';
 
 void main() {
   test('DeepSeek Anthropic service sends paper context and conversation',
@@ -26,7 +27,7 @@ void main() {
     );
 
     final result = await service.answer(
-      paper: demoPapers.first,
+      context: PaperChatContext.fromPaper(demoPapers.first),
       conversation: const [
         PaperAiMessage(fromUser: true, content: '解释核心方法'),
       ],
@@ -65,7 +66,7 @@ void main() {
     );
 
     final chunks = await service.answerStream(
-      paper: demoPapers.first,
+      context: PaperChatContext.fromPaper(demoPapers.first),
       conversation: const [
         PaperAiMessage(fromUser: true, content: '解释方法'),
       ],
@@ -87,7 +88,7 @@ void main() {
     service.setReasoningEffort(PaperAiReasoningEffort.none);
 
     await service.answer(
-      paper: demoPapers.first,
+      context: PaperChatContext.fromPaper(demoPapers.first),
       conversation: const [
         PaperAiMessage(fromUser: true, content: '直接回答'),
       ],
@@ -107,7 +108,7 @@ void main() {
 
     await expectLater(
       service.answer(
-        paper: demoPapers.first,
+        context: PaperChatContext.fromPaper(demoPapers.first),
         conversation: const [
           PaperAiMessage(fromUser: true, content: 'test'),
         ],
@@ -137,7 +138,7 @@ void main() {
 
     await expectLater(
       service.answer(
-        paper: demoPapers.first,
+        context: PaperChatContext.fromPaper(demoPapers.first),
         conversation: const [
           PaperAiMessage(fromUser: true, content: 'test'),
         ],

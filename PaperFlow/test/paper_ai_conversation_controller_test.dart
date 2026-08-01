@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:paperflow/paperflow.dart';
+import 'package:paperflow/src/features/chat/domain/chat_context.dart';
 
 void main() {
   test(
@@ -392,7 +393,7 @@ class _ConfigurableAiService
 
   @override
   Future<String> answer({
-    required PaperRecord paper,
+    required ChatContext context,
     required List<PaperAiMessage> conversation,
   }) async =>
       '回答';
@@ -406,7 +407,7 @@ class _QueueAiService implements PaperAiService {
 
   @override
   Future<String> answer({
-    required PaperRecord paper,
+    required ChatContext context,
     required List<PaperAiMessage> conversation,
   }) async {
     conversations.add(List.from(conversation));
@@ -422,7 +423,7 @@ class _CancellableAiService implements CancellablePaperAiService {
 
   @override
   Future<String> answer({
-    required PaperRecord paper,
+    required ChatContext context,
     required List<PaperAiMessage> conversation,
   }) {
     _completer = Completer<String>();
@@ -515,14 +516,14 @@ class _StreamingAiService implements StreamingPaperAiService {
 
   @override
   Future<String> answer({
-    required PaperRecord paper,
+    required ChatContext context,
     required List<PaperAiMessage> conversation,
   }) async =>
       '**最终回答**';
 
   @override
   Stream<PaperAiStreamChunk> answerStream({
-    required PaperRecord paper,
+    required ChatContext context,
     required List<PaperAiMessage> conversation,
   }) async* {
     yield const PaperAiStreamChunk(reasoningDelta: '先阅读摘要，');
@@ -539,14 +540,14 @@ class _RegeneratingStreamingAiService
 
   @override
   Future<String> answer({
-    required PaperRecord paper,
+    required ChatContext context,
     required List<PaperAiMessage> conversation,
   }) async =>
       '完整回答';
 
   @override
   Stream<PaperAiStreamChunk> answerStream({
-    required PaperRecord paper,
+    required ChatContext context,
     required List<PaperAiMessage> conversation,
   }) async* {
     _requests++;
@@ -573,14 +574,14 @@ class _WebSearchAiService implements StreamingPaperAiService {
 
   @override
   Future<String> answer({
-    required PaperRecord paper,
+    required ChatContext context,
     required List<PaperAiMessage> conversation,
   }) async =>
       '联网回答';
 
   @override
   Stream<PaperAiStreamChunk> answerStream({
-    required PaperRecord paper,
+    required ChatContext context,
     required List<PaperAiMessage> conversation,
   }) async* {
     requests++;

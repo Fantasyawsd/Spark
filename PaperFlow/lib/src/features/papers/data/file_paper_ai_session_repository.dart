@@ -1,10 +1,10 @@
 import '../../../core/storage/local_json_store.dart';
 import '../../../core/storage/versioned_local_json_store.dart';
-import '../application/paper_ai_service.dart';
-import '../application/paper_ai_session_repository.dart';
+import '../../chat/domain/chat_message.dart';
+import '../../chat/domain/chat_session_repository.dart';
 import 'paper_ai_session_json_mapper.dart';
 
-class FilePaperAiSessionRepository implements PaperAiSessionRepository {
+class FilePaperAiSessionRepository implements ChatSessionRepository {
   FilePaperAiSessionRepository({LocalJsonStore? store})
       : _store = VersionedLocalJsonStore(
           store ?? LocalJsonStore(fileName: 'paper_ai_sessions.json'),
@@ -15,18 +15,18 @@ class FilePaperAiSessionRepository implements PaperAiSessionRepository {
   final VersionedLocalJsonStore _store;
 
   @override
-  Future<List<PaperAiMessage>> load(String paperId) async {
+  Future<List<ChatMessage>> load(String paperId) async {
     try {
       final json = await _store.readMap();
       if (json == null) return const [];
       return PaperAiSessionJsonMapper.messagesFor(json, paperId);
     } catch (error) {
-      throw PaperAiSessionPersistenceException('无法读取 AI 对话记录。', error);
+      throw ChatSessionPersistenceException('无法读取 AI 对话记录。', error);
     }
   }
 
   @override
-  Future<void> save(String paperId, List<PaperAiMessage> messages) async {
+  Future<void> save(String paperId, List<ChatMessage> messages) async {
     try {
       await _store.updateMap((current) {
         final json = current ?? <String, dynamic>{};
@@ -42,7 +42,7 @@ class FilePaperAiSessionRepository implements PaperAiSessionRepository {
         return json;
       });
     } catch (error) {
-      throw PaperAiSessionPersistenceException('无法保存 AI 对话记录。', error);
+      throw ChatSessionPersistenceException('无法保存 AI 对话记录。', error);
     }
   }
 
@@ -55,7 +55,7 @@ class FilePaperAiSessionRepository implements PaperAiSessionRepository {
         return json;
       });
     } catch (error) {
-      throw PaperAiSessionPersistenceException('无法清空 AI 对话记录。', error);
+      throw ChatSessionPersistenceException('无法清空 AI 对话记录。', error);
     }
   }
 
@@ -79,16 +79,16 @@ class FilePaperAiSessionRepository implements PaperAiSessionRepository {
         return json;
       });
     } catch (error) {
-      throw PaperAiSessionPersistenceException('无法更新 AI 会话置顶状态。', error);
+      throw ChatSessionPersistenceException('无法更新 AI 会话置顶状态。', error);
     }
   }
 
   @override
-  Future<List<PaperAiSessionSummary>> listSessions() async {
+  Future<List<ChatSessionSummary>> listSessions() async {
     try {
       final stored = await _store.readMap();
       if (stored == null) return const [];
-      final result = <PaperAiSessionSummary>[];
+      final result = <ChatSessionSummary>[];
       for (final entry in stored.entries) {
         final rawSession = entry.value;
         final rawMessages = PaperAiSessionJsonMapper.rawMessages(rawSession);
@@ -105,7 +105,7 @@ class FilePaperAiSessionRepository implements PaperAiSessionRepository {
             .firstWhere((text) => text.trim().isNotEmpty, orElse: () => '');
         if (preview.isEmpty) continue;
         result.add(
-          PaperAiSessionSummary(
+          ChatSessionSummary(
             contextId: entry.key,
             messageCount: messages.length,
             preview: preview.trim(),
@@ -120,7 +120,7 @@ class FilePaperAiSessionRepository implements PaperAiSessionRepository {
       });
       return List.unmodifiable(result);
     } catch (error) {
-      throw PaperAiSessionPersistenceException('无法读取 AI 会话列表。', error);
+      throw ChatSessionPersistenceException('无法读取 AI 会话列表。', error);
     }
   }
 }

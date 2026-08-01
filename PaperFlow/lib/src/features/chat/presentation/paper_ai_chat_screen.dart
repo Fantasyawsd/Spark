@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/paperflow_theme.dart';
-import '../../papers/application/paper_ai_conversation_controller.dart';
-import '../../papers/application/paper_ai_service.dart';
-import '../../papers/application/paper_ai_session_repository.dart';
-import '../../papers/domain/paper.dart';
-import '../../papers/presentation/widgets/paper_ai_composer.dart';
-import '../../papers/presentation/widgets/paper_ai_content.dart';
+import '../application/chat_ai_service.dart';
+import '../application/chat_conversation_controller.dart';
+import '../domain/chat_context.dart';
+import '../domain/chat_session_repository.dart';
+import 'widgets/paper_ai_composer.dart';
+import 'widgets/paper_ai_content.dart';
 
 class PaperAiChatScreen extends StatefulWidget {
   const PaperAiChatScreen({
     super.key,
-    required this.paper,
+    required this.chatContext,
     required this.aiService,
     this.webSearchAiService,
     required this.sessionRepository,
@@ -27,10 +27,10 @@ class PaperAiChatScreen extends StatefulWidget {
     this.clearConfirmation = '这会删除当前论文的全部 AI 对话记录。',
   });
 
-  final PaperRecord paper;
-  final PaperAiService aiService;
-  final PaperAiService? webSearchAiService;
-  final PaperAiSessionRepository sessionRepository;
+  final ChatContext chatContext;
+  final ChatAiService aiService;
+  final ChatAiService? webSearchAiService;
+  final ChatSessionRepository sessionRepository;
   final String screenTitle;
   final String? screenSubtitle;
   final String? welcomeTitle;
@@ -45,13 +45,13 @@ class PaperAiChatScreen extends StatefulWidget {
 class _PaperAiChatScreenState extends State<PaperAiChatScreen> {
   final TextEditingController _composer = TextEditingController();
   final ScrollController _scrollController = ScrollController();
-  late final PaperAiConversationController _conversation;
+  late final ChatConversationController _conversation;
 
   @override
   void initState() {
     super.initState();
-    _conversation = PaperAiConversationController(
-      paper: widget.paper,
+    _conversation = ChatConversationController(
+      context: widget.chatContext,
       service: widget.aiService,
       webSearchService: widget.webSearchAiService,
       sessionRepository: widget.sessionRepository,
@@ -91,7 +91,7 @@ class _PaperAiChatScreenState extends State<PaperAiChatScreen> {
             SizedBox(
               width: MediaQuery.sizeOf(context).width * 0.68,
               child: Text(
-                widget.screenSubtitle ?? widget.paper.title,
+                widget.screenSubtitle ?? widget.chatContext.title,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
@@ -111,7 +111,7 @@ class _PaperAiChatScreenState extends State<PaperAiChatScreen> {
               controller: _scrollController,
               children: [
                 PaperAiContent(
-                  paper: widget.paper,
+                  chatContext: widget.chatContext,
                   messages: _conversation.messages,
                   loading: _conversation.loading,
                   sending: _conversation.sending,

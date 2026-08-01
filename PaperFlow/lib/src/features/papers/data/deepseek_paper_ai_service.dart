@@ -3,16 +3,16 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
-import '../application/paper_ai_service.dart';
-import '../application/paper_ai_prompt_builder.dart';
-import '../domain/paper.dart';
+import '../../chat/application/chat_ai_service.dart';
+import '../../chat/domain/chat_context.dart';
+import '../../chat/domain/chat_message.dart';
 
 class DeepSeekPaperAiService
     implements
-        PaperAiService,
-        StreamingPaperAiService,
-        CancellablePaperAiService,
-        ConfigurablePaperAiService {
+        ChatAiService,
+        StreamingChatAiService,
+        CancellableChatAiService,
+        ConfigurableChatAiService {
   DeepSeekPaperAiService({
     this.apiKey = const String.fromEnvironment('DEEPSEEK_API_KEY'),
     this.baseUrl = const String.fromEnvironment(
@@ -31,22 +31,22 @@ class DeepSeekPaperAiService
     this.systemPromptBuilder,
     http.Client? client,
   })  : _reasoningEffort = thinkingEnabled
-            ? PaperAiReasoningEffort.fromApiValue(reasoningEffort)
-            : PaperAiReasoningEffort.none,
+            ? ChatReasoningEffort.fromApiValue(reasoningEffort)
+            : ChatReasoningEffort.none,
         _injectedClient = client;
 
   final String apiKey;
   final String baseUrl;
   final String model;
   final bool thinkingEnabled;
-  final String Function(PaperRecord paper)? systemPromptBuilder;
+  final String Function(ChatContext context)? systemPromptBuilder;
   final http.Client? _injectedClient;
-  PaperAiReasoningEffort _reasoningEffort;
+  ChatReasoningEffort _reasoningEffort;
 
   String get reasoningEffort => _reasoningEffort.apiValue;
 
   @override
-  void setReasoningEffort(PaperAiReasoningEffort effort) {
+  void setReasoningEffort(ChatReasoningEffort effort) {
     if (thinkingEnabled) _reasoningEffort = effort;
   }
 
@@ -56,26 +56,26 @@ class DeepSeekPaperAiService
 
   @override
   Future<String> answer({
-    required PaperRecord paper,
-    required List<PaperAiMessage> conversation,
+    required ChatContext context,
+    required List<ChatMessage> conversation,
   }) async {
     final content = StringBuffer();
     await for (final chunk in answerStream(
-      paper: paper,
+      context: context,
       conversation: conversation,
     )) {
       content.write(chunk.contentDelta);
     }
     if (content.toString().trim().isEmpty) {
-      throw const PaperAiException('DeepSeek 返回了空响应，请稍后重试。');
+      throw const ChatAiException('DeepSeek 返回了空响应，请稍后重试。');
     }
     return content.toString().trim();
   }
 
   @override
-  Stream<PaperAiStreamChunk> answerStream({
-    required PaperRecord paper,
-    required List<PaperAiMessage> conversation,
+  Stream<ChatStreamChunk> answerStream({
+    required ChatContext context,
+    required List<ChatMessage> conversation,
   }) async* {
     _validateConfiguration();
     final requestId = ++_requestSerial;
@@ -90,7 +90,7 @@ class DeepSeekPaperAiService
           'Content-Type': 'application/json',
           'Accept': 'text/event-stream',
         })
-        ..body = jsonEncode(_requestBody(paper, conversation));
+        ..body = jsonEncode(_requestBody(context, conversation));
       final response =
           await client.send(request).timeout(const Duration(seconds: 60));
       _throwIfCancelled(requestId);
@@ -98,7 +98,7 @@ class DeepSeekPaperAiService
       if (response.statusCode < 200 || response.statusCode >= 300) {
         final body = await response.stream.bytesToString();
         final payload = _decodePayload(body);
-        throw PaperAiException(_apiError(response.statusCode, payload));
+        throw ChatAiException(_apiError(response.statusCode, payload));
       }
 
       await for (final line in response.stream
@@ -110,22 +110,22 @@ class DeepSeekPaperAiService
         if (data.isEmpty) continue;
         final payload = _decodePayload(data);
         if (payload['type'] == 'error' || payload['error'] != null) {
-          throw PaperAiException(_apiError(500, payload));
+          throw ChatAiException(_apiError(500, payload));
         }
         final chunk = _streamChunk(payload);
         if (!chunk.isEmpty) yield chunk;
       }
-    } on PaperAiCancelledException {
+    } on ChatAiCancelledException {
       rethrow;
-    } on PaperAiException {
+    } on ChatAiException {
       rethrow;
     } on FormatException {
-      throw const PaperAiException('DeepSeek 返回了无法解析的数据。');
+      throw const ChatAiException('DeepSeek 返回了无法解析的数据。');
     } on TimeoutException {
-      throw const PaperAiException('DeepSeek 响应超时，请稍后重试。');
+      throw const ChatAiException('DeepSeek 响应超时，请稍后重试。');
     } on Exception {
       _throwIfCancelled(requestId);
-      throw const PaperAiException('无法连接 DeepSeek，请检查网络后重试。');
+      throw const ChatAiException('无法连接 DeepSeek，请检查网络后重试。');
     } finally {
       if (identical(_activeClient, client)) _activeClient = null;
       if (_injectedClient == null) client.close();
@@ -142,7 +142,7 @@ class DeepSeekPaperAiService
 
   void _validateConfiguration() {
     if (apiKey.trim().isEmpty) {
-      throw const PaperAiException(
+      throw const ChatAiException(
         '尚未配置 DeepSeek API Key（DEEPSEEK_API_KEY），请使用本地 DeepSeek 启动脚本运行应用。',
       );
     }
@@ -157,23 +157,22 @@ class DeepSeekPaperAiService
   }
 
   Map<String, Object> _requestBody(
-    PaperRecord paper,
-    List<PaperAiMessage> conversation,
+    ChatContext context,
+    List<ChatMessage> conversation,
   ) {
     return {
       'model': model,
       'max_tokens': 4096,
       'stream': true,
-      'system': systemPromptBuilder?.call(paper) ??
-          PaperAiPromptBuilder.systemPrompt(paper),
+      'system': systemPromptBuilder?.call(context) ?? context.systemPrompt,
       'thinking':
-          !thinkingEnabled || _reasoningEffort == PaperAiReasoningEffort.none
+          !thinkingEnabled || _reasoningEffort == ChatReasoningEffort.none
               ? {'type': 'disabled'}
               : {
                   'type': 'enabled',
                   'budget_tokens': _thinkingBudget(_reasoningEffort),
                 },
-      if (thinkingEnabled && _reasoningEffort != PaperAiReasoningEffort.none)
+      if (thinkingEnabled && _reasoningEffort != ChatReasoningEffort.none)
         'output_config': {'effort': _reasoningEffort.apiValue},
       'messages': [
         for (final message in conversation)
@@ -185,13 +184,13 @@ class DeepSeekPaperAiService
     };
   }
 
-  static int _thinkingBudget(PaperAiReasoningEffort effort) {
+  static int _thinkingBudget(ChatReasoningEffort effort) {
     return switch (effort) {
-      PaperAiReasoningEffort.none => 0,
-      PaperAiReasoningEffort.low => 512,
-      PaperAiReasoningEffort.medium => 1024,
-      PaperAiReasoningEffort.high => 2048,
-      PaperAiReasoningEffort.max => 4096,
+      ChatReasoningEffort.none => 0,
+      ChatReasoningEffort.low => 512,
+      ChatReasoningEffort.medium => 1024,
+      ChatReasoningEffort.high => 2048,
+      ChatReasoningEffort.max => 4096,
     };
   }
 
@@ -201,13 +200,13 @@ class DeepSeekPaperAiService
     return decoded;
   }
 
-  PaperAiStreamChunk _streamChunk(Map<String, dynamic> payload) {
+  ChatStreamChunk _streamChunk(Map<String, dynamic> payload) {
     if (payload['type'] != 'content_block_delta') {
-      return const PaperAiStreamChunk();
+      return const ChatStreamChunk();
     }
     final delta = payload['delta'];
-    if (delta is! Map) return const PaperAiStreamChunk();
-    return PaperAiStreamChunk(
+    if (delta is! Map) return const ChatStreamChunk();
+    return ChatStreamChunk(
       reasoningDelta:
           delta['type'] == 'thinking_delta' && delta['thinking'] is String
               ? delta['thinking'] as String
@@ -235,7 +234,7 @@ class DeepSeekPaperAiService
 
   void _throwIfCancelled(int requestId) {
     if (_cancelledRequest == requestId) {
-      throw const PaperAiCancelledException();
+      throw const ChatAiCancelledException();
     }
   }
 }

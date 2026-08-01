@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:paperflow/src/app/paperflow_dependencies.dart';
+import 'package:paperflow/src/features/chat/domain/chat_context.dart';
 import 'package:paperflow/src/features/papers/application/paper_ai_service.dart';
 import 'package:paperflow/src/features/papers/domain/paper.dart';
 import 'package:paperflow/src/features/papers/domain/paper_repository.dart';
@@ -89,7 +90,7 @@ class _FakePaperRepository implements PaperRepository {
 class _FakeAiService implements PaperAiService {
   @override
   Future<String> answer({
-    required PaperRecord paper,
+    required ChatContext context,
     required List<PaperAiMessage> conversation,
   }) async {
     return '';

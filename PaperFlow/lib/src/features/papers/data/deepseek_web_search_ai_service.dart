@@ -3,16 +3,16 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
-import '../application/paper_ai_prompt_builder.dart';
-import '../application/paper_ai_service.dart';
-import '../domain/paper.dart';
+import '../../chat/application/chat_ai_service.dart';
+import '../../chat/domain/chat_context.dart';
+import '../../chat/domain/chat_message.dart';
 
 class DeepSeekWebSearchAiService
     implements
-        PaperAiService,
-        StreamingPaperAiService,
-        CancellablePaperAiService,
-        ConfigurablePaperAiService {
+        ChatAiService,
+        StreamingChatAiService,
+        CancellableChatAiService,
+        ConfigurableChatAiService {
   DeepSeekWebSearchAiService({
     this.apiKey = const String.fromEnvironment('DEEPSEEK_API_KEY'),
     this.baseUrl = const String.fromEnvironment(
@@ -30,21 +30,21 @@ class DeepSeekWebSearchAiService
     this.maxSearches = 3,
     this.systemPromptBuilder,
     http.Client? client,
-  })  : _reasoningEffort = PaperAiReasoningEffort.fromApiValue(reasoningEffort),
+  })  : _reasoningEffort = ChatReasoningEffort.fromApiValue(reasoningEffort),
         _injectedClient = client;
 
   final String apiKey;
   final String baseUrl;
   final String model;
   final int maxSearches;
-  final String Function(PaperRecord paper)? systemPromptBuilder;
+  final String Function(ChatContext context)? systemPromptBuilder;
   final http.Client? _injectedClient;
-  PaperAiReasoningEffort _reasoningEffort;
+  ChatReasoningEffort _reasoningEffort;
 
   String get reasoningEffort => _reasoningEffort.apiValue;
 
   @override
-  void setReasoningEffort(PaperAiReasoningEffort effort) {
+  void setReasoningEffort(ChatReasoningEffort effort) {
     _reasoningEffort = effort;
   }
 
@@ -54,26 +54,26 @@ class DeepSeekWebSearchAiService
 
   @override
   Future<String> answer({
-    required PaperRecord paper,
-    required List<PaperAiMessage> conversation,
+    required ChatContext context,
+    required List<ChatMessage> conversation,
   }) async {
     final content = StringBuffer();
     await for (final chunk in answerStream(
-      paper: paper,
+      context: context,
       conversation: conversation,
     )) {
       content.write(chunk.contentDelta);
     }
     if (content.toString().trim().isEmpty) {
-      throw const PaperAiException('DeepSeek 联网搜索没有返回回答。');
+      throw const ChatAiException('DeepSeek 联网搜索没有返回回答。');
     }
     return content.toString().trim();
   }
 
   @override
-  Stream<PaperAiStreamChunk> answerStream({
-    required PaperRecord paper,
-    required List<PaperAiMessage> conversation,
+  Stream<ChatStreamChunk> answerStream({
+    required ChatContext context,
+    required List<ChatMessage> conversation,
   }) async* {
     _validateConfiguration();
     final requestId = ++_requestSerial;
@@ -87,14 +87,14 @@ class DeepSeekWebSearchAiService
           'Content-Type': 'application/json',
           'Accept': 'text/event-stream',
         })
-        ..body = jsonEncode(_requestBody(paper, conversation));
+        ..body = jsonEncode(_requestBody(context, conversation));
       final response =
           await client.send(request).timeout(const Duration(seconds: 60));
       _throwIfCancelled(requestId);
 
       if (response.statusCode < 200 || response.statusCode >= 300) {
         final body = await response.stream.bytesToString();
-        throw PaperAiException(_apiError(response.statusCode, body));
+        throw ChatAiException(_apiError(response.statusCode, body));
       }
 
       await for (final line in response.stream
@@ -106,22 +106,22 @@ class DeepSeekWebSearchAiService
         if (data.isEmpty) continue;
         final payload = _decodePayload(data);
         if (payload['type'] == 'error') {
-          throw PaperAiException(_eventError(payload));
+          throw ChatAiException(_eventError(payload));
         }
         final chunk = _streamChunk(payload);
         if (!chunk.isEmpty) yield chunk;
       }
-    } on PaperAiCancelledException {
+    } on ChatAiCancelledException {
       rethrow;
-    } on PaperAiException {
+    } on ChatAiException {
       rethrow;
     } on FormatException {
-      throw const PaperAiException('DeepSeek 联网搜索返回了无法解析的数据。');
+      throw const ChatAiException('DeepSeek 联网搜索返回了无法解析的数据。');
     } on TimeoutException {
-      throw const PaperAiException('DeepSeek 联网搜索响应超时，请稍后重试。');
+      throw const ChatAiException('DeepSeek 联网搜索响应超时，请稍后重试。');
     } on Exception {
       _throwIfCancelled(requestId);
-      throw const PaperAiException('无法连接 DeepSeek 联网搜索，请检查网络后重试。');
+      throw const ChatAiException('无法连接 DeepSeek 联网搜索，请检查网络后重试。');
     } finally {
       if (identical(_activeClient, client)) _activeClient = null;
       if (_injectedClient == null) client.close();
@@ -138,7 +138,7 @@ class DeepSeekWebSearchAiService
 
   void _validateConfiguration() {
     if (apiKey.trim().isEmpty) {
-      throw const PaperAiException(
+      throw const ChatAiException(
         '尚未配置 DeepSeek API Key（DEEPSEEK_API_KEY）。',
       );
     }
@@ -153,22 +153,22 @@ class DeepSeekWebSearchAiService
   }
 
   Map<String, Object> _requestBody(
-    PaperRecord paper,
-    List<PaperAiMessage> conversation,
+    ChatContext context,
+    List<ChatMessage> conversation,
   ) {
     return {
       'model': model,
       'max_tokens': 4096,
       'stream': true,
-      'system': systemPromptBuilder?.call(paper) ??
-          PaperAiPromptBuilder.systemPrompt(paper, webSearch: true),
-      'thinking': _reasoningEffort == PaperAiReasoningEffort.none
+      'system': systemPromptBuilder?.call(context) ??
+          context.promptFor(webSearch: true),
+      'thinking': _reasoningEffort == ChatReasoningEffort.none
           ? {'type': 'disabled'}
           : {
               'type': 'enabled',
               'budget_tokens': _thinkingBudget(_reasoningEffort),
             },
-      if (_reasoningEffort != PaperAiReasoningEffort.none)
+      if (_reasoningEffort != ChatReasoningEffort.none)
         'output_config': {'effort': _reasoningEffort.apiValue},
       'tools': [
         {
@@ -187,13 +187,13 @@ class DeepSeekWebSearchAiService
     };
   }
 
-  static int _thinkingBudget(PaperAiReasoningEffort effort) {
+  static int _thinkingBudget(ChatReasoningEffort effort) {
     return switch (effort) {
-      PaperAiReasoningEffort.none => 0,
-      PaperAiReasoningEffort.low => 512,
-      PaperAiReasoningEffort.medium => 1024,
-      PaperAiReasoningEffort.high => 2048,
-      PaperAiReasoningEffort.max => 4096,
+      ChatReasoningEffort.none => 0,
+      ChatReasoningEffort.low => 512,
+      ChatReasoningEffort.medium => 1024,
+      ChatReasoningEffort.high => 2048,
+      ChatReasoningEffort.max => 4096,
     };
   }
 
@@ -203,27 +203,27 @@ class DeepSeekWebSearchAiService
     return decoded;
   }
 
-  PaperAiStreamChunk _streamChunk(Map<String, dynamic> payload) {
+  ChatStreamChunk _streamChunk(Map<String, dynamic> payload) {
     if (payload['type'] == 'content_block_start') {
       final block = payload['content_block'];
-      if (block is! Map) return const PaperAiStreamChunk();
+      if (block is! Map) return const ChatStreamChunk();
       if (block['type'] == 'server_tool_use' && block['name'] == 'web_search') {
-        return const PaperAiStreamChunk(searchStarted: true);
+        return const ChatStreamChunk(searchStarted: true);
       }
       if (block['type'] == 'web_search_tool_result') {
-        return PaperAiStreamChunk(
+        return ChatStreamChunk(
           sources: _sources(block['content']),
           searchFinished: true,
         );
       }
-      return const PaperAiStreamChunk();
+      return const ChatStreamChunk();
     }
     if (payload['type'] != 'content_block_delta') {
-      return const PaperAiStreamChunk();
+      return const ChatStreamChunk();
     }
     final delta = payload['delta'];
-    if (delta is! Map) return const PaperAiStreamChunk();
-    return PaperAiStreamChunk(
+    if (delta is! Map) return const ChatStreamChunk();
+    return ChatStreamChunk(
       reasoningDelta:
           delta['type'] == 'thinking_delta' && delta['thinking'] is String
               ? delta['thinking'] as String
@@ -234,9 +234,9 @@ class DeepSeekWebSearchAiService
     );
   }
 
-  List<PaperAiSource> _sources(Object? rawContent) {
+  List<ChatSource> _sources(Object? rawContent) {
     if (rawContent is! List) return const [];
-    final sources = <PaperAiSource>[];
+    final sources = <ChatSource>[];
     for (final item in rawContent.whereType<Map>()) {
       final title = item['title'];
       final url = item['url'];
@@ -244,7 +244,7 @@ class DeepSeekWebSearchAiService
           title.trim().isNotEmpty &&
           url is String &&
           url.trim().isNotEmpty) {
-        sources.add(PaperAiSource(title: title.trim(), url: url.trim()));
+        sources.add(ChatSource(title: title.trim(), url: url.trim()));
       }
     }
     return sources;
@@ -278,7 +278,7 @@ class DeepSeekWebSearchAiService
 
   void _throwIfCancelled(int requestId) {
     if (_cancelledRequest == requestId) {
-      throw const PaperAiCancelledException();
+      throw const ChatAiCancelledException();
     }
   }
 }

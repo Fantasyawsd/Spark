@@ -40,17 +40,18 @@
 - 各文件仓储的 JSON Record 解析已集中到所属业务模块的 Mapper，字段存在但类型错误时会保留损坏副本，不再静默恢复为空状态后覆盖原始数据。
 - 新增 `PaperFlowDependencies` 作为唯一应用组合根：正式入口集中创建文件仓储、平台服务和 DeepSeek 实现，`PaperFlowShell` 只消费依赖接口；旧的可选构造参数仅保留给测试和预览兼容层。
 - 增加组合根装配测试，覆盖正式实现类型、预览替身注入以及论文 AI 与主聊天 AI 的默认/独立服务映射。
+- 新增通用 `ChatContext`、`ChatAiService` 与 `ChatConversationController`，主聊天不再通过伪造 `PaperRecord` 复用论文会话；论文模块只通过 `PaperChatContext` 适配论文提示词和稳定会话 ID。
+- AI Composer、会话内容和消息视图已迁入 `chat/presentation`；论文模块旧路径只保留导出兼容层。Markdown 渲染与入场动画因被论文和聊天共同使用，迁入 `core/widgets`。
+- DeepSeek 实现和文件/内存会话仓储已直接依赖 `chat` 的端口与领域类型，不再通过 `papers/application` 兼容别名反向依赖；论文 AI 类型别名仅保留给现有论文调用方渐进迁移。
 
 ## 高优先级待整改
 
-1. **聊天模块所有权**：通用消息和会话端口已迁入 `chat`，但 ConversationController、Composer 和内容渲染仍复用 `papers` 类型。后续应由聊天模块拥有通用对话流程，论文模块只提供论文聊天上下文。
-2. **依赖方向**：部分 `papers/data` 实现仍通过兼容别名导入 `papers/application` 端口。后续应直接依赖 `chat/domain`，使依赖统一为 `presentation -> application -> domain <- data`。
-3. **数据结构分层**：`PaperRecord` 仍混合原始论文值、Markdown 展示内容和格式化计数字符串。远程接口接入前应拆分 DTO、领域模型和 ViewModel，并把计数恢复为整数。
+1. **数据结构分层**：`PaperRecord` 仍混合原始论文值、Markdown 展示内容和格式化计数字符串。远程接口接入前应拆分 DTO、领域模型和 ViewModel，并把计数恢复为整数。
 
 ## 中优先级待整改
 
 - `PaperController` 当前是 `PaperFeedController` 与 `PaperInteractionController` 的兼容外观。保留用于过渡，待调用方全部改为窄接口后再删除，不立即重构。
-- `paper_markdown.dart` 同时承担渲染、代码块解析、LaTeX 预处理、流式修复和剪贴板操作。后续出现第三个调用方或新增解析能力时再按职责拆分。
+- `paperflow_markdown.dart` 同时承担渲染、代码块解析、LaTeX 预处理、流式修复和剪贴板操作。当前作为论文与聊天共享能力保留在 `core/widgets`；后续新增解析能力时再按职责拆分。
 - 仅由单个业务模块使用的组件不应继续放入 `core/widgets`；迁移时以真实复用关系为准，不进行批量目录改名。
 
 ## 继续开发约束

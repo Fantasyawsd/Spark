@@ -7,3 +7,6 @@
 *.swp
 *.swo
 .DS_Store
+
+# Local deep-work progress state.
+.slim/deepwork/

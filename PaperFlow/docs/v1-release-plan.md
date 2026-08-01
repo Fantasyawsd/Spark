@@ -115,6 +115,8 @@ V1.0 单机版采用 BYOK：
 
 ## 6. 发布验收
 
+Android V1 身份已固定为 `app.paperflow.reader`，正式 release 不再回退到 debug 签名。签名信息仅从被 Git 忽略的 `android/key.properties` 读取，仓库保留 `android/key.properties.example` 作为本地配置模板。
+
 - 冷启动有本地内容；联网后自动更新，不因远程失败进入空白页。
 - 三个一级页面高度和 Dock 状态稳定，不出现未实现入口。
 - 所有本地状态在重启后恢复，损坏数据可隔离并回退。

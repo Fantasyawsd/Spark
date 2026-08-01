@@ -1,4 +1,4 @@
-package com.example.paperflow
+package app.paperflow.reader
 
 import android.content.Intent
 import io.flutter.embedding.android.FlutterActivity

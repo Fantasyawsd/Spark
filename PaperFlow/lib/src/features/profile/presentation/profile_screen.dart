@@ -935,9 +935,12 @@ class _AppSettingsCard extends StatelessWidget {
             ),
             const Divider(height: 1),
             ListTile(
+              key: const ValueKey('profile-privacy'),
               leading: const Icon(Icons.privacy_tip_outlined),
               title: const Text('隐私'),
-              subtitle: const Text('阅读、互动与聊天数据保存在当前设备'),
+              subtitle: const Text('了解本地存储与 DeepSeek 数据传输'),
+              trailing: const Icon(Icons.chevron_right_rounded),
+              onTap: () => _showPrivacyNotice(context),
             ),
             const Divider(height: 1),
             ListTile(
@@ -965,6 +968,29 @@ class _AppSettingsCard extends StatelessWidget {
       ),
     );
   }
+}
+
+Future<void> _showPrivacyNotice(BuildContext context) {
+  return showDialog<void>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: const Text('隐私说明'),
+      content: const SingleChildScrollView(
+        child: Text(
+          '论文缓存、阅读记录、点赞、收藏、评论、搜索历史、中文解读和 ChatPaper 会话保存在当前设备。你可以在“本地数据”中分类清理。\n\n'
+          '使用 ChatPaper 或中文解读时，你输入的内容、当前论文的标题、摘要和必要上下文会发送到 DeepSeek 官方接口生成回答。开启联网搜索后，DeepSeek 还会处理搜索请求并返回来源。\n\n'
+          'DeepSeek API Key 由系统安全存储保护，不写入普通业务数据文件，也不会随“重置本地业务数据”一起删除；你可以在 AI 设置中单独删除。\n\n'
+          'PaperFlow V1 不提供账号、广告或分析统计。打开论文、PDF 或来源链接时，将跳转到系统浏览器并受对应第三方服务的隐私规则约束。',
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('知道了'),
+        ),
+      ],
+    ),
+  );
 }
 
 class PaperCatalogStatusView {

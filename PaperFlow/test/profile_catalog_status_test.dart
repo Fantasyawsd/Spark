@@ -48,6 +48,24 @@ void main() {
     expect(status.stateLabel, '在线');
   });
 
+  testWidgets('privacy notice discloses DeepSeek data transfer',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(378, 810));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      const MaterialApp(home: Scaffold(body: ProfileScreen())),
+    );
+
+    await tester.ensureVisible(find.byKey(const ValueKey('profile-privacy')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('profile-privacy')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('隐私说明'), findsOneWidget);
+    expect(find.textContaining('发送到 DeepSeek 官方接口'), findsOneWidget);
+    expect(find.textContaining('系统安全存储'), findsOneWidget);
+  });
+
   test('seed catalog is reported as local instead of online', () {
     const status = PaperCatalogStatusView(
       sourceLabel: '内置论文',

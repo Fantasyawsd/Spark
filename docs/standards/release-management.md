@@ -16,7 +16,7 @@ PaperFlow 分开管理代码版本、发布版本、数据版本、接口版本�
 | 接口版本 | 服务端路由与契约文档 | 暂无自有 API；未来从 `/api/v1` 开始 |
 | 功能版本 | Feature Flag 定义与发布配置 | 编译期 Flag；生产默认关闭实验功能 |
 
-`VERSION` 文件不作为额外事实源。Flutter 和 Android 已原生读取 `pubspec.yaml`，重复文件只会增加漂移风险。应用内展示常量由 `tool/set_version.ps1` 同步，并由 `tool/verify_version.ps1` 和 CI 校验。
+`VERSION` 文件不作为额外事实源。Flutter 和 Android 已原生读取 `pubspec.yaml`，重复文件只会增加漂移风险。所有 flavor 的 `versionName` 都保持为该版本值；渠道只通过应用 ID 和应用名称区分。应用内展示常量由 `tool/set_version.ps1` 同步，并由 `tool/verify_version.ps1` 和 CI 校验。
 
 ## 2. 代码版本
 
@@ -59,7 +59,7 @@ git tag -a v0.1.1 -m "Release v0.1.1"
 git push origin v0.1.1
 ```
 
-Tag 不用于标记未完成开发或普通内部构建。已推送 Tag 不移动、不覆盖；发布错误使用新 patch 与新构建号修复。
+CI 会将版本与目标分支基线比较：SemVer 不得倒退，版本元数据变化时 build number 必须严格递增。Tag 不用于标记未完成开发或普通内部构建。正式 Tag 必须是 annotated Tag，CHANGELOG 标题必须使用发布日期而不是候选状态；已推送 Tag 不移动、不覆盖，发布错误使用新 patch 与新构建号修复。
 
 ## 4. 环境与渠道
 
@@ -79,7 +79,7 @@ flutter build apk --debug --flavor staging --dart-define=PAPERFLOW_ENV=staging
 flutter build appbundle --release --flavor production --dart-define=PAPERFLOW_ENV=production
 ```
 
-Flavor 与 `PAPERFLOW_ENV` 必须一致。非敏感开关可使用 `dart-define`；API Key、签名密码和 Token 不属于环境常量，必须使用安全存储或 CI Secret。
+Android 会读取 Flutter 提供的真实 `appFlavor` 并与 `PAPERFLOW_ENV` 校验，错配时拒绝启动；Windows 等无 flavor 平台使用 `PAPERFLOW_ENV`。非敏感开关可使用 `dart-define`；API Key、签名密码和 Token 不属于环境常量，必须使用安全存储或 CI Secret。
 
 当前没有自有服务器和数据库，因此三个环境暂时共享公开的 arXiv/OpenAlex 端点，但应用身份和运行配置已经隔离。接入后端时必须为三个环境配置独立域名、凭据和数据库，测试包不得访问生产数据库。
 
@@ -122,12 +122,12 @@ PAPERFLOW_FEATURE_PDF_AI
 
 ## 8. 发布门
 
-1. `main` 工作区干净，CI 通过。
+1. `main` 工作区干净，Pull Request 与 `main` CI 通过。
 2. 使用版本工具递增发布号或构建号，更新 CHANGELOG。
 3. 执行对应版本的 `docs/releases/<version>/release-checklist.md`。
 4. 构建 production AAB，验证签名、包名、版本号和 SHA-256。
 5. 先上传 Internal，再进入 Beta/封闭测试，最后发布 Production。
 6. 完成真机升级、数据 Migration、弱网、凭据和回滚验证。
-7. 创建并推送 annotated Tag，归档产物、提交 SHA、迁移版本、已知问题和回滚方案。
+7. 创建并推送 annotated Tag；Tag CI 再校验版本、CHANGELOG 日期和链接，随后归档产物、提交 SHA、迁移版本、已知问题和回滚方案。
 
 0.1.0 当前仍是代码候选；在签名、真机和 Play 内部测试完成前不得创建正式发布 Tag。

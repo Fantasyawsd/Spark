@@ -26,7 +26,7 @@
 - [x] `pubspec.yaml`、应用内版本和 CHANGELOG 可由工具校验。
 - [x] Android 支持 development、staging、production 三个 flavor。
 - [x] 实验功能具有生产默认关闭的编译期 Feature Flag 基础层。
-- [x] GitHub Actions 执行版本检查、变更文件格式、分析、测试和 development APK 构建。
+- [x] GitHub Actions 执行基线版本/Tag 检查、变更文件格式、分析、测试、development/production APK 构建和无签名 release 阻断。
 - [x] 版本、数据迁移、API 兼容与发布流程有唯一规范入口。
 - [x] Flutter 分析、测试和 Android flavor 构建通过。
 
@@ -65,10 +65,10 @@
 
 ## 当前进度
 
-- 已完成：配置层、版本工具、三套 Android flavor、CI、五层版本规范、文档同步和完整验证。
-- 正在进行：最终 diff 审查和原子提交。
-- 下一步：完成开发报告，提交并交由集成流程合并。
-- 阻塞项：无
+- 已完成：配置层、版本工具、三套 Android flavor、CI、五层版本规范、两轮只读审查、审查修复和完整验证。
+- 正在进行：开发报告收尾与远程集成。
+- 下一步：推送补充提交，重新认证 GitHub 应用后创建 PR 并观察首次远程 CI。
+- 阻塞项：GitHub 应用连接要求重新认证，当前无法通过连接器创建 PR。
 
 ## 决策记录
 
@@ -77,18 +77,23 @@
 | 2026-08-02 | `pubspec.yaml` 作为发布版本唯一事实源 | Flutter 和 Android 已原生读取该字段，避免重复版本文件漂移 | 工具与 CI 必须同步校验应用内展示常量 |
 | 2026-08-02 | 服务端数据/API 仅定义兼容规则 | 当前没有自有后端，提前创建空实现会产生虚假架构 | 后端 workstream 按规范落地 Migration 和 `/api/v1` |
 | 2026-08-02 | CI 只强制格式化本次变更的 Dart 文件 | Dart 3.12 会重排大量历史文件，全仓迁移不应混入版本管理提交 | 后续单独建立基线格式迁移 workstream |
+| 2026-08-02 | Android versionName 不追加渠道后缀 | `pubspec.yaml` 是唯一版本事实源，固定 `-beta` 会与 SemVer prerelease 重复 | 渠道通过 applicationId 与应用名称区分 |
+| 2026-08-02 | 发布校验采用基线、实际 flavor 与实际 release 任务 | 防止版本倒退、环境错配和 Gradle 缩写/聚合任务绕过 | CI 与本地工具均 fail-closed |
 
 ## 验证记录
 
 | 命令或人工检查 | 结果 | 日期 |
 | --- | --- | --- |
 | `.\tool\verify_version.ps1` | `0.1.0+1` 一致性通过；临时提升到 build 2 后同步与校验闭环通过并已恢复 | 2026-08-02 |
-| `.\tool\verify_changed_dart_format.ps1` | 9 个变更 Dart 文件通过 | 2026-08-02 |
+| `.\tool\verify_changed_dart_format.ps1` | 无参数自动找到 `origin/main` merge-base，10 个变更 Dart 文件通过 | 2026-08-02 |
 | Markdown 本地链接检查 / `git diff --check` | 通过 | 2026-08-02 |
 | `flutter analyze` | 通过，无问题 | 2026-08-02 |
-| `flutter test` | 194 项全部通过 | 2026-08-02 |
+| `flutter test` | 195 项全部通过 | 2026-08-02 |
 | development / staging / production debug APK | 三个 flavor 均构建成功，`aapt` 元数据符合约定 | 2026-08-02 |
 | `:app:assembleProductionRelease`（无签名） | 按预期拒绝，错误信息明确 | 2026-08-02 |
+| `:app:assembleProductionRel`（Gradle 缩写、无签名） | 仍由实际 release 任务门阻断 | 2026-08-02 |
+| PowerShell 5 / 7 | 三个脚本使用 UTF-8 BOM；版本递增与基线校验均通过 | 2026-08-02 |
+| 临时轻量 / annotated `v0.1.0` | 轻量 Tag 被拒绝；候选 CHANGELOG 被正式 Tag 门禁拒绝；临时 Tag 已删除 | 2026-08-02 |
 
 ## 检查点与提交
 
@@ -96,3 +101,5 @@
 | --- | --- | --- | --- |
 | `1efbebd` | `feat: add release environment configuration` | 配置层与 Android flavor | analyze、194 tests、三个 debug flavor 构建通过 |
 | `5c4eeff` | `chore: add version checks and Flutter CI` | 工具与 CI | 版本升号/恢复闭环、格式与语法检查通过 |
+| `f250c05` | `fix: enforce flavor and signing boundaries` | 审查修复 | 实际 flavor 校验、Gradle 缩写签名门、195 tests |
+| `9156f0e` | `chore: harden version and release CI gates` | 审查修复 | 基线版本、Tag、PowerShell 5/7 和增量格式负向验证 |

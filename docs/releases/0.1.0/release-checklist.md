@@ -14,7 +14,7 @@
 - [x] 正式构建不读取 `DEEPSEEK_API_KEY` 的编译常量；开发辅助脚本拒绝 release。
 - [x] 应用内隐私入口说明本地存储与 DeepSeek 数据传输。
 - [x] 论文远程目录、缓存、离线种子回退、ChatPaper、本地互动和本地数据清理均有自动化测试。
-- [x] `flutter analyze` 通过，完整 Flutter 测试 191 项通过，`git diff --check` 通过。
+- [x] `flutter analyze` 通过，完整 Flutter 测试 195 项通过，`git diff --check` 通过。
 - [x] Android development、staging、production debug APK 均已构建并核对包名、版本和应用名称。
 - [x] 未配置签名时 `gradlew bundleRelease` 按预期失败，防止误把未签名产物当成发布包。
 
@@ -24,9 +24,9 @@
 
 | 渠道 | APK | 包名 / 版本 / 标签 | 大小 | SHA-256 |
 | --- | --- | --- | ---: | --- |
-| development | `app-development-debug.apk` | `app.paperflow.reader.dev` / `0.1.0-dev (1)` / PaperFlow Dev | 159,606,512 字节 | `CA6703DA5AE00563F1653DDC1D328399651F4749BE10661BC1BCEDA331FA4737` |
-| staging | `app-staging-debug.apk` | `app.paperflow.reader.staging` / `0.1.0-beta (1)` / PaperFlow Beta | 159,606,624 字节 | `23862B3E5DE9C0F895358095A9B3BFFC6CCE751A786D89433D211C401375BED0` |
-| production | `app-production-debug.apk` | `app.paperflow.reader` / `0.1.0 (1)` / PaperFlow | 159,606,468 字节 | `0FEE22D56D97FFCA1FB8D243963E8EE7059AD82C7D118B4997A1D217F90FB472` |
+| development | `app-development-debug.apk` | `app.paperflow.reader.dev` / `0.1.0 (1)` / PaperFlow Dev | 159,607,808 字节 | `920247C89E30A0B035AF70B6190CFEB28AE105C681153563C348AC9DC11DB261` |
+| staging | `app-staging-debug.apk` | `app.paperflow.reader.staging` / `0.1.0 (1)` / PaperFlow Beta | 159,608,076 字节 | `24441CAC6A573C47EB7FAF617EABD9E29DB3AE41B5E1C1C6755A7266C2278C1D` |
+| production | `app-production-debug.apk` | `app.paperflow.reader` / `0.1.0 (1)` / PaperFlow | 184,057,303 字节 | `F1ED536B08733BF321E7A8A99E026BE755EC78745575CA24F5AB5C21D5EAF681` |
 
 以上元数据由 `aapt dump badging` 核对。三个文件均为 debug 产物，只用于开发和真机验收，不是可提交商店的正式签名包；目录中的旧 `app-debug.apk` 或任何 `app-release.apk` 均不得作为当前发布产物。
 

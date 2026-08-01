@@ -10,6 +10,11 @@ PaperFlow 的用户可见变更记录在此文件中。格式遵循 Keep a Chang
 - 版本一致性、变更文件格式检查、版本更新工具和 GitHub Actions CI。
 - 生产默认关闭的实验功能开关基础层。
 
+### Changed
+
+- Android 渠道只通过包名和应用名称区分，版本名称统一来自 `pubspec.yaml`。
+- 发布门拒绝环境错配、版本倒退、未签名 release、轻量 Tag 和未填写发布日期的正式 Tag。
+
 ## [0.1.0] - Release candidate
 
 ### Added

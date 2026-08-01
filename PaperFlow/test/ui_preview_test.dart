@@ -111,7 +111,7 @@ void main() {
     expect(find.byIcon(Icons.bookmark_rounded), findsWidgets);
   });
 
-  testWidgets('structured related paper opens its local reading page',
+  testWidgets('related paper opens a fullscreen detail and returns to feed',
       (tester) async {
     await tester.binding.setSurfaceSize(const Size(378, 810));
     addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -132,9 +132,42 @@ void main() {
       find.byKey(const ValueKey('paper-title-2404.01356')),
       findsOneWidget,
     );
+    expect(
+      find.byKey(const ValueKey('paper-detail-2404.01356')),
+      findsOneWidget,
+    );
+    expect(find.byKey(const ValueKey('papers-header')), findsNothing);
+    expect(find.byKey(const ValueKey('bottom-nav-0')), findsNothing);
+
+    await tester.tap(find.text('相关论文').first);
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const ValueKey('related-paper-2402.06734')),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const ValueKey('paper-detail-2402.06734')),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.byKey(const ValueKey('paper-detail-back')));
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const ValueKey('paper-detail-2404.01356')),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.byKey(const ValueKey('paper-detail-back')));
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const ValueKey('paper-title-2402.06734')),
+      findsOneWidget,
+    );
+    expect(find.byKey(const ValueKey('papers-header')), findsOneWidget);
+    expect(find.byKey(const ValueKey('bottom-nav-0')), findsOneWidget);
   });
 
-  testWidgets('saved papers appear in profile and reopen the reading page',
+  testWidgets('saved paper detail returns to profile without moving the feed',
       (tester) async {
     await tester.binding.setSurfaceSize(const Size(378, 810));
     addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -162,6 +195,24 @@ void main() {
     await tester.pumpAndSettle();
     expect(
       find.byKey(const ValueKey('paper-title-2404.01356')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey('paper-detail-2404.01356')),
+      findsOneWidget,
+    );
+    expect(find.byKey(const ValueKey('papers-header')), findsNothing);
+    expect(find.byKey(const ValueKey('bottom-nav-2')), findsNothing);
+
+    await tester.tap(find.byKey(const ValueKey('paper-detail-back')));
+    await tester.pumpAndSettle();
+    expect(savedPaper, findsOneWidget);
+    expect(find.byKey(const ValueKey('bottom-nav-2')), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('bottom-nav-0')));
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const ValueKey('paper-title-2402.06734')),
       findsOneWidget,
     );
   });
@@ -743,7 +794,7 @@ void main() {
     expect(find.byTooltip('研究领域：AI Agent'), findsOneWidget);
   });
 
-  testWidgets('local search opens a paper and keeps its history',
+  testWidgets('search detail returns to search and keeps its history',
       (tester) async {
     await tester.binding.setSurfaceSize(const Size(378, 810));
     addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -778,7 +829,22 @@ void main() {
       find.byKey(const ValueKey('paper-title-2502.00547')),
       findsOneWidget,
     );
+    expect(
+      find.byKey(const ValueKey('paper-detail-2502.00547')),
+      findsOneWidget,
+    );
+    expect(find.byKey(const ValueKey('papers-header')), findsNothing);
+    expect(find.byKey(const ValueKey('bottom-nav-0')), findsNothing);
 
+    await tester.tap(find.byKey(const ValueKey('paper-detail-back')));
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const ValueKey('paper-search-result-2502.00547')),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.byTooltip('返回'));
+    await tester.pumpAndSettle();
     await tester.tap(find.byTooltip('搜索'));
     await tester.pumpAndSettle();
     expect(find.text('Milmer'), findsOneWidget);

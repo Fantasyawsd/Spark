@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../core/navigation/paperflow_route_observer.dart';
 import '../core/theme/paperflow_theme.dart';
 import '../core/theme/theme_controller.dart';
 import '../core/widgets/paperflow_bottom_nav.dart';
@@ -24,6 +25,7 @@ import '../features/papers/domain/paper.dart';
 import '../features/papers/domain/paper_interaction_repository.dart';
 import '../features/papers/domain/paper_preference_repository.dart';
 import '../features/papers/domain/paper_reading_repository.dart';
+import '../features/papers/presentation/paper_detail_screen.dart';
 import '../features/papers/presentation/papers_screen.dart';
 import '../features/profile/presentation/profile_screen.dart';
 import '../features/search/application/paper_search_controller.dart';
@@ -88,6 +90,7 @@ class PaperFlowApp extends StatelessWidget {
         title: 'PaperFlow',
         debugShowCheckedModeBanner: false,
         theme: PaperFlowTheme.light(),
+        navigatorObservers: [PaperFlowRouteObserver.instance],
         home: _PaperFlowBootstrap(
           showSplash: showSplash,
           dependencies: resolvedDependencies,
@@ -231,6 +234,7 @@ class PaperFlowShell extends StatefulWidget {
 
 class _PaperFlowShellState extends State<PaperFlowShell> {
   int _selectedIndex = 0;
+  int _coveringRouteDepth = 0;
   late final PaperFlowDependencies _dependencies;
   late final PaperController _paperController;
   late final PaperCommentController _commentController;
@@ -321,7 +325,7 @@ class _PaperFlowShellState extends State<PaperFlowShell> {
               index: _selectedIndex,
               children: [
                 PapersScreen(
-                  active: _selectedIndex == 0,
+                  active: _selectedIndex == 0 && _coveringRouteDepth == 0,
                   feedController: _paperController.feed,
                   interactionController: _paperController.interactions,
                   commentController: _commentController,
@@ -334,6 +338,8 @@ class _PaperFlowShellState extends State<PaperFlowShell> {
                   shareService: _dependencies.shareService,
                   linkService: _linkService,
                   onSearch: _openPaperSearch,
+                  onOpenPaperDetail: (paperId) =>
+                      unawaited(_openPaperDetailById(paperId)),
                 ),
                 AiChatHomeScreen(
                   chatSessionController: _chatSessionController,
@@ -365,7 +371,8 @@ class _PaperFlowShellState extends State<PaperFlowShell> {
                   readLaterPapers: _papersForIds(
                     _readingController.readLaterPaperIds,
                   ),
-                  onOpenPaper: _openSavedPaper,
+                  onOpenPaper: (paperId) =>
+                      unawaited(_openPaperDetailById(paperId)),
                 ),
               ],
             ),
@@ -415,21 +422,23 @@ class _PaperFlowShellState extends State<PaperFlowShell> {
         .toList(growable: false);
   }
 
-  void _openPaperSearch() {
+  Future<void> _openPaperSearch() async {
     final controller = PaperSearchController(
       papers: _paperController.feed.allPapers,
       historyRepository: _searchHistoryRepository,
     );
-    Navigator.of(context)
-        .push<void>(
-          MaterialPageRoute(
-            builder: (context) => PaperSearchScreen(
-              controller: controller,
-              onPaperSelected: _paperController.openPaperById,
-            ),
+    try {
+      await _pushCoveredRoute<void>(
+        MaterialPageRoute(
+          builder: (context) => PaperSearchScreen(
+            controller: controller,
+            onPaperSelected: _openPaperDetailById,
           ),
-        )
-        .whenComplete(controller.dispose);
+        ),
+      );
+    } finally {
+      controller.dispose();
+    }
   }
 
   Future<void> _openAiChat(Paper paper) async {
@@ -466,8 +475,46 @@ class _PaperFlowShellState extends State<PaperFlowShell> {
     await _chatSessionController.refresh();
   }
 
-  void _openSavedPaper(String paperId) {
-    _paperController.openPaperById(paperId);
-    setState(() => _selectedIndex = 0);
+  Future<void> _openPaperDetailById(String paperId) async {
+    final paper = _paperController.feed.allPapers
+        .where((item) => item.id == paperId)
+        .firstOrNull;
+    if (paper == null || !mounted) return;
+    await _pushCoveredRoute<void>(
+      MaterialPageRoute(
+        builder: (context) => PaperDetailScreen(
+          paper: paper,
+          interactionController: _paperController.interactions,
+          commentController: _commentController,
+          readingController: _readingController,
+          aiService: _paperAiService,
+          webSearchAiService: _webSearchAiService,
+          aiSessionRepository: _aiSessionRepository,
+          translationServiceFactory: _translationServiceFactory,
+          translationRepository: _dependencies.translationRepository,
+          shareService: _dependencies.shareService,
+          linkService: _linkService,
+          onOpenRelatedPaper: (relatedPaperId) =>
+              unawaited(_openPaperDetailById(relatedPaperId)),
+        ),
+      ),
+    );
+  }
+
+  Future<T?> _pushCoveredRoute<T>(Route<T> route) async {
+    _changeRouteCoverage(1);
+    try {
+      return await Navigator.of(context).push<T>(route);
+    } finally {
+      _changeRouteCoverage(-1);
+    }
+  }
+
+  void _changeRouteCoverage(int delta) {
+    if (!mounted) return;
+    setState(() {
+      _coveringRouteDepth += delta;
+      if (_coveringRouteDepth < 0) _coveringRouteDepth = 0;
+    });
   }
 }

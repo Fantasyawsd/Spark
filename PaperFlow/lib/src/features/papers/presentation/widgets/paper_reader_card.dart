@@ -45,6 +45,8 @@ class PaperReaderCard extends StatefulWidget {
     this.translationRepository,
     this.onOpenPaper,
     this.onOpenRelatedPaper,
+    this.contentTopInset = 8,
+    this.actionBarBottomInset = 72,
   });
 
   final Paper paper;
@@ -72,6 +74,8 @@ class PaperReaderCard extends StatefulWidget {
   final double initialAbstractScrollOffset;
   final ValueChanged<int>? onTabChanged;
   final ValueChanged<double>? onAbstractScrollChanged;
+  final double contentTopInset;
+  final double actionBarBottomInset;
 
   @override
   State<PaperReaderCard> createState() => _PaperReaderCardState();
@@ -144,9 +148,9 @@ class _PaperReaderCardState extends State<PaperReaderCard> {
             child: Padding(
               padding: EdgeInsets.fromLTRB(
                 16,
-                8,
+                widget.contentTopInset,
                 16,
-                safePadding.bottom + 168,
+                safePadding.bottom + widget.actionBarBottomInset + 96,
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -203,13 +207,13 @@ class _PaperReaderCardState extends State<PaperReaderCard> {
           ),
           Positioned(
             right: 16,
-            bottom: safePadding.bottom + 128,
+            bottom: safePadding.bottom + widget.actionBarBottomInset + 56,
             child: _AiInterpretButton(onPressed: widget.onAnalyze),
           ),
           Positioned(
             left: 16,
             right: 16,
-            bottom: safePadding.bottom + 72,
+            bottom: safePadding.bottom + widget.actionBarBottomInset,
             height: 52,
             child: PaperActionBar(
               paper: paper,

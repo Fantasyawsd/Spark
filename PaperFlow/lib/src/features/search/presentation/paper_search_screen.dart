@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/paperflow_theme.dart';
@@ -12,7 +14,7 @@ class PaperSearchScreen extends StatefulWidget {
   });
 
   final PaperSearchController controller;
-  final ValueChanged<String> onPaperSelected;
+  final FutureOr<void> Function(String paperId) onPaperSelected;
 
   @override
   State<PaperSearchScreen> createState() => _PaperSearchScreenState();
@@ -103,8 +105,7 @@ class _PaperSearchScreenState extends State<PaperSearchScreen> {
 
   Future<void> _openPaper(String paperId) async {
     await widget.controller.rememberCurrentQuery();
-    widget.onPaperSelected(paperId);
-    if (mounted) Navigator.pop(context);
+    await widget.onPaperSelected(paperId);
   }
 }
 

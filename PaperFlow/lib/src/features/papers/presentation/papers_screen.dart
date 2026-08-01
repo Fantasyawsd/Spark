@@ -14,11 +14,10 @@ import '../application/paper_reading_controller.dart';
 import '../application/paper_share_service.dart';
 import '../application/paper_translation_service.dart';
 import 'widgets/paper_category_picker.dart';
-import 'widgets/paper_comments_sheet.dart';
 import 'widgets/paper_empty_state.dart';
 import 'widgets/paper_favorite_group_sheet.dart';
 import 'widgets/paper_grid_card.dart';
-import 'widgets/paper_reader_card.dart';
+import 'widgets/paper_reader_view.dart';
 import 'widgets/papers_header.dart';
 
 class PapersScreen extends StatefulWidget {
@@ -37,6 +36,7 @@ class PapersScreen extends StatefulWidget {
     this.shareService,
     this.linkService,
     this.onSearch,
+    this.onOpenPaperDetail,
   });
 
   final PaperFeedController feedController;
@@ -52,6 +52,7 @@ class PapersScreen extends StatefulWidget {
   final PaperShareService? shareService;
   final PaperLinkService? linkService;
   final VoidCallback? onSearch;
+  final ValueChanged<String>? onOpenPaperDetail;
 
   @override
   State<PapersScreen> createState() => _PapersScreenState();
@@ -204,40 +205,19 @@ class _PapersScreenState extends State<PapersScreen> {
       onPageChanged: _handlePageChanged,
       itemBuilder: (context, index) {
         final paper = papers[index];
-        return PaperReaderCard(
+        return PaperReaderView(
           paper: paper,
-          liked: _interactions.isLiked(paper.id),
-          saved: _interactions.isSaved(paper.id),
-          read: widget.readingController.isRead(paper.id),
-          readLater: widget.readingController.isReadLater(paper.id),
-          followed: _interactions.isAuthorFollowed(paper),
-          shareCountDelta: _interactions.shareCountDelta(paper.id),
-          commentCountDelta: widget.commentController.commentCount(paper.id),
-          onLike: () => _interactions.toggleLike(paper.id),
-          onSave: () => _interactions.toggleSave(paper.id),
-          onSaveLongPress: () => _showFavoriteGroups(paper.id),
-          onToggleRead: () => widget.readingController.toggleRead(paper.id),
-          onToggleReadLater: () =>
-              widget.readingController.toggleReadLater(paper.id),
-          onFollow: () => _interactions.toggleFollowAuthor(paper),
-          onComment: () => _openDiscussion(paper.id),
-          onAnalyze: () => _openDiscussion(
-            paper.id,
-            initialPage: PaperSheetPage.ai,
-          ),
-          onShare: () => _sharePaper(paper),
-          onOpenPaper:
-              widget.linkService == null ? null : (uri) => _openPaperLink(uri),
-          onOpenRelatedPaper: _feed.openPaperById,
-          initialTabIndex: widget.readingController.tabIndex(paper.id),
-          initialAbstractScrollOffset:
-              widget.readingController.abstractScrollOffset(paper.id),
-          onTabChanged: (index) =>
-              widget.readingController.selectTab(paper.id, index),
-          onAbstractScrollChanged: (offset) => widget.readingController
-              .saveAbstractScrollOffset(paper.id, offset),
+          interactionController: _interactions,
+          commentController: widget.commentController,
+          readingController: widget.readingController,
+          aiService: widget.aiService,
+          webSearchAiService: widget.webSearchAiService,
+          aiSessionRepository: widget.aiSessionRepository,
           translationServiceFactory: widget.translationServiceFactory,
           translationRepository: widget.translationRepository,
+          shareService: widget.shareService,
+          linkService: widget.linkService,
+          onOpenRelatedPaper: widget.onOpenPaperDetail ?? _feed.openPaperById,
         );
       },
     );
@@ -254,44 +234,6 @@ class _PapersScreenState extends State<PapersScreen> {
         child: child,
       ),
     );
-  }
-
-  Future<void> _openPaperLink(Uri uri) async {
-    final service = widget.linkService;
-    if (service == null) return;
-    try {
-      final opened = await service.open(uri);
-      if (!opened && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('无法打开论文链接')),
-        );
-      }
-    } catch (_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('无法打开论文链接')),
-      );
-    }
-  }
-
-  Future<void> _sharePaper(Paper paper) async {
-    final service = widget.shareService;
-    if (service == null) return;
-    try {
-      final result = await service.share(PaperShareComposer.compose(paper));
-      if (!mounted || result == PaperShareResult.cancelled) return;
-      _interactions.recordShare(paper.id);
-      if (result == PaperShareResult.copied) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('分享内容已复制')),
-        );
-      }
-    } on PaperShareException catch (error) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error.message)),
-      );
-    }
   }
 
   void _openPaper(int index) {
@@ -335,22 +277,6 @@ class _PapersScreenState extends State<PapersScreen> {
     }
     _activePaperId = null;
     _activeSince = null;
-  }
-
-  void _openDiscussion(
-    String paperId, {
-    PaperSheetPage initialPage = PaperSheetPage.comments,
-  }) {
-    final paper = _feed.papers.firstWhere((item) => item.id == paperId);
-    showPaperCommentsSheet(
-      context,
-      paper,
-      initialPage: initialPage,
-      aiService: widget.aiService,
-      webSearchAiService: widget.webSearchAiService,
-      aiSessionRepository: widget.aiSessionRepository,
-      commentController: widget.commentController,
-    );
   }
 
   void _showFavoriteGroups(String paperId) {

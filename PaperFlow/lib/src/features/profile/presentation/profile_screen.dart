@@ -951,7 +951,7 @@ class _AppSettingsCard extends StatelessWidget {
               onTap: () => showLicensePage(
                 context: context,
                 applicationName: 'PaperFlow',
-                applicationVersion: '1.0.0 (1)',
+                applicationVersion: '0.1.0 (1)',
               ),
             ),
             const Divider(height: 1),
@@ -959,7 +959,7 @@ class _AppSettingsCard extends StatelessWidget {
               leading: Icon(Icons.info_outline_rounded),
               title: Text('PaperFlow'),
               trailing: Text(
-                '1.0.0 (1)',
+                '0.1.0 (1)',
                 style: TextStyle(color: PaperFlowColors.muted),
               ),
             ),
@@ -980,7 +980,7 @@ Future<void> _showPrivacyNotice(BuildContext context) {
           '论文缓存、阅读记录、点赞、收藏、评论、搜索历史、中文解读和 ChatPaper 会话保存在当前设备。你可以在“本地数据”中分类清理。\n\n'
           '使用 ChatPaper 或中文解读时，你输入的内容、当前论文的标题、摘要和必要上下文会发送到 DeepSeek 官方接口生成回答。开启联网搜索后，DeepSeek 还会处理搜索请求并返回来源。\n\n'
           'DeepSeek API Key 由系统安全存储保护，不写入普通业务数据文件，也不会随“重置本地业务数据”一起删除；你可以在 AI 设置中单独删除。\n\n'
-          'PaperFlow V1 不提供账号、广告或分析统计。打开论文、PDF 或来源链接时，将跳转到系统浏览器并受对应第三方服务的隐私规则约束。',
+          'PaperFlow 0.1.0 不提供账号、广告或分析统计。打开论文、PDF 或来源链接时，将跳转到系统浏览器并受对应第三方服务的隐私规则约束。',
         ),
       ),
       actions: [

@@ -4,7 +4,7 @@
 > 最近更新：2026-08-01
 > 适用范围：`lib/src/features/papers/`
 > 视觉与阅读体验改造：[`paper-experience-redesign.md`](paper-experience-redesign.md)
-> V1.0 三页上线范围：[`v1-release-plan.md`](v1-release-plan.md)
+> 0.1.0 三页上线范围：[`v1-release-plan.md`](v1-release-plan.md)
 
 ## 1. 文档目标
 
@@ -12,7 +12,7 @@
 
 当前论文页使用内置 arXiv 种子数据保证冷启动首屏，同时生产组合根已经接入 arXiv Atom 远程目录、版本化论文缓存和离线回退。分类、搜索、点赞、收藏、评论、分享和 AI 已形成可测试的本地业务闭环。账号、跨设备同步和服务端 AI 代理仍未实现；后续继续通过替换 Repository 或 Service 实现接入远程能力，不在页面组件中堆叠业务逻辑。
 
-V1.0 已收敛为“论文、ChatPaper、我的”三个一级页面。社区、私信和通知不进入本版本；远程论文源与单机安全凭据配置按 `v1-release-plan.md` 实施。
+0.1.0 已收敛为“论文、ChatPaper、我的”三个一级页面。社区、私信和通知不进入本版本；远程论文源与单机安全凭据配置按 `v1-release-plan.md` 实施。
 
 ### 核心开发原则
 
@@ -93,11 +93,11 @@ abstract interface class PaperRepository {
 - 相关论文使用结构化本地关系并可打开对应论文，但尚未接入真实引用图谱。
 - 分享已接入平台服务；Android 系统分享面板仍待本轮发布真机验收。
 - 评论支持发送、回复、展开、点赞、删除、最新/最热排序和本地持久化，尚未接入账号或服务端。
-- AI 对话和翻译当前由客户端开发配置直连 DeepSeek；V1.0 将改为用户自行配置并安全存储 Key。只有提供平台共享额度时才必须迁移到后端代理。
+- AI 对话和翻译当前由客户端开发配置直连 DeepSeek；0.1.0 已改为用户自行配置并安全存储 Key。只有提供平台共享额度时才必须迁移到后端代理。
 
 ### 3.4 DeepSeek
 
-DeepSeek 请求已进入 V1.0 单机凭据模式：
+DeepSeek 请求已进入 0.1.0 单机凭据模式：
 
 - 正式组合根通过 `DeepSeekCredentialRepository` 从安全存储动态读取用户 Key；`--dart-define` 只保留为私人开发构建回退。
 - “我的”页面支持验证、保存、替换和删除，Key 只以掩码展示。
@@ -106,7 +106,7 @@ DeepSeek 请求已进入 V1.0 单机凭据模式：
 - 已支持请求取消和错误重试；限流和额度控制仍应由后端实现。
 - AI 上下文只有论文元信息和摘要，不包含全文、图表或参考文献。
 
-正式发布不会在 APK 中包含共享 DeepSeek API Key。V1.0 单机版采用用户自行配置 Key；未来提供平台共享额度时再通过 PaperFlow 后端代理请求。Android Keystore 的重启、升级、卸载和备份行为仍需真机验收。
+正式发布不会在 APK 中包含共享 DeepSeek API Key。0.1.0 单机版采用用户自行配置 Key；未来提供平台共享额度时再通过 PaperFlow 后端代理请求。Android Keystore 的重启、升级、卸载和备份行为仍需真机验收。
 
 ## 4. P0 本地功能闭环
 
@@ -240,7 +240,7 @@ AI 功能继续通过现有 `PaperAiService` 调用 DeepSeek，但不依赖数�
 - [x] 可选开启 DeepSeek 原生联网搜索，限制每轮最多 3 次搜索
 - [x] 联网回答保存来源标题和 URL，并随会话持久化
 
-开发版本可以从独立的用户级 `DEEPSEEK_*` 环境变量读取调试配置，不读取 Claude、Codex 或本地代理配置。`tool/flutter_with_deepseek.ps1` 固定校验 DeepSeek 官方地址并拒绝 release；正式构建不会读取编译期 Key。V1.0 已改为用户自行配置并通过 Android 安全存储保存 Key。普通对话与联网搜索均使用 DeepSeek 官方的 Anthropic 兼容 Messages 接口；联网搜索只是在同一请求中增加 `web_search_20250305` 工具。界面按 DeepSeek App 的交互提供“深度思考”二态开关，关闭对应 `none`，开启对应 `high`；SSE 流分别接收思考、正文和搜索来源。共享平台额度仍需服务端代理。
+开发版本可以从独立的用户级 `DEEPSEEK_*` 环境变量读取调试配置，不读取 Claude、Codex 或本地代理配置。`tool/flutter_with_deepseek.ps1` 固定校验 DeepSeek 官方地址并拒绝 release；正式构建不会读取编译期 Key。0.1.0 已改为用户自行配置并通过 Android 安全存储保存 Key。普通对话与联网搜索均使用 DeepSeek 官方的 Anthropic 兼容 Messages 接口；联网搜索只是在同一请求中增加 `web_search_20250305` 工具。界面按 DeepSeek App 的交互提供“深度思考”二态开关，关闭对应 `none`，开启对应 `high`；SSE 流分别接收思考、正文和搜索来源。共享平台额度仍需服务端代理。
 
 ## 5. P1 数据库与服务端接入
 
@@ -256,7 +256,7 @@ arXiv OAI-PMH 增量       -> ArxivOaiClient -> ArxivPaperSyncService
 OpenAlex API 增强         -> OpenAlexClient -> citations/institutions/concepts
 ```
 
-当前仓库只包含上述导入和同步适配器，不包含 Kaggle JSONL 快照、SQLite/Parquet 论文库或服务端 `PaperStore` 实现。V1 客户端生产数据源仍为 arXiv Atom API 分页与设备本地缓存；不得把适配器存在表述为数据集已经导入。完整快照接入属于服务端阶段。
+当前仓库只包含上述导入和同步适配器，不包含 Kaggle JSONL 快照、SQLite/Parquet 论文库或服务端 `PaperStore` 实现。0.1.0 客户端生产数据源仍为 arXiv Atom API 分页与设备本地缓存；不得把适配器存在表述为数据集已经导入。完整快照接入属于服务端阶段。
 
 `PaperSyncStateStore` 需要由服务端实现，至少保存 `lastDatestamp`、
 `resumptionToken` 和更新时间。首次初始化建议使用 Kaggle 快照，后续按分类
@@ -267,7 +267,7 @@ Flutter 启动时不直接执行上述同步，避免把批量导入、限流和
 
 - [x] 论文列表接口
 - [x] 论文详情接口
-- [x] 分类查询（V1 客户端将推荐领域映射为 arXiv 分类）
+- [x] 分类查询（0.1.0 客户端将推荐领域映射为 arXiv 分类）
 - [x] 搜索接口
 - [x] 分页和预加载
 - [x] 下拉刷新

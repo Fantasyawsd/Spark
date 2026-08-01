@@ -44,7 +44,7 @@
 - AI Composer、会话内容和消息视图已迁入 `chat/presentation`；论文模块旧路径只保留导出兼容层。Markdown 渲染与入场动画因被论文和聊天共同使用，迁入 `core/widgets`。
 - DeepSeek 实现和文件/内存会话仓储已直接依赖 `chat` 的端口与领域类型，不再通过 `papers/application` 兼容别名反向依赖；论文 AI 类型别名仅保留给现有论文调用方渐进迁移。
 - 论文领域实体已由 `PaperRecord` 更名为 `Paper`；作者改为结构化列表，正文与统计值拆为领域值对象，引用、点赞、评论、收藏和分享计数恢复为整数，紧凑数字只由展示层格式化。
-- V1 主导航已收敛为“论文 / ChatPaper / 我的”；ChatPaper 会话首页和左滑操作从 `messages` 迁入 `chat`，不再混合私信、通知 Demo，社区与消息模块不参与正式组合根或公共导出。
+- 0.1.0 主导航已收敛为“论文 / ChatPaper / 我的”；ChatPaper 会话首页和左滑操作从 `messages` 迁入 `chat`，不再混合私信、通知 Demo，社区与消息模块不参与正式组合根或公共导出。
 - 收藏状态已从单一 ID 集合升级为领域化分组模型：默认分组保持稳定 ID，自定义分组及论文成员关系随互动快照持久化；旧 `savedPaperIds` 通过 schema v2 迁移到默认分组。论文页只发出收藏命令，“我的”只消费分组视图和窄回调。
 - 论文阅读入口已按职责拆分：`PapersScreen` 只编排可上下刷新的 Feed、分类顶栏和 Dock，`PaperDetailScreen` 只编排外部入口的全屏阅读与路由返回；两者通过模块内 `PaperReaderView` 统一连接 `PaperReaderCard`、Controller 和平台服务，搜索、收藏、历史和相关论文不再通过修改 Feed 索引模拟跳转。
 - App Shell 统一拥有论文详情路由栈和覆盖状态。嵌套打开相关论文会继续压栈，返回逐级恢复上一个详情或原入口；被覆盖的首页 Feed 暂停阅读停留计时，详情页通过共享路由可见性观察器只累计前台可见时间。

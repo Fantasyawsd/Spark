@@ -1,4 +1,4 @@
-# PaperFlow V1.0 发布检查清单
+# PaperFlow 0.1.0 发布检查清单
 
 > 当前状态：**代码候选，不能标记为已上线**。
 >
@@ -6,8 +6,8 @@
 
 ## 1. 已完成的仓库准备
 
-- [x] V1 主导航只包含论文、ChatPaper、我的。
-- [x] 包名固定为 `app.paperflow.reader`，版本为 `1.0.0+1`。
+- [x] 0.1.0 主导航只包含论文、ChatPaper、我的。
+- [x] 包名固定为 `app.paperflow.reader`，版本为 `0.1.0+1`。
 - [x] 正式 release 缺少 `android/key.properties` 时 Gradle 明确失败。
 - [x] `android/key.properties`、`.jks` 和 `.keystore` 已被 Git 忽略。
 - [x] Android 仅声明网络权限，禁用自动备份和明文流量。
@@ -20,9 +20,10 @@
 
 ### 当前内部验证产物
 
-- 构建时间：2026-08-01 22:28:40（本机时间）。
-- 文件：`build/app/outputs/flutter-apk/app-debug.apk`，大小 184,065,792 字节。
-- SHA-256：`49F70939A0C42AEE4541F83D39A4A3FE72F7720C60D2EEC1F8219AD4DC7877BE`。
+- 构建时间：2026-08-01 23:27:55（本机时间）。
+- 文件：`build/app/outputs/flutter-apk/app-debug.apk`，大小 159,611,972 字节。
+- SHA-256：`EED3F1D42F236B817BAB0706C3D02097C19906DDCA9C08D6EC407BF71AA70712`。
+- `aapt dump badging` 已确认包内 `versionName='0.1.0'`、`versionCode='1'`。
 - `apksigner verify --verbose --print-certs` 已通过，使用 APK Signature Scheme v2，证书为 Android Debug。
 - 该文件只用于开发和真机验收，不是可提交商店的正式签名包；目录中的任何旧 `app-release.apk` 均不得作为当前发布产物。
 
@@ -58,7 +59,7 @@ flutter build apk --release
 - [ ] 本地数据：分类清理和重置后不残留旧评论、聊天、翻译或缓存。
 - [ ] 系统：键盘、后台恢复、深浅主题、Android 12+ 启动图标与启动页正确。
 
-Windows release 回归当前受本机 Visual Studio Build Tools 缺少 ATL 头文件 `atlstr.h` 阻塞；这不影响 Android V1，但若需要 Windows 分发，应安装 `Microsoft.VisualStudio.Component.VC.ATL` 后重试。
+Windows release 回归当前受本机 Visual Studio Build Tools 缺少 ATL 头文件 `atlstr.h` 阻塞；这不影响 Android 0.1.0，但若需要 Windows 分发，应安装 `Microsoft.VisualStudio.Component.VC.ATL` 后重试。
 
 ## 5. Play Console 发布门
 

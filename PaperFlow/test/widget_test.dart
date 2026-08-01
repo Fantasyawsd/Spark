@@ -70,7 +70,7 @@ void main() {
     expect(find.byKey(const ValueKey('paper-feed')), findsOneWidget);
   });
 
-  testWidgets('v1 shell exposes only papers, AI chat and profile',
+  testWidgets('0.1.0 shell exposes only papers, AI chat and profile',
       (tester) async {
     await tester.binding.setSurfaceSize(const Size(390, 844));
     addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -86,5 +86,9 @@ void main() {
     expect(find.text('私信'), findsNothing);
     expect(find.text('通知'), findsNothing);
     expect(find.byKey(const ValueKey('create-button')), findsNothing);
+
+    await tester.tap(find.byKey(const ValueKey('bottom-nav-2')));
+    await tester.pumpAndSettle();
+    expect(find.text('0.1.0 (1)'), findsOneWidget);
   });
 }

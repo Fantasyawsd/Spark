@@ -1,12 +1,12 @@
 # PaperFlow
 
-PaperFlow 是面向个人研究者的 Flutter 论文阅读器。V1.0 聚焦三个页面：
+PaperFlow 是面向个人研究者的 Flutter 论文阅读器。0.1.0 聚焦三个页面：
 
 - **论文**：arXiv 论文流、领域筛选、搜索、Markdown/公式阅读、中文解读、相关论文和本地互动。
 - **ChatPaper**：主聊天与论文聊天、流式回答、深度思考、联网搜索和本地会话管理。
 - **我的**：收藏分组、阅读记录、主题、DeepSeek API Key 和本地数据管理。
 
-社区、私信、账号、云同步和内容发布不属于 V1.0 范围。
+社区、私信、账号、云同步和内容发布不属于 0.1.0 范围。
 
 ## 数据与隐私
 
@@ -24,7 +24,7 @@ lib/src/
 `-- features/   按论文、聊天、AI 设置、搜索、我的等业务划分
 ```
 
-详细架构约束见 [代码结构原则](docs/code-structure-principles.md)，V1 范围与发布状态见 [发布计划](docs/v1-release-plan.md)。
+详细架构约束见 [代码结构原则](docs/code-structure-principles.md)，0.1.0 范围与发布状态见 [发布计划](docs/v1-release-plan.md)。
 
 ## 开发环境
 
@@ -54,4 +54,4 @@ flutter test
 flutter build windows --release
 ```
 
-Android 上线步骤、签名配置、真机验收与 Play Console 发布门见 [V1 发布检查清单](docs/v1-release-checklist.md)。
+Android 上线步骤、签名配置、真机验收与 Play Console 发布门见 [0.1.0 发布检查清单](docs/v1-release-checklist.md)。

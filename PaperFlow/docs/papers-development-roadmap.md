@@ -4,12 +4,15 @@
 > 最近更新：2026-08-01
 > 适用范围：`lib/src/features/papers/`
 > 视觉与阅读体验改造：[`paper-experience-redesign.md`](paper-experience-redesign.md)
+> V1.0 三页上线范围：[`v1-release-plan.md`](v1-release-plan.md)
 
 ## 1. 文档目标
 
 本文记录 PaperFlow 论文页在完成 UI 原型后的功能缺口、技术边界、开发优先级和验收标准。
 
 当前论文页使用内置 arXiv 种子数据，分类、搜索、点赞、收藏、评论、分享和 AI 已形成可测试的本地业务闭环。远程论文接口、账号、跨设备同步和服务端 AI 代理仍未实现。后续通过替换 Repository 或 Service 实现接入远程能力，不在页面组件中继续堆叠业务逻辑。
+
+V1.0 已收敛为“论文、AI 聊天、我的”三个一级页面。社区、私信和通知不进入本版本；远程论文源与单机安全凭据配置按 `v1-release-plan.md` 实施。
 
 ### 核心开发原则
 
@@ -87,7 +90,7 @@ abstract interface class PaperRepository {
 - 相关论文使用结构化本地关系并可打开对应论文，但尚未接入真实引用图谱。
 - 分享已接入平台服务；Android 系统分享面板仍需真机人工验收。
 - 评论支持发送、回复、展开、点赞、删除、最新/最热排序和本地持久化，尚未接入账号或服务端。
-- AI 对话和翻译由客户端开发配置直连 DeepSeek，正式发布前必须迁移到后端代理。
+- AI 对话和翻译当前由客户端开发配置直连 DeepSeek；V1.0 将改为用户自行配置并安全存储 Key。只有提供平台共享额度时才必须迁移到后端代理。
 
 ### 3.4 DeepSeek
 
@@ -99,7 +102,7 @@ DeepSeek 请求代码已经存在，但仍属于开发接入状态：
 - 已支持请求取消和错误重试；限流和额度控制仍应由后端实现。
 - AI 上下文只有论文元信息和摘要，不包含全文、图表或参考文献。
 
-正式发布时不能将 DeepSeek API Key 放在 APK 中，应通过 PaperFlow 后端代理请求。
+正式发布时不能将共享 DeepSeek API Key 放在 APK 中。V1.0 单机版采用用户自行配置 Key；未来提供平台共享额度时再通过 PaperFlow 后端代理请求。
 
 ## 4. P0 本地功能闭环
 
@@ -229,7 +232,7 @@ AI 功能继续通过现有 `PaperAiService` 调用 DeepSeek，但不依赖数�
 - [x] 可选开启 DeepSeek 原生联网搜索，限制每轮最多 3 次搜索
 - [x] 联网回答保存来源标题和 URL，并随会话持久化
 
-开发版本只读取独立的用户级 `DEEPSEEK_*` 环境变量，不读取 Claude、Codex 或本地代理配置。`tool/flutter_with_deepseek.ps1` 固定校验 DeepSeek 官方地址，并通过 `--dart-define` 注入 `deepseek-v4-flash` 配置。普通对话与联网搜索均使用 DeepSeek 官方的 Anthropic 兼容 Messages 接口；联网搜索只是在同一请求中增加 `web_search_20250305` 工具。界面按 DeepSeek App 的交互提供“深度思考”二态开关，关闭对应 `none`，开启对应 `high`；SSE 流分别接收思考、正文和搜索来源。正式发布前仍需增加 PaperFlow 服务端代理，避免客户端包含 API Key。
+开发版本只读取独立的用户级 `DEEPSEEK_*` 环境变量，不读取 Claude、Codex 或本地代理配置。`tool/flutter_with_deepseek.ps1` 固定校验 DeepSeek 官方地址，并通过 `--dart-define` 注入 `deepseek-v4-flash` 配置。普通对话与联网搜索均使用 DeepSeek 官方的 Anthropic 兼容 Messages 接口；联网搜索只是在同一请求中增加 `web_search_20250305` 工具。界面按 DeepSeek App 的交互提供“深度思考”二态开关，关闭对应 `none`，开启对应 `high`；SSE 流分别接收思考、正文和搜索来源。V1.0 发布前改为用户自行配置并通过 Android 安全存储保存 Key；共享平台额度仍需服务端代理。
 
 ## 5. P1 数据库与服务端接入
 

@@ -3,6 +3,9 @@ import '../features/ai_settings/data/in_memory_deepseek_credential_repository.da
 import '../features/ai_settings/data/secure_deepseek_credential_repository.dart';
 import '../features/ai_settings/domain/deepseek_credential_repository.dart';
 import '../core/storage/local_json_store.dart';
+import '../core/theme/file_theme_preference_repository.dart';
+import '../core/theme/in_memory_theme_preference_repository.dart';
+import '../core/theme/theme_preference_repository.dart';
 import '../features/local_data/data/in_memory_local_data_repository.dart';
 import '../features/local_data/data/json_local_data_repository.dart';
 import '../features/local_data/domain/local_data_repository.dart';
@@ -62,6 +65,7 @@ class PaperFlowDependencies {
     required this.mainAiService,
     required this.mainWebSearchAiService,
     required this.localDataRepository,
+    required this.themePreferenceRepository,
   });
 
   factory PaperFlowDependencies.production() {
@@ -81,6 +85,7 @@ class PaperFlowDependencies {
     final translationStore = LocalJsonStore(
       fileName: 'paper_translations.json',
     );
+    final themeStore = LocalJsonStore(fileName: 'theme_preferences.json');
     return PaperFlowDependencies(
       paperRepository: seedRepository,
       paperCatalogRepository: OfflineFirstPaperCatalogRepository(
@@ -127,7 +132,11 @@ class PaperFlowDependencies {
           preferenceStore,
           readingStore,
           searchHistoryStore,
+          themeStore,
         ],
+      ),
+      themePreferenceRepository: FileThemePreferenceRepository(
+        store: themeStore,
       ),
     );
   }
@@ -152,6 +161,7 @@ class PaperFlowDependencies {
     PaperAiService? mainAiService,
     PaperAiService? mainWebSearchAiService,
     LocalDataRepository? localDataRepository,
+    ThemePreferenceRepository? themePreferenceRepository,
   }) {
     final resolvedCredentialRepository =
         deepSeekCredentialRepository ?? InMemoryDeepSeekCredentialRepository();
@@ -192,6 +202,8 @@ class PaperFlowDependencies {
       mainWebSearchAiService:
           mainWebSearchAiService ?? resolvedWebSearchService,
       localDataRepository: localDataRepository ?? InMemoryLocalDataRepository(),
+      themePreferenceRepository:
+          themePreferenceRepository ?? InMemoryThemePreferenceRepository(),
     );
   }
 
@@ -214,4 +226,5 @@ class PaperFlowDependencies {
   final PaperAiService mainAiService;
   final PaperAiService mainWebSearchAiService;
   final LocalDataRepository localDataRepository;
+  final ThemePreferenceRepository themePreferenceRepository;
 }

@@ -36,7 +36,7 @@ import '../features/search/domain/paper_search_history_repository.dart';
 import '../features/search/presentation/paper_search_screen.dart';
 import 'paperflow_dependencies.dart';
 
-class PaperFlowApp extends StatelessWidget {
+class PaperFlowApp extends StatefulWidget {
   const PaperFlowApp({
     super.key,
     this.showSplash = true,
@@ -71,22 +71,39 @@ class PaperFlowApp extends StatelessWidget {
   final PaperAiService? webSearchAiService;
 
   @override
-  Widget build(BuildContext context) {
-    final resolvedDependencies = dependencies ??
+  State<PaperFlowApp> createState() => _PaperFlowAppState();
+}
+
+class _PaperFlowAppState extends State<PaperFlowApp> {
+  late final PaperFlowDependencies _dependencies;
+
+  @override
+  void initState() {
+    super.initState();
+    _dependencies = widget.dependencies ??
         PaperFlowDependencies.preview(
-          commentRepository: commentRepository,
-          interactionRepository: interactionRepository,
-          preferenceRepository: preferenceRepository,
-          readingRepository: readingRepository,
-          searchHistoryRepository: searchHistoryRepository,
-          shareService: shareService,
-          linkService: linkService,
-          aiService: aiService,
-          webSearchAiService: webSearchAiService,
-          aiSessionRepository: aiSessionRepository,
-          translationServiceFactory: translationServiceFactory,
-          translationRepository: translationRepository,
+          commentRepository: widget.commentRepository,
+          interactionRepository: widget.interactionRepository,
+          preferenceRepository: widget.preferenceRepository,
+          readingRepository: widget.readingRepository,
+          searchHistoryRepository: widget.searchHistoryRepository,
+          shareService: widget.shareService,
+          linkService: widget.linkService,
+          aiService: widget.aiService,
+          webSearchAiService: widget.webSearchAiService,
+          aiSessionRepository: widget.aiSessionRepository,
+          translationServiceFactory: widget.translationServiceFactory,
+          translationRepository: widget.translationRepository,
         );
+    unawaited(
+      ThemeController.instance.configure(
+        _dependencies.themePreferenceRepository,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return ListenableBuilder(
       listenable: ThemeController.instance,
       builder: (context, _) => MaterialApp(
@@ -95,8 +112,8 @@ class PaperFlowApp extends StatelessWidget {
         theme: PaperFlowTheme.light(),
         navigatorObservers: [PaperFlowRouteObserver.instance],
         home: _PaperFlowBootstrap(
-          showSplash: showSplash,
-          dependencies: resolvedDependencies,
+          showSplash: widget.showSplash,
+          dependencies: _dependencies,
         ),
       ),
     );
@@ -445,6 +462,7 @@ class _PaperFlowShellState extends State<PaperFlowShell> {
       _paperController.feed.flushCatalogOperations(),
       _commentController.flushPendingWrites(),
       _readingController.flushPendingWrites(),
+      ThemeController.instance.flushPendingWrites(),
     ]);
   }
 
@@ -465,6 +483,7 @@ class _PaperFlowShellState extends State<PaperFlowShell> {
             _paperController.feed.allPapers.map((paper) => paper.id),
           ),
           _chatSessionController.reload(),
+          ThemeController.instance.reload(),
         ]);
         return;
     }

@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:paperflow/src/app/paperflow_dependencies.dart';
 import 'package:paperflow/src/features/ai_settings/data/secure_deepseek_credential_repository.dart';
+import 'package:paperflow/src/core/theme/file_theme_preference_repository.dart';
 import 'package:paperflow/src/features/chat/domain/chat_context.dart';
 import 'package:paperflow/src/features/papers/application/paper_ai_service.dart';
 import 'package:paperflow/src/features/papers/domain/paper.dart';
@@ -56,6 +57,10 @@ void main() {
     expect(
       dependencies.mainWebSearchAiService,
       isA<DeepSeekWebSearchAiService>(),
+    );
+    expect(
+      dependencies.themePreferenceRepository,
+      isA<FileThemePreferenceRepository>(),
     );
   });
 

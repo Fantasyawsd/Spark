@@ -1,20 +1,7 @@
 import 'package:flutter/material.dart';
 
-/// 可选的主题主色。value 为主色，soft / pale 为其浅色底。
-enum PaperThemeColor {
-  pink('默认粉', Color(0xFFFF315F), Color(0xFFFFEEF2), Color(0xFFFFF7F9)),
-  blue('蓝色', Color(0xFF2B82F6), Color(0xFFEAF3FE), Color(0xFFF5F9FF)),
-  purple('紫色', Color(0xFF8E5CF5), Color(0xFFF1EBFE), Color(0xFFF8F5FF)),
-  green('绿色', Color(0xFF41C982), Color(0xFFEAFBF2), Color(0xFFF5FDF8)),
-  orange('橙色', Color(0xFFFF8A21), Color(0xFFFFF3E8), Color(0xFFFFF9F2));
-
-  const PaperThemeColor(this.label, this.value, this.soft, this.pale);
-
-  final String label;
-  final Color value;
-  final Color soft;
-  final Color pale;
-}
+import 'paper_theme_color.dart';
+import 'theme_preference_repository.dart';
 
 /// 全局主题状态：当前主题色。切换后通知 MaterialApp 重建。
 class ThemeController extends ChangeNotifier {
@@ -23,11 +10,50 @@ class ThemeController extends ChangeNotifier {
   static final ThemeController instance = ThemeController._();
 
   PaperThemeColor _color = PaperThemeColor.pink;
+  ThemePreferenceRepository? _repository;
+  Future<void> _writeQueue = Future.value();
+  String? _persistenceError;
+
   PaperThemeColor get color => _color;
+  String? get persistenceError => _persistenceError;
+
+  Future<void> configure(ThemePreferenceRepository repository) {
+    if (identical(_repository, repository)) return Future.value();
+    _repository = repository;
+    return reload();
+  }
+
+  Future<void> initialize() => reload();
+
+  Future<void> reload() async {
+    await flushPendingWrites();
+    final repository = _repository;
+    if (repository == null) return;
+    try {
+      _color = await repository.load() ?? PaperThemeColor.pink;
+      _persistenceError = null;
+    } on ThemePreferencePersistenceException catch (error) {
+      _persistenceError = error.message;
+    }
+    notifyListeners();
+  }
 
   void setColor(PaperThemeColor color) {
     if (color == _color) return;
     _color = color;
     notifyListeners();
+    final repository = _repository;
+    if (repository == null) return;
+    _writeQueue = _writeQueue.then((_) async {
+      try {
+        await repository.save(color);
+        _persistenceError = null;
+      } on ThemePreferencePersistenceException catch (error) {
+        _persistenceError = error.message;
+      }
+      notifyListeners();
+    });
   }
+
+  Future<void> flushPendingWrites() => _writeQueue;
 }

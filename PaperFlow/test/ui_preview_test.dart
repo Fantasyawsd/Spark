@@ -149,7 +149,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.text('我的'));
+    await tester.tap(find.byKey(const ValueKey('bottom-nav-2')));
     await tester.pumpAndSettle();
 
     final savedPaper = find.byKey(
@@ -186,7 +186,7 @@ void main() {
     await tester.tap(find.text('加入稍后阅读'));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('我的'));
+    await tester.tap(find.byKey(const ValueKey('bottom-nav-2')));
     await tester.pumpAndSettle();
 
     expect(
@@ -492,13 +492,13 @@ void main() {
 
     await tester.tap(find.byTooltip('点赞').first);
     await tester.pump();
-    await tester.tap(find.text('社区'));
+    await tester.tap(find.byKey(const ValueKey('bottom-nav-1')));
     await tester.pumpAndSettle();
     repository.failSave();
     await tester.pump();
     expect(find.text('保存互动失败'), findsNothing);
 
-    await tester.tap(find.textContaining('论文'));
+    await tester.tap(find.byKey(const ValueKey('bottom-nav-0')));
     await tester.pumpAndSettle();
     expect(find.text('保存互动失败'), findsOneWidget);
   });
@@ -739,9 +739,9 @@ void main() {
     );
     await tester.pump();
 
-    await tester.tap(find.text('聊天'));
+    await tester.tap(find.byKey(const ValueKey('bottom-nav-1')));
     await tester.pumpAndSettle();
-    expect(find.text('AI 聊天'), findsOneWidget);
+    expect(find.byKey(const ValueKey('ai-chat-home-title')), findsOneWidget);
     expect(find.text('PaperFlow 主聊天'), findsOneWidget);
     expect(find.text(paper.title), findsOneWidget);
 
@@ -765,7 +765,7 @@ void main() {
     );
     await tester.pump();
 
-    await tester.tap(find.text('聊天'));
+    await tester.tap(find.byKey(const ValueKey('bottom-nav-1')));
     await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey('main-ai-chat')), findsOneWidget);
 
@@ -794,7 +794,7 @@ void main() {
       ),
     );
     await tester.pump();
-    await tester.tap(find.text('聊天'));
+    await tester.tap(find.byKey(const ValueKey('bottom-nav-1')));
     await tester.pumpAndSettle();
 
     final sessionCard = find.byKey(ValueKey('ai-session-${paper.id}'));

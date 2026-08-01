@@ -1,33 +1,28 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/paperflow_theme.dart';
-import '../../../core/widgets/profile_avatar.dart';
-import '../../../core/widgets/surface_card.dart';
-import '../../chat/application/chat_session_controller.dart';
-import '../../chat/domain/chat_session_repository.dart';
-import '../data/message_seed.dart';
-import '../domain/message_item.dart';
-import 'widgets/swipe_action_row.dart';
+import '../application/chat_session_controller.dart';
+import '../domain/chat_session_repository.dart';
+import 'widgets/chat_session_swipe_action.dart';
 
-class MessagesScreen extends StatefulWidget {
-  const MessagesScreen({
+class AiChatHomeScreen extends StatefulWidget {
+  const AiChatHomeScreen({
     super.key,
     required this.chatSessionController,
-    this.onOpenAiChat,
-    this.onOpenMainAiChat,
+    this.onOpenPaperChat,
+    this.onOpenMainChat,
   });
 
   final ChatSessionController chatSessionController;
-  final Future<void> Function(String contextId)? onOpenAiChat;
-  final Future<void> Function()? onOpenMainAiChat;
+  final Future<void> Function(String contextId)? onOpenPaperChat;
+  final Future<void> Function()? onOpenMainChat;
 
   @override
-  State<MessagesScreen> createState() => _MessagesScreenState();
+  State<AiChatHomeScreen> createState() => _AiChatHomeScreenState();
 }
 
-class _MessagesScreenState extends State<MessagesScreen> {
-  int _tabIndex = 0;
-  String? _revealedAiSessionId;
+class _AiChatHomeScreenState extends State<AiChatHomeScreen> {
+  String? _revealedSessionId;
 
   @override
   void initState() {
@@ -37,7 +32,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
   }
 
   @override
-  void didUpdateWidget(covariant MessagesScreen oldWidget) {
+  void didUpdateWidget(covariant AiChatHomeScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.chatSessionController == widget.chatSessionController) return;
     oldWidget.chatSessionController.removeListener(_handleSessionStateChanged);
@@ -53,12 +48,6 @@ class _MessagesScreenState extends State<MessagesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final direct = _tabIndex == 1;
-    final visibleMessages = direct
-        ? demoMessages.where((item) => item.kind == MessageKind.direct).toList()
-        : demoMessages
-            .where((item) => item.kind != MessageKind.direct)
-            .toList();
     return ColoredBox(
       color: PaperFlowColors.canvas,
       child: SafeArea(
@@ -66,13 +55,14 @@ class _MessagesScreenState extends State<MessagesScreen> {
         child: Column(
           children: [
             const SizedBox(
-              height: 50,
+              height: 64,
               child: Padding(
-                padding: EdgeInsets.fromLTRB(18, 12, 18, 0),
+                padding: EdgeInsets.fromLTRB(18, 16, 18, 8),
                 child: Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
-                    '聊天',
+                    'AI 聊天',
+                    key: ValueKey('ai-chat-home-title'),
                     style: TextStyle(
                       color: PaperFlowColors.ink,
                       fontSize: 22,
@@ -82,39 +72,19 @@ class _MessagesScreenState extends State<MessagesScreen> {
                 ),
               ),
             ),
-            SizedBox(
-              height: 48,
-              child: _SegmentedTabs(
-                labels: const ['AI 聊天', '私信', '通知'],
-                selectedIndex: _tabIndex,
-                onSelected: (index) => setState(() => _tabIndex = index),
-              ),
-            ),
             Expanded(
-              child: _tabIndex == 0
-                  ? _AiSessionList(
-                      loading: widget.chatSessionController.loading,
-                      sessions: widget.chatSessionController.entries,
-                      mainSession: widget.chatSessionController.mainSession,
-                      onOpen: _openAiSession,
-                      onOpenMain: _openMainAiChat,
-                      revealedSessionId: _revealedAiSessionId,
-                      onReveal: (id) =>
-                          setState(() => _revealedAiSessionId = id),
-                      onCloseActions: () =>
-                          setState(() => _revealedAiSessionId = null),
-                      onTogglePinned: _togglePinnedSession,
-                      onDelete: _deleteSession,
-                    )
-                  : ListView.separated(
-                      padding: const EdgeInsets.fromLTRB(14, 10, 14, 92),
-                      itemCount: visibleMessages.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 10),
-                      itemBuilder: (context, index) => _MessageCard(
-                        item: visibleMessages[index],
-                        showAvatar: direct,
-                      ),
-                    ),
+              child: _AiSessionList(
+                loading: widget.chatSessionController.loading,
+                sessions: widget.chatSessionController.entries,
+                mainSession: widget.chatSessionController.mainSession,
+                onOpen: _openPaperChat,
+                onOpenMain: _openMainChat,
+                revealedSessionId: _revealedSessionId,
+                onReveal: (id) => setState(() => _revealedSessionId = id),
+                onCloseActions: () => setState(() => _revealedSessionId = null),
+                onTogglePinned: _togglePinnedSession,
+                onDelete: _deleteSession,
+              ),
             ),
           ],
         ),
@@ -122,21 +92,21 @@ class _MessagesScreenState extends State<MessagesScreen> {
     );
   }
 
-  Future<void> _openAiSession(ChatSessionEntry entry) async {
-    final open = widget.onOpenAiChat;
+  Future<void> _openPaperChat(ChatSessionEntry entry) async {
+    final open = widget.onOpenPaperChat;
     if (open == null) return;
     await open(entry.context.id);
   }
 
-  Future<void> _openMainAiChat() async {
-    final open = widget.onOpenMainAiChat;
+  Future<void> _openMainChat() async {
+    final open = widget.onOpenMainChat;
     if (open == null) return;
     await open();
   }
 
   Future<void> _togglePinnedSession(ChatSessionEntry entry) async {
     await widget.chatSessionController.togglePinned(entry.context.id);
-    if (mounted) setState(() => _revealedAiSessionId = null);
+    if (mounted) setState(() => _revealedSessionId = null);
   }
 
   Future<void> _deleteSession(ChatSessionEntry entry) async {
@@ -154,7 +124,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
             key: const ValueKey('confirm-delete-ai-session'),
             onPressed: () => Navigator.pop(context, true),
             style: FilledButton.styleFrom(
-              backgroundColor: const Color(0xFFD92D20),
+              backgroundColor: Color(0xFFD92D20),
             ),
             child: const Text('删除'),
           ),
@@ -163,9 +133,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
     );
     if (confirmed != true) return;
     await widget.chatSessionController.delete(entry.context.id);
-    if (mounted) {
-      setState(() => _revealedAiSessionId = null);
-    }
+    if (mounted) setState(() => _revealedSessionId = null);
   }
 
   void _handleSessionStateChanged() {
@@ -217,7 +185,7 @@ class _AiSessionList extends StatelessWidget {
         final entry = sessions[index - 1];
         final session = entry.session;
         final contextId = entry.context.id;
-        return SwipeActionRow(
+        return ChatSessionSwipeAction(
           sessionId: contextId,
           revealed: revealedSessionId == contextId,
           pinned: session.pinned,
@@ -463,181 +431,6 @@ class _MainAiChatCard extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-}
-
-class _SegmentedTabs extends StatelessWidget {
-  const _SegmentedTabs(
-      {required this.labels,
-      required this.selectedIndex,
-      required this.onSelected});
-
-  final List<String> labels;
-  final int selectedIndex;
-  final ValueChanged<int> onSelected;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 47,
-      margin: const EdgeInsets.symmetric(horizontal: 14),
-      padding: const EdgeInsets.all(3),
-      child: Row(
-        children: List.generate(labels.length, (index) {
-          final selected = selectedIndex == index;
-          return Expanded(
-            child: GestureDetector(
-              onTap: () => onSelected(index),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: selected
-                      ? PaperFlowColors.primarySoft
-                      : Colors.transparent,
-                  borderRadius: BorderRadius.circular(99),
-                ),
-                child: Center(
-                  child: Text(
-                    labels[index],
-                    style: TextStyle(
-                      color: selected
-                          ? PaperFlowColors.primary
-                          : PaperFlowColors.muted,
-                      fontSize: 16,
-                      fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          );
-        }),
-      ),
-    );
-  }
-}
-
-class _MessageCard extends StatelessWidget {
-  const _MessageCard({required this.item, required this.showAvatar});
-
-  final MessageItem item;
-  final bool showAvatar;
-
-  @override
-  Widget build(BuildContext context) {
-    final direct = item.kind == MessageKind.direct;
-    return SurfaceCard(
-      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 14),
-      radius: 19,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          _MessageIcon(item: item, showAvatar: showAvatar),
-          const SizedBox(width: 13),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  item.title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: PaperFlowColors.ink,
-                    fontSize: direct ? 16 : 14.5,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                const SizedBox(height: 5),
-                Text(
-                  item.subtitle,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: PaperFlowColors.muted,
-                    fontSize: 12.5,
-                    height: 1.45,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 8),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(item.time,
-                  style: const TextStyle(
-                      color: PaperFlowColors.muted, fontSize: 11)),
-              const SizedBox(height: 13),
-              if (item.unread > 0)
-                Container(
-                  constraints: const BoxConstraints(minWidth: 23),
-                  height: 23,
-                  padding: const EdgeInsets.symmetric(horizontal: 6),
-                  decoration: BoxDecoration(
-                    color: PaperFlowColors.primary,
-                    borderRadius: BorderRadius.all(Radius.circular(99)),
-                  ),
-                  child: Center(
-                    child: Text(
-                      '${item.unread}',
-                      style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w800),
-                    ),
-                  ),
-                ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _MessageIcon extends StatelessWidget {
-  const _MessageIcon({required this.item, required this.showAvatar});
-
-  final MessageItem item;
-  final bool showAvatar;
-
-  @override
-  Widget build(BuildContext context) {
-    if (showAvatar && item.avatarUrl != null) {
-      return ProfileAvatar(
-          imageUrl: item.avatarUrl!, radius: 31, showStatus: item.unread > 0);
-    }
-
-    final data = switch (item.kind) {
-      MessageKind.liked => (
-          Icons.favorite_rounded,
-          const Color(0xFFFFE4EA),
-          PaperFlowColors.primary
-        ),
-      MessageKind.commented => (
-          Icons.chat_bubble_rounded,
-          const Color(0xFFECE9FF),
-          PaperFlowColors.purple
-        ),
-      MessageKind.system => (
-          Icons.notifications_rounded,
-          const Color(0xFFE3F0FF),
-          PaperFlowColors.blue
-        ),
-      MessageKind.direct => (
-          Icons.chat_bubble_rounded,
-          PaperFlowColors.primarySoft,
-          PaperFlowColors.primary
-        ),
-    };
-
-    return Container(
-      width: 62,
-      height: 62,
-      decoration: BoxDecoration(color: data.$2, shape: BoxShape.circle),
-      child: Icon(data.$1, color: data.$3, size: 29),
     );
   }
 }

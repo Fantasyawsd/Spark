@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/theme/paperflow_theme.dart';
 
-class SwipeActionRow extends StatefulWidget {
-  const SwipeActionRow({
+class ChatSessionSwipeAction extends StatefulWidget {
+  const ChatSessionSwipeAction({
     super.key,
     required this.sessionId,
     required this.revealed,
@@ -27,10 +27,10 @@ class SwipeActionRow extends StatefulWidget {
   final BorderRadius borderRadius;
 
   @override
-  State<SwipeActionRow> createState() => _SwipeActionRowState();
+  State<ChatSessionSwipeAction> createState() => _ChatSessionSwipeActionState();
 }
 
-class _SwipeActionRowState extends State<SwipeActionRow> {
+class _ChatSessionSwipeActionState extends State<ChatSessionSwipeAction> {
   static const _actionWidth = 72.0;
   static const _actionsExtent = _actionWidth * 2;
 

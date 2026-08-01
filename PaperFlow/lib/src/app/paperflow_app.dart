@@ -5,13 +5,11 @@ import 'package:flutter/material.dart';
 import '../core/theme/paperflow_theme.dart';
 import '../core/theme/theme_controller.dart';
 import '../core/widgets/paperflow_bottom_nav.dart';
-import '../core/widgets/paperflow_sheet.dart';
 import '../features/chat/application/chat_session_controller.dart';
 import '../features/chat/application/main_ai_chat_definition.dart';
+import '../features/chat/presentation/ai_chat_home_screen.dart';
 import '../features/chat/presentation/main_ai_chat_screen.dart';
 import '../features/chat/presentation/paper_ai_chat_screen.dart';
-import '../features/community/presentation/community_screen.dart';
-import '../features/messages/presentation/messages_screen.dart';
 import '../features/papers/application/paper_ai_service.dart';
 import '../features/papers/application/paper_ai_session_repository.dart';
 import '../features/papers/application/paper_comment_controller.dart';
@@ -337,11 +335,10 @@ class _PaperFlowShellState extends State<PaperFlowShell> {
                   linkService: _linkService,
                   onSearch: _openPaperSearch,
                 ),
-                CommunityScreen(),
-                MessagesScreen(
+                AiChatHomeScreen(
                   chatSessionController: _chatSessionController,
-                  onOpenAiChat: _openAiChatById,
-                  onOpenMainAiChat: _openMainAiChat,
+                  onOpenPaperChat: _openAiChatById,
+                  onOpenMainChat: _openMainAiChat,
                 ),
                 ProfileScreen(
                   savedPapers: _paperController.feed.allPapers
@@ -367,7 +364,6 @@ class _PaperFlowShellState extends State<PaperFlowShell> {
               selectedIndex: _selectedIndex,
               papersGridMode: _paperController.gridMode,
               onSelected: _handleNavigation,
-              onCreate: () => _showCreateSheet(context),
             ),
           ),
         ],
@@ -461,108 +457,5 @@ class _PaperFlowShellState extends State<PaperFlowShell> {
   void _openSavedPaper(String paperId) {
     _paperController.openPaperById(paperId);
     setState(() => _selectedIndex = 0);
-  }
-
-  void _showCreateSheet(BuildContext context) {
-    showPaperFlowSheet<void>(
-      context: context,
-      builder: (context) => Container(
-        margin: const EdgeInsets.all(14),
-        padding: const EdgeInsets.fromLTRB(22, 18, 22, 24),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(26),
-        ),
-        child: SafeArea(
-          top: false,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 42,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: PaperFlowColors.line,
-                  borderRadius: BorderRadius.circular(99),
-                ),
-              ),
-              const SizedBox(height: 18),
-              const Text(
-                '创建内容',
-                style: TextStyle(
-                  color: PaperFlowColors.ink,
-                  fontSize: 20,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-              const SizedBox(height: 18),
-              Row(
-                children: [
-                  Expanded(
-                    child: _CreateAction(
-                      icon: Icons.upload_file_rounded,
-                      label: '上传论文',
-                      color: PaperFlowColors.primary,
-                      onTap: () => Navigator.pop(context),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _CreateAction(
-                      icon: Icons.edit_note_rounded,
-                      label: '发布动态',
-                      color: PaperFlowColors.purple,
-                      onTap: () => Navigator.pop(context),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _CreateAction extends StatelessWidget {
-  const _CreateAction({
-    required this.icon,
-    required this.label,
-    required this.color,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String label;
-  final Color color;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(18),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 20),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.09),
-          borderRadius: BorderRadius.circular(18),
-        ),
-        child: Column(
-          children: [
-            Icon(icon, color: color, size: 30),
-            const SizedBox(height: 8),
-            Text(
-              label,
-              style: const TextStyle(
-                color: PaperFlowColors.ink,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 }

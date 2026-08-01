@@ -18,15 +18,15 @@ void main() {
       findsOneWidget,
     );
 
-    await tester.tap(find.text('社区'));
-    await tester.pump();
-    expect(find.text('社区'), findsOneWidget);
+    expect(find.text('社区'), findsNothing);
+    expect(find.text('私信'), findsNothing);
+    expect(find.text('通知'), findsNothing);
 
-    await tester.tap(find.text('聊天'));
+    await tester.tap(find.byKey(const ValueKey('bottom-nav-1')));
     await tester.pump();
-    expect(find.text('AI 聊天'), findsOneWidget);
+    expect(find.text('PaperFlow 主聊天'), findsOneWidget);
 
-    await tester.tap(find.text('我的'));
+    await tester.tap(find.byKey(const ValueKey('bottom-nav-2')));
     await tester.pump();
     expect(find.text('Alex Chen'), findsOneWidget);
   });

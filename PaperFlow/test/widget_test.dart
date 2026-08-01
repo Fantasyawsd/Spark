@@ -44,18 +44,20 @@ void main() {
     expect(find.byKey(const ValueKey('paper-feed')), findsOneWidget);
   });
 
-  testWidgets('create button opens the PaperFlow action sheet', (tester) async {
+  testWidgets('v1 shell exposes only papers, AI chat and profile',
+      (tester) async {
     await tester.binding.setSurfaceSize(const Size(390, 844));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
     await tester.pumpWidget(const PaperFlowApp(showSplash: false));
     await tester.pump();
 
-    await tester.tap(find.byKey(const ValueKey('create-button')));
-    await tester.pumpAndSettle();
-
-    expect(find.text('创建内容'), findsOneWidget);
-    expect(find.text('上传论文'), findsOneWidget);
-    expect(find.text('发布动态'), findsOneWidget);
+    expect(find.byKey(const ValueKey('bottom-nav-0')), findsOneWidget);
+    expect(find.byKey(const ValueKey('bottom-nav-1')), findsOneWidget);
+    expect(find.byKey(const ValueKey('bottom-nav-2')), findsOneWidget);
+    expect(find.text('社区'), findsNothing);
+    expect(find.text('私信'), findsNothing);
+    expect(find.text('通知'), findsNothing);
+    expect(find.byKey(const ValueKey('create-button')), findsNothing);
   });
 }

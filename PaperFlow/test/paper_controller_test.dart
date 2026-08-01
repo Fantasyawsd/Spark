@@ -275,7 +275,10 @@ void main() {
       addTearDown(controller.dispose);
 
       await controller.initialize();
-      expect(catalog.queries.single.category, isNull);
+      expect(
+        catalog.queries.single.category,
+        'cs.CL|cs.AI|cs.CV|cs.DC|cs.OS|cs.PF|math.OC|math.ST|q-bio.QM|q-bio.BM',
+      );
 
       controller.selectTopic(1);
       await controller.feed.flushCatalogOperations();
@@ -283,7 +286,10 @@ void main() {
 
       controller.selectPrimaryCategory(2);
       await controller.feed.flushCatalogOperations();
-      expect(catalog.queries.last.category, isNull);
+      expect(
+        catalog.queries.last.category,
+        'cs.CL|cs.AI|cs.CV|cs.DC|cs.OS|cs.PF|math.OC|math.ST|q-bio.QM|q-bio.BM',
+      );
     });
 
     test('topic refresh keeps previously loaded papers available to following',

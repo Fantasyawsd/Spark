@@ -139,6 +139,50 @@ void main() {
       );
     });
 
+    test('retries one transient server failure before reporting an error',
+        () async {
+      final client = _RecordingClient([
+        http.Response('temporary failure', 500),
+        _response(_emptyFeed),
+      ]);
+      final api = ArxivAtomClient(
+        client: client,
+        minimumRequestInterval: Duration.zero,
+      );
+
+      final page = await api.loadLatest(
+        category: 'cs.AI',
+        offset: 0,
+        limit: 10,
+      );
+
+      expect(page.entries, isEmpty);
+      expect(client.requests, hasLength(2));
+    });
+
+    test('stops after the configured server retry limit', () async {
+      final client = _RecordingClient([
+        http.Response('temporary failure', 500),
+        http.Response('still failing', 500),
+      ]);
+      final api = ArxivAtomClient(
+        client: client,
+        minimumRequestInterval: Duration.zero,
+      );
+
+      await expectLater(
+        api.loadLatest(category: 'cs.AI', offset: 0, limit: 10),
+        throwsA(
+          isA<ArxivApiException>().having(
+            (error) => error.message,
+            'message',
+            contains('HTTP 500'),
+          ),
+        ),
+      );
+      expect(client.requests, hasLength(2));
+    });
+
     test('maps request timeout without waiting for the default timeout',
         () async {
       final api = ArxivAtomClient(

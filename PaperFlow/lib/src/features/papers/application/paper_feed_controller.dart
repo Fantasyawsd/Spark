@@ -52,6 +52,8 @@ class PaperFeedController extends ChangeNotifier {
     'Mathematics': 'math.OC|math.ST',
     'Biology': 'q-bio.QM|q-bio.BM',
   };
+  static const _defaultArxivCategories =
+      'cs.CL|cs.AI|cs.CV|cs.DC|cs.OS|cs.PF|math.OC|math.ST|q-bio.QM|q-bio.BM';
 
   List<Paper> _allPapers;
   late List<Paper> _visiblePapers;
@@ -391,8 +393,12 @@ class PaperFeedController extends ChangeNotifier {
       : '$_primaryCategoryIndex';
 
   String? get _catalogCategory {
-    if (_primaryCategoryIndex != PaperFeedMode.recommended.index) return null;
-    return _arxivCategoriesByTopic[topics[_topicIndex]];
+    if (_primaryCategoryIndex == PaperFeedMode.following.index) return null;
+    if (_primaryCategoryIndex == PaperFeedMode.latest.index) {
+      return _defaultArxivCategories;
+    }
+    return _arxivCategoriesByTopic[topics[_topicIndex]] ??
+        _defaultArxivCategories;
   }
 
   Future<void> flushPreferenceWrites() => _preferenceWriteQueue;

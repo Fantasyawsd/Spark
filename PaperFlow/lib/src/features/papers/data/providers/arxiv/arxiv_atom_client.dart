@@ -29,9 +29,11 @@ class ArxivAtomClient implements ArxivCatalogSource {
     http.Client? client,
     this.requestTimeout = const Duration(seconds: 15),
     this.minimumRequestInterval = const Duration(seconds: 3),
+    this.maxServerRetries = 1,
     ArxivClock? clock,
     ArxivDelay? delay,
-  })  : _client = client ?? http.Client(),
+  })  : assert(maxServerRetries >= 0),
+        _client = client ?? http.Client(),
         _ownsClient = client == null,
         _clock = clock ?? DateTime.now,
         _delay = delay ?? Future<void>.delayed;
@@ -39,6 +41,7 @@ class ArxivAtomClient implements ArxivCatalogSource {
   final String endpoint;
   final Duration requestTimeout;
   final Duration minimumRequestInterval;
+  final int maxServerRetries;
   final http.Client _client;
   final bool _ownsClient;
   final ArxivClock _clock;
@@ -105,7 +108,10 @@ class ArxivAtomClient implements ArxivCatalogSource {
     return operation;
   }
 
-  Future<ArxivAtomPageDto> _performRequest(Uri uri) async {
+  Future<ArxivAtomPageDto> _performRequest(
+    Uri uri, {
+    int serverRetryCount = 0,
+  }) async {
     await _respectRequestInterval();
     _lastRequestAt = _clock();
 
@@ -129,6 +135,13 @@ class ArxivAtomClient implements ArxivCatalogSource {
       );
     }
 
+    if (_isServerError(response.statusCode) &&
+        serverRetryCount < maxServerRetries) {
+      return _performRequest(
+        uri,
+        serverRetryCount: serverRetryCount + 1,
+      );
+    }
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw ArxivApiException(
         ArxivApiErrorKind.http,
@@ -156,6 +169,9 @@ class ArxivAtomClient implements ArxivCatalogSource {
     final remaining = minimumRequestInterval - elapsed;
     if (remaining > Duration.zero) await _delay(remaining);
   }
+
+  static bool _isServerError(int statusCode) =>
+      statusCode >= 500 && statusCode < 600;
 
   ArxivAtomPageDto _parse(String body) {
     final document = XmlDocument.parse(body);

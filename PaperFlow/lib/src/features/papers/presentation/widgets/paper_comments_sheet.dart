@@ -20,7 +20,7 @@ enum PaperSheetPage { comments, ai }
 
 Future<void> showPaperCommentsSheet(
   BuildContext context,
-  PaperRecord paper, {
+  Paper paper, {
   required PaperAiService aiService,
   PaperAiService? webSearchAiService,
   PaperAiSessionRepository? aiSessionRepository,
@@ -53,7 +53,7 @@ class _PaperCommentsSheet extends StatefulWidget {
     required this.commentController,
   });
 
-  final PaperRecord paper;
+  final Paper paper;
   final PaperSheetPage initialPage;
   final PaperAiService aiService;
   final PaperAiService? webSearchAiService;

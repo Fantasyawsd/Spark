@@ -4,7 +4,7 @@ import '../domain/paper.dart';
 
 enum PaperAccent { blue, purple, green, pink, azure, orange }
 
-extension PaperAccentForRecord on PaperRecord {
+extension PaperAccentForRecord on Paper {
   PaperAccent get accent => switch (id) {
         'lora-2021' => PaperAccent.blue,
         'mamba-2023' => PaperAccent.purple,

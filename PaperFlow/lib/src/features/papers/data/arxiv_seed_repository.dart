@@ -11,9 +11,9 @@ class ArxivSeedRepository implements PaperRepository {
   const ArxivSeedRepository();
 
   @override
-  List<PaperRecord> getAll() {
+  List<Paper> getAll() {
     return arxivSeedMetadata.map((metadata) {
-      return metadata.toPaperRecord(
+      return metadata.toPaper(
         relatedPapers: _relatedPapersFor(metadata),
       );
     }).toList(growable: false);

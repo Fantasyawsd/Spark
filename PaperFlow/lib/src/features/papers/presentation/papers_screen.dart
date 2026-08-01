@@ -159,7 +159,7 @@ class _PapersScreenState extends State<PapersScreen> {
     );
   }
 
-  Widget _buildPaperContent(List<PaperRecord> papers) {
+  Widget _buildPaperContent(List<Paper> papers) {
     if (papers.isEmpty) {
       return PaperEmptyState(
         title: _feed.primaryCategoryIndex == 1 ? '还没有关注作者' : '当前领域暂无论文',
@@ -271,7 +271,7 @@ class _PapersScreenState extends State<PapersScreen> {
     }
   }
 
-  Future<void> _sharePaper(PaperRecord paper) async {
+  Future<void> _sharePaper(Paper paper) async {
     final service = widget.shareService;
     if (service == null) return;
     try {

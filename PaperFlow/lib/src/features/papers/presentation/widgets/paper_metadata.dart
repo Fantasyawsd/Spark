@@ -12,7 +12,7 @@ class PaperMetadata extends StatelessWidget {
     required this.onFollow,
   });
 
-  final PaperRecord paper;
+  final Paper paper;
   final bool followed;
   final VoidCallback onFollow;
 
@@ -94,7 +94,7 @@ class PaperMetadata extends StatelessWidget {
                 ),
               ),
             Text(
-              '被引 ${paper.citations}',
+              '被引 ${adjustedCompactCount(paper.metrics.citations)}',
               style: const TextStyle(
                 color: PaperFlowColors.muted,
                 fontSize: 11,

@@ -17,7 +17,7 @@ void main() {
 
     expect(count, 1);
     expect(store.papers.single.title, 'Imported paper');
-    expect(store.papers.single.citations, '42');
+    expect(store.papers.single.metrics.citations, 42);
     expect(stateStore.state.lastDatestamp, DateTime.utc(2024, 1, 2));
   });
 }
@@ -55,10 +55,10 @@ class _FakeEnhancementSource implements PaperEnhancementSource {
 }
 
 class _MemoryPaperStore implements PaperStore {
-  final papers = <PaperRecord>[];
+  final papers = <Paper>[];
 
   @override
-  Future<void> upsert(Iterable<PaperRecord> values) async {
+  Future<void> upsert(Iterable<Paper> values) async {
     papers
       ..clear()
       ..addAll(values);

@@ -28,9 +28,9 @@ class ArxivPaperSyncService {
         until: token == null ? until : null,
         resumptionToken: token,
       );
-      final papers = <PaperRecord>[];
+      final papers = <Paper>[];
       for (final metadata in page.records) {
-        var record = metadata.toPaperRecord();
+        var record = metadata.toPaper();
         final enhancement = await enhancementSource?.findByArxivId(
           metadata.normalizedId,
         );

@@ -43,10 +43,11 @@
 - 新增通用 `ChatContext`、`ChatAiService` 与 `ChatConversationController`，主聊天不再通过伪造 `PaperRecord` 复用论文会话；论文模块只通过 `PaperChatContext` 适配论文提示词和稳定会话 ID。
 - AI Composer、会话内容和消息视图已迁入 `chat/presentation`；论文模块旧路径只保留导出兼容层。Markdown 渲染与入场动画因被论文和聊天共同使用，迁入 `core/widgets`。
 - DeepSeek 实现和文件/内存会话仓储已直接依赖 `chat` 的端口与领域类型，不再通过 `papers/application` 兼容别名反向依赖；论文 AI 类型别名仅保留给现有论文调用方渐进迁移。
+- 论文领域实体已由 `PaperRecord` 更名为 `Paper`；作者改为结构化列表，正文与统计值拆为领域值对象，引用、点赞、评论、收藏和分享计数恢复为整数，紧凑数字只由展示层格式化。
 
 ## 高优先级待整改
 
-1. **数据结构分层**：`PaperRecord` 仍混合原始论文值、Markdown 展示内容和格式化计数字符串。远程接口接入前应拆分 DTO、领域模型和 ViewModel，并把计数恢复为整数。
+1. **远程数据分层**：领域 `Paper` 已不再承担格式化计数字符串；接入远程源时仍需新增 Provider DTO、缓存 Record 和 Mapper，禁止让远程 JSON 类型直接进入 Controller 或 Widget。
 
 ## 中优先级待整改
 

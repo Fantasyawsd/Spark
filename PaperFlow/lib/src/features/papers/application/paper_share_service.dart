@@ -26,9 +26,9 @@ class PaperShareException implements Exception {
 class PaperShareComposer {
   const PaperShareComposer._();
 
-  static PaperSharePayload compose(PaperRecord paper) {
-    final firstAuthor = paper.authors.split(',').first.trim();
-    final abstractText = _plainText(paper.abstractText);
+  static PaperSharePayload compose(Paper paper) {
+    final firstAuthor = paper.firstAuthor;
+    final abstractText = _plainText(paper.content.originalAbstractMarkdown);
     final snippet = abstractText.length > 180
         ? '${abstractText.substring(0, 180).trimRight()}…'
         : abstractText;

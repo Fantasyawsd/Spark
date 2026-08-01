@@ -33,7 +33,7 @@ void main() {
     expect(body, isNot(contains('output_config')));
     expect(
       (body['messages'] as List).last['content'],
-      contains(demoPapers.first.abstractText),
+      contains(demoPapers.first.content.originalAbstractMarkdown),
     );
     expect(result, '这是中文翻译');
   });
@@ -82,7 +82,7 @@ class _FakeTranslationService implements PaperTranslationService {
   int requests = 0;
 
   @override
-  Stream<String> translateAbstract(PaperRecord paper) async* {
+  Stream<String> translateAbstract(Paper paper) async* {
     requests++;
     yield '第一段';
     yield '中文翻译';

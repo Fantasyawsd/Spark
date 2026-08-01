@@ -46,7 +46,7 @@ class PaperReaderCard extends StatefulWidget {
     this.onOpenRelatedPaper,
   });
 
-  final PaperRecord paper;
+  final Paper paper;
   final bool liked;
   final bool saved;
   final bool read;
@@ -245,7 +245,7 @@ class _PaperReaderCardState extends State<PaperReaderCard> {
     );
   }
 
-  Widget _buildTabContent(PaperRecord paper, int index) {
+  Widget _buildTabContent(Paper paper, int index) {
     if (index == 1) {
       return PaperTranslationContent(
         key: ValueKey('${paper.id}-translation'),
@@ -273,19 +273,19 @@ class _PaperReaderCardState extends State<PaperReaderCard> {
     }
     return PaperTabBody(
       key: ValueKey('${paper.id}-tab-$index'),
-      text: paper.abstractText,
+      text: paper.content.originalAbstractMarkdown,
       expandable: true,
       topics: const [],
       onExpand: () => _openFullReader(
         paper,
-        paper.abstractText,
+        paper.content.originalAbstractMarkdown,
         title: '原文摘要',
       ),
     );
   }
 
   void _openFullReader(
-    PaperRecord paper,
+    Paper paper,
     String markdown, {
     required String title,
   }) {

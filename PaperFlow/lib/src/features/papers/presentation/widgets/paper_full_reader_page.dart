@@ -15,7 +15,7 @@ class PaperFullReaderPage extends StatefulWidget {
     this.onScrollOffsetChanged,
   });
 
-  final PaperRecord paper;
+  final Paper paper;
   final String markdown;
   final String title;
   final double initialScrollOffset;

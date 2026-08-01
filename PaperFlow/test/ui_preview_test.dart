@@ -918,7 +918,7 @@ class _FakePaperTranslationService implements PaperTranslationService {
   final String content;
 
   @override
-  Stream<String> translateAbstract(PaperRecord paper) async* {
+  Stream<String> translateAbstract(Paper paper) async* {
     yield content;
   }
 
@@ -929,28 +929,28 @@ class _FakePaperTranslationService implements PaperTranslationService {
 class _TestPaperRepository implements PaperRepository {
   const _TestPaperRepository(this.paper);
 
-  final PaperRecord paper;
+  final Paper paper;
 
   @override
-  List<PaperRecord> getAll() => [paper];
+  List<Paper> getAll() => [paper];
 }
 
-PaperRecord _testPaper(String abstractText) {
-  return PaperRecord(
+Paper _testPaper(String abstractText) {
+  return Paper(
     id: 'test-paper',
     venue: 'TestConf 2026',
     title: 'A Test Paper for Reading Layout',
-    authors: 'Alex Chen, Lin Zhang',
+    authors: const ['Alex Chen', 'Lin Zhang'],
     firstAffiliation: 'PaperFlow Lab',
     topics: const ['Testing'],
     abstractText: abstractText,
     chineseAbstractMarkdown: '**中文摘要**',
     relatedPapers: const [],
     readMinutes: 5,
-    citations: '0',
-    likes: '0',
-    comments: '0',
-    saves: '0',
-    shares: '0',
+    citations: 0,
+    likes: 0,
+    comments: 0,
+    saves: 0,
+    shares: 0,
   );
 }

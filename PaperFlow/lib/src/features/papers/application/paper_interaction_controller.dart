@@ -42,7 +42,7 @@ class PaperInteractionController extends ChangeNotifier {
   bool isSaved(String paperId) => _savedPaperIds.contains(paperId);
   bool isFollowed(String paperId) => _followedPaperIds.contains(paperId);
 
-  bool isAuthorFollowed(PaperRecord paper) =>
+  bool isAuthorFollowed(Paper paper) =>
       isFollowed(paper.authorKey) || isFollowed(paper.id);
 
   Future<void> initialize() {
@@ -94,7 +94,7 @@ class PaperInteractionController extends ChangeNotifier {
     _mutate(_InteractionMutation(_InteractionMutationType.follow, paperId));
   }
 
-  void toggleFollowAuthor(PaperRecord paper) {
+  void toggleFollowAuthor(Paper paper) {
     if (isFollowed(paper.authorKey)) {
       toggleFollow(paper.authorKey);
     } else if (isFollowed(paper.id)) {

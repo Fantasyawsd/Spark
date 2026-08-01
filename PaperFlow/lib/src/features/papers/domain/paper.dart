@@ -1,20 +1,20 @@
-class PaperRecord {
-  const PaperRecord({
+class Paper {
+  Paper({
     required this.id,
     required this.venue,
     required this.title,
-    required this.authors,
+    required List<String> authors,
     required this.firstAffiliation,
-    required this.topics,
-    required this.abstractText,
-    required this.chineseAbstractMarkdown,
-    this.relatedPapers = const [],
+    required List<String> topics,
+    required String abstractText,
+    required String chineseAbstractMarkdown,
+    List<RelatedPaper> relatedPapers = const [],
     required this.readMinutes,
-    required this.citations,
-    required this.likes,
-    required this.comments,
-    required this.saves,
-    required this.shares,
+    int citations = 0,
+    int likes = 0,
+    int comments = 0,
+    int saves = 0,
+    int shares = 0,
     this.arxivId,
     this.doi,
     this.paperUrl,
@@ -23,23 +23,31 @@ class PaperRecord {
     this.updatedAt,
     this.license,
     this.source = 'demo',
-  });
+  })  : authors = List.unmodifiable(authors),
+        topics = List.unmodifiable(topics),
+        relatedPapers = List.unmodifiable(relatedPapers),
+        content = PaperContent(
+          originalAbstractMarkdown: abstractText,
+          chineseAbstractMarkdown: chineseAbstractMarkdown,
+        ),
+        metrics = PaperMetrics(
+          citations: citations,
+          likes: likes,
+          comments: comments,
+          saves: saves,
+          shares: shares,
+        );
 
   final String id;
   final String venue;
   final String title;
-  final String authors;
+  final List<String> authors;
   final String firstAffiliation;
   final List<String> topics;
-  final String abstractText;
-  final String chineseAbstractMarkdown;
+  final PaperContent content;
   final List<RelatedPaper> relatedPapers;
   final int readMinutes;
-  final String citations;
-  final String likes;
-  final String comments;
-  final String saves;
-  final String shares;
+  final PaperMetrics metrics;
   final String? arxivId;
   final String? doi;
   final String? paperUrl;
@@ -48,6 +56,53 @@ class PaperRecord {
   final DateTime? updatedAt;
   final String? license;
   final String source;
+
+  String get firstAuthor => authors.firstWhere(
+        (author) => author.trim().isNotEmpty,
+        orElse: () => id,
+      );
+}
+
+class PaperContent {
+  const PaperContent({
+    required this.originalAbstractMarkdown,
+    required this.chineseAbstractMarkdown,
+  });
+
+  final String originalAbstractMarkdown;
+  final String chineseAbstractMarkdown;
+}
+
+class PaperMetrics {
+  const PaperMetrics({
+    this.citations = 0,
+    this.likes = 0,
+    this.comments = 0,
+    this.saves = 0,
+    this.shares = 0,
+  });
+
+  final int citations;
+  final int likes;
+  final int comments;
+  final int saves;
+  final int shares;
+
+  PaperMetrics copyWith({
+    int? citations,
+    int? likes,
+    int? comments,
+    int? saves,
+    int? shares,
+  }) {
+    return PaperMetrics(
+      citations: citations ?? this.citations,
+      likes: likes ?? this.likes,
+      comments: comments ?? this.comments,
+      saves: saves ?? this.saves,
+      shares: shares ?? this.shares,
+    );
+  }
 }
 
 class RelatedPaper {
@@ -64,12 +119,6 @@ class RelatedPaper {
   final String relation;
 }
 
-extension PaperAuthorIdentity on PaperRecord {
-  String get authorKey {
-    final firstAuthor = authors
-        .split(',')
-        .map((name) => name.trim())
-        .firstWhere((name) => name.isNotEmpty, orElse: () => id);
-    return 'author:${firstAuthor.toLowerCase()}';
-  }
+extension PaperAuthorIdentity on Paper {
+  String get authorKey => 'author:${firstAuthor.trim().toLowerCase()}';
 }

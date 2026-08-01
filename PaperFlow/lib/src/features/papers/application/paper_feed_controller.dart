@@ -15,7 +15,7 @@ class PaperFeedController extends ChangeNotifier {
         );
 
   PaperFeedController.fromPapers(
-    Iterable<PaperRecord> papers, {
+    Iterable<Paper> papers, {
     PaperPreferenceRepository? preferenceRepository,
   })  : _allPapers = List.unmodifiable(papers),
         _preferenceRepository = preferenceRepository {
@@ -35,8 +35,8 @@ class PaperFeedController extends ChangeNotifier {
     'Biology',
   ];
 
-  final List<PaperRecord> _allPapers;
-  late List<PaperRecord> _visiblePapers;
+  final List<Paper> _allPapers;
+  late List<Paper> _visiblePapers;
   Set<String> _followedPaperIds = {};
   final PaperPreferenceRepository? _preferenceRepository;
   Future<void> _preferenceWriteQueue = Future.value();
@@ -49,8 +49,8 @@ class PaperFeedController extends ChangeNotifier {
   bool _gridMode = false;
   bool _disposed = false;
 
-  List<PaperRecord> get papers => _visiblePapers;
-  List<PaperRecord> get allPapers => _allPapers;
+  List<Paper> get papers => _visiblePapers;
+  List<Paper> get allPapers => _allPapers;
   List<String> get extraCategories => List.unmodifiable(_extraCategories);
   List<String> get topics => [...defaultTopics, ..._extraCategories];
   int get primaryCategoryIndex => _primaryCategoryIndex;

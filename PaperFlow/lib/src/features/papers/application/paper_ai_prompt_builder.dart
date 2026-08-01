@@ -3,7 +3,7 @@ import '../domain/paper.dart';
 class PaperAiPromptBuilder {
   const PaperAiPromptBuilder._();
 
-  static String systemPrompt(PaperRecord paper, {bool webSearch = false}) {
+  static String systemPrompt(Paper paper, {bool webSearch = false}) {
     final searchInstructions = webSearch
         ? '''
 
@@ -14,16 +14,16 @@ class PaperAiPromptBuilder {
 
 # 论文
 标题：${paper.title}
-作者：${paper.authors}
+作者：${paper.authors.join(', ')}
 第一单位：${paper.firstAffiliation}
 会议：${paper.venue}
 主题：${paper.topics.join(', ')}
 
 ## 摘要
-${paper.abstractText}
+${paper.content.originalAbstractMarkdown}
 
 ## 中文摘要
-${paper.chineseAbstractMarkdown}
+${paper.content.chineseAbstractMarkdown}
 ''';
   }
 }

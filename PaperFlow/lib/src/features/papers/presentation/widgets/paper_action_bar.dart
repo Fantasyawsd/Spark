@@ -23,7 +23,7 @@ class PaperActionBar extends StatelessWidget {
     this.onShare,
   });
 
-  final PaperRecord paper;
+  final Paper paper;
   final bool liked;
   final bool saved;
   final int shareCountDelta;
@@ -50,7 +50,10 @@ class PaperActionBar extends StatelessWidget {
               icon: liked
                   ? Icons.favorite_rounded
                   : Icons.favorite_border_rounded,
-              label: adjustedCompactCount(paper.likes, delta: liked ? 1 : 0),
+              label: adjustedCompactCount(
+                paper.metrics.likes,
+                delta: liked ? 1 : 0,
+              ),
               active: liked,
               onTap: onLike,
             ),
@@ -59,7 +62,7 @@ class PaperActionBar extends StatelessWidget {
               tooltip: '评论',
               icon: Icons.chat_bubble_outline_rounded,
               label: adjustedCompactCount(
-                paper.comments,
+                paper.metrics.comments,
                 delta: commentCountDelta,
               ),
               onTap: onComment,
@@ -69,7 +72,10 @@ class PaperActionBar extends StatelessWidget {
               icon: saved
                   ? Icons.bookmark_rounded
                   : Icons.bookmark_border_rounded,
-              label: adjustedCompactCount(paper.saves, delta: saved ? 1 : 0),
+              label: adjustedCompactCount(
+                paper.metrics.saves,
+                delta: saved ? 1 : 0,
+              ),
               active: saved,
               onTap: onSave,
             ),
@@ -78,7 +84,7 @@ class PaperActionBar extends StatelessWidget {
               tooltip: '分享',
               icon: Icons.ios_share_outlined,
               label: adjustedCompactCount(
-                paper.shares,
+                paper.metrics.shares,
                 delta: shareCountDelta,
               ),
               onTap: onShare,

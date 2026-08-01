@@ -11,7 +11,7 @@ class PaperPdfButton extends StatelessWidget {
     required this.onOpen,
   });
 
-  final PaperRecord paper;
+  final Paper paper;
   final ValueChanged<Uri> onOpen;
 
   @override

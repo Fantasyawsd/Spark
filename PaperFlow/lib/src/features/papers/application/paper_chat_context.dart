@@ -5,11 +5,11 @@ import 'paper_ai_prompt_builder.dart';
 class PaperChatContext {
   const PaperChatContext._();
 
-  static ChatContext fromPaper(PaperRecord paper) {
+  static ChatContext fromPaper(Paper paper) {
     return ChatContext(
       id: paper.id,
       title: paper.title,
-      subtitle: '${paper.authors.split(',').first.trim()} · ${paper.venue}',
+      subtitle: '${paper.firstAuthor} · ${paper.venue}',
       systemPrompt: PaperAiPromptBuilder.systemPrompt(paper),
       webSearchSystemPrompt: PaperAiPromptBuilder.systemPrompt(
         paper,

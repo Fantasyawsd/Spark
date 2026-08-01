@@ -5,8 +5,8 @@ enum PaperFeedMode { recommended, following, latest }
 class PaperFeedFilter {
   const PaperFeedFilter._();
 
-  static List<PaperRecord> apply({
-    required Iterable<PaperRecord> papers,
+  static List<Paper> apply({
+    required Iterable<Paper> papers,
     required PaperFeedMode mode,
     required String topic,
     required Set<String> followedPaperIds,
@@ -29,7 +29,7 @@ class PaperFeedFilter {
     return List.unmodifiable(result);
   }
 
-  static DateTime _publishedAt(PaperRecord paper) =>
+  static DateTime _publishedAt(Paper paper) =>
       paper.publishedAt ?? DateTime.fromMillisecondsSinceEpoch(0);
 }
 
@@ -61,12 +61,12 @@ class PaperTopicMatcher {
     ],
   };
 
-  static bool matches(PaperRecord paper, String topic) {
+  static bool matches(Paper paper, String topic) {
     if (topic == '全部') return true;
     final normalizedTopic = topic.trim().toLowerCase();
     final searchable = [
       paper.title,
-      paper.abstractText,
+      paper.content.originalAbstractMarkdown,
       paper.venue,
       ...paper.topics,
     ].join(' ').toLowerCase();

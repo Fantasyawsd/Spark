@@ -3,8 +3,8 @@ import '../../papers/domain/paper.dart';
 class PaperSearchMatcher {
   const PaperSearchMatcher._();
 
-  static List<PaperRecord> search(
-    Iterable<PaperRecord> papers,
+  static List<Paper> search(
+    Iterable<Paper> papers,
     String query,
   ) {
     final terms = query
@@ -18,7 +18,7 @@ class PaperSearchMatcher {
     final matches = papers.where((paper) {
       final searchable = [
         paper.title,
-        paper.authors,
+        paper.authors.join(' '),
         paper.venue,
         paper.firstAffiliation,
         ...paper.topics,

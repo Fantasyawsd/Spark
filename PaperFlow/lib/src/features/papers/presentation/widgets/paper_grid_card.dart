@@ -18,7 +18,7 @@ class PaperGridCard extends StatelessWidget {
     required this.onSave,
   });
 
-  final PaperRecord paper;
+  final Paper paper;
   final int index;
   final bool liked;
   final bool saved;
@@ -84,7 +84,7 @@ class PaperGridCard extends StatelessWidget {
                       const SizedBox(width: 4),
                       Text(
                         adjustedCompactCount(
-                          paper.likes,
+                          paper.metrics.likes,
                           delta: liked ? 1 : 0,
                         ),
                         style: const TextStyle(
@@ -120,7 +120,7 @@ class PaperGridCard extends StatelessWidget {
 class _PaperGridCover extends StatelessWidget {
   const _PaperGridCover({required this.paper, required this.index});
 
-  final PaperRecord paper;
+  final Paper paper;
   final int index;
 
   @override
@@ -182,7 +182,7 @@ class _PaperGridCover extends StatelessWidget {
               ),
               const SizedBox(width: 4),
               Text(
-                '被引 ${paper.citations}',
+                '被引 ${adjustedCompactCount(paper.metrics.citations)}',
                 style: const TextStyle(
                   color: PaperFlowColors.muted,
                   fontSize: 9.5,

@@ -8,7 +8,7 @@ typedef PaperAiRequestStatus = ChatRequestStatus;
 
 class PaperAiConversationController extends ChatConversationController {
   PaperAiConversationController({
-    required PaperRecord paper,
+    required Paper paper,
     required super.service,
     super.webSearchService,
     super.sessionRepository,

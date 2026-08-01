@@ -17,9 +17,9 @@ class ProfileScreen extends StatelessWidget {
     this.onOpenPaper,
   });
 
-  final List<PaperRecord> savedPapers;
-  final List<PaperRecord> readingHistory;
-  final List<PaperRecord> readLaterPapers;
+  final List<Paper> savedPapers;
+  final List<Paper> readingHistory;
+  final List<Paper> readLaterPapers;
   final ValueChanged<String>? onOpenPaper;
 
   @override
@@ -331,7 +331,7 @@ class _SectionHeader extends StatelessWidget {
 class _FavoritesCard extends StatelessWidget {
   const _FavoritesCard({required this.papers, required this.onOpenPaper});
 
-  final List<PaperRecord> papers;
+  final List<Paper> papers;
   final ValueChanged<String>? onOpenPaper;
 
   @override
@@ -422,7 +422,7 @@ class _FavoritesCard extends StatelessWidget {
 class _ReadingHistoryCard extends StatelessWidget {
   const _ReadingHistoryCard({required this.papers, required this.onOpenPaper});
 
-  final List<PaperRecord> papers;
+  final List<Paper> papers;
   final ValueChanged<String>? onOpenPaper;
 
   @override
@@ -452,7 +452,7 @@ class _PaperShelfCard extends StatelessWidget {
   final String title;
   final String emptyText;
   final String keyPrefix;
-  final List<PaperRecord> papers;
+  final List<Paper> papers;
   final ValueChanged<String>? onOpenPaper;
 
   @override

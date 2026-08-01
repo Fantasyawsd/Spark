@@ -5,16 +5,24 @@ class DemoPaperRepository implements PaperRepository {
   const DemoPaperRepository();
 
   @override
-  List<PaperRecord> getAll() => demoPapers;
+  List<Paper> getAll() => demoPapers;
 }
 
-final demoPapers = <PaperRecord>[
-  PaperRecord(
+final demoPapers = <Paper>[
+  Paper(
     id: 'lora-2021',
     venue: 'ICLR 2024',
     title: 'LoRA: Low-Rank Adaptation of Large Language Models',
-    authors:
-        'Edward J. Hu, Yelong Shen, Phillip Wallis, Zeyuan Allen-Zhu, Yuanzhi Li, Shean Wang, Lu Wang, Weizhu Chen',
+    authors: const [
+      'Edward J. Hu',
+      'Yelong Shen',
+      'Phillip Wallis',
+      'Zeyuan Allen-Zhu',
+      'Yuanzhi Li',
+      'Shean Wang',
+      'Lu Wang',
+      'Weizhu Chen',
+    ],
     firstAffiliation: 'Microsoft Research',
     topics: [
       'Large Language Models',
@@ -53,18 +61,18 @@ Instead of updating every model parameter, LoRA injects trainable low-rank matri
       ),
     ],
     readMinutes: 12,
-    citations: '1,234',
-    likes: '1.2k',
-    comments: '128',
-    saves: '8.2k',
-    shares: '256',
+    citations: 1234,
+    likes: 1200,
+    comments: 128,
+    saves: 8200,
+    shares: 256,
     publishedAt: DateTime(2021),
   ),
-  PaperRecord(
+  Paper(
     id: 'mamba-2023',
     venue: 'NeurIPS 2024',
     title: 'Mamba: Linear-Time Sequence Modeling with Selective State Spaces',
-    authors: 'Albert Gu, Tri Dao',
+    authors: const ['Albert Gu', 'Tri Dao'],
     firstAffiliation: 'Carnegie Mellon University',
     topics: ['State Space Models', 'Efficient Architecture', 'Long Context'],
     abstractText:
@@ -86,18 +94,18 @@ Instead of updating every model parameter, LoRA injects trainable low-rank matri
       ),
     ],
     readMinutes: 15,
-    citations: '842',
-    likes: '4.8k',
-    comments: '306',
-    saves: '6.1k',
-    shares: '734',
+    citations: 842,
+    likes: 4800,
+    comments: 306,
+    saves: 6100,
+    shares: 734,
     publishedAt: DateTime(2023),
   ),
-  PaperRecord(
+  Paper(
     id: 'retrieval-long-context-2025',
     venue: 'ACL 2025',
     title: 'Rethinking Retrieval for Long-Context Language Models',
-    authors: 'Mina Park, Leo Chen, Ananya Rao, Daniel Kim',
+    authors: const ['Mina Park', 'Leo Chen', 'Ananya Rao', 'Daniel Kim'],
     firstAffiliation: 'Stanford University',
     topics: ['Retrieval-Augmented Generation', 'Long Context', 'Evaluation'],
     abstractText:
@@ -121,18 +129,23 @@ Instead of updating every model parameter, LoRA injects trainable low-rank matri
       ),
     ],
     readMinutes: 9,
-    citations: '317',
-    likes: '2.9k',
-    comments: '184',
-    saves: '3.7k',
-    shares: '421',
+    citations: 317,
+    likes: 2900,
+    comments: 184,
+    saves: 3700,
+    shares: 421,
     publishedAt: DateTime(2025),
   ),
-  PaperRecord(
+  Paper(
     id: 'qlora-2023',
     venue: 'NeurIPS 2023',
     title: 'QLoRA: Efficient Finetuning of Quantized LLMs',
-    authors: 'Tim Dettmers, Artidoro Pagnoni, Ari Holtzman, Luke Zettlemoyer',
+    authors: const [
+      'Tim Dettmers',
+      'Artidoro Pagnoni',
+      'Ari Holtzman',
+      'Luke Zettlemoyer',
+    ],
     firstAffiliation: 'University of Washington',
     topics: ['Quantization', 'Efficient Fine-tuning', 'LLM'],
     abstractText:
@@ -148,18 +161,23 @@ Instead of updating every model parameter, LoRA injects trainable low-rank matri
       ),
     ],
     readMinutes: 11,
-    citations: '3,607',
-    likes: '6.3k',
-    comments: '418',
-    saves: '9.4k',
-    shares: '1.1k',
+    citations: 3607,
+    likes: 6300,
+    comments: 418,
+    saves: 9400,
+    shares: 1100,
     publishedAt: DateTime(2023),
   ),
-  PaperRecord(
+  Paper(
     id: 'segment-anything-2023',
     venue: 'ICCV 2023',
     title: 'Segment Anything',
-    authors: 'Alexander Kirillov, Eric Mintun, Nikhila Ravi, Hanzi Mao',
+    authors: const [
+      'Alexander Kirillov',
+      'Eric Mintun',
+      'Nikhila Ravi',
+      'Hanzi Mao',
+    ],
     firstAffiliation: 'Meta AI Research',
     topics: ['Computer Vision', 'Foundation Models', 'Segmentation'],
     abstractText:
@@ -168,19 +186,24 @@ Instead of updating every model parameter, LoRA injects trainable low-rank matri
         '**Segment Anything** 提出可提示的通用分割模型，并构建大规模掩码数据集，以支持零样本图像分割。',
     relatedPapers: const [],
     readMinutes: 13,
-    citations: '8,921',
-    likes: '8.7k',
-    comments: '692',
-    saves: '11.2k',
-    shares: '1.8k',
+    citations: 8921,
+    likes: 8700,
+    comments: 692,
+    saves: 11200,
+    shares: 1800,
     publishedAt: DateTime(2023),
   ),
-  PaperRecord(
+  Paper(
     id: 'swe-agent-2024',
     venue: 'ICML 2024',
     title:
         'SWE-agent: Agent-Computer Interfaces Enable Automated Software Engineering',
-    authors: 'John Yang, Carlos E. Jimenez, Alexander Wettig, Kilian Lieret',
+    authors: const [
+      'John Yang',
+      'Carlos E. Jimenez',
+      'Alexander Wettig',
+      'Kilian Lieret',
+    ],
     firstAffiliation: 'Princeton University',
     topics: ['Agents', 'Software Engineering', 'Tool Use'],
     abstractText:
@@ -196,11 +219,11 @@ Instead of updating every model parameter, LoRA injects trainable low-rank matri
       ),
     ],
     readMinutes: 10,
-    citations: '486',
-    likes: '3.9k',
-    comments: '275',
-    saves: '4.6k',
-    shares: '587',
+    citations: 486,
+    likes: 3900,
+    comments: 275,
+    saves: 4600,
+    shares: 587,
     publishedAt: DateTime(2024),
   ),
 ];

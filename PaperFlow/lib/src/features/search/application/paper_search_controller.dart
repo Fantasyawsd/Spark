@@ -8,7 +8,7 @@ import '../domain/paper_search_matcher.dart';
 
 class PaperSearchController extends ChangeNotifier {
   PaperSearchController({
-    required Iterable<PaperRecord> papers,
+    required Iterable<Paper> papers,
     required PaperSearchHistoryRepository historyRepository,
     this.debounceDuration = const Duration(milliseconds: 250),
   })  : _papers = List.unmodifiable(papers),
@@ -16,19 +16,19 @@ class PaperSearchController extends ChangeNotifier {
 
   static const maxHistoryLength = 12;
 
-  final List<PaperRecord> _papers;
+  final List<Paper> _papers;
   final PaperSearchHistoryRepository _historyRepository;
   final Duration debounceDuration;
 
   Timer? _debounce;
   String _query = '';
-  List<PaperRecord> _results = const [];
+  List<Paper> _results = const [];
   List<String> _history = const [];
   bool _loadingHistory = true;
   String? _historyError;
 
   String get query => _query;
-  List<PaperRecord> get results => _results;
+  List<Paper> get results => _results;
   List<String> get history => _history;
   bool get loadingHistory => _loadingHistory;
   String? get historyError => _historyError;

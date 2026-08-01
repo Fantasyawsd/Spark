@@ -1,7 +1,7 @@
 import '../domain/paper.dart';
 
 abstract interface class PaperTranslationService {
-  Stream<String> translateAbstract(PaperRecord paper);
+  Stream<String> translateAbstract(Paper paper);
 
   void cancelActiveTranslation();
 }

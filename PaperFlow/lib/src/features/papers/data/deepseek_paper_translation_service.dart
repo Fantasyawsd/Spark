@@ -12,7 +12,7 @@ class DeepSeekPaperTranslationService implements PaperTranslationService {
   final DeepSeekPaperAiService _client;
 
   @override
-  Stream<String> translateAbstract(PaperRecord paper) async* {
+  Stream<String> translateAbstract(Paper paper) async* {
     try {
       await for (final chunk in _client.answerStream(
         context: ChatContext(
@@ -33,7 +33,7 @@ class DeepSeekPaperTranslationService implements PaperTranslationService {
 - 只输出译文，可使用 Markdown 保留原文列表结构。
 - 保留原有公式；行内公式使用 LaTeX `\$...\$`，独立公式使用 `\$\$...\$\$`，不要把公式放入代码块。
 
-${paper.abstractText}
+${paper.content.originalAbstractMarkdown}
 ''',
           ),
         ],

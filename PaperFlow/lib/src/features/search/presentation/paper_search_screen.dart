@@ -250,12 +250,12 @@ class _SearchHistory extends StatelessWidget {
 class _PaperSearchResult extends StatelessWidget {
   const _PaperSearchResult({required this.paper, required this.onTap});
 
-  final PaperRecord paper;
+  final Paper paper;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final firstAuthor = paper.authors.split(',').first.trim();
+    final firstAuthor = paper.firstAuthor;
     return ListTile(
       key: ValueKey('paper-search-result-${paper.id}'),
       contentPadding: const EdgeInsets.symmetric(vertical: 7),

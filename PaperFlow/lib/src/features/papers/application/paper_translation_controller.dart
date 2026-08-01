@@ -13,7 +13,7 @@ class PaperTranslationController extends ChangeNotifier {
   })  : _service = service,
         _repository = repository;
 
-  final PaperRecord paper;
+  final Paper paper;
   final PaperTranslationService _service;
   final PaperTranslationRepository? _repository;
 

@@ -27,5 +27,5 @@ abstract interface class PaperSyncStateStore {
 }
 
 abstract interface class PaperStore {
-  Future<void> upsert(Iterable<PaperRecord> papers);
+  Future<void> upsert(Iterable<Paper> papers);
 }

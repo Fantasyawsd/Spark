@@ -84,7 +84,7 @@ void main() {
 
 class _FakePaperRepository implements PaperRepository {
   @override
-  List<PaperRecord> getAll() => const [];
+  List<Paper> getAll() => const [];
 }
 
 class _FakeAiService implements PaperAiService {

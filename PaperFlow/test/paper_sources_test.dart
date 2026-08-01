@@ -18,7 +18,7 @@ void main() {
       expect(papers.single.normalizedId, '2401.00001');
       expect(papers.single.title, 'A title');
       expect(papers.single.publishedAt, DateTime.utc(2024, 1, 1));
-      expect(papers.single.toPaperRecord().source, 'arxiv');
+      expect(papers.single.toPaper().source, 'arxiv');
     });
   });
 

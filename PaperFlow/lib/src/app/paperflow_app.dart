@@ -397,13 +397,13 @@ class _PaperFlowShellState extends State<PaperFlowShell> {
         (paper) => ChatContextSummary(id: paper.id, title: paper.title),
       );
 
-  List<PaperRecord> _papersForIds(Iterable<String> ids) {
+  List<Paper> _papersForIds(Iterable<String> ids) {
     final papersById = {
       for (final paper in _paperController.feed.allPapers) paper.id: paper,
     };
     return ids
         .map((id) => papersById[id])
-        .whereType<PaperRecord>()
+        .whereType<Paper>()
         .toList(growable: false);
   }
 
@@ -424,7 +424,7 @@ class _PaperFlowShellState extends State<PaperFlowShell> {
         .whenComplete(controller.dispose);
   }
 
-  Future<void> _openAiChat(PaperRecord paper) async {
+  Future<void> _openAiChat(Paper paper) async {
     await Navigator.of(context).push<void>(
       MaterialPageRoute(
         builder: (context) => PaperAiChatScreen(

@@ -20,7 +20,7 @@ class PaperController extends ChangeNotifier {
         );
 
   PaperController._fromPapers(
-    List<PaperRecord> papers, {
+    List<Paper> papers, {
     PaperInteractionRepository? interactionRepository,
     PaperPreferenceRepository? preferenceRepository,
   })  : feed = PaperFeedController.fromPapers(
@@ -37,7 +37,7 @@ class PaperController extends ChangeNotifier {
   final PaperFeedController feed;
   final PaperInteractionController interactions;
 
-  List<PaperRecord> get papers => feed.papers;
+  List<Paper> get papers => feed.papers;
   List<String> get extraCategories => feed.extraCategories;
   List<String> get categories => feed.topics;
   int get categoryIndex => feed.topicIndex;

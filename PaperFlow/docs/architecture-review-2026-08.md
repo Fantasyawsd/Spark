@@ -48,10 +48,13 @@
 - 收藏状态已从单一 ID 集合升级为领域化分组模型：默认分组保持稳定 ID，自定义分组及论文成员关系随互动快照持久化；旧 `savedPaperIds` 通过 schema v2 迁移到默认分组。论文页只发出收藏命令，“我的”只消费分组视图和窄回调。
 - 论文阅读入口已按职责拆分：`PapersScreen` 只编排可上下刷新的 Feed、分类顶栏和 Dock，`PaperDetailScreen` 只编排外部入口的全屏阅读与路由返回；两者通过模块内 `PaperReaderView` 统一连接 `PaperReaderCard`、Controller 和平台服务，搜索、收藏、历史和相关论文不再通过修改 Feed 索引模拟跳转。
 - App Shell 统一拥有论文详情路由栈和覆盖状态。嵌套打开相关论文会继续压栈，返回逐级恢复上一个详情或原入口；被覆盖的首页 Feed 暂停阅读停留计时，详情页通过共享路由可见性观察器只累计前台可见时间。
+- 新增 `PaperCatalogRepository` 异步分页端口；arXiv Atom Provider DTO、论文缓存 Record 和领域 `Paper` 通过 Mapper 分层转换，远程 JSON/XML 不进入 Controller 或 Widget。
+- 新增 `OfflineFirstPaperCatalogRepository`，按远程、查询缓存、内置种子顺序提供 Feed/Search/详情；生产组合根注入该目录仓储，预览与测试默认仍使用同步种子避免隐式网络请求。
+- `PaperFeedController` 保留冷启动同步种子视图，并在目录仓储可用时异步刷新和接近末尾加载更多；`PaperSearchController` 保留本地即时搜索兼容路径，并在生产入口使用远程搜索结果更新。
 
 ## 高优先级待整改
 
-1. **远程数据分层**：领域 `Paper` 已不再承担格式化计数字符串；接入远程源时仍需新增 Provider DTO、缓存 Record 和 Mapper，禁止让远程 JSON 类型直接进入 Controller 或 Widget。
+1. **DeepSeek 凭据分层**：AI 服务仍主要依赖开发期 `dart-define`，V1.0 发布前必须新增安全凭据端口、Android Keystore 实现和“我的”页面配置入口。
 
 ## 中优先级待整改
 

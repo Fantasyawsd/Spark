@@ -73,21 +73,40 @@ class _PaperSearchScreenState extends State<PaperSearchScreen> {
         onClear: controller.clearHistory,
       );
     }
-    if (controller.results.isEmpty) {
-      return const _NoSearchResults();
+    if (controller.loadingResults && controller.results.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
     }
-    return ListView.separated(
-      key: const ValueKey('paper-search-results'),
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-      itemCount: controller.results.length,
-      separatorBuilder: (_, __) => const Divider(height: 1),
-      itemBuilder: (context, index) {
-        final paper = controller.results[index];
-        return _PaperSearchResult(
-          paper: paper,
-          onTap: () => _openPaper(paper.id),
-        );
+    if (controller.results.isEmpty) {
+      return _NoSearchResults(message: controller.resultsError?.message);
+    }
+    return NotificationListener<ScrollNotification>(
+      onNotification: (notification) {
+        if (notification.metrics.extentAfter < 320 &&
+            controller.hasMoreResults) {
+          unawaited(controller.loadMoreResults());
+        }
+        return false;
       },
+      child: ListView.separated(
+        key: const ValueKey('paper-search-results'),
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+        itemCount:
+            controller.results.length + (controller.loadingMoreResults ? 1 : 0),
+        separatorBuilder: (_, __) => const Divider(height: 1),
+        itemBuilder: (context, index) {
+          if (index == controller.results.length) {
+            return const Padding(
+              padding: EdgeInsets.all(16),
+              child: Center(child: CircularProgressIndicator()),
+            );
+          }
+          final paper = controller.results[index];
+          return _PaperSearchResult(
+            paper: paper,
+            onTap: () => _openPaper(paper.id),
+          );
+        },
+      ),
     );
   }
 
@@ -287,21 +306,23 @@ class _PaperSearchResult extends StatelessWidget {
 }
 
 class _NoSearchResults extends StatelessWidget {
-  const _NoSearchResults();
+  const _NoSearchResults({this.message});
+
+  final String? message;
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
-      key: ValueKey('paper-search-empty'),
+    return Center(
+      key: const ValueKey('paper-search-empty'),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.search_off_rounded,
+          const Icon(Icons.search_off_rounded,
               color: PaperFlowColors.muted, size: 36),
-          SizedBox(height: 10),
+          const SizedBox(height: 10),
           Text(
-            '没有找到相关论文',
-            style: TextStyle(
+            message ?? '没有找到相关论文',
+            style: const TextStyle(
               color: PaperFlowColors.ink,
               fontSize: 14,
               fontWeight: FontWeight.w700,

@@ -271,19 +271,14 @@ class _PaperFlowShellState extends State<PaperFlowShell> {
       _dependencies.paperRepository,
       interactionRepository: _dependencies.interactionRepository,
       preferenceRepository: _dependencies.preferenceRepository,
+      catalogRepository: _dependencies.paperCatalogRepository,
     )..addListener(_handlePaperStateChanged);
-    unawaited(_paperController.initialize());
     _readingController = PaperReadingController(
       repository: _dependencies.readingRepository,
     )..addListener(_handleReadingStateChanged);
     unawaited(_readingController.initialize());
     _commentController = PaperCommentController(
       repository: _dependencies.commentRepository,
-    );
-    unawaited(
-      _commentController.initialize(
-        _paperController.feed.allPapers.map((paper) => paper.id),
-      ),
     );
     _paperAiService = _dependencies.aiService;
     _webSearchAiService = _dependencies.webSearchAiService;
@@ -299,6 +294,7 @@ class _PaperFlowShellState extends State<PaperFlowShell> {
     _translationServiceFactory = _dependencies.translationServiceFactory;
     _searchHistoryRepository = _dependencies.searchHistoryRepository;
     _linkService = _dependencies.linkService;
+    unawaited(_initializePaperState());
   }
 
   @override
@@ -412,6 +408,16 @@ class _PaperFlowShellState extends State<PaperFlowShell> {
         (paper) => ChatContextSummary(id: paper.id, title: paper.title),
       );
 
+  Future<void> _initializePaperState() async {
+    await _paperController.initialize();
+    if (!mounted) return;
+    await _commentController.initialize(
+      _paperController.feed.allPapers.map((paper) => paper.id),
+    );
+    if (!mounted) return;
+    _chatSessionController.updateContexts(_paperChatContexts);
+  }
+
   List<Paper> _papersForIds(Iterable<String> ids) {
     final papersById = {
       for (final paper in _paperController.feed.allPapers) paper.id: paper,
@@ -426,6 +432,7 @@ class _PaperFlowShellState extends State<PaperFlowShell> {
     final controller = PaperSearchController(
       papers: _paperController.feed.allPapers,
       historyRepository: _searchHistoryRepository,
+      catalogRepository: _dependencies.paperCatalogRepository,
     );
     try {
       await _pushCoveredRoute<void>(
@@ -476,14 +483,16 @@ class _PaperFlowShellState extends State<PaperFlowShell> {
   }
 
   Future<void> _openPaperDetailById(String paperId) async {
-    final paper = _paperController.feed.allPapers
+    var paper = _paperController.feed.allPapers
         .where((item) => item.id == paperId)
         .firstOrNull;
-    if (paper == null || !mounted) return;
+    paper ??= await _dependencies.paperCatalogRepository?.findById(paperId);
+    final selectedPaper = paper;
+    if (selectedPaper == null || !mounted) return;
     await _pushCoveredRoute<void>(
       MaterialPageRoute(
         builder: (context) => PaperDetailScreen(
-          paper: paper,
+          paper: selectedPaper,
           interactionController: _paperController.interactions,
           commentController: _commentController,
           readingController: _readingController,

@@ -50,6 +50,7 @@ export 'src/features/papers/data/arxiv_seed_repository.dart';
 export 'src/features/papers/data/openalex_client.dart';
 export 'src/features/papers/data/platform_paper_share_service.dart';
 export 'src/features/papers/domain/paper.dart';
+export 'src/features/papers/domain/paper_catalog.dart';
 export 'src/features/papers/domain/favorite_group.dart';
 export 'src/features/papers/domain/paper_comment_repository.dart';
 export 'src/features/papers/domain/paper_interaction_repository.dart';

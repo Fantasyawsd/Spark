@@ -142,18 +142,29 @@ class _PapersScreenState extends State<PapersScreen> {
             ),
           ),
           Expanded(
-            child: ClipRect(
-              key: const ValueKey('paper-feed-viewport'),
-              child: AnimatedSwitcher(
-                duration: MotionTokens.duration(
-                  context,
-                  MotionTokens.pageDuration,
+            child: Stack(
+              children: [
+                ClipRect(
+                  key: const ValueKey('paper-feed-viewport'),
+                  child: AnimatedSwitcher(
+                    duration: MotionTokens.duration(
+                      context,
+                      MotionTokens.pageDuration,
+                    ),
+                    switchInCurve: MotionTokens.enterCurve,
+                    switchOutCurve: MotionTokens.exitCurve,
+                    transitionBuilder: _buildModeTransition,
+                    child: _buildPaperContent(papers),
+                  ),
                 ),
-                switchInCurve: MotionTokens.enterCurve,
-                switchOutCurve: MotionTokens.exitCurve,
-                transitionBuilder: _buildModeTransition,
-                child: _buildPaperContent(papers),
-              ),
+                if (_feed.catalogLoading || _feed.catalogLoadingMore)
+                  const Positioned(
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    child: LinearProgressIndicator(minHeight: 2),
+                  ),
+              ],
             ),
           ),
         ],

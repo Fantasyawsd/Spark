@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import '../domain/paper.dart';
+import '../domain/paper_catalog.dart';
 import '../domain/paper_interaction_repository.dart';
 import '../domain/paper_preference_repository.dart';
 import '../domain/paper_repository.dart';
@@ -13,19 +14,23 @@ class PaperController extends ChangeNotifier {
     PaperRepository repository, {
     PaperInteractionRepository? interactionRepository,
     PaperPreferenceRepository? preferenceRepository,
+    PaperCatalogRepository? catalogRepository,
   }) : this._fromPapers(
           repository.getAll(),
           interactionRepository: interactionRepository,
           preferenceRepository: preferenceRepository,
+          catalogRepository: catalogRepository,
         );
 
   PaperController._fromPapers(
     List<Paper> papers, {
     PaperInteractionRepository? interactionRepository,
     PaperPreferenceRepository? preferenceRepository,
+    PaperCatalogRepository? catalogRepository,
   })  : feed = PaperFeedController.fromPapers(
           papers,
           preferenceRepository: preferenceRepository,
+          catalogRepository: catalogRepository,
         ),
         interactions = PaperInteractionController(
           repository: interactionRepository,
@@ -50,6 +55,7 @@ class PaperController extends ChangeNotifier {
     await Future.wait([
       interactions.initialize(),
       feed.initializePreferences(),
+      feed.initializeCatalog(),
     ]);
   }
 

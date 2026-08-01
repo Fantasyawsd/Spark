@@ -13,6 +13,7 @@ import '../features/papers/data/file_paper_interaction_repository.dart';
 import '../features/papers/data/file_paper_preference_repository.dart';
 import '../features/papers/data/file_paper_reading_repository.dart';
 import '../features/papers/data/file_paper_translation_repository.dart';
+import '../features/papers/data/cache/file_paper_cache_store.dart';
 import '../features/papers/data/in_memory_paper_ai_session_repository.dart';
 import '../features/papers/data/in_memory_paper_comment_repository.dart';
 import '../features/papers/data/in_memory_paper_interaction_repository.dart';
@@ -20,6 +21,9 @@ import '../features/papers/data/in_memory_paper_preference_repository.dart';
 import '../features/papers/data/in_memory_paper_reading_repository.dart';
 import '../features/papers/data/in_memory_paper_translation_repository.dart';
 import '../features/papers/data/platform_paper_share_service.dart';
+import '../features/papers/data/offline_first_paper_catalog_repository.dart';
+import '../features/papers/data/providers/arxiv/arxiv_atom_client.dart';
+import '../features/papers/domain/paper_catalog.dart';
 import '../features/papers/domain/paper_comment_repository.dart';
 import '../features/papers/domain/paper_interaction_repository.dart';
 import '../features/papers/domain/paper_preference_repository.dart';
@@ -32,6 +36,7 @@ import '../features/search/domain/paper_search_history_repository.dart';
 class PaperFlowDependencies {
   const PaperFlowDependencies({
     required this.paperRepository,
+    this.paperCatalogRepository,
     required this.commentRepository,
     required this.interactionRepository,
     required this.preferenceRepository,
@@ -49,8 +54,14 @@ class PaperFlowDependencies {
   });
 
   factory PaperFlowDependencies.production() {
+    const seedRepository = ArxivSeedRepository();
     return PaperFlowDependencies(
-      paperRepository: const ArxivSeedRepository(),
+      paperRepository: seedRepository,
+      paperCatalogRepository: OfflineFirstPaperCatalogRepository(
+        remoteSource: ArxivAtomClient(),
+        cacheStore: FilePaperCacheStore(),
+        seedRepository: seedRepository,
+      ),
       commentRepository: FilePaperCommentRepository(),
       interactionRepository: FilePaperInteractionRepository(),
       preferenceRepository: FilePaperPreferenceRepository(),
@@ -70,6 +81,7 @@ class PaperFlowDependencies {
 
   factory PaperFlowDependencies.preview({
     PaperRepository? paperRepository,
+    PaperCatalogRepository? paperCatalogRepository,
     PaperCommentRepository? commentRepository,
     PaperInteractionRepository? interactionRepository,
     PaperPreferenceRepository? preferenceRepository,
@@ -90,6 +102,7 @@ class PaperFlowDependencies {
         webSearchAiService ?? DeepSeekWebSearchAiService();
     return PaperFlowDependencies(
       paperRepository: paperRepository ?? const ArxivSeedRepository(),
+      paperCatalogRepository: paperCatalogRepository,
       commentRepository: commentRepository ?? InMemoryPaperCommentRepository(),
       interactionRepository:
           interactionRepository ?? InMemoryPaperInteractionRepository(),
@@ -115,6 +128,7 @@ class PaperFlowDependencies {
   }
 
   final PaperRepository paperRepository;
+  final PaperCatalogRepository? paperCatalogRepository;
   final PaperCommentRepository commentRepository;
   final PaperInteractionRepository interactionRepository;
   final PaperPreferenceRepository preferenceRepository;

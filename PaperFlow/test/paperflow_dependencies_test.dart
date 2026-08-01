@@ -14,12 +14,17 @@ import 'package:paperflow/src/features/papers/data/file_paper_preference_reposit
 import 'package:paperflow/src/features/papers/data/file_paper_reading_repository.dart';
 import 'package:paperflow/src/features/papers/data/file_paper_translation_repository.dart';
 import 'package:paperflow/src/features/papers/data/platform_paper_share_service.dart';
+import 'package:paperflow/src/features/papers/data/offline_first_paper_catalog_repository.dart';
 
 void main() {
   test('production dependencies compose concrete infrastructure once', () {
     final dependencies = PaperFlowDependencies.production();
 
     expect(dependencies.paperRepository, isA<ArxivSeedRepository>());
+    expect(
+      dependencies.paperCatalogRepository,
+      isA<OfflineFirstPaperCatalogRepository>(),
+    );
     expect(dependencies.commentRepository, isA<FilePaperCommentRepository>());
     expect(
       dependencies.interactionRepository,

@@ -18,6 +18,16 @@ val hasReleaseSigning = listOf(
     "keyAlias",
     "keyPassword",
 ).all { !keystoreProperties.getProperty(it).isNullOrBlank() }
+val requestsReleaseBuild = gradle.startParameter.taskNames.any {
+    it.contains("release", ignoreCase = true)
+}
+
+if (requestsReleaseBuild && !hasReleaseSigning) {
+    throw GradleException(
+        "Release signing is not configured. Copy android/key.properties.example " +
+            "to android/key.properties and provide the upload keystore credentials.",
+    )
+}
 
 android {
     namespace = "app.paperflow.reader"
@@ -33,7 +43,7 @@ android {
         applicationId = "app.paperflow.reader"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = 23
+        minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
@@ -52,7 +62,9 @@ android {
 
     buildTypes {
         release {
-            signingConfig = signingConfigs.findByName("release")
+            if (hasReleaseSigning) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
     }
 }

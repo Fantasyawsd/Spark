@@ -8,6 +8,10 @@ import '../../chat/domain/chat_context.dart';
 import '../../chat/domain/chat_message.dart';
 import '../../ai_settings/domain/deepseek_credential_repository.dart';
 
+const _debugBuildApiKey = bool.fromEnvironment('dart.vm.product')
+    ? ''
+    : String.fromEnvironment('DEEPSEEK_API_KEY');
+
 class DeepSeekPaperAiService
     implements
         ChatAiService,
@@ -15,7 +19,7 @@ class DeepSeekPaperAiService
         CancellableChatAiService,
         ConfigurableChatAiService {
   DeepSeekPaperAiService({
-    this.apiKey = const String.fromEnvironment('DEEPSEEK_API_KEY'),
+    this.apiKey = _debugBuildApiKey,
     this.credentialRepository,
     this.baseUrl = const String.fromEnvironment(
       'DEEPSEEK_BASE_URL',

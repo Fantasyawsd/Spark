@@ -8,6 +8,10 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+if ($FlutterArguments -contains "--release") {
+    throw "该脚本仅用于本地调试。正式 release 构建禁止通过 dart-define 注入 DeepSeek API Key。"
+}
+
 function Get-DeepSeekSetting {
     param(
         [Parameter(Mandatory = $true)]

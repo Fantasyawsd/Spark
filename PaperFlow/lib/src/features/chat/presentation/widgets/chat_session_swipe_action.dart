@@ -76,8 +76,8 @@ class _ChatSessionSwipeActionState extends State<ChatSessionSwipeAction> {
                       width: _actionWidth,
                       icon: Icons.delete_outline_rounded,
                       label: '删除',
-                      backgroundColor: const Color(0xFFFFEDEE),
-                      foregroundColor: const Color(0xFFD92D20),
+                      backgroundColor: PaperFlowColors.dangerSoft,
+                      foregroundColor: PaperFlowColors.danger,
                       onTap: () {
                         widget.onClose();
                         widget.onDelete();

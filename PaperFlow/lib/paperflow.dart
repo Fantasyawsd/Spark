@@ -14,6 +14,7 @@ export 'src/core/widgets/paperflow_bottom_nav.dart';
 export 'src/core/widgets/paperflow_sheet.dart';
 export 'src/core/widgets/paperflow_segmented_control.dart';
 export 'src/core/widgets/paperflow_tab_bar.dart';
+export 'src/core/widgets/paper_theme_sheet.dart';
 export 'src/features/chat/application/chat_session_controller.dart';
 export 'src/features/chat/domain/chat_message.dart';
 export 'src/features/chat/domain/chat_session_repository.dart';

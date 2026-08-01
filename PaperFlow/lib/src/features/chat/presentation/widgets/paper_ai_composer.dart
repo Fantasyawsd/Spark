@@ -50,12 +50,12 @@ class PaperAiComposer extends StatelessWidget {
             key: const ValueKey('paper-ai-composer-surface'),
             padding: const EdgeInsets.fromLTRB(12, 7, 7, 7),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: PaperFlowColors.card,
               borderRadius: BorderRadius.circular(27),
-              border: Border.all(color: const Color(0xFFE8E9ED)),
+              border: Border.all(color: PaperFlowColors.line),
               boxShadow: const [
                 BoxShadow(
-                  color: Color(0x120B1020),
+                  color: Color(0x0A182230),
                   blurRadius: 14,
                   offset: Offset(0, 4),
                 ),
@@ -81,6 +81,7 @@ class PaperAiComposer extends StatelessWidget {
                     ),
                     decoration: const InputDecoration(
                       hintText: '',
+                      filled: false,
                       border: InputBorder.none,
                       isDense: true,
                       contentPadding: EdgeInsets.fromLTRB(4, 5, 4, 2),

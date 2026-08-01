@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/paperflow_theme.dart';
-import '../../../core/theme/paper_theme_color.dart';
 import '../../../core/theme/theme_controller.dart';
+import '../../../core/widgets/paper_theme_sheet.dart';
 import '../../../core/widgets/paperflow_sheet.dart';
 import '../../../core/widgets/surface_card.dart';
 import '../../ai_settings/application/deepseek_credential_controller.dart';
@@ -1023,115 +1023,3 @@ class PaperCatalogStatusView {
 }
 
 enum PaperCatalogAvailability { online, offline, local }
-
-/// 打开设置底部面板，目前提供主题色切换。
-void showPaperThemeSheet(BuildContext context) {
-  showPaperFlowSheet<void>(
-    context: context,
-    builder: (context) => Container(
-      margin: const EdgeInsets.all(14),
-      padding: const EdgeInsets.fromLTRB(22, 18, 22, 26),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(26),
-      ),
-      child: SafeArea(
-        top: false,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 42,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: PaperFlowColors.line,
-                  borderRadius: BorderRadius.circular(99),
-                ),
-              ),
-            ),
-            const SizedBox(height: 18),
-            const Text(
-              '设置',
-              style: TextStyle(
-                color: PaperFlowColors.ink,
-                fontSize: 20,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-            const SizedBox(height: 18),
-            const Text(
-              '主题色',
-              style: TextStyle(
-                color: PaperFlowColors.muted,
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 12),
-            ListenableBuilder(
-              listenable: ThemeController.instance,
-              builder: (context, _) {
-                final current = ThemeController.instance.color;
-                return Wrap(
-                  spacing: 16,
-                  runSpacing: 12,
-                  children: PaperThemeColor.values.map((c) {
-                    final selected = c == current;
-                    return GestureDetector(
-                      onTap: () => ThemeController.instance.setColor(c),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          AnimatedContainer(
-                            duration: const Duration(milliseconds: 180),
-                            width: 34,
-                            height: 34,
-                            decoration: BoxDecoration(
-                              color: c.value,
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: selected
-                                    ? PaperFlowColors.ink
-                                    : PaperFlowColors.line,
-                                width: selected ? 2 : 1,
-                              ),
-                              boxShadow: const [
-                                BoxShadow(
-                                  color: Color(0x1A15213A),
-                                  blurRadius: 8,
-                                  offset: Offset(0, 3),
-                                ),
-                              ],
-                            ),
-                            child: selected
-                                ? const Icon(Icons.check_rounded,
-                                    color: Colors.white, size: 18)
-                                : null,
-                          ),
-                          const SizedBox(height: 5),
-                          Text(
-                            c.label,
-                            style: TextStyle(
-                              color: selected
-                                  ? PaperFlowColors.ink
-                                  : PaperFlowColors.muted,
-                              fontSize: 10,
-                              fontWeight:
-                                  selected ? FontWeight.w700 : FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  }).toList(),
-                );
-              },
-            ),
-          ],
-        ),
-      ),
-    ),
-  );
-}

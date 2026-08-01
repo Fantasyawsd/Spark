@@ -311,7 +311,7 @@ class _MainAiChatCard extends StatelessWidget {
     final currentSession = session;
     final preview = currentSession?.preview.trim();
     return Material(
-      color: const Color(0xFFFFF3F6),
+      color: PaperFlowColors.primaryPale,
       borderRadius: BorderRadius.circular(18),
       child: InkWell(
         key: const ValueKey('main-ai-chat'),
@@ -330,7 +330,7 @@ class _MainAiChatCard extends StatelessWidget {
                 ),
                 child: const Icon(
                   Icons.auto_awesome_rounded,
-                  color: Colors.white,
+                  color: PaperFlowColors.card,
                   size: 23,
                 ),
               ),

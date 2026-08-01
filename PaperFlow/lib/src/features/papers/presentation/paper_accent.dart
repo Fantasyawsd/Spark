@@ -31,11 +31,11 @@ PaperAccent _accentForTopic(Iterable<String> topics) {
 
 extension PaperAccentColor on PaperAccent {
   Color get color => switch (this) {
-        PaperAccent.blue => const Color(0xFF4A7FCA),
-        PaperAccent.purple => const Color(0xFF7758C9),
-        PaperAccent.green => const Color(0xFF38A984),
-        PaperAccent.pink => const Color(0xFFEF5B7E),
-        PaperAccent.azure => const Color(0xFF2B82F6),
-        PaperAccent.orange => const Color(0xFFFF8A21),
+        PaperAccent.blue => const Color(0xFF4B74A7),
+        PaperAccent.purple => const Color(0xFF735C9E),
+        PaperAccent.green => const Color(0xFF3E806F),
+        PaperAccent.pink => const Color(0xFFC95A73),
+        PaperAccent.azure => const Color(0xFF3F83B5),
+        PaperAccent.orange => const Color(0xFFB66A2C),
       };
 }

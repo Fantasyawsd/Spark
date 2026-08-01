@@ -27,7 +27,7 @@ class PaperFlowBottomNav extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.fromLTRB(4, 4, 4, 3),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.9),
+              color: PaperFlowColors.card.withValues(alpha: 0.92),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(color: PaperFlowColors.line),
             ),

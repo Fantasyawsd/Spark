@@ -25,8 +25,9 @@ class TopicChip extends StatelessWidget {
         vertical: compact ? 6 : 8,
       ),
       decoration: BoxDecoration(
-        color:
-            selected ? accent.withValues(alpha: 0.09) : const Color(0xFFF5F6F8),
+        color: selected
+            ? accent.withValues(alpha: 0.09)
+            : PaperFlowColors.surfaceMuted,
         borderRadius: BorderRadius.circular(99),
         border:
             selected ? Border.all(color: accent.withValues(alpha: 0.55)) : null,

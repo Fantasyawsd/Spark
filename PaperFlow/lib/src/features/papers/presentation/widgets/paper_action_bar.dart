@@ -97,7 +97,7 @@ class PaperActionBar extends StatelessWidget {
               child: PopupMenuButton<_PaperMoreAction>(
                 key: const ValueKey('paper-action-more'),
                 tooltip: '更多',
-                color: Colors.white,
+                color: PaperFlowColors.card,
                 surfaceTintColor: Colors.transparent,
                 elevation: 8,
                 shadowColor: const Color(0x2410182B),

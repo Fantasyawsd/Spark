@@ -8,7 +8,7 @@ class SurfaceCard extends StatelessWidget {
     required this.child,
     this.padding = const EdgeInsets.all(18),
     this.margin,
-    this.radius = 22,
+    this.radius = 16,
     this.color = PaperFlowColors.card,
     this.border,
   });

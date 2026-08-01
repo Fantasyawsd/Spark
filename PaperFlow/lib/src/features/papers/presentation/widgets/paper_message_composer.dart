@@ -33,7 +33,7 @@ class PaperMessageComposer extends StatelessWidget {
         height: 64,
         child: Container(
           padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
-          color: Colors.white,
+          color: PaperFlowColors.card,
           child: TextField(
             key: ValueKey(
                 aiMode ? 'paper-ai-message-input' : 'paper-comment-input'),
@@ -95,7 +95,7 @@ class PaperMessageComposer extends StatelessWidget {
                           size: 22,
                         ),
               filled: true,
-              fillColor: PaperFlowColors.canvas,
+              fillColor: PaperFlowColors.surfaceMuted,
               isDense: true,
               contentPadding: const EdgeInsets.symmetric(
                 horizontal: 14,

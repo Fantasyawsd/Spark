@@ -25,7 +25,7 @@ class PapersHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final showTopicFilter = primaryIndex == 0;
     return Material(
-      color: Colors.white,
+      color: PaperFlowColors.card,
       elevation: 0,
       shadowColor: Colors.transparent,
       surfaceTintColor: Colors.transparent,

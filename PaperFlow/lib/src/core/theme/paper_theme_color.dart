@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
 enum PaperThemeColor {
-  pink('默认粉', Color(0xFFFF315F), Color(0xFFFFEEF2), Color(0xFFFFF7F9)),
-  blue('蓝色', Color(0xFF2B82F6), Color(0xFFEAF3FE), Color(0xFFF5F9FF)),
-  purple('紫色', Color(0xFF8E5CF5), Color(0xFFF1EBFE), Color(0xFFF8F5FF)),
-  green('绿色', Color(0xFF41C982), Color(0xFFEAFBF2), Color(0xFFF5FDF8)),
-  orange('橙色', Color(0xFFFF8A21), Color(0xFFFFF3E8), Color(0xFFFFF9F2));
+  pink('蔷薇', Color(0xFFD13C5F), Color(0xFFFBE9EE), Color(0xFFFFF7F9)),
+  blue('学术蓝', Color(0xFF356FAE), Color(0xFFE8F0F8), Color(0xFFF5F8FC)),
+  purple('鸢尾紫', Color(0xFF7256A8), Color(0xFFEEEAF6), Color(0xFFF8F6FC)),
+  green('松石绿', Color(0xFF267A65), Color(0xFFE6F2EE), Color(0xFFF5FAF8)),
+  orange('琥珀', Color(0xFFAD5A17), Color(0xFFF7ECE2), Color(0xFFFCF8F4));
 
   const PaperThemeColor(this.label, this.value, this.soft, this.pale);
 

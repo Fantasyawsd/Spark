@@ -24,7 +24,7 @@ Future<String?> showPaperTopicPicker(
     context: context,
     builder: (context) => Container(
       decoration: const BoxDecoration(
-        color: Colors.white,
+        color: PaperFlowColors.card,
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: SafeArea(
@@ -76,7 +76,7 @@ Future<String?> showPaperTopicPicker(
                       showCheckmark: false,
                       onSelected: (_) => Navigator.pop(context, topic),
                       selectedColor: PaperFlowColors.primarySoft,
-                      backgroundColor: PaperFlowColors.canvas,
+                      backgroundColor: PaperFlowColors.surfaceMuted,
                       side: BorderSide(
                         color: topic == selectedTopic
                             ? PaperFlowColors.primary

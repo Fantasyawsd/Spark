@@ -169,7 +169,7 @@ class _SearchHeader extends StatelessWidget {
                   icon: const Icon(Icons.close_rounded, size: 18),
                 ),
                 filled: true,
-                fillColor: PaperFlowColors.canvas,
+                fillColor: PaperFlowColors.surfaceMuted,
                 contentPadding: const EdgeInsets.symmetric(vertical: 10),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),

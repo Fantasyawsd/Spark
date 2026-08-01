@@ -28,7 +28,7 @@ class PaperFlowSegmentedControl extends StatelessWidget {
       child: DecoratedBox(
         decoration: const BoxDecoration(
           border: Border(
-            bottom: BorderSide(color: Color(0xFFE4E7EC)),
+            bottom: BorderSide(color: PaperFlowColors.line),
           ),
         ),
         child: SizedBox(

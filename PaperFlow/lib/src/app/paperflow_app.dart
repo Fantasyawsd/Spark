@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../core/motion/motion_tokens.dart';
 import '../core/navigation/paperflow_route_observer.dart';
 import '../core/theme/paperflow_theme.dart';
 import '../core/theme/theme_controller.dart';
@@ -140,6 +141,7 @@ class _PaperFlowBootstrapState extends State<_PaperFlowBootstrap>
   late final Animation<double> _opacity;
   late final Animation<double> _scale;
   late bool _splashComplete;
+  bool _animationStarted = false;
 
   @override
   void initState() {
@@ -147,32 +149,41 @@ class _PaperFlowBootstrapState extends State<_PaperFlowBootstrap>
     _splashComplete = !widget.showSplash;
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 900),
+      duration: MotionTokens.splashDuration,
     );
     _opacity = TweenSequence<double>([
       TweenSequenceItem(
-        tween: Tween(begin: 0.0, end: 1.0).chain(
-          CurveTween(curve: Curves.easeOutCubic),
-        ),
-        weight: 35,
+        tween: ConstantTween(1.0),
+        weight: 42,
       ),
-      TweenSequenceItem(tween: ConstantTween(1.0), weight: 45),
-      TweenSequenceItem(
+      TweenSequenceItem<double>(
         tween: Tween(begin: 1.0, end: 0.0).chain(
           CurveTween(curve: Curves.easeInCubic),
         ),
-        weight: 20,
+        weight: 58,
       ),
     ]).animate(_controller);
-    _scale = Tween(begin: 0.88, end: 1.0).animate(
+    _scale = Tween(begin: 1.0, end: 1.035).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
     );
 
     if (widget.showSplash) {
-      _controller
-        ..addStatusListener(_handleAnimationStatus)
-        ..forward();
+      _controller.addStatusListener(_handleAnimationStatus);
     }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!widget.showSplash || _animationStarted || _splashComplete) return;
+
+    _animationStarted = true;
+    if (MediaQuery.maybeOf(context)?.disableAnimations == true) {
+      _controller.value = 1;
+      _splashComplete = true;
+      return;
+    }
+    _controller.forward();
   }
 
   @override
@@ -185,28 +196,33 @@ class _PaperFlowBootstrapState extends State<_PaperFlowBootstrap>
 
   @override
   Widget build(BuildContext context) {
-    if (_splashComplete) {
-      return PaperFlowShell(
-        dependencies: widget.dependencies,
-      );
-    }
-
-    return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFF),
-      body: Center(
-        child: FadeTransition(
-          opacity: _opacity,
-          child: ScaleTransition(
-            scale: _scale,
-            child: Image.asset(
-              'assets/images/paperflow_logo.png',
-              width: 112,
-              height: 112,
-              filterQuality: FilterQuality.high,
+    final shell = PaperFlowShell(dependencies: widget.dependencies);
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        shell,
+        if (!_splashComplete)
+          AbsorbPointer(
+            child: FadeTransition(
+              opacity: _opacity,
+              child: ColoredBox(
+                key: const ValueKey('paperflow-splash'),
+                color: Colors.white,
+                child: Center(
+                  child: ScaleTransition(
+                    scale: _scale,
+                    child: Image.asset(
+                      'assets/images/paperflow_logo.png',
+                      width: 112,
+                      height: 112,
+                      filterQuality: FilterQuality.high,
+                    ),
+                  ),
+                ),
+              ),
             ),
           ),
-        ),
-      ),
+      ],
     );
   }
 

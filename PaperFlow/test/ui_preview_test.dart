@@ -1076,6 +1076,13 @@ void main() {
       find.byKey(ValueKey('ai-session-delete-${paper.id}')),
       findsOneWidget,
     );
+    final actionsClip = tester.widget<ClipRRect>(
+      find.byKey(ValueKey('ai-session-actions-${paper.id}')),
+    );
+    expect(
+      actionsClip.borderRadius,
+      const BorderRadius.all(Radius.circular(16)),
+    );
 
     await tester.tap(find.byKey(ValueKey('ai-session-pin-${paper.id}')));
     await tester.pumpAndSettle();

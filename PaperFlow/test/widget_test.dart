@@ -33,14 +33,40 @@ void main() {
 
     await tester.pumpWidget(const PaperFlowApp());
 
+    expect(
+      find.byKey(const ValueKey('paperflow-splash')),
+      findsOneWidget,
+    );
     final logo = tester.widget<Image>(find.byType(Image));
     expect(
       (logo.image as AssetImage).assetName,
       'assets/images/paperflow_logo.png',
     );
 
-    await tester.pump(const Duration(milliseconds: 950));
-    await tester.pump();
+    await tester.pump(
+      MotionTokens.splashDuration + const Duration(milliseconds: 1),
+    );
+    expect(
+      find.byKey(const ValueKey('paperflow-splash')),
+      findsNothing,
+    );
+    expect(find.byKey(const ValueKey('paper-feed')), findsOneWidget);
+  });
+
+  testWidgets('startup skips its animation when reduced motion is enabled',
+      (tester) async {
+    tester.platformDispatcher.accessibilityFeaturesTestValue =
+        const FakeAccessibilityFeatures(disableAnimations: true);
+    addTearDown(
+      tester.platformDispatcher.clearAccessibilityFeaturesTestValue,
+    );
+
+    await tester.pumpWidget(const PaperFlowApp());
+
+    expect(
+      find.byKey(const ValueKey('paperflow-splash')),
+      findsNothing,
+    );
     expect(find.byKey(const ValueKey('paper-feed')), findsOneWidget);
   });
 

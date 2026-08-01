@@ -51,36 +51,40 @@ class _ChatSessionSwipeActionState extends State<ChatSessionSwipeAction> {
           Positioned.fill(
             child: Align(
               alignment: Alignment.centerRight,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _SwipeActionButton(
-                    key: ValueKey('ai-session-pin-${widget.sessionId}'),
-                    width: _actionWidth,
-                    icon: widget.pinned
-                        ? Icons.push_pin_outlined
-                        : Icons.push_pin_rounded,
-                    label: widget.pinned ? '取消置顶' : '置顶',
-                    backgroundColor: PaperFlowColors.primarySoft,
-                    foregroundColor: PaperFlowColors.primary,
-                    onTap: () {
-                      widget.onClose();
-                      widget.onTogglePinned();
-                    },
-                  ),
-                  _SwipeActionButton(
-                    key: ValueKey('ai-session-delete-${widget.sessionId}'),
-                    width: _actionWidth,
-                    icon: Icons.delete_outline_rounded,
-                    label: '删除',
-                    backgroundColor: const Color(0xFFFFEDEE),
-                    foregroundColor: const Color(0xFFD92D20),
-                    onTap: () {
-                      widget.onClose();
-                      widget.onDelete();
-                    },
-                  ),
-                ],
+              child: ClipRRect(
+                key: ValueKey('ai-session-actions-${widget.sessionId}'),
+                borderRadius: widget.borderRadius,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _SwipeActionButton(
+                      key: ValueKey('ai-session-pin-${widget.sessionId}'),
+                      width: _actionWidth,
+                      icon: widget.pinned
+                          ? Icons.push_pin_outlined
+                          : Icons.push_pin_rounded,
+                      label: widget.pinned ? '取消置顶' : '置顶',
+                      backgroundColor: PaperFlowColors.primarySoft,
+                      foregroundColor: PaperFlowColors.primary,
+                      onTap: () {
+                        widget.onClose();
+                        widget.onTogglePinned();
+                      },
+                    ),
+                    _SwipeActionButton(
+                      key: ValueKey('ai-session-delete-${widget.sessionId}'),
+                      width: _actionWidth,
+                      icon: Icons.delete_outline_rounded,
+                      label: '删除',
+                      backgroundColor: const Color(0xFFFFEDEE),
+                      foregroundColor: const Color(0xFFD92D20),
+                      onTap: () {
+                        widget.onClose();
+                        widget.onDelete();
+                      },
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

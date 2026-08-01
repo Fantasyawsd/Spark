@@ -97,6 +97,15 @@ class PaperActionBar extends StatelessWidget {
               child: PopupMenuButton<_PaperMoreAction>(
                 key: const ValueKey('paper-action-more'),
                 tooltip: '更多',
+                color: Colors.white,
+                surfaceTintColor: Colors.transparent,
+                elevation: 8,
+                shadowColor: const Color(0x2410182B),
+                offset: const Offset(0, -4),
+                constraints: const BoxConstraints.tightFor(width: 174),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
                 icon: const Icon(
                   Icons.more_horiz_rounded,
                   color: PaperFlowColors.ink,
@@ -113,28 +122,24 @@ class PaperActionBar extends StatelessWidget {
                 itemBuilder: (context) => [
                   PopupMenuItem(
                     value: _PaperMoreAction.read,
-                    child: ListTile(
-                      dense: true,
-                      contentPadding: EdgeInsets.zero,
-                      leading: Icon(
-                        read
-                            ? Icons.mark_email_unread_outlined
-                            : Icons.done_all_rounded,
-                      ),
-                      title: Text(read ? '标记为未读' : '标记为已读'),
+                    height: 46,
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: _PaperMoreMenuItem(
+                      icon: read
+                          ? Icons.mark_email_unread_outlined
+                          : Icons.done_all_rounded,
+                      label: read ? '标记为未读' : '标记为已读',
                     ),
                   ),
                   PopupMenuItem(
                     value: _PaperMoreAction.readLater,
-                    child: ListTile(
-                      dense: true,
-                      contentPadding: EdgeInsets.zero,
-                      leading: Icon(
-                        readLater
-                            ? Icons.playlist_remove_rounded
-                            : Icons.watch_later_outlined,
-                      ),
-                      title: Text(readLater ? '移出稍后阅读' : '加入稍后阅读'),
+                    height: 46,
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: _PaperMoreMenuItem(
+                      icon: readLater
+                          ? Icons.playlist_remove_rounded
+                          : Icons.watch_later_outlined,
+                      label: readLater ? '移出稍后阅读' : '加入稍后阅读',
                     ),
                   ),
                 ],
@@ -148,6 +153,43 @@ class PaperActionBar extends StatelessWidget {
 }
 
 enum _PaperMoreAction { read, readLater }
+
+class _PaperMoreMenuItem extends StatelessWidget {
+  const _PaperMoreMenuItem({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Container(
+          width: 32,
+          height: 32,
+          decoration: BoxDecoration(
+            color: PaperFlowColors.canvas,
+            borderRadius: BorderRadius.circular(9),
+          ),
+          child: Icon(icon, size: 18, color: PaperFlowColors.ink),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: PaperFlowColors.ink,
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
 
 class _PaperActionButton extends StatefulWidget {
   const _PaperActionButton({

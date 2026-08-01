@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -59,6 +60,39 @@ void main() {
     expect(
       () => repository.load('paper-1'),
       throwsA(isA<PaperCommentPersistenceException>()),
+    );
+  });
+
+  test('quarantines comments with invalid record fields', () async {
+    await file.writeAsString(jsonEncode({
+      'paper-1': [
+        {
+          'id': 'comment-1',
+          'paperId': 'paper-1',
+          'name': 'Alex Chen',
+          'initials': 'AC',
+          'time': '刚刚',
+          'body': 'invalid likes',
+          'likes': 'three',
+        },
+      ],
+    }));
+    final repository = FilePaperCommentRepository(
+      store: LocalJsonStore(fileName: 'unused.json', file: file),
+    );
+
+    await expectLater(
+      repository.load('paper-1'),
+      throwsA(isA<PaperCommentPersistenceException>()),
+    );
+
+    expect(await file.exists(), isFalse);
+    expect(
+      directory
+          .listSync()
+          .whereType<File>()
+          .where((item) => item.path.contains('.corrupt.')),
+      hasLength(1),
     );
   });
 }

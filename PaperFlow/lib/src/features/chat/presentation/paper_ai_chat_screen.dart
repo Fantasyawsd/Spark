@@ -15,7 +15,7 @@ class PaperAiChatScreen extends StatefulWidget {
     required this.aiService,
     this.webSearchAiService,
     required this.sessionRepository,
-    this.screenTitle = 'AI 聊天',
+    this.screenTitle = 'ChatPaper',
     this.screenSubtitle,
     this.welcomeTitle,
     this.welcomeDescription,

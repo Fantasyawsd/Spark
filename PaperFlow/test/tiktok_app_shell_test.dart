@@ -24,6 +24,8 @@ void main() {
 
     await tester.tap(find.byKey(const ValueKey('bottom-nav-1')));
     await tester.pump();
+    expect(find.text('ChatPaper'), findsWidgets);
+    expect(find.text('AI 聊天'), findsNothing);
     expect(find.text('PaperFlow 主聊天'), findsOneWidget);
 
     await tester.tap(find.byKey(const ValueKey('bottom-nav-2')));

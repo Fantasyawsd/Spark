@@ -51,7 +51,7 @@ class PaperFlowBottomNav extends StatelessWidget {
                       onSelected: onSelected,
                     ),
                     _NavItem(
-                      label: 'AI 聊天',
+                      label: 'ChatPaper',
                       icon: Icons.chat_bubble_outline_rounded,
                       selectedIcon: Icons.chat_bubble_rounded,
                       index: 1,

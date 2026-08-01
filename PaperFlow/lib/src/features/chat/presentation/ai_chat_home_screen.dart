@@ -61,7 +61,7 @@ class _AiChatHomeScreenState extends State<AiChatHomeScreen> {
                 child: Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
-                    'AI 聊天',
+                    'ChatPaper',
                     key: ValueKey('ai-chat-home-title'),
                     style: TextStyle(
                       color: PaperFlowColors.ink,

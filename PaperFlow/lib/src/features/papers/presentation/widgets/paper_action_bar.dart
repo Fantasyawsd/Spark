@@ -18,6 +18,7 @@ class PaperActionBar extends StatelessWidget {
     required this.onLike,
     required this.onComment,
     required this.onSave,
+    required this.onSaveLongPress,
     required this.onToggleRead,
     required this.onToggleReadLater,
     this.onShare,
@@ -33,6 +34,7 @@ class PaperActionBar extends StatelessWidget {
   final VoidCallback onLike;
   final VoidCallback onComment;
   final VoidCallback onSave;
+  final VoidCallback onSaveLongPress;
   final VoidCallback onToggleRead;
   final VoidCallback onToggleReadLater;
   final VoidCallback? onShare;
@@ -68,6 +70,7 @@ class PaperActionBar extends StatelessWidget {
               onTap: onComment,
             ),
             _PaperActionButton(
+              key: const ValueKey('paper-action-save'),
               tooltip: '收藏',
               icon: saved
                   ? Icons.bookmark_rounded
@@ -78,6 +81,7 @@ class PaperActionBar extends StatelessWidget {
               ),
               active: saved,
               onTap: onSave,
+              onLongPress: onSaveLongPress,
             ),
             _PaperActionButton(
               key: const ValueKey('paper-action-share'),
@@ -153,6 +157,7 @@ class _PaperActionButton extends StatefulWidget {
     this.label,
     this.active = false,
     this.onTap,
+    this.onLongPress,
   });
 
   final String tooltip;
@@ -160,6 +165,7 @@ class _PaperActionButton extends StatefulWidget {
   final String? label;
   final bool active;
   final VoidCallback? onTap;
+  final VoidCallback? onLongPress;
 
   @override
   State<_PaperActionButton> createState() => _PaperActionButtonState();
@@ -175,6 +181,7 @@ class _PaperActionButtonState extends State<_PaperActionButton> {
       child: Tooltip(
         message: widget.tooltip,
         child: InkResponse(
+          onLongPress: widget.onLongPress,
           onTap: widget.onTap == null
               ? null
               : () {

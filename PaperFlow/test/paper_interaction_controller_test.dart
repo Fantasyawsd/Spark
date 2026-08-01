@@ -72,6 +72,57 @@ void main() {
       'new-save',
     });
   });
+
+  test('single tap toggles only the default favorite group', () async {
+    final controller = PaperInteractionController();
+    addTearDown(controller.dispose);
+
+    final customGroupId = controller.createFavoriteGroup('方法论文');
+    controller.setFavoriteMembership(
+      paperId: 'paper-1',
+      groupId: customGroupId,
+      selected: true,
+    );
+    controller.toggleSave('paper-1');
+
+    expect(controller.isSaved('paper-1'), isTrue);
+    expect(
+      controller.favoriteGroupIdsForPaper('paper-1'),
+      {defaultFavoriteGroupId, customGroupId},
+    );
+
+    controller.toggleSave('paper-1');
+    expect(controller.isSaved('paper-1'), isTrue);
+    expect(controller.favoriteGroupIdsForPaper('paper-1'), {customGroupId});
+  });
+
+  test('custom favorite groups persist rename, membership and deletion',
+      () async {
+    final repository = _ControlledInteractionRepository();
+    final controller = PaperInteractionController(repository: repository);
+    addTearDown(controller.dispose);
+    await controller.initialize();
+
+    final groupId = controller.createFavoriteGroup('待读');
+    controller.renameFavoriteGroup(groupId, '重点阅读');
+    controller.setFavoriteMembership(
+      paperId: 'paper-2',
+      groupId: groupId,
+      selected: true,
+    );
+    await controller.flushPendingWrites();
+
+    expect(repository.snapshot.favoriteGroups.last.name, '重点阅读');
+    expect(repository.snapshot.savedPaperIds, {'paper-2'});
+
+    controller.deleteFavoriteGroup(groupId);
+    await controller.flushPendingWrites();
+    expect(controller.isSaved('paper-2'), isFalse);
+    expect(
+      controller.favoriteGroups.map((group) => group.id),
+      [defaultFavoriteGroupId],
+    );
+  });
 }
 
 class _ControlledInteractionRepository implements PaperInteractionRepository {

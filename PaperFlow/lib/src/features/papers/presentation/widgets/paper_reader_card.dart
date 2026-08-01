@@ -30,6 +30,7 @@ class PaperReaderCard extends StatefulWidget {
     required this.commentCountDelta,
     required this.onLike,
     required this.onSave,
+    required this.onSaveLongPress,
     required this.onToggleRead,
     required this.onToggleReadLater,
     required this.onFollow,
@@ -56,6 +57,7 @@ class PaperReaderCard extends StatefulWidget {
   final int commentCountDelta;
   final VoidCallback onLike;
   final VoidCallback onSave;
+  final VoidCallback onSaveLongPress;
   final VoidCallback onToggleRead;
   final VoidCallback onToggleReadLater;
   final VoidCallback onFollow;
@@ -218,6 +220,7 @@ class _PaperReaderCardState extends State<PaperReaderCard> {
               onLike: widget.onLike,
               onComment: widget.onComment,
               onSave: widget.onSave,
+              onSaveLongPress: widget.onSaveLongPress,
               onShare: widget.onShare,
               read: widget.read,
               readLater: widget.readLater,

@@ -8,6 +8,8 @@ class FilePaperInteractionRepository implements PaperInteractionRepository {
       : _store = VersionedLocalJsonStore(
           store ?? LocalJsonStore(fileName: 'paper_interactions.json'),
           schemaId: 'papers.interactions',
+          schemaVersion: 2,
+          migrations: const {1: PaperInteractionJsonMapper.migrateV1ToV2},
           validatePayload: PaperInteractionJsonMapper.validatePayload,
         );
 

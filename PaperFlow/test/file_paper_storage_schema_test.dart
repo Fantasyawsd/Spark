@@ -85,6 +85,70 @@ void main() {
     );
     expect(await file.readAsString(), original);
   });
+
+  test('interaction repository migrates legacy saves into default favorites',
+      () async {
+    final file = _file(directory, 'legacy-interactions.json');
+    await file.writeAsString(jsonEncode({
+      '_format': VersionedLocalJsonStore.format,
+      'formatVersion': 1,
+      'schema': 'papers.interactions',
+      'schemaVersion': 1,
+      'revision': 3,
+      'payload': {
+        'likedPaperIds': <String>[],
+        'savedPaperIds': ['paper-1'],
+        'followedPaperIds': <String>[],
+        'shareCountDeltas': <String, int>{},
+      },
+    }));
+    final repository = FilePaperInteractionRepository(
+      store: LocalJsonStore(fileName: 'unused.json', file: file),
+    );
+
+    final snapshot = await repository.load();
+
+    expect(snapshot.savedPaperIds, {'paper-1'});
+    expect(snapshot.favoriteGroups.single.id, defaultFavoriteGroupId);
+    expect(
+      snapshot.favoritePaperIdsByGroup[defaultFavoriteGroupId],
+      {'paper-1'},
+    );
+    final envelope = jsonDecode(await file.readAsString()) as Map;
+    expect(envelope['schemaVersion'], 2);
+    expect((envelope['payload'] as Map), isNot(contains('savedPaperIds')));
+  });
+
+  test('interaction repository restores custom favorite groups', () async {
+    final file = _file(directory, 'grouped-interactions.json');
+    final repository = FilePaperInteractionRepository(
+      store: LocalJsonStore(fileName: 'unused.json', file: file),
+    );
+    const customGroup = FavoriteGroup(id: 'methods', name: '方法论文');
+
+    await repository.save(
+      PaperInteractionSnapshot(
+        favoriteGroups: const [customGroup],
+        favoritePaperIdsByGroup: const {
+          defaultFavoriteGroupId: {'paper-1'},
+          'methods': {'paper-1', 'paper-2'},
+        },
+      ),
+    );
+    final restored = await FilePaperInteractionRepository(
+      store: LocalJsonStore(fileName: 'unused.json', file: file),
+    ).load();
+
+    expect(restored.favoriteGroups.map((group) => group.name), [
+      '默认收藏',
+      '方法论文',
+    ]);
+    expect(restored.savedPaperIds, {'paper-1', 'paper-2'});
+    expect(restored.favoritePaperIdsByGroup['methods'], {
+      'paper-1',
+      'paper-2',
+    });
+  });
 }
 
 File _file(Directory directory, String name) {

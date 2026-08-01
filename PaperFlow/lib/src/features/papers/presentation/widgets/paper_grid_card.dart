@@ -16,6 +16,7 @@ class PaperGridCard extends StatelessWidget {
     required this.onOpen,
     required this.onLike,
     required this.onSave,
+    required this.onSaveLongPress,
   });
 
   final Paper paper;
@@ -25,6 +26,7 @@ class PaperGridCard extends StatelessWidget {
   final VoidCallback onOpen;
   final VoidCallback onLike;
   final VoidCallback onSave;
+  final VoidCallback onSaveLongPress;
 
   @override
   Widget build(BuildContext context) {
@@ -95,6 +97,7 @@ class PaperGridCard extends StatelessWidget {
                       const Spacer(),
                       GestureDetector(
                         onTap: onSave,
+                        onLongPress: onSaveLongPress,
                         child: Icon(
                           saved
                               ? Icons.bookmark_rounded

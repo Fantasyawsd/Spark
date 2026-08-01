@@ -16,6 +16,7 @@ import '../application/paper_translation_service.dart';
 import 'widgets/paper_category_picker.dart';
 import 'widgets/paper_comments_sheet.dart';
 import 'widgets/paper_empty_state.dart';
+import 'widgets/paper_favorite_group_sheet.dart';
 import 'widgets/paper_grid_card.dart';
 import 'widgets/paper_reader_card.dart';
 import 'widgets/papers_header.dart';
@@ -190,6 +191,7 @@ class _PapersScreenState extends State<PapersScreen> {
           onOpen: () => _openPaper(index),
           onLike: () => _interactions.toggleLike(papers[index].id),
           onSave: () => _interactions.toggleSave(papers[index].id),
+          onSaveLongPress: () => _showFavoriteGroups(papers[index].id),
         ),
       );
     }
@@ -213,6 +215,7 @@ class _PapersScreenState extends State<PapersScreen> {
           commentCountDelta: widget.commentController.commentCount(paper.id),
           onLike: () => _interactions.toggleLike(paper.id),
           onSave: () => _interactions.toggleSave(paper.id),
+          onSaveLongPress: () => _showFavoriteGroups(paper.id),
           onToggleRead: () => widget.readingController.toggleRead(paper.id),
           onToggleReadLater: () =>
               widget.readingController.toggleReadLater(paper.id),
@@ -347,6 +350,14 @@ class _PapersScreenState extends State<PapersScreen> {
       webSearchAiService: widget.webSearchAiService,
       aiSessionRepository: widget.aiSessionRepository,
       commentController: widget.commentController,
+    );
+  }
+
+  void _showFavoriteGroups(String paperId) {
+    showPaperFavoriteGroupSheet(
+      context,
+      paperId: paperId,
+      controller: _interactions,
     );
   }
 

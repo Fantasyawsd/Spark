@@ -341,12 +341,24 @@ class _PaperFlowShellState extends State<PaperFlowShell> {
                   onOpenMainChat: _openMainAiChat,
                 ),
                 ProfileScreen(
-                  savedPapers: _paperController.feed.allPapers
-                      .where(
-                        (paper) =>
-                            _paperController.interactions.isSaved(paper.id),
-                      )
-                      .toList(growable: false),
+                  favoriteGroups: _paperController.interactions.favoriteGroups,
+                  favoritePapersByGroup: {
+                    for (final group
+                        in _paperController.interactions.favoriteGroups)
+                      group.id: _papersForIds(
+                        _paperController.interactions.favoritePaperIds(
+                          group.id,
+                        ),
+                      ),
+                  },
+                  savedCount:
+                      _paperController.interactions.savedPaperIds.length,
+                  onCreateFavoriteGroup:
+                      _paperController.interactions.createFavoriteGroup,
+                  onRenameFavoriteGroup:
+                      _paperController.interactions.renameFavoriteGroup,
+                  onDeleteFavoriteGroup:
+                      _paperController.interactions.deleteFavoriteGroup,
                   readingHistory: _papersForIds(
                     _readingController.historyPaperIds,
                   ),

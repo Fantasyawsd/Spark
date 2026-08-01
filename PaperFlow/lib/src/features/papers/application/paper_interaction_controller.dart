@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
+import '../domain/favorite_group.dart';
 import '../domain/paper.dart';
 import '../domain/paper_interaction_repository.dart';
 
@@ -10,15 +11,18 @@ class PaperInteractionController extends ChangeNotifier {
     Iterable<String> initiallySaved = const [],
     Iterable<String> initiallyFollowed = const [],
     PaperInteractionRepository? repository,
-  })  : _savedPaperIds = {...initiallySaved},
-        _followedPaperIds = {...initiallyFollowed},
+  })  : _followedPaperIds = {...initiallyFollowed},
         _repository = repository {
+    _favoriteGroups[defaultFavoriteGroupId] =
+        const FavoriteGroup.defaultGroup();
+    _favoritePaperIdsByGroup[defaultFavoriteGroupId] = {...initiallySaved};
     _committedSnapshot = _currentSnapshot();
     _initialized = repository == null;
   }
 
   final Set<String> _likedPaperIds = {};
-  final Set<String> _savedPaperIds;
+  final Map<String, FavoriteGroup> _favoriteGroups = {};
+  final Map<String, Set<String>> _favoritePaperIdsByGroup = {};
   final Set<String> _followedPaperIds;
   final Map<String, int> _shareCountDeltas = {};
   final PaperInteractionRepository? _repository;
@@ -33,14 +37,31 @@ class PaperInteractionController extends ChangeNotifier {
   bool _disposed = false;
 
   Set<String> get followedPaperIds => Set.unmodifiable(_followedPaperIds);
+  List<FavoriteGroup> get favoriteGroups =>
+      List.unmodifiable(_favoriteGroups.values);
+  Set<String> get savedPaperIds => Set.unmodifiable(
+        _favoritePaperIdsByGroup.values.expand((paperIds) => paperIds),
+      );
   String? get persistenceError => _persistenceError;
   int get errorRevision => _errorRevision;
   bool get initialized => _initialized;
   int shareCountDelta(String paperId) => _shareCountDeltas[paperId] ?? 0;
 
   bool isLiked(String paperId) => _likedPaperIds.contains(paperId);
-  bool isSaved(String paperId) => _savedPaperIds.contains(paperId);
+  bool isSaved(String paperId) => _favoritePaperIdsByGroup.values.any(
+        (paperIds) => paperIds.contains(paperId),
+      );
+  bool isSavedInGroup(String paperId, String groupId) =>
+      _favoritePaperIdsByGroup[groupId]?.contains(paperId) ?? false;
   bool isFollowed(String paperId) => _followedPaperIds.contains(paperId);
+
+  Set<String> favoriteGroupIdsForPaper(String paperId) => Set.unmodifiable(
+        _favoritePaperIdsByGroup.entries
+            .where((entry) => entry.value.contains(paperId))
+            .map((entry) => entry.key),
+      );
+  Set<String> favoritePaperIds(String groupId) =>
+      Set.unmodifiable(_favoritePaperIdsByGroup[groupId] ?? const {});
 
   bool isAuthorFollowed(Paper paper) =>
       isFollowed(paper.authorKey) || isFollowed(paper.id);
@@ -87,7 +108,79 @@ class PaperInteractionController extends ChangeNotifier {
   }
 
   void toggleSave(String paperId) {
-    _mutate(_InteractionMutation(_InteractionMutationType.save, paperId));
+    _mutate(
+      _InteractionMutation.favoriteMembership(
+        paperId: paperId,
+        groupId: defaultFavoriteGroupId,
+        selected: !isSavedInGroup(paperId, defaultFavoriteGroupId),
+      ),
+    );
+  }
+
+  void setFavoriteMembership({
+    required String paperId,
+    required String groupId,
+    required bool selected,
+  }) {
+    if (!_favoriteGroups.containsKey(groupId)) {
+      throw ArgumentError.value(groupId, 'groupId', '收藏分组不存在');
+    }
+    if (isSavedInGroup(paperId, groupId) == selected) return;
+    _mutate(
+      _InteractionMutation.favoriteMembership(
+        paperId: paperId,
+        groupId: groupId,
+        selected: selected,
+      ),
+    );
+  }
+
+  String createFavoriteGroup(String name) {
+    final normalizedName = name.trim();
+    if (normalizedName.isEmpty) {
+      throw ArgumentError.value(name, 'name', '收藏分组名称不能为空');
+    }
+    for (final group in _favoriteGroups.values) {
+      if (group.name.toLowerCase() == normalizedName.toLowerCase()) {
+        return group.id;
+      }
+    }
+    final id = 'favorite-${DateTime.now().microsecondsSinceEpoch}';
+    _mutate(
+      _InteractionMutation.createFavoriteGroup(
+        FavoriteGroup(id: id, name: normalizedName),
+      ),
+    );
+    return id;
+  }
+
+  void renameFavoriteGroup(String groupId, String name) {
+    if (groupId == defaultFavoriteGroupId) return;
+    final normalizedName = name.trim();
+    if (normalizedName.isEmpty || !_favoriteGroups.containsKey(groupId)) {
+      return;
+    }
+    if (_favoriteGroups.values.any(
+      (group) =>
+          group.id != groupId &&
+          group.name.toLowerCase() == normalizedName.toLowerCase(),
+    )) {
+      return;
+    }
+    _mutate(
+      _InteractionMutation.renameFavoriteGroup(
+        groupId: groupId,
+        name: normalizedName,
+      ),
+    );
+  }
+
+  void deleteFavoriteGroup(String groupId) {
+    if (groupId == defaultFavoriteGroupId ||
+        !_favoriteGroups.containsKey(groupId)) {
+      return;
+    }
+    _mutate(_InteractionMutation.deleteFavoriteGroup(groupId));
   }
 
   void toggleFollow(String paperId) {
@@ -127,8 +220,28 @@ class PaperInteractionController extends ChangeNotifier {
     switch (mutation.type) {
       case _InteractionMutationType.like:
         _toggleMembership(_likedPaperIds, mutation.paperId);
-      case _InteractionMutationType.save:
-        _toggleMembership(_savedPaperIds, mutation.paperId);
+      case _InteractionMutationType.favoriteMembership:
+        final paperIds = _favoritePaperIdsByGroup[mutation.groupId];
+        if (paperIds == null) return;
+        if (mutation.selected!) {
+          paperIds.add(mutation.paperId);
+        } else {
+          paperIds.remove(mutation.paperId);
+        }
+      case _InteractionMutationType.createFavoriteGroup:
+        final group = mutation.group!;
+        _favoriteGroups[group.id] = group;
+        _favoritePaperIdsByGroup.putIfAbsent(group.id, () => {});
+      case _InteractionMutationType.renameFavoriteGroup:
+        final groupId = mutation.groupId!;
+        if (!_favoriteGroups.containsKey(groupId)) return;
+        _favoriteGroups[groupId] = FavoriteGroup(
+          id: groupId,
+          name: mutation.name!,
+        );
+      case _InteractionMutationType.deleteFavoriteGroup:
+        _favoriteGroups.remove(mutation.groupId);
+        _favoritePaperIdsByGroup.remove(mutation.groupId);
       case _InteractionMutationType.follow:
         _toggleMembership(_followedPaperIds, mutation.paperId);
       case _InteractionMutationType.share:
@@ -172,7 +285,8 @@ class PaperInteractionController extends ChangeNotifier {
 
   PaperInteractionSnapshot _currentSnapshot() => PaperInteractionSnapshot(
         likedPaperIds: _likedPaperIds,
-        savedPaperIds: _savedPaperIds,
+        favoriteGroups: _favoriteGroups.values,
+        favoritePaperIdsByGroup: _favoritePaperIdsByGroup,
         followedPaperIds: _followedPaperIds,
         shareCountDeltas: _shareCountDeltas,
       );
@@ -181,9 +295,18 @@ class PaperInteractionController extends ChangeNotifier {
     _likedPaperIds
       ..clear()
       ..addAll(snapshot.likedPaperIds);
-    _savedPaperIds
+    _favoriteGroups
       ..clear()
-      ..addAll(snapshot.savedPaperIds);
+      ..addEntries(
+        snapshot.favoriteGroups.map((group) => MapEntry(group.id, group)),
+      );
+    _favoritePaperIdsByGroup
+      ..clear()
+      ..addEntries(
+        snapshot.favoritePaperIdsByGroup.entries.map(
+          (entry) => MapEntry(entry.key, {...entry.value}),
+        ),
+      );
     _followedPaperIds
       ..clear()
       ..addAll(snapshot.followedPaperIds);
@@ -203,11 +326,57 @@ class PaperInteractionController extends ChangeNotifier {
   }
 }
 
-enum _InteractionMutationType { like, save, follow, share }
+enum _InteractionMutationType {
+  like,
+  favoriteMembership,
+  createFavoriteGroup,
+  renameFavoriteGroup,
+  deleteFavoriteGroup,
+  follow,
+  share,
+}
 
 class _InteractionMutation {
-  const _InteractionMutation(this.type, this.paperId);
+  const _InteractionMutation(this.type, this.paperId)
+      : groupId = null,
+        selected = null,
+        group = null,
+        name = null;
+
+  const _InteractionMutation.favoriteMembership({
+    required this.paperId,
+    required this.groupId,
+    required this.selected,
+  })  : type = _InteractionMutationType.favoriteMembership,
+        group = null,
+        name = null;
+
+  const _InteractionMutation.createFavoriteGroup(this.group)
+      : type = _InteractionMutationType.createFavoriteGroup,
+        paperId = '',
+        groupId = null,
+        selected = null,
+        name = null;
+
+  const _InteractionMutation.renameFavoriteGroup({
+    required this.groupId,
+    required this.name,
+  })  : type = _InteractionMutationType.renameFavoriteGroup,
+        paperId = '',
+        selected = null,
+        group = null;
+
+  const _InteractionMutation.deleteFavoriteGroup(this.groupId)
+      : type = _InteractionMutationType.deleteFavoriteGroup,
+        paperId = '',
+        selected = null,
+        group = null,
+        name = null;
 
   final _InteractionMutationType type;
   final String paperId;
+  final String? groupId;
+  final bool? selected;
+  final FavoriteGroup? group;
+  final String? name;
 }

@@ -166,6 +166,72 @@ void main() {
     );
   });
 
+  testWidgets('favorite tap uses default group and long press selects groups',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(378, 810));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final repository = InMemoryPaperInteractionRepository();
+    final paper = const ArxivSeedRepository().getAll().first;
+
+    await tester.pumpWidget(
+      PaperFlowApp(
+        showSplash: false,
+        interactionRepository: repository,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey('paper-action-save')).first);
+    await tester.pumpAndSettle();
+    expect(
+      (await repository.load()).favoritePaperIdsByGroup[defaultFavoriteGroupId],
+      contains(paper.id),
+    );
+
+    await tester.longPress(
+      find.byKey(const ValueKey('paper-action-save')).first,
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('收藏到分组'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('favorite-group-default')),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.byKey(const ValueKey('create-favorite-group')));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const ValueKey('favorite-group-name-input')),
+      '重点阅读',
+    );
+    await tester.tap(
+      find.byKey(const ValueKey('confirm-create-favorite-group')),
+    );
+    await tester.pumpAndSettle();
+
+    final snapshot = await repository.load();
+    final customGroup = snapshot.favoriteGroups.singleWhere(
+      (group) => group.name == '重点阅读',
+    );
+    expect(
+      snapshot.favoritePaperIdsByGroup[customGroup.id],
+      contains(paper.id),
+    );
+
+    await tester.tap(find.byTooltip('关闭'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('bottom-nav-2')));
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(ValueKey('profile-favorite-group-${customGroup.id}')),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(ValueKey('profile-saved-paper-${paper.id}')),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('read later and reading history appear in profile',
       (tester) async {
     await tester.binding.setSurfaceSize(const Size(378, 810));

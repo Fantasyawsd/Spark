@@ -42,6 +42,17 @@ class PaperFeedController extends ChangeNotifier {
     'Biology',
   ];
 
+  static const _arxivCategoriesByTopic = <String, String>{
+    'LLM': 'cs.CL|cs.AI',
+    'NLP': 'cs.CL',
+    'CV': 'cs.CV',
+    'Agent': 'cs.AI',
+    '多模态': 'cs.CV|cs.CL',
+    'Systems': 'cs.DC|cs.OS|cs.PF',
+    'Mathematics': 'math.OC|math.ST',
+    'Biology': 'q-bio.QM|q-bio.BM',
+  };
+
   List<Paper> _allPapers;
   late List<Paper> _visiblePapers;
   Set<String> _followedPaperIds = {};
@@ -62,6 +73,7 @@ class PaperFeedController extends ChangeNotifier {
   PaperPageSource _catalogSource = PaperPageSource.seed;
   DateTime? _catalogFetchedAt;
   final Set<Future<void>> _catalogOperations = {};
+  int _catalogQueryRevision = 0;
   int? _catalogNextOffset;
   PaperCatalogError? _catalogError;
   bool _disposed = false;
@@ -99,21 +111,35 @@ class PaperFeedController extends ChangeNotifier {
     PaperCatalogRepository repository, {
     required bool forceRefresh,
   }) async {
+    final queryRevision = _catalogQueryRevision;
     _catalogLoading = true;
     notifyListeners();
     try {
       final page = await repository.loadFeed(
-        PaperFeedQuery(limit: 20, forceRefresh: forceRefresh),
+        PaperFeedQuery(
+          category: _catalogCategory,
+          limit: 20,
+          forceRefresh: forceRefresh,
+        ),
       );
-      _applyCatalogPage(page, append: false);
+      if (queryRevision == _catalogQueryRevision) {
+        _applyCatalogPage(page);
+      }
     } on Object catch (_) {
-      _catalogError = const PaperCatalogError(
-        kind: PaperCatalogErrorKind.unavailable,
-        message: '论文目录暂时不可用，请稍后重试。',
-      );
+      if (queryRevision == _catalogQueryRevision) {
+        _catalogError = const PaperCatalogError(
+          kind: PaperCatalogErrorKind.unavailable,
+          message: '论文目录暂时不可用，请稍后重试。',
+        );
+      }
     } finally {
       _catalogLoading = false;
       if (!_disposed) notifyListeners();
+      if (!_disposed &&
+          queryRevision != _catalogQueryRevision &&
+          _primaryCategoryIndex != PaperFeedMode.following.index) {
+        unawaited(refreshCatalog());
+      }
     }
   }
 
@@ -135,18 +161,27 @@ class PaperFeedController extends ChangeNotifier {
     PaperCatalogRepository repository,
     int nextOffset,
   ) async {
+    final queryRevision = _catalogQueryRevision;
     _catalogLoadingMore = true;
     notifyListeners();
     try {
       final page = await repository.loadFeed(
-        PaperFeedQuery(offset: nextOffset, limit: 20),
+        PaperFeedQuery(
+          category: _catalogCategory,
+          offset: nextOffset,
+          limit: 20,
+        ),
       );
-      _applyCatalogPage(page, append: true);
+      if (queryRevision == _catalogQueryRevision) {
+        _applyCatalogPage(page);
+      }
     } on Object catch (_) {
-      _catalogError = const PaperCatalogError(
-        kind: PaperCatalogErrorKind.unavailable,
-        message: '无法加载更多论文，请稍后重试。',
-      );
+      if (queryRevision == _catalogQueryRevision) {
+        _catalogError = const PaperCatalogError(
+          kind: PaperCatalogErrorKind.unavailable,
+          message: '无法加载更多论文，请稍后重试。',
+        );
+      }
     } finally {
       _catalogLoadingMore = false;
       if (!_disposed) notifyListeners();
@@ -229,6 +264,10 @@ class PaperFeedController extends ChangeNotifier {
     _restorePosition();
     notifyListeners();
     _queuePreferencePersistence();
+    _catalogQueryRevision++;
+    if (_primaryCategoryIndex != PaperFeedMode.following.index) {
+      unawaited(refreshCatalog());
+    }
   }
 
   void selectTopic(int index) {
@@ -240,6 +279,10 @@ class PaperFeedController extends ChangeNotifier {
     _restorePosition();
     notifyListeners();
     _queuePreferencePersistence();
+    _catalogQueryRevision++;
+    if (_primaryCategoryIndex == PaperFeedMode.recommended.index) {
+      unawaited(refreshCatalog());
+    }
   }
 
   void selectTopicByName(String topic) {
@@ -257,6 +300,10 @@ class PaperFeedController extends ChangeNotifier {
     _restorePosition();
     notifyListeners();
     _queuePreferencePersistence();
+    _catalogQueryRevision++;
+    if (_primaryCategoryIndex == PaperFeedMode.recommended.index) {
+      unawaited(refreshCatalog());
+    }
   }
 
   void selectCategory(int index) => selectTopic(index);
@@ -305,7 +352,7 @@ class PaperFeedController extends ChangeNotifier {
     );
   }
 
-  void _applyCatalogPage(PaperPage page, {required bool append}) {
+  void _applyCatalogPage(PaperPage page) {
     final currentPaperId = _visiblePapers.isEmpty
         ? null
         : _visiblePapers[_currentPaperIndex.clamp(
@@ -313,14 +360,12 @@ class PaperFeedController extends ChangeNotifier {
             _visiblePapers.length - 1,
           )]
             .id;
-    if (append) {
+    if (page.papers.isNotEmpty) {
       final byId = {for (final paper in _allPapers) paper.id: paper};
       for (final paper in page.papers) {
         byId[paper.id] = paper;
       }
       _allPapers = List.unmodifiable(byId.values);
-    } else if (page.papers.isNotEmpty) {
-      _allPapers = List.unmodifiable(page.papers);
     }
     _catalogNextOffset = page.nextOffset;
     _catalogOffline = page.isOffline;
@@ -344,6 +389,11 @@ class PaperFeedController extends ChangeNotifier {
   String get _filterKey => _primaryCategoryIndex == 0
       ? '$_primaryCategoryIndex:$_topicIndex'
       : '$_primaryCategoryIndex';
+
+  String? get _catalogCategory {
+    if (_primaryCategoryIndex != PaperFeedMode.recommended.index) return null;
+    return _arxivCategoriesByTopic[topics[_topicIndex]];
+  }
 
   Future<void> flushPreferenceWrites() => _preferenceWriteQueue;
 

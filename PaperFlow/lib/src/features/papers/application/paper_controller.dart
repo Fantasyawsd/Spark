@@ -55,8 +55,8 @@ class PaperController extends ChangeNotifier {
     await Future.wait([
       interactions.initialize(),
       feed.initializePreferences(),
-      feed.initializeCatalog(),
     ]);
+    await feed.initializeCatalog();
   }
 
   Future<void> reloadLocalState() async {

@@ -264,7 +264,64 @@ void main() {
       await Future.wait([refresh, barrier]);
       expect(barrierCompleted, isTrue);
     });
+
+    test('sends selected recommendation topics to the remote catalog',
+        () async {
+      final catalog = _RecordingPaperCatalogRepository();
+      final controller = PaperController(
+        const ArxivSeedRepository(),
+        catalogRepository: catalog,
+      );
+      addTearDown(controller.dispose);
+
+      await controller.initialize();
+      expect(catalog.queries.single.category, isNull);
+
+      controller.selectTopic(1);
+      await controller.feed.flushCatalogOperations();
+      expect(catalog.queries.last.category, 'cs.CL|cs.AI');
+
+      controller.selectPrimaryCategory(2);
+      await controller.feed.flushCatalogOperations();
+      expect(catalog.queries.last.category, isNull);
+    });
+
+    test('topic refresh keeps previously loaded papers available to following',
+        () async {
+      final catalog = _RecordingPaperCatalogRepository();
+      final controller = PaperController(
+        const ArxivSeedRepository(),
+        catalogRepository: catalog,
+      );
+      addTearDown(controller.dispose);
+      final followed = controller.feed.allPapers.first;
+
+      await controller.initialize();
+      controller.toggleFollow(followed.id);
+      controller.selectTopic(1);
+      await controller.feed.flushCatalogOperations();
+      controller.selectPrimaryCategory(1);
+
+      expect(controller.papers.map((paper) => paper.id), contains(followed.id));
+    });
   });
+}
+
+class _RecordingPaperCatalogRepository implements PaperCatalogRepository {
+  final List<PaperFeedQuery> queries = [];
+
+  @override
+  Future<Paper?> findById(String paperId) async => null;
+
+  @override
+  Future<PaperPage> loadFeed(PaperFeedQuery query) async {
+    queries.add(query);
+    return PaperPage(papers: const [], source: PaperPageSource.remote);
+  }
+
+  @override
+  Future<PaperPage> search(PaperSearchQuery query) async =>
+      PaperPage(papers: const [], source: PaperPageSource.remote);
 }
 
 class _BlockingPaperCatalogRepository implements PaperCatalogRepository {

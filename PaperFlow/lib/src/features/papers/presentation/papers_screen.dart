@@ -7,6 +7,7 @@ import '../application/paper_ai_service.dart';
 import '../application/paper_ai_session_repository.dart';
 import '../application/paper_comment_controller.dart';
 import '../domain/paper.dart';
+import '../domain/paper_catalog.dart';
 import '../application/paper_feed_controller.dart';
 import '../application/paper_interaction_controller.dart';
 import '../application/paper_link_service.dart';
@@ -63,6 +64,7 @@ class _PapersScreenState extends State<PapersScreen> {
   String? _activePaperId;
   DateTime? _activeSince;
   int _lastInteractionErrorRevision = 0;
+  PaperCatalogError? _lastCatalogError;
 
   PaperFeedController get _feed => widget.feedController;
   PaperInteractionController get _interactions => widget.interactionController;
@@ -88,6 +90,7 @@ class _PapersScreenState extends State<PapersScreen> {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           _syncActivePaper();
           _showInteractionErrorIfNeeded();
+          _showCatalogErrorIfNeeded();
         });
       } else {
         _finishActivePaper();
@@ -188,51 +191,61 @@ class _PapersScreenState extends State<PapersScreen> {
     }
 
     if (_feed.gridMode) {
-      return MasonryGridView.count(
-        key: const ValueKey('paper-grid'),
-        crossAxisCount: 2,
-        mainAxisSpacing: 10,
-        crossAxisSpacing: 10,
-        padding: const EdgeInsets.fromLTRB(12, 8, 12, 80),
-        itemCount: papers.length,
-        itemBuilder: (context, index) => PaperGridCard(
-          paper: papers[index],
-          index: index,
-          liked: _interactions.isLiked(papers[index].id),
-          saved: _interactions.isSaved(papers[index].id),
-          onOpen: () => _openPaper(index),
-          onLike: () => _interactions.toggleLike(papers[index].id),
-          onSave: () => _interactions.toggleSave(papers[index].id),
-          onSaveLongPress: () => _showFavoriteGroups(papers[index].id),
+      return RefreshIndicator(
+        onRefresh: _feed.refreshCatalog,
+        child: MasonryGridView.count(
+          key: const ValueKey('paper-grid'),
+          physics: const AlwaysScrollableScrollPhysics(),
+          crossAxisCount: 2,
+          mainAxisSpacing: 10,
+          crossAxisSpacing: 10,
+          padding: const EdgeInsets.fromLTRB(12, 8, 12, 80),
+          itemCount: papers.length,
+          itemBuilder: (context, index) => PaperGridCard(
+            paper: papers[index],
+            index: index,
+            liked: _interactions.isLiked(papers[index].id),
+            saved: _interactions.isSaved(papers[index].id),
+            onOpen: () => _openPaper(index),
+            onLike: () => _interactions.toggleLike(papers[index].id),
+            onSave: () => _interactions.toggleSave(papers[index].id),
+            onSaveLongPress: () => _showFavoriteGroups(papers[index].id),
+          ),
         ),
       );
     }
 
-    return PageView.builder(
-      key: const ValueKey('paper-feed'),
-      controller: _pageController,
-      scrollDirection: Axis.vertical,
-      itemCount: papers.length,
-      onPageChanged: _handlePageChanged,
-      itemBuilder: (context, index) {
-        final paper = papers[index];
-        return PaperReaderView(
-          key: ValueKey('paper-reader-${paper.id}'),
-          paper: paper,
-          interactionController: _interactions,
-          commentController: widget.commentController,
-          readingController: widget.readingController,
-          aiService: widget.aiService,
-          webSearchAiService: widget.webSearchAiService,
-          aiSessionRepository: widget.aiSessionRepository,
-          translationServiceFactory: widget.translationServiceFactory,
-          translationRepository: widget.translationRepository,
-          shareService: widget.shareService,
-          linkService: widget.linkService,
-          onOpenRelatedPaper: widget.onOpenPaperDetail ?? _feed.openPaperById,
-          active: widget.active && index == _feed.currentPaperIndex,
-        );
-      },
+    return RefreshIndicator(
+      onRefresh: _feed.refreshCatalog,
+      child: PageView.builder(
+        key: const ValueKey('paper-feed'),
+        controller: _pageController,
+        physics: const PageScrollPhysics(
+          parent: AlwaysScrollableScrollPhysics(),
+        ),
+        scrollDirection: Axis.vertical,
+        itemCount: papers.length,
+        onPageChanged: _handlePageChanged,
+        itemBuilder: (context, index) {
+          final paper = papers[index];
+          return PaperReaderView(
+            key: ValueKey('paper-reader-${paper.id}'),
+            paper: paper,
+            interactionController: _interactions,
+            commentController: widget.commentController,
+            readingController: widget.readingController,
+            aiService: widget.aiService,
+            webSearchAiService: widget.webSearchAiService,
+            aiSessionRepository: widget.aiSessionRepository,
+            translationServiceFactory: widget.translationServiceFactory,
+            translationRepository: widget.translationRepository,
+            shareService: widget.shareService,
+            linkService: widget.linkService,
+            onOpenRelatedPaper: widget.onOpenPaperDetail ?? _feed.openPaperById,
+            active: widget.active && index == _feed.currentPaperIndex,
+          );
+        },
+      ),
     );
   }
 
@@ -317,6 +330,7 @@ class _PapersScreenState extends State<PapersScreen> {
     if (!mounted) return;
     setState(() {});
     _showInteractionErrorIfNeeded();
+    _showCatalogErrorIfNeeded();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || !_pageController.hasClients || _feed.papers.isEmpty) {
         return;
@@ -344,5 +358,18 @@ class _PapersScreenState extends State<PapersScreen> {
         ..hideCurrentSnackBar()
         ..showSnackBar(SnackBar(content: Text(message)));
     });
+  }
+
+  void _showCatalogErrorIfNeeded() {
+    final error = _feed.catalogError;
+    if (error == null) {
+      _lastCatalogError = null;
+      return;
+    }
+    if (!widget.active || identical(error, _lastCatalogError)) return;
+    _lastCatalogError = error;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(error.message)),
+    );
   }
 }

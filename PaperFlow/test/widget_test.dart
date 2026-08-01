@@ -55,6 +55,7 @@ void main() {
     expect(find.byKey(const ValueKey('bottom-nav-0')), findsOneWidget);
     expect(find.byKey(const ValueKey('bottom-nav-1')), findsOneWidget);
     expect(find.byKey(const ValueKey('bottom-nav-2')), findsOneWidget);
+    expect(find.byType(RefreshIndicator), findsOneWidget);
     expect(find.text('社区'), findsNothing);
     expect(find.text('私信'), findsNothing);
     expect(find.text('通知'), findsNothing);

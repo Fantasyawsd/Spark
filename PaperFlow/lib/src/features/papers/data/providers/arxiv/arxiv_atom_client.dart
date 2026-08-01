@@ -57,7 +57,10 @@ class ArxivAtomClient implements ArxivCatalogSource {
     return _query({
       'search_query': normalizedCategory == null || normalizedCategory.isEmpty
           ? 'all:*'
-          : 'cat:$normalizedCategory',
+          : normalizedCategory
+              .split('|')
+              .map((category) => 'cat:${category.trim()}')
+              .join(' OR '),
       'start': '$offset',
       'max_results': '$limit',
       'sortBy': 'submittedDate',

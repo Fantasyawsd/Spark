@@ -75,6 +75,26 @@ void main() {
       expect(result?.id, '2401.00001');
     });
 
+    test('builds a compound category query for broad product topics', () async {
+      final client = _RecordingClient([_response(_emptyFeed)]);
+      final api = ArxivAtomClient(
+        endpoint: 'https://example.test/api/query',
+        client: client,
+        minimumRequestInterval: Duration.zero,
+      );
+
+      await api.loadLatest(
+        category: 'cs.CL|cs.AI',
+        offset: 0,
+        limit: 20,
+      );
+
+      expect(
+        client.requests.single.url.queryParameters['search_query'],
+        'cat:cs.CL OR cat:cs.AI',
+      );
+    });
+
     test('serializes requests and injects the three-second throttle', () async {
       var now = DateTime.utc(2024, 1, 1);
       final delays = <Duration>[];

@@ -16,6 +16,7 @@ class ProfileScreen extends StatelessWidget {
     super.key,
     this.credentialController,
     this.localDataController,
+    this.catalogStatus,
     this.favoriteGroups = const [FavoriteGroup.defaultGroup()],
     this.favoritePapersByGroup = const {},
     this.savedCount = 0,
@@ -29,6 +30,7 @@ class ProfileScreen extends StatelessWidget {
 
   final DeepSeekCredentialController? credentialController;
   final LocalDataController? localDataController;
+  final PaperCatalogStatusView? catalogStatus;
   final List<FavoriteGroup> favoriteGroups;
   final Map<String, List<Paper>> favoritePapersByGroup;
   final int savedCount;
@@ -84,6 +86,7 @@ class ProfileScreen extends StatelessWidget {
             const SizedBox(height: 14),
             _AppSettingsCard(
               localDataController: localDataController,
+              catalogStatus: catalogStatus,
               savedCount: savedCount,
               readLaterCount: readLaterPapers.length,
               historyCount: readingHistory.length,
@@ -853,12 +856,14 @@ class _PaperShelfCard extends StatelessWidget {
 class _AppSettingsCard extends StatelessWidget {
   const _AppSettingsCard({
     required this.localDataController,
+    required this.catalogStatus,
     required this.savedCount,
     required this.readLaterCount,
     required this.historyCount,
   });
 
   final LocalDataController? localDataController;
+  final PaperCatalogStatusView? catalogStatus;
   final int savedCount;
   final int readLaterCount;
   final int historyCount;
@@ -885,6 +890,25 @@ class _AppSettingsCard extends StatelessWidget {
               onTap: () => showPaperThemeSheet(context),
             ),
             const Divider(height: 1),
+            if (catalogStatus case final status?) ...[
+              ListTile(
+                key: const ValueKey('profile-paper-source'),
+                leading: const Icon(Icons.cloud_outlined),
+                title: const Text('论文数据源'),
+                subtitle: Text(status.description),
+                trailing: Text(
+                  status.stateLabel,
+                  style: TextStyle(
+                    color:
+                        status.availability == PaperCatalogAvailability.offline
+                            ? const Color(0xFFB54708)
+                            : PaperFlowColors.muted,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              const Divider(height: 1),
+            ],
             ListTile(
               key: const ValueKey('profile-local-data'),
               leading: const Icon(Icons.storage_outlined),
@@ -942,6 +966,37 @@ class _AppSettingsCard extends StatelessWidget {
     );
   }
 }
+
+class PaperCatalogStatusView {
+  const PaperCatalogStatusView({
+    required this.sourceLabel,
+    required this.availability,
+    this.fetchedAt,
+  });
+
+  final String sourceLabel;
+  final PaperCatalogAvailability availability;
+  final DateTime? fetchedAt;
+
+  String get stateLabel => switch (availability) {
+        PaperCatalogAvailability.online => '在线',
+        PaperCatalogAvailability.offline => '离线',
+        PaperCatalogAvailability.local => '本地',
+      };
+
+  String get description {
+    final updated = fetchedAt;
+    if (updated == null) return sourceLabel;
+    final local = updated.toLocal();
+    final month = local.month.toString().padLeft(2, '0');
+    final day = local.day.toString().padLeft(2, '0');
+    final hour = local.hour.toString().padLeft(2, '0');
+    final minute = local.minute.toString().padLeft(2, '0');
+    return '$sourceLabel · $month-$day $hour:$minute 更新';
+  }
+}
+
+enum PaperCatalogAvailability { online, offline, local }
 
 /// 打开设置底部面板，目前提供主题色切换。
 void showPaperThemeSheet(BuildContext context) {

@@ -25,6 +25,7 @@ import '../features/papers/application/paper_share_service.dart';
 import '../features/papers/application/paper_translation_service.dart';
 import '../features/papers/domain/paper_comment_repository.dart';
 import '../features/papers/domain/paper.dart';
+import '../features/papers/domain/paper_catalog.dart';
 import '../features/papers/domain/paper_interaction_repository.dart';
 import '../features/papers/domain/paper_preference_repository.dart';
 import '../features/papers/domain/paper_reading_repository.dart';
@@ -380,6 +381,19 @@ class _PaperFlowShellState extends State<PaperFlowShell> {
                 ProfileScreen(
                   credentialController: _credentialController,
                   localDataController: _localDataController,
+                  catalogStatus: PaperCatalogStatusView(
+                    sourceLabel: switch (_paperController.feed.catalogSource) {
+                      PaperPageSource.remote => 'arXiv 远程目录',
+                      PaperPageSource.cache => 'arXiv 本地缓存',
+                      PaperPageSource.seed => '内置论文',
+                    },
+                    availability: switch (_paperController.feed.catalogSource) {
+                      PaperPageSource.remote => PaperCatalogAvailability.online,
+                      PaperPageSource.cache => PaperCatalogAvailability.offline,
+                      PaperPageSource.seed => PaperCatalogAvailability.local,
+                    },
+                    fetchedAt: _paperController.feed.catalogFetchedAt,
+                  ),
                   favoriteGroups: _paperController.interactions.favoriteGroups,
                   favoritePapersByGroup: {
                     for (final group

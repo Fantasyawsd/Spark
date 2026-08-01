@@ -43,11 +43,13 @@ class OfflineFirstPaperCatalogRepository implements PaperCatalogRepository {
       );
       final papers =
           remote.entries.map(_mapper.toDomain).toList(growable: false);
-      await _writePage(queryKey, papers, remote.nextOffset);
+      final fetchedAt = _clock().toUtc();
+      await _writePage(queryKey, papers, remote.nextOffset, fetchedAt);
       return PaperPage(
         papers: papers,
         source: PaperPageSource.remote,
         nextOffset: remote.nextOffset,
+        fetchedAt: fetchedAt,
       );
     } on Object catch (error) {
       final cached = await _readCachedPage(queryKey);
@@ -73,11 +75,13 @@ class OfflineFirstPaperCatalogRepository implements PaperCatalogRepository {
       );
       final papers =
           remote.entries.map(_mapper.toDomain).toList(growable: false);
-      await _writePage(queryKey, papers, remote.nextOffset);
+      final fetchedAt = _clock().toUtc();
+      await _writePage(queryKey, papers, remote.nextOffset, fetchedAt);
       return PaperPage(
         papers: papers,
         source: PaperPageSource.remote,
         nextOffset: remote.nextOffset,
+        fetchedAt: fetchedAt,
       );
     } on Object catch (error) {
       final cached = await _readCachedPage(queryKey);
@@ -109,16 +113,16 @@ class OfflineFirstPaperCatalogRepository implements PaperCatalogRepository {
     String queryKey,
     List<Paper> papers,
     int? nextOffset,
+    DateTime fetchedAt,
   ) async {
-    final now = _clock().toUtc();
     final records = papers.map(
-      (paper) => _cacheMapper.toRecord(paper, cachedAt: now),
+      (paper) => _cacheMapper.toRecord(paper, cachedAt: fetchedAt),
     );
     await _cacheStore.writePage(
       page: PaperPageCacheRecord(
         queryKey: queryKey,
         paperIds: papers.map((paper) => paper.id).toList(growable: false),
-        fetchedAt: now.toIso8601String(),
+        fetchedAt: fetchedAt.toIso8601String(),
         nextOffset: nextOffset,
       ),
       papers: records,
@@ -143,6 +147,7 @@ class OfflineFirstPaperCatalogRepository implements PaperCatalogRepository {
       isStale: true,
       isOffline: true,
       error: _catalogError(error),
+      fetchedAt: DateTime.parse(cached.page.fetchedAt).toUtc(),
     );
   }
 

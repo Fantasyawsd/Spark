@@ -72,6 +72,7 @@ class PaperPage {
     this.isStale = false,
     this.isOffline = false,
     this.error,
+    this.fetchedAt,
   }) : papers = List.unmodifiable(papers);
 
   final List<Paper> papers;
@@ -80,6 +81,7 @@ class PaperPage {
   final bool isStale;
   final bool isOffline;
   final PaperCatalogError? error;
+  final DateTime? fetchedAt;
 
   bool get hasMore => nextOffset != null;
 }

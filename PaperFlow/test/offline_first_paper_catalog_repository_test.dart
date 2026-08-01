@@ -30,7 +30,9 @@ void main() {
     );
 
     expect(page.source, PaperPageSource.remote);
+    expect(page.fetchedAt, DateTime.utc(2024, 3, 1));
     expect(page.papers.single.id, '2401.00001');
+    expect(page.fetchedAt, DateTime.utc(2024, 3, 1));
     expect(remote.lastCategory, 'cs.AI');
     expect(
       (await cache.readPage('feed|category=cs.AI|offset=0|limit=10')),

@@ -59,6 +59,8 @@ class PaperFeedController extends ChangeNotifier {
   bool _catalogLoadingMore = false;
   bool _catalogOffline = false;
   bool _catalogStale = false;
+  PaperPageSource _catalogSource = PaperPageSource.seed;
+  DateTime? _catalogFetchedAt;
   final Set<Future<void>> _catalogOperations = {};
   int? _catalogNextOffset;
   PaperCatalogError? _catalogError;
@@ -78,6 +80,8 @@ class PaperFeedController extends ChangeNotifier {
   bool get catalogLoadingMore => _catalogLoadingMore;
   bool get catalogOffline => _catalogOffline;
   bool get catalogStale => _catalogStale;
+  PaperPageSource get catalogSource => _catalogSource;
+  DateTime? get catalogFetchedAt => _catalogFetchedAt;
   bool get catalogHasMore => _catalogNextOffset != null;
   PaperCatalogError? get catalogError => _catalogError;
 
@@ -321,6 +325,8 @@ class PaperFeedController extends ChangeNotifier {
     _catalogNextOffset = page.nextOffset;
     _catalogOffline = page.isOffline;
     _catalogStale = page.isStale;
+    _catalogSource = page.source;
+    _catalogFetchedAt = page.fetchedAt;
     _catalogError = page.error;
     _refreshVisiblePapers();
     if (_visiblePapers.isEmpty) {

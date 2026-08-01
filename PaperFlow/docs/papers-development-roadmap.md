@@ -255,6 +255,8 @@ arXiv OAI-PMH 增量       -> ArxivOaiClient -> ArxivPaperSyncService
 OpenAlex API 增强         -> OpenAlexClient -> citations/institutions/concepts
 ```
 
+当前仓库只包含上述导入和同步适配器，不包含 Kaggle JSONL 快照、SQLite/Parquet 论文库或服务端 `PaperStore` 实现。V1 客户端生产数据源仍为 arXiv Atom API 分页与设备本地缓存；不得把适配器存在表述为数据集已经导入。完整快照接入属于服务端阶段。
+
 `PaperSyncStateStore` 需要由服务端实现，至少保存 `lastDatestamp`、
 `resumptionToken` 和更新时间。首次初始化建议使用 Kaggle 快照，后续按分类
 或全量集合使用 OAI-PMH 增量同步；OpenAlex 只按 arXiv ID 增强，不下载完整快照。

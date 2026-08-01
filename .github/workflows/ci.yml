@@ -5,6 +5,8 @@ on:
   push:
     branches:
       - main
+    tags:
+      - "v*"
 
 permissions:
   contents: read
@@ -36,12 +38,20 @@ jobs:
 
       - name: Verify version metadata
         shell: pwsh
-        run: ./tool/verify_version.ps1
+        env:
+          BASE_REVISION: ${{ github.ref_type == 'tag' && github.sha || github.event.pull_request.base.sha || github.event.before }}
+          REQUIRE_RELEASE_TAG: ${{ github.ref_type == 'tag' }}
+        run: |
+          $parameters = @{ BaseRevision = $env:BASE_REVISION }
+          if ($env:REQUIRE_RELEASE_TAG -eq 'true') {
+            $parameters.RequireReleaseTag = $true
+          }
+          ./tool/verify_version.ps1 @parameters
 
       - name: Check changed Dart formatting
         shell: pwsh
         env:
-          BASE_REVISION: ${{ github.event.pull_request.base.sha || github.event.before }}
+          BASE_REVISION: ${{ github.ref_type == 'tag' && github.sha || github.event.pull_request.base.sha || github.event.before }}
         run: ./tool/verify_changed_dart_format.ps1 -BaseRevision $env:BASE_REVISION
 
       - name: Analyze
@@ -55,6 +65,25 @@ jobs:
           flutter build apk --debug
           --flavor development
           --dart-define=PAPERFLOW_ENV=development
+
+      - name: Build production debug APK
+        run: >-
+          flutter build apk --debug
+          --flavor production
+          --dart-define=PAPERFLOW_ENV=production
+
+      - name: Verify unsigned production release is blocked
+        shell: pwsh
+        run: |
+          $output = @(& ./android/gradlew -p android :app:assembleProductionRelease 2>&1)
+          $exitCode = $LASTEXITCODE
+          if ($exitCode -eq 0) {
+            throw 'Unsigned production release unexpectedly succeeded.'
+          }
+          if ($output -notmatch 'Release signing is not configured') {
+            $output | Write-Output
+            throw 'Production release failed for an unexpected reason.'
+          }
 
       - name: Upload development APK
         uses: actions/upload-artifact@v4

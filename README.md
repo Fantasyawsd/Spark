@@ -41,7 +41,6 @@ PaperFlow 是面向个人研究者的 Flutter 论文发现、阅读和 AI 研究
 ## 项目结构
 
 ```text
-PaperFlow/
 |-- AGENTS.md                  AI Agent 开发、协作和交付规范
 |-- README.md                  项目背景、功能、结构和运行方式
 |-- assets/                    Logo、启动图和应用静态资源

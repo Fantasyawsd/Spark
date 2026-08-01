@@ -44,7 +44,7 @@
 - [x] AI 对话 UI、加载状态和 Markdown 回复
 - [x] DeepSeek SSE 流式请求实现
 - [x] DeepSeek 原生联网搜索开关、流式回答和网络来源展示
-- [x] 主题选择弹窗
+- [x] 主题与配色 Sheet、五套低饱和强调色和语义化 Material 组件主题
 - [x] Flutter Widget 测试覆盖主要 UI 流程
 - [x] 阅读状态、阅读历史、稍后阅读和阅读位置本地持久化
 - [x] 每次进入一篇论文时默认打开“原文”Tab，切换论文不继承上一页 Tab

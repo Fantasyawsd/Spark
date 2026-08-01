@@ -50,11 +50,12 @@
 - 版本化本地 JSON、schema 迁移、原子替换、损坏隔离和 revision 并发保护。
 - 0.1.0 主导航已经收敛为“论文 / ChatPaper / 我的”。
 - Flutter 启动层首帧承接原生 Logo，并在首页完成初始化的同时平滑淡出；系统减少动画时直接进入首页。
+- 主题系统使用稳定的中性阅读底色、五套低饱和强调色和统一的 Material 组件语义色；已有主题偏好继续兼容。
 - 当前源码没有提交真实 DeepSeek Key。
 - Android release 缺少正式签名时会失败；签名文件已被 Git 忽略，明文流量和应用备份已关闭。
 - release 模式不读取编译期 DeepSeek Key，开发辅助脚本禁止用于 release 构建。
 - 本机已安装 Android Command-line Tools 并接受全部 SDK licenses；`flutter doctor -v` 无问题。
-- `flutter analyze`、188 项 Flutter 测试、`git diff --check` 和 Android debug APK 构建已通过；最新 debug APK 已完成 SHA-256 和 v2 调试签名校验。Windows release 回归因本机缺少 ATL 组件而未通过。
+- `flutter analyze`、191 项 Flutter 测试、`git diff --check` 和 Android debug APK 构建已通过；最新 debug APK 已完成 SHA-256 和 v2 调试签名校验。Windows release 回归因本机缺少 ATL 组件而未通过。
 
 ### 我的
 

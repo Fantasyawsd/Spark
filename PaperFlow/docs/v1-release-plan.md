@@ -1,6 +1,6 @@
 # PaperFlow V1.0 单机版发布计划
 
-> 状态：执行中
+> 状态：功能代码候选；等待正式签名、Android 真机与商店发布门
 > 最近更新：2026-08-01
 > 第一验收平台：Android 手机
 
@@ -80,6 +80,7 @@ V1.0 单机版采用 BYOK：
 ### 5.1 论文
 
 - [x] 远程推荐论文流：生产组合根接入 arXiv Atom API，启动时先显示种子数据，再异步更新远程或缓存页
+- [x] 推荐领域筛选下推到 arXiv 查询；宽领域映射为一个或多个 arXiv 分类，切换中的旧请求不会覆盖当前筛选
 - [x] 远程搜索、分页、错误回退：搜索页可通过 `PaperCatalogRepository` 查询远程结果，并支持加载更多
 - [x] 最近数据缓存与离线回退：远程成功写入版本化论文缓存；失败时按查询缓存、内置种子顺序回退
 - [x] Markdown、公式、中文翻译和相关论文
@@ -88,7 +89,7 @@ V1.0 单机版采用 BYOK：
 - [x] 收藏支持默认分组、自定义分组、重命名和删除；单击切换默认收藏，长按选择分组
 - [x] 远程数据变化后仍以稳定论文 ID 关联本地状态：arXiv ID 去除版本后缀，缓存 Record 与领域 `Paper` 分层转换
 - [ ] Android 真机弱网、断网、真实 arXiv 分页和刷新体验验收
-- [x] Android 系统分享面板真机验收
+- [ ] Android 系统分享面板真机验收
 
 ### 5.2 ChatPaper
 
@@ -118,6 +119,8 @@ V1.0 单机版采用 BYOK：
 
 Android V1 身份已固定为 `app.paperflow.reader`，正式 release 不再回退到 debug 签名。签名信息仅从被 Git 忽略的 `android/key.properties` 读取，仓库保留 `android/key.properties.example` 作为本地配置模板。
 
+缺少签名配置时 release Gradle 任务会明确失败；Android 已禁用自动备份和明文流量。开发期 DeepSeek 辅助脚本拒绝 release，产品构建也不会读取 `DEEPSEEK_API_KEY` 编译常量，避免把开发 Key 打入安装包。
+
 - 冷启动有本地内容；联网后自动更新，不因远程失败进入空白页。
 - 三个一级页面高度和 Dock 状态稳定，不出现未实现入口。
 - 所有本地状态在重启后恢复，损坏数据可隔离并回退。
@@ -126,3 +129,5 @@ Android V1 身份已固定为 `app.paperflow.reader`，正式 release 不再回�
 - 无社区、私信、通知、发布按钮或相关占位文案。
 - `dart analyze`、全量 `flutter test` 和静态发布检查通过。
 - Android 真机完成网络、键盘、分享、后台恢复和低网速人工验收。
+
+逐项操作和证据要求见 `docs/v1-release-checklist.md`。正式隐私政策仍需补充运营者、联系邮箱并发布为 HTTPS URL；当前 `docs/privacy-policy-draft.md` 仅为草案。

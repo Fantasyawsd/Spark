@@ -1,102 +1,51 @@
 # PaperFlow
 
-PaperFlow is a Flutter prototype for discovering, reading, saving, and
-discussing academic papers in a vertical information feed.
+PaperFlow 是面向个人研究者的 Flutter 论文阅读器。V1.0 聚焦三个页面：
 
-## Features
+- **论文**：arXiv 论文流、领域筛选、搜索、Markdown/公式阅读、中文解读、相关论文和本地互动。
+- **ChatPaper**：主聊天与论文聊天、流式回答、深度思考、联网搜索和本地会话管理。
+- **我的**：收藏分组、阅读记录、主题、DeepSeek API Key 和本地数据管理。
 
-- Full-screen vertical paper feed
-- Two-column paper browser with selection back to the reader
-- Abstract, Chinese abstract, and related-paper tabs
-- Shared like and save state across feed and grid views
-- Comments and AI analysis bottom sheet
-- Community, messages, and profile pages
-- Runtime theme color selection
-- Windows and Android platform projects
+社区、私信、账号、云同步和内容发布不属于 V1.0 范围。
 
-## Architecture
+## 数据与隐私
+
+- 论文目录使用 arXiv Atom API；联网失败时回退到设备缓存或内置种子论文。
+- 阅读记录、互动、评论、搜索历史、中文解读和聊天会话只保存在当前设备，可从“我的 > 本地数据”清理。
+- AI 功能采用 BYOK：用户在“我的 > AI 设置”保存自己的 DeepSeek API Key。正式 release 不包含共享 Key，也不接受 `--dart-define` 注入 Key。
+- 使用 ChatPaper 或中文解读时，问题、论文标题/摘要和必要上下文会发送到 DeepSeek 官方接口。应用内“隐私”入口有简要说明；公开发布前必须按 [隐私政策草案](docs/privacy-policy-draft.md) 提供可访问的正式 URL。
+
+## 目录
 
 ```text
 lib/src/
-|-- app/                         Application shell and navigation
-|-- core/                        Theme and shared widgets
-`-- features/
-    |-- papers/
-    |   |-- application/         Paper interaction state
-    |   |-- data/                Demo repository
-    |   |-- domain/              Entity and repository contract
-    |   `-- presentation/        Feed, grid, comments, and AI UI
-    |-- community/
-    |-- messages/
-    `-- profile/
+|-- app/        应用组合根、导航和依赖装配
+|-- core/       跨业务模块复用的主题、动画、存储和基础组件
+`-- features/   按论文、聊天、AI 设置、搜索、我的等业务划分
 ```
 
-`PaperController` is the single source of truth for the selected paper, layout
-mode, topics, likes, and saves. `PaperRepository` isolates the UI from the data
-source so the demo repository can later be replaced by an API-backed one.
+详细架构约束见 [代码结构原则](docs/code-structure-principles.md)，V1 范围与发布状态见 [发布计划](docs/v1-release-plan.md)。
 
-## Paper data sources
+## 开发环境
 
-The paper data layer now includes adapters for the recommended ingestion path:
-
-- `ArxivJsonlImporter` streams the official Kaggle snapshot and filters target categories.
-- `ArxivOaiClient` reads arXiv OAI-PMH pages and persists `resumptionToken` through `ArxivPaperSyncService`.
-- `OpenAlexClient` enriches an arXiv record with citations, institutions, concepts, and related works.
-
-These adapters are intentionally not called from the app startup path. A backend
-or an import worker should use them to upsert records into its database, then
-expose the existing `PaperRepository` contract to Flutter. No Kaggle credential,
-database credential, or third-party API key belongs in the mobile client.
-
-## Requirements
-
-- Flutter SDK 3.44 or newer
-- Dart SDK 3.12 or newer
-- Android SDK for APK builds
-- Visual Studio Build Tools with Desktop C++ support for Windows builds
-
-The local development setup used for this project is:
-
-```text
-Flutter: D:\app\flutter
-Android SDK: D:\app\Android\Sdk
-```
-
-## Run
+- Flutter 3.44.8 / Dart 3.12.2
+- Android SDK：`D:\app\Android\Sdk`
+- Windows 构建需要 Visual Studio Build Tools 的 Desktop C++ 组件
 
 ```powershell
 flutter pub get
 flutter run -d windows
 ```
 
-## DeepSeek AI
-
-PaperFlow uses DeepSeek as its only model provider. Both normal chat and
-web-search chat use DeepSeek's remote Anthropic-compatible Messages endpoint.
-Claude, Codex, and localhost proxy settings are not read by the application.
-
-Configure independent user environment variables:
-
-```powershell
-[Environment]::SetEnvironmentVariable('DEEPSEEK_API_KEY', 'your_key', 'User')
-[Environment]::SetEnvironmentVariable('DEEPSEEK_BASE_URL', 'https://api.deepseek.com', 'User')
-[Environment]::SetEnvironmentVariable('DEEPSEEK_MODEL', 'deepseek-v4-flash', 'User')
-```
-
-Run or build with the repository helper:
+本地开发若需通过环境变量临时注入 DeepSeek Key，可使用：
 
 ```powershell
 .\tool\flutter_with_deepseek.ps1 -FlutterCommand run -FlutterArguments @('-d', 'windows')
-.\tool\flutter_with_deepseek.ps1 -FlutterCommand build -FlutterArguments @('apk', '--release')
 ```
 
-Normal chat sends an Anthropic Messages request without tools. Web search uses
-the same endpoint with DeepSeek's remote `web_search_20250305` tool. The helper
-passes settings through `dart-define` without printing the key. A key embedded
-in a client can still be extracted, so production should use a PaperFlow server
-that stores the DeepSeek key securely.
+该脚本会拒绝 `--release`，防止把 Key 编译进正式安装包。正式 Android 构建只使用用户在设备安全存储中配置的 Key。
 
-## Verify
+## 验证
 
 ```powershell
 dart format --output=none --set-exit-if-changed lib test
@@ -104,3 +53,5 @@ flutter analyze
 flutter test
 flutter build windows --release
 ```
+
+Android 上线步骤、签名配置、真机验收与 Play Console 发布门见 [V1 发布检查清单](docs/v1-release-checklist.md)。

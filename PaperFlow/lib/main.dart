@@ -4,17 +4,7 @@ import 'package:paperflow/paperflow.dart';
 void main() {
   runApp(
     PaperFlowApp(
-      commentRepository: FilePaperCommentRepository(),
-      interactionRepository: FilePaperInteractionRepository(),
-      preferenceRepository: FilePaperPreferenceRepository(),
-      readingRepository: FilePaperReadingRepository(),
-      searchHistoryRepository: FilePaperSearchHistoryRepository(),
-      shareService: const PlatformPaperShareService(),
-      aiService: DeepSeekPaperAiService(),
-      webSearchAiService: DeepSeekWebSearchAiService(),
-      aiSessionRepository: FilePaperAiSessionRepository(),
-      translationServiceFactory: const DeepSeekPaperTranslationServiceFactory(),
-      translationRepository: FilePaperTranslationRepository(),
+      dependencies: PaperFlowDependencies.production(),
     ),
   );
 }

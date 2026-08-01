@@ -1,4 +1,5 @@
 export 'src/app/paperflow_app.dart';
+export 'src/app/paperflow_dependencies.dart';
 export 'src/core/motion/motion_tokens.dart';
 export 'src/core/theme/paperflow_theme.dart';
 export 'src/core/theme/theme_controller.dart';

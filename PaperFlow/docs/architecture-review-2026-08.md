@@ -38,13 +38,14 @@
 - 本地 JSON 存储在当前 Dart isolate 内使用规范化同路径事务队列和临时文件替换；Windows 替换期间保留恢复文件，读取时可恢复中断写入前的数据。只有 JSON 或已知 schema 结构损坏才隔离原文件，普通文件系统错误不移动用户数据。
 - 完整快照写入使用信封 revision 做乐观并发检查，检测到其他仓储实例已更新磁盘数据时拒绝陈旧覆盖；评论、翻译和 AI 会话继续通过事务更新最新磁盘值。
 - 各文件仓储的 JSON Record 解析已集中到所属业务模块的 Mapper，字段存在但类型错误时会保留损坏副本，不再静默恢复为空状态后覆盖原始数据。
+- 新增 `PaperFlowDependencies` 作为唯一应用组合根：正式入口集中创建文件仓储、平台服务和 DeepSeek 实现，`PaperFlowShell` 只消费依赖接口；旧的可选构造参数仅保留给测试和预览兼容层。
+- 增加组合根装配测试，覆盖正式实现类型、预览替身注入以及论文 AI 与主聊天 AI 的默认/独立服务映射。
 
 ## 高优先级待整改
 
 1. **聊天模块所有权**：通用消息和会话端口已迁入 `chat`，但 ConversationController、Composer 和内容渲染仍复用 `papers` 类型。后续应由聊天模块拥有通用对话流程，论文模块只提供论文聊天上下文。
-2. **唯一组合根**：`PaperFlowShell.initState` 仍创建若干 DeepSeek、搜索和平台实现。具体实现应统一在 `main.dart` 或 `AppDependencies` 创建；`PaperFlowApp` 的内存 fallback 只用于测试和预览。
-3. **依赖方向**：部分 `papers/data` 实现仍通过兼容别名导入 `papers/application` 端口。后续应直接依赖 `chat/domain`，使依赖统一为 `presentation -> application -> domain <- data`。
-4. **数据结构分层**：`PaperRecord` 仍混合原始论文值、Markdown 展示内容和格式化计数字符串。远程接口接入前应拆分 DTO、领域模型和 ViewModel，并把计数恢复为整数。
+2. **依赖方向**：部分 `papers/data` 实现仍通过兼容别名导入 `papers/application` 端口。后续应直接依赖 `chat/domain`，使依赖统一为 `presentation -> application -> domain <- data`。
+3. **数据结构分层**：`PaperRecord` 仍混合原始论文值、Markdown 展示内容和格式化计数字符串。远程接口接入前应拆分 DTO、领域模型和 ViewModel，并把计数恢复为整数。
 
 ## 中优先级待整改
 

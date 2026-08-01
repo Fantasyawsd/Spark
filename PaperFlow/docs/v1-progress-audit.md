@@ -22,7 +22,7 @@ V1.0 只交付三个一级页面：
 - arXiv Atom 远程论文目录已进入生产组合根，启动先用内置种子保证首屏，随后异步更新远程或缓存数据。
 - 远程搜索、分页加载、论文详情查询、版本化论文缓存和离线回退已经有自动化测试覆盖。
 - 推荐领域会映射到 arXiv 分类并进入远程 Feed 查询；筛选切换期间的过期响应不会覆盖当前列表。
-- “全部”和“最新”使用明确的产品领域合集，避免 arXiv `all:*` 查询返回 HTTP 500；服务端 5xx 会按三秒节流规则重试一次。
+- “全部”和“最新”使用明确的产品领域合集，避免 arXiv `all:*` 查询返回 HTTP 500；服务端 5xx 会按三秒节流规则重试一次，最终失败时显示本地数据和用户可理解的降级提示。
 - 单页垂直信息流和双栏选择模式。
 - 首页 Feed 与外部全屏论文详情使用不同导航视角。
 - Markdown、LaTeX、可选正文、滚动和溢出展开。
@@ -50,7 +50,7 @@ V1.0 只交付三个一级页面：
 - Android release 缺少正式签名时会失败；签名文件已被 Git 忽略，明文流量和应用备份已关闭。
 - release 模式不读取编译期 DeepSeek Key，开发辅助脚本禁止用于 release 构建。
 - 本机已安装 Android Command-line Tools 并接受全部 SDK licenses；`flutter doctor -v` 无问题。
-- `flutter analyze`、183 项 Flutter 测试、`git diff --check` 和 Android debug APK 构建已通过；最新 debug APK 已完成 SHA-256 和 v2 调试签名校验。Windows release 回归因本机缺少 ATL 组件而未通过。
+- `flutter analyze`、184 项 Flutter 测试、`git diff --check` 和 Android debug APK 构建已通过；最新 debug APK 已完成 SHA-256 和 v2 调试签名校验。Windows release 回归因本机缺少 ATL 组件而未通过。
 
 ### 我的
 

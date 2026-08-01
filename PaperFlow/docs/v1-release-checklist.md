@@ -14,15 +14,15 @@
 - [x] 正式构建不读取 `DEEPSEEK_API_KEY` 的编译常量；开发辅助脚本拒绝 release。
 - [x] 应用内隐私入口说明本地存储与 DeepSeek 数据传输。
 - [x] 论文远程目录、缓存、离线种子回退、ChatPaper、本地互动和本地数据清理均有自动化测试。
-- [x] `flutter analyze` 通过，完整 Flutter 测试 183 项通过，`git diff --check` 通过。
+- [x] `flutter analyze` 通过，完整 Flutter 测试 184 项通过，`git diff --check` 通过。
 - [x] Android debug APK 已构建：`build/app/outputs/flutter-apk/app-debug.apk`。
 - [x] 未配置签名时 `gradlew bundleRelease` 按预期失败，防止误把未签名产物当成发布包。
 
 ### 当前内部验证产物
 
-- 构建时间：2026-08-01 21:00:18（本机时间）。
+- 构建时间：2026-08-01 21:04:05（本机时间）。
 - 文件：`build/app/outputs/flutter-apk/app-debug.apk`，大小 159,610,812 字节。
-- SHA-256：`28828F5456D36F3D4FC7DBE3F72A986A5802139F83A506B17A4C8B6EB89DD424`。
+- SHA-256：`53BE35917A7E8A47AA3E2A2960881B3EFBFD62124DC2ECE705575B22EC461008`。
 - `apksigner verify --verbose --print-certs` 已通过，使用 APK Signature Scheme v2，证书为 Android Debug。
 - 该文件只用于开发和真机验收，不是可提交商店的正式签名包；目录中的任何旧 `app-release.apk` 均不得作为当前发布产物。
 

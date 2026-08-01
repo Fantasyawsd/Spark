@@ -54,6 +54,7 @@ class PaperFeedController extends ChangeNotifier {
   };
   static const _defaultArxivCategories =
       'cs.CL|cs.AI|cs.CV|cs.DC|cs.OS|cs.PF|math.OC|math.ST|q-bio.QM|q-bio.BM';
+  static const _catalogPrefetchThreshold = 10;
 
   List<Paper> _allPapers;
   late List<Paper> _visiblePapers;
@@ -103,7 +104,11 @@ class PaperFeedController extends ChangeNotifier {
 
   Future<void> refreshCatalog({bool forceRefresh = true}) {
     final repository = _catalogRepository;
-    if (repository == null || _catalogLoading) return Future.value();
+    if (repository == null ||
+        _catalogLoading ||
+        _primaryCategoryIndex == PaperFeedMode.following.index) {
+      return Future.value();
+    }
     return _trackCatalogOperation(
       _refreshCatalog(repository, forceRefresh: forceRefresh),
     );
@@ -125,7 +130,7 @@ class PaperFeedController extends ChangeNotifier {
         ),
       );
       if (queryRevision == _catalogQueryRevision) {
-        _applyCatalogPage(page);
+        _applyCatalogPage(page, append: false);
       }
     } on Object catch (_) {
       if (queryRevision == _catalogQueryRevision) {
@@ -151,7 +156,8 @@ class PaperFeedController extends ChangeNotifier {
     if (repository == null ||
         nextOffset == null ||
         _catalogLoading ||
-        _catalogLoadingMore) {
+        _catalogLoadingMore ||
+        _primaryCategoryIndex == PaperFeedMode.following.index) {
       return Future.value();
     }
     return _trackCatalogOperation(
@@ -175,7 +181,7 @@ class PaperFeedController extends ChangeNotifier {
         ),
       );
       if (queryRevision == _catalogQueryRevision) {
-        _applyCatalogPage(page);
+        _applyCatalogPage(page, append: true);
       }
     } on Object catch (_) {
       if (queryRevision == _catalogQueryRevision) {
@@ -223,6 +229,7 @@ class PaperFeedController extends ChangeNotifier {
     _gridMode = false;
     notifyListeners();
     _queuePreferencePersistence();
+    _prefetchCatalogForIndex(index);
   }
 
   void openPaperById(String paperId) {
@@ -241,18 +248,16 @@ class PaperFeedController extends ChangeNotifier {
   }
 
   void selectPaper(int index) {
-    if (index == _currentPaperIndex ||
-        index < 0 ||
-        index >= _visiblePapers.length) {
+    if (index < 0 || index >= _visiblePapers.length) {
       return;
     }
-    _currentPaperIndex = index;
-    _positions[_filterKey] = index;
-    notifyListeners();
-    _queuePreferencePersistence();
-    if (index >= _visiblePapers.length - 3) {
-      unawaited(loadMoreCatalog());
+    if (index != _currentPaperIndex) {
+      _currentPaperIndex = index;
+      _positions[_filterKey] = index;
+      notifyListeners();
+      _queuePreferencePersistence();
     }
+    _prefetchCatalogForIndex(index);
   }
 
   void selectPrimaryCategory(int index) {
@@ -354,7 +359,7 @@ class PaperFeedController extends ChangeNotifier {
     );
   }
 
-  void _applyCatalogPage(PaperPage page) {
+  void _applyCatalogPage(PaperPage page, {required bool append}) {
     final currentPaperId = _visiblePapers.isEmpty
         ? null
         : _visiblePapers[_currentPaperIndex.clamp(
@@ -363,11 +368,7 @@ class PaperFeedController extends ChangeNotifier {
           )]
             .id;
     if (page.papers.isNotEmpty) {
-      final byId = {for (final paper in _allPapers) paper.id: paper};
-      for (final paper in page.papers) {
-        byId[paper.id] = paper;
-      }
-      _allPapers = List.unmodifiable(byId.values);
+      _allPapers = _mergeCatalogPapers(page.papers, append: append);
     }
     _catalogNextOffset = page.nextOffset;
     _catalogOffline = page.isOffline;
@@ -386,6 +387,38 @@ class PaperFeedController extends ChangeNotifier {
     _currentPaperIndex = restoredIndex >= 0
         ? restoredIndex
         : _currentPaperIndex.clamp(0, _visiblePapers.length - 1);
+  }
+
+  List<Paper> _mergeCatalogPapers(
+    List<Paper> incoming, {
+    required bool append,
+  }) {
+    final latestById = <String, Paper>{
+      for (final paper in _allPapers) paper.id: paper,
+      for (final paper in incoming) paper.id: paper,
+    };
+    final orderedIds = append
+        ? [
+            ..._allPapers.map((paper) => paper.id),
+            ...incoming.map((paper) => paper.id),
+          ]
+        : [
+            ...incoming.map((paper) => paper.id),
+            ..._allPapers.map((paper) => paper.id),
+          ];
+    final seen = <String>{};
+    return List.unmodifiable([
+      for (final id in orderedIds)
+        if (seen.add(id)) latestById[id]!,
+    ]);
+  }
+
+  void _prefetchCatalogForIndex(int index) {
+    if (_primaryCategoryIndex == PaperFeedMode.following.index) return;
+    final remaining = _visiblePapers.length - index - 1;
+    if (remaining <= _catalogPrefetchThreshold) {
+      unawaited(loadMoreCatalog());
+    }
   }
 
   String get _filterKey => _primaryCategoryIndex == 0

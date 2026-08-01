@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 
@@ -191,25 +193,28 @@ class _PapersScreenState extends State<PapersScreen> {
     }
 
     if (_feed.gridMode) {
-      return RefreshIndicator(
-        onRefresh: _feed.refreshCatalog,
-        child: MasonryGridView.count(
-          key: const ValueKey('paper-grid'),
-          physics: const AlwaysScrollableScrollPhysics(),
-          crossAxisCount: 2,
-          mainAxisSpacing: 10,
-          crossAxisSpacing: 10,
-          padding: const EdgeInsets.fromLTRB(12, 8, 12, 80),
-          itemCount: papers.length,
-          itemBuilder: (context, index) => PaperGridCard(
-            paper: papers[index],
-            index: index,
-            liked: _interactions.isLiked(papers[index].id),
-            saved: _interactions.isSaved(papers[index].id),
-            onOpen: () => _openPaper(index),
-            onLike: () => _interactions.toggleLike(papers[index].id),
-            onSave: () => _interactions.toggleSave(papers[index].id),
-            onSaveLongPress: () => _showFavoriteGroups(papers[index].id),
+      return NotificationListener<ScrollNotification>(
+        onNotification: _handleGridScroll,
+        child: RefreshIndicator(
+          onRefresh: _feed.refreshCatalog,
+          child: MasonryGridView.count(
+            key: const ValueKey('paper-grid'),
+            physics: const AlwaysScrollableScrollPhysics(),
+            crossAxisCount: 2,
+            mainAxisSpacing: 10,
+            crossAxisSpacing: 10,
+            padding: const EdgeInsets.fromLTRB(12, 8, 12, 80),
+            itemCount: papers.length,
+            itemBuilder: (context, index) => PaperGridCard(
+              paper: papers[index],
+              index: index,
+              liked: _interactions.isLiked(papers[index].id),
+              saved: _interactions.isSaved(papers[index].id),
+              onOpen: () => _openPaper(index),
+              onLike: () => _interactions.toggleLike(papers[index].id),
+              onSave: () => _interactions.toggleSave(papers[index].id),
+              onSaveLongPress: () => _showFavoriteGroups(papers[index].id),
+            ),
           ),
         ),
       );
@@ -274,6 +279,14 @@ class _PapersScreenState extends State<PapersScreen> {
   void _handlePageChanged(int index) {
     _feed.selectPaper(index);
     _syncActivePaper();
+  }
+
+  bool _handleGridScroll(ScrollNotification notification) {
+    if (notification.metrics.axis == Axis.vertical &&
+        notification.metrics.extentAfter <= 800) {
+      unawaited(_feed.loadMoreCatalog());
+    }
+    return false;
   }
 
   void _syncActivePaper() {

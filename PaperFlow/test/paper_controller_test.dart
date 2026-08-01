@@ -310,6 +310,60 @@ void main() {
 
       expect(controller.papers.map((paper) => paper.id), contains(followed.id));
     });
+
+    test('prefetches and deduplicates the next page before the buffer ends',
+        () async {
+      final catalog = _PagedPaperCatalogRepository(
+        firstPage: List.generate(20, (index) => _catalogPaper('p$index')),
+        secondPage: List.generate(
+          20,
+          (index) => _catalogPaper('p${index + 15}'),
+        ),
+      );
+      final feed = PaperFeedController.fromPapers(
+        const [],
+        catalogRepository: catalog,
+      );
+      addTearDown(feed.dispose);
+
+      await feed.initializeCatalog();
+      expect(feed.papers, hasLength(20));
+
+      feed.selectPaper(9);
+      await feed.flushCatalogOperations();
+
+      expect(catalog.queries.map((query) => query.offset), [0, 20]);
+      expect(feed.papers, hasLength(35));
+      expect(feed.papers.map((paper) => paper.id).toSet(), hasLength(35));
+    });
+
+    test('refresh prepends unseen papers without discarding the buffer',
+        () async {
+      final catalog = _PagedPaperCatalogRepository(
+        firstPage: List.generate(20, (index) => _catalogPaper('p$index')),
+      );
+      final feed = PaperFeedController.fromPapers(
+        const [],
+        catalogRepository: catalog,
+      );
+      addTearDown(feed.dispose);
+
+      await feed.initializeCatalog();
+      catalog.firstPage = [
+        _catalogPaper('new-paper'),
+        _catalogPaper('p0', title: 'Updated paper'),
+      ];
+
+      await feed.refreshCatalog();
+
+      expect(feed.papers.first.id, 'new-paper');
+      expect(feed.papers[1].title, 'Updated paper');
+      expect(feed.papers, hasLength(21));
+      expect(
+        feed.papers.where((paper) => paper.id == 'p0'),
+        hasLength(1),
+      );
+    });
   });
 }
 
@@ -349,3 +403,51 @@ class _BlockingPaperCatalogRepository implements PaperCatalogRepository {
   Future<PaperPage> search(PaperSearchQuery query) async =>
       PaperPage(papers: const [], source: PaperPageSource.remote);
 }
+
+class _PagedPaperCatalogRepository implements PaperCatalogRepository {
+  _PagedPaperCatalogRepository({
+    required this.firstPage,
+    this.secondPage = const [],
+  });
+
+  List<Paper> firstPage;
+  List<Paper> secondPage;
+  final List<PaperFeedQuery> queries = [];
+
+  @override
+  Future<Paper?> findById(String paperId) async => null;
+
+  @override
+  Future<PaperPage> loadFeed(PaperFeedQuery query) async {
+    queries.add(query);
+    if (query.offset == 0) {
+      return PaperPage(
+        papers: firstPage,
+        source: PaperPageSource.remote,
+        nextOffset: secondPage.isEmpty ? null : 20,
+      );
+    }
+    return PaperPage(
+      papers: secondPage,
+      source: PaperPageSource.remote,
+    );
+  }
+
+  @override
+  Future<PaperPage> search(PaperSearchQuery query) async =>
+      PaperPage(papers: const [], source: PaperPageSource.remote);
+}
+
+Paper _catalogPaper(String id, {String? title}) => Paper(
+      id: id,
+      venue: 'arXiv',
+      title: title ?? 'Paper $id',
+      authors: const ['Researcher'],
+      firstAffiliation: 'Research Lab',
+      topics: const ['cs.AI'],
+      abstractText: 'Abstract for $id.',
+      chineseAbstractMarkdown: '',
+      readMinutes: 3,
+      publishedAt: DateTime.utc(2026, 1, 1),
+      source: 'arxiv',
+    );

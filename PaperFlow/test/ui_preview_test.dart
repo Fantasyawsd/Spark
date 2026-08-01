@@ -848,6 +848,54 @@ void main() {
     expect(find.text('分享内容已复制'), findsOneWidget);
   });
 
+  testWidgets('paper grid loads the next page near the scroll boundary',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(378, 810));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final catalog = _GridPagedPaperCatalogRepository();
+    final feed = PaperFeedController.fromPapers(
+      const [],
+      catalogRepository: catalog,
+    );
+    final interactions = PaperInteractionController();
+    final comments = PaperCommentController();
+    final reading = PaperReadingController();
+    addTearDown(feed.dispose);
+    addTearDown(interactions.dispose);
+    addTearDown(comments.dispose);
+    addTearDown(reading.dispose);
+
+    await feed.initializeCatalog();
+    feed.toggleGridMode();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: PapersScreen(
+            readingController: reading,
+            feedController: feed,
+            interactionController: interactions,
+            commentController: comments,
+            aiService: const _FakePaperAiService(),
+            translationServiceFactory:
+                const _FakePaperTranslationServiceFactory(),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    await tester.fling(
+      find.byKey(const ValueKey('paper-grid')),
+      const Offset(0, -5000),
+      5000,
+    );
+    await tester.pumpAndSettle();
+    await feed.flushCatalogOperations();
+
+    expect(catalog.queries.map((query) => query.offset), [0, 20]);
+    expect(feed.papers, hasLength(40));
+  });
+
   testWidgets('topic filter stays compact and only appears in recommendations',
       (tester) async {
     await tester.binding.setSurfaceSize(const Size(378, 810));
@@ -1058,6 +1106,42 @@ class _FakePaperLinkService implements PaperLinkService {
     return true;
   }
 }
+
+class _GridPagedPaperCatalogRepository implements PaperCatalogRepository {
+  final List<PaperFeedQuery> queries = [];
+
+  @override
+  Future<Paper?> findById(String paperId) async => null;
+
+  @override
+  Future<PaperPage> loadFeed(PaperFeedQuery query) async {
+    queries.add(query);
+    final start = query.offset;
+    return PaperPage(
+      papers: List.generate(20, (index) => _gridPaper(start + index)),
+      source: PaperPageSource.remote,
+      nextOffset: start == 0 ? 20 : null,
+    );
+  }
+
+  @override
+  Future<PaperPage> search(PaperSearchQuery query) async =>
+      PaperPage(papers: const [], source: PaperPageSource.remote);
+}
+
+Paper _gridPaper(int index) => Paper(
+      id: 'grid-paper-$index',
+      venue: 'arXiv',
+      title: 'Grid paper $index with a sufficiently descriptive title',
+      authors: const ['Researcher'],
+      firstAffiliation: 'PaperFlow Lab',
+      topics: const ['cs.AI'],
+      abstractText: 'Abstract for grid paper $index.',
+      chineseAbstractMarkdown: '',
+      readMinutes: 3,
+      publishedAt: DateTime.utc(2026, 1, 1),
+      source: 'arxiv',
+    );
 
 class _ControlledCommentWidgetRepository implements PaperCommentRepository {
   final Completer<void> _saveCompleter = Completer<void>();

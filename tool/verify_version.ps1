@@ -163,6 +163,54 @@ if ($RequireReleaseTag) {
         throw "发布 Tag $expectedTag 必须是 annotated Tag。"
     }
 
+    $headCommit = @(git -C $projectRoot rev-parse HEAD) | Select-Object -First 1
+    $mainCommit = @(git -C $projectRoot rev-parse refs/remotes/origin/main) |
+        Select-Object -First 1
+    if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($mainCommit)) {
+        throw '无法读取 origin/main，不能验证发布 Tag 的集成基线。'
+    }
+    if ($headCommit -ne $mainCommit) {
+        throw "发布 Tag $expectedTag 必须指向当前 origin/main 提交。"
+    }
+
+    $previousTags = @(git -C $projectRoot tag --merged HEAD --list 'v*')
+    if ($LASTEXITCODE -ne 0) {
+        throw '无法读取历史发布 Tag。'
+    }
+    foreach ($previousTag in $previousTags) {
+        if ($previousTag -eq $expectedTag) {
+            continue
+        }
+        $previousTagMatch = [regex]::Match(
+            $previousTag,
+            "^v(?<name>$versionPattern)`$"
+        )
+        if (-not $previousTagMatch.Success) { continue }
+
+        $previousType = @(git -C $projectRoot cat-file -t "refs/tags/$previousTag") |
+            Select-Object -First 1
+        if ($LASTEXITCODE -ne 0 -or $previousType -ne 'tag') {
+            continue
+        }
+
+        $previousPubspec = @(git -C $projectRoot show "${previousTag}:pubspec.yaml") -join "`n"
+        if ($LASTEXITCODE -ne 0) {
+            throw "无法从历史发布 Tag $previousTag 读取 pubspec.yaml。"
+        }
+        $previous = Get-VersionMetadata `
+            -Content $previousPubspec `
+            -Source "历史发布 Tag $previousTag 的 pubspec.yaml"
+        if ($previous.Name -ne $previousTagMatch.Groups['name'].Value) {
+            throw "历史发布 Tag $previousTag 与其中的版本 $($previous.Name) 不一致。"
+        }
+        if ((Compare-SemVer -Left $versionName -Right $previous.Name) -le 0) {
+            throw "发布版本 $versionName 必须高于历史版本 $($previous.Name)。"
+        }
+        if ($buildNumber -le $previous.BuildNumber) {
+            throw "发布构建号 $buildNumber 必须高于历史构建号 $($previous.BuildNumber)。"
+        }
+    }
+
     if (-not [regex]::IsMatch(
         $changelog,
         "(?m)^## \[$escapedVersion\] - \d{4}-\d{2}-\d{2}[ \t]*(?=\r?`$)"

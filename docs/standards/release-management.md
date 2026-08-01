@@ -59,7 +59,7 @@ git tag -a v0.1.1 -m "Release v0.1.1"
 git push origin v0.1.1
 ```
 
-CI 会将版本与目标分支基线比较：SemVer 不得倒退，版本元数据变化时 build number 必须严格递增。Tag 不用于标记未完成开发或普通内部构建。正式 Tag 必须是 annotated Tag，CHANGELOG 标题必须使用发布日期而不是候选状态；已推送 Tag 不移动、不覆盖，发布错误使用新 patch 与新构建号修复。
+CI 会将版本与目标分支基线比较：SemVer 不得倒退，版本元数据变化时 build number 必须严格递增。Tag 不用于标记未完成开发或普通内部构建。正式 Tag 必须是 annotated Tag、必须指向远程当前 `main`，SemVer 与 build number 必须高于所有可达的历史正式 Tag，CHANGELOG 标题必须使用发布日期而不是候选状态；已推送 Tag 不移动、不覆盖，发布错误使用新 patch 与新构建号修复。
 
 ## 4. 环境与渠道
 
@@ -128,6 +128,6 @@ PAPERFLOW_FEATURE_PDF_AI
 4. 构建 production AAB，验证签名、包名、版本号和 SHA-256。
 5. 先上传 Internal，再进入 Beta/封闭测试，最后发布 Production。
 6. 完成真机升级、数据 Migration、弱网、凭据和回滚验证。
-7. 创建并推送 annotated Tag；Tag CI 再校验版本、CHANGELOG 日期和链接，随后归档产物、提交 SHA、迁移版本、已知问题和回滚方案。
+7. 创建并推送 annotated Tag；Tag CI 再校验当前 `main`、历史发布单调性、CHANGELOG 日期和链接，随后归档产物、提交 SHA、迁移版本、已知问题和回滚方案。
 
 0.1.0 当前仍是代码候选；在签名、真机和 Play 内部测试完成前不得创建正式发布 Tag。

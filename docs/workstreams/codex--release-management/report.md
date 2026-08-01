@@ -33,7 +33,7 @@ PaperFlow 已建立代码、发布、数据、接口和功能五层版本管理�
 - PaperFlow 尚无自有后端，因此只定义未来 `/api/v1` 与数据库 expand/migrate/contract 规则，不创建占位服务。
 - Dart 3.12 会重排大量历史文件；CI 先对本次变更的 Dart 文件执行格式门禁，全仓格式迁移留给独立机械 workstream。
 - Android 使用 Flutter 的真实 `appFlavor` 校验请求环境；所有实际 release 任务都在缺少签名时失败，不能由 Gradle 缩写或聚合任务绕过。
-- 正式 Tag 必须为 annotated Tag，且 CHANGELOG 必须从候选状态更新为发布日期并包含正确链接。
+- 正式 Tag 必须为 annotated Tag、指向远程当前 `main`、高于所有可达的历史正式 Tag，且 CHANGELOG 必须从候选状态更新为发布日期并包含正确链接。
 
 ## 主要文件
 
@@ -75,6 +75,7 @@ PaperFlow 已建立代码、发布、数据、接口和功能五层版本管理�
 | 无签名 production release | Gradle 按预期拒绝并给出签名配置错误 |
 | Gradle 缩写 `assembleProductionRel` | 仍由实际 release 任务签名门阻断 |
 | SemVer / Tag 负向测试 | 降级、轻量 Tag、候选 CHANGELOG 正式 Tag 均被拒绝；临时状态已清理 |
+| 非 main annotated Tag | 因未指向当前 `origin/main` 被拒绝；临时 Tag 已清理 |
 | `git diff --check` | 通过 |
 
 ## 兼容性与迁移

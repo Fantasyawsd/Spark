@@ -79,6 +79,7 @@
 | 2026-08-02 | CI 只强制格式化本次变更的 Dart 文件 | Dart 3.12 会重排大量历史文件，全仓迁移不应混入版本管理提交 | 后续单独建立基线格式迁移 workstream |
 | 2026-08-02 | Android versionName 不追加渠道后缀 | `pubspec.yaml` 是唯一版本事实源，固定 `-beta` 会与 SemVer prerelease 重复 | 渠道通过 applicationId 与应用名称区分 |
 | 2026-08-02 | 发布校验采用基线、实际 flavor 与实际 release 任务 | 防止版本倒退、环境错配和 Gradle 缩写/聚合任务绕过 | CI 与本地工具均 fail-closed |
+| 2026-08-02 | 正式 Tag 必须位于当前远程 main 且高于历史正式 Tag | 防止给旧提交补 Tag 或用自身作为版本比较基线 | Tag CI 独立验证集成位置与发布单调性 |
 
 ## 验证记录
 
@@ -94,6 +95,7 @@
 | `:app:assembleProductionRel`（Gradle 缩写、无签名） | 仍由实际 release 任务门阻断 | 2026-08-02 |
 | PowerShell 5 / 7 | 三个脚本使用 UTF-8 BOM；版本递增与基线校验均通过 | 2026-08-02 |
 | 临时轻量 / annotated `v0.1.0` | 轻量 Tag 被拒绝；候选 CHANGELOG 被正式 Tag 门禁拒绝；临时 Tag 已删除 | 2026-08-02 |
+| 开发分支临时 annotated `v0.1.0` | 因未指向当前 `origin/main` 被拒绝；临时 Tag 已删除 | 2026-08-02 |
 
 ## 检查点与提交
 

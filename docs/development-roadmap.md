@@ -54,7 +54,7 @@ PaperFlow 面向个人研究者，核心闭环由三个一级能力组成：
 
 - 架构与代码边界遵守[代码结构原则](standards/code-structure.md)。
 - 分支、worktree、提交和集成遵守[Git 与任务集成管理](standards/version-control.md)。
-- 任务状态通过 `workstreams/<branch-slug>/status.md` 台账交换，不通过共享未提交文件协作。
+- 任务状态通过 `docs/workstreams/<branch-slug>/status.md` 台账交换，不通过共享未提交文件协作。
 - 远程论文、AI、持久化和平台能力通过抽象接口接入，不进入 Widget 或领域实体。
 
 ## 5. 发布关系

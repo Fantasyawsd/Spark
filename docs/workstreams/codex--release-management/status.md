@@ -66,7 +66,7 @@
 ## 当前进度
 
 - 已完成：配置层、版本工具、三套 Android flavor、CI、五层版本规范、两轮只读审查、审查修复、完整验证，以及向 `main` 的快进集成。
-- 集成结果：`main` 与远程 `origin/main` 已于 2026-08-02 更新到 `c35c173`。
+- 集成结果：实现提交 `c35c173`、集成报告提交 `924c041` 和旧 `.ignore` 清理提交 `a51130a` 均已于 2026-08-02 推送并可从远程 `origin/main` 到达。
 - 下一步：重新认证 GitHub 应用，核对首次 `main` GitHub Actions，并为 `main` 启用禁止强推、必须 Pull Request 和 `Flutter CI / verify` 必须通过的分支保护。
 - 外部阻塞：GitHub 应用连接要求重新认证，当前无法读取 Actions 结果或修改仓库保护规则。
 

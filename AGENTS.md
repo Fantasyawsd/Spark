@@ -36,7 +36,7 @@
 5. `docs/standards/code-structure.md`：架构强制约束。
 6. `docs/standards/version-control.md`：Git、worktree、提交和集成规则。
 7. `docs/standards/release-management.md`：发布版本、环境、数据/API 兼容和功能开关规则。
-8. 与本任务可能重叠的 `docs/workstreams/<slug>/status.md`。
+8. 与本任务可能重叠的 `docs/workstreams/<branch-slug>/status.md`。
 9. 只有任务明确面向某次发布时，才读取 `docs/releases/<version>/` 下的发布计划和检查清单。
 
 不得依据过时对话、旧文件路径或记忆中的进度直接开始修改。

@@ -6,7 +6,7 @@
 - 目标发布或里程碑：版本管理基础设施 / 0.1.0 发布准备
 - 分支：`codex/release-management`
 - 基线提交：`4660302`
-- 最终提交：以合并前分支 `HEAD` 为准
+- 最终提交：`c35c173`
 - 负责人：Codex
 - 报告日期：2026-08-02
 
@@ -15,6 +15,8 @@
 PaperFlow 已建立代码、发布、数据、接口和功能五层版本管理的统一规则与当前阶段可执行的基础设施。Android 现在区分 development、staging、production 三个渠道；应用版本由 `pubspec.yaml` 管理，工具同步应用内展示并由 CI 相对基线校验；GitHub Actions 对 Pull Request、`main` 和发布 Tag 执行版本、格式、分析、测试、渠道构建和签名门禁。
 
 本 workstream 没有创建不存在的服务端、数据库或虚假 API，也没有创建 `v0.1.0` Tag 或声称已经正式上线。
+
+2026-08-02，开发分支在本地版本、增量格式、静态分析和 195 项测试全部通过后，以快进方式集成并推送至 `main`。由于 GitHub 应用连接要求重新认证，本次无法通过连接器创建 Pull Request 或读取首次远程 Actions 结果；这是分支保护启用前的一次 bootstrap 例外，不改变后续普通开发必须通过 Pull Request 和 CI 的规则。
 
 ## 实际变更
 
@@ -56,7 +58,8 @@ PaperFlow 已建立代码、发布、数据、接口和功能五层版本管理�
 | `5c4eeff` | `chore: add version checks and Flutter CI` | 是；移除工具与 CI，不改变应用数据 |
 | `f250c05` | `fix: enforce flavor and signing boundaries` | 是；恢复到仅依赖规范命令的环境和签名检查 |
 | `9156f0e` | `chore: harden version and release CI gates` | 是；恢复到无基线/Tag 持续门禁 |
-| 分支 `HEAD` | `docs: define five-layer release management` | 是；只回退规范、证据与协作说明 |
+| `43fc44c` | `docs: define five-layer release management` | 是；只回退规范、证据与协作说明 |
+| `c35c173` | `fix: require release tags on current main` | 是；恢复到未校验远程 main 指向的 Tag 门禁 |
 
 ## 验证证据
 
@@ -87,7 +90,7 @@ PaperFlow 已建立代码、发布、数据、接口和功能五层版本管理�
 
 ## 已知风险与回滚
 
-- GitHub Actions 尚未在远程 PR 上实际运行；本地已覆盖其核心命令，远程 runner 和 artifact 上传仍需首次 PR 验证。
+- GitHub Actions 已由 `main` 推送触发，但连接器重新认证阻止读取结果；本地已覆盖其核心命令，远程 runner 和 artifact 上传仍需认证后核对。
 - Feature Flag 目前没有远程配置、百分比灰度或在线止损能力，且具体实验功能仍需在所属业务模块接入。
 - production release 未生成，因为仓库不包含上传签名；正式签名、AAB、真机和 Play Console 仍是人工发布门。
 - 回滚可按提交逆序执行 `git revert`；本 workstream 没有数据迁移，不需要恢复设备数据。
@@ -100,7 +103,8 @@ PaperFlow 已建立代码、发布、数据、接口和功能五层版本管理�
 ## 未完成与后续工作
 
 - 在 GitHub 为 `main` 启用禁止强推、必须 PR、必须通过 `Flutter CI / verify` 的分支保护。
-- GitHub 应用连接需重新认证后创建 PR，再观察首次 GitHub Actions 并确认 APK artifact 上传路径。
+- 重新认证 GitHub 应用后，核对首次 `main` GitHub Actions 并确认 APK artifact 上传路径。
+- 在 GitHub 为 `main` 启用分支保护后，后续普通开发必须通过 Pull Request 集成；本次直接快进是保护规则建立前的 bootstrap 例外。
 - 单独建立历史 Dart 格式基线迁移，不混入功能提交。
 - 接入自有后端时再落地 development/staging/production 独立服务、数据库 Migration、API v1 和远程 Feature Flag。
 - 由持有签名和 Play Console 权限的人完成 0.1.0 正式发布门，之后再创建 annotated Tag。

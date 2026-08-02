@@ -8,7 +8,7 @@
 - Worktree：`C:\Users\Fantasy\Desktop\PaperFlow-worktrees\codex-release-management`
 - 基线提交：`4660302`
 - 负责人：Codex
-- 状态：待审查
+- 状态：已集成
 - 最近更新：`2026-08-02`
 
 ## 目标
@@ -65,10 +65,10 @@
 
 ## 当前进度
 
-- 已完成：配置层、版本工具、三套 Android flavor、CI、五层版本规范、两轮只读审查、审查修复和完整验证。
-- 正在进行：开发报告收尾与远程集成。
-- 下一步：推送补充提交，重新认证 GitHub 应用后创建 PR 并观察首次远程 CI。
-- 阻塞项：GitHub 应用连接要求重新认证，当前无法通过连接器创建 PR。
+- 已完成：配置层、版本工具、三套 Android flavor、CI、五层版本规范、两轮只读审查、审查修复、完整验证，以及向 `main` 的快进集成。
+- 集成结果：`main` 与远程 `origin/main` 已于 2026-08-02 更新到 `c35c173`。
+- 下一步：重新认证 GitHub 应用，核对首次 `main` GitHub Actions，并为 `main` 启用禁止强推、必须 Pull Request 和 `Flutter CI / verify` 必须通过的分支保护。
+- 外部阻塞：GitHub 应用连接要求重新认证，当前无法读取 Actions 结果或修改仓库保护规则。
 
 ## 决策记录
 
@@ -80,6 +80,7 @@
 | 2026-08-02 | Android versionName 不追加渠道后缀 | `pubspec.yaml` 是唯一版本事实源，固定 `-beta` 会与 SemVer prerelease 重复 | 渠道通过 applicationId 与应用名称区分 |
 | 2026-08-02 | 发布校验采用基线、实际 flavor 与实际 release 任务 | 防止版本倒退、环境错配和 Gradle 缩写/聚合任务绕过 | CI 与本地工具均 fail-closed |
 | 2026-08-02 | 正式 Tag 必须位于当前远程 main 且高于历史正式 Tag | 防止给旧提交补 Tag 或用自身作为版本比较基线 | Tag CI 独立验证集成位置与发布单调性 |
+| 2026-08-02 | 版本管理基础设施以快进方式集成到 `main` | GitHub 应用重新认证阻止创建 PR；本地四项门禁已通过且用户要求继续完成集成 | 这是分支保护启用前的 bootstrap 例外；后续普通开发恢复 Pull Request 流程 |
 
 ## 验证记录
 
@@ -96,6 +97,8 @@
 | PowerShell 5 / 7 | 三个脚本使用 UTF-8 BOM；版本递增与基线校验均通过 | 2026-08-02 |
 | 临时轻量 / annotated `v0.1.0` | 轻量 Tag 被拒绝；候选 CHANGELOG 被正式 Tag 门禁拒绝；临时 Tag 已删除 | 2026-08-02 |
 | 开发分支临时 annotated `v0.1.0` | 因未指向当前 `origin/main` 被拒绝；临时 Tag 已删除 | 2026-08-02 |
+| `main` 集成后版本、格式、分析和测试 | `0.1.0+1`、10 个 Dart 文件、`flutter analyze`、195 项测试全部通过 | 2026-08-02 |
+| 远程 `main` SHA | `origin/main` 已核对为 `c35c173` | 2026-08-02 |
 
 ## 检查点与提交
 

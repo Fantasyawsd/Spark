@@ -80,7 +80,7 @@ jobs:
           if ($exitCode -eq 0) {
             throw 'Unsigned production release unexpectedly succeeded.'
           }
-          if ($output -notmatch 'Release signing is not configured') {
+          if (($output -join "`n") -notmatch 'Release signing is not configured') {
             $output | Write-Output
             throw 'Production release failed for an unexpected reason.'
           }

@@ -11,7 +11,7 @@ disable-model-invocation: true
 ## 步骤
 
 1. **确认当前环境**
-   - 确认 `git branch --show-current` 匹配任务分支；`docs/workstreams/<slug>/status.md` 存在。
+   - 确认 `git branch --show-current` 匹配任务分支；`docs/workstreams/<branch-slug>/status.md` 存在。
    - 完成标准：处于任务 worktree；台账可读；若缺少则提示编排者先运行 `/start`。
 
 2. **读取上下文**

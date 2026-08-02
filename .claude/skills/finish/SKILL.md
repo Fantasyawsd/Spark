@@ -29,5 +29,5 @@ disable-model-invocation: true
 
 5. **清理**
    - 从控制工作树执行 `git worktree remove` 与 `git worktree prune`，合并后删除分支；规则见 `docs/standards/version-control.md`「Worktree 清理」。
-   - 台账 `docs/workstreams/<slug>/status.md` 归档保留，不删除、不更新。
+   - 台账 `docs/workstreams/<branch-slug>/status.md` 归档保留，不删除、不更新。
    - 完成标准：worktree 已移除、分支已删或明确保留、`git worktree list` 干净。

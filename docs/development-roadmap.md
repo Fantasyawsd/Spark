@@ -1,7 +1,7 @@
 # PaperFlow 开发总路线
 
 > 状态：持续维护
-> 最近更新：2026-08-02
+> 最近更新：2026-08-03
 
 本文只维护 PaperFlow 的跨领域目标、优先级和依赖关系。具体需求、实现状态和验收标准归入 `product/<domain>/`；发布范围和发布证据只归入 `releases/<version>/`。
 
@@ -53,8 +53,8 @@ PaperFlow 面向个人研究者，核心闭环由三个一级能力组成：
 ## 4. 工程依赖
 
 - 架构与代码边界遵守[代码结构原则](standards/code-structure.md)。
-- 分支、worktree、提交和集成遵守[Git 与多 Agent 集成管理](standards/version-control.md)。
-- 并行任务通过 `workstreams/<branch-slug>/status.md` 和 `report.md` 交换状态，不通过共享未提交文件协作。
+- 分支、worktree、提交和集成遵守[Git 与任务集成管理](standards/version-control.md)。
+- 任务状态通过 `workstreams/<branch-slug>/status.md` 台账交换，不通过共享未提交文件协作。
 - 远程论文、AI、持久化和平台能力通过抽象接口接入，不进入 Widget 或领域实体。
 
 ## 5. 发布关系

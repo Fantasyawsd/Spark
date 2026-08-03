@@ -15,7 +15,7 @@ disable-model-invocation: true
    - 完成标准：目标是一句可验证的业务结果；验收标准可观察、可测量；是否关联发布已明确。
 
 2. **读取开发前必读**
-   - 按 `AGENTS.md`「开发前必读」列出的顺序读取：`README.md`、`docs/README.md`、`docs/development-roadmap.md`、相关 `docs/product/` 文档、`docs/standards/` 三份规范、可能重叠的 `docs/workstreams/<slug>/status.md`。
+   - 按 `AGENTS.md`「开发前必读」列出的顺序读取：`README.md`、`docs/README.md`、`docs/development.md`、`docs/standards/` 三份规范、可能重叠的 `docs/workstreams/<slug>/status.md`。
    - 完成标准：全部必读已读；对任务边界与约束有结论；未依据过时路径。
 
 3. **确认基线**

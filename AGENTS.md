@@ -31,13 +31,12 @@
 
 1. `README.md`：产品背景、当前功能和目录结构。
 2. `docs/README.md`：开发文档入口与维护规则。
-3. `docs/development-roadmap.md`：持续开发路线、能力边界和优先级。
-4. `docs/product/` 下与任务相关的产品领域文档。
-5. `docs/standards/code-structure.md`：架构强制约束。
-6. `docs/standards/version-control.md`：Git、worktree、提交和集成规则。
-7. `docs/standards/release-management.md`：发布版本、环境、数据/API 兼容和功能开关规则。
-8. 与本任务可能重叠的 `docs/workstreams/<branch-slug>/status.md`。
-9. 只有任务明确面向某次发布时，才读取 `docs/releases/<version>/` 下的发布计划和检查清单。
+3. `docs/development.md`：开发计划（产品边界、优先级和各领域现状与方向）。
+4. `docs/standards/code-structure.md`：架构强制约束。
+5. `docs/standards/version-control.md`：Git、worktree、提交和集成规则。
+6. `docs/standards/release-management.md`：发布版本、环境、数据/API 兼容和功能开关规则。
+7. 与本任务可能重叠的 `docs/workstreams/<branch-slug>/status.md`。
+8. 只有任务明确面向某次发布时，才读取 `docs/releases/<version>/` 下的发布计划和检查清单。
 
 不得依据过时对话、旧文件路径或记忆中的进度直接开始修改。
 
@@ -184,7 +183,7 @@ docs/workstreams/<branch-slug>/
 | --- | --- | --- | --- |
 | 规范（Skill 事实源） | `AGENTS.md`、`docs/standards/{code-structure,version-control,release-management}.md` | 规则变更由编排者批准；SKILL.md 只引用不复制 | 活跃 |
 | 索引 | `docs/README.md` | 随文档增删同步，索引表含状态列 | 活跃 |
-| 路线与领域 | `docs/development-roadmap.md`、`docs/product/*/` | 功能开发时由 `/finish` 同步更新 | 活跃 |
+| 开发计划 | `docs/development.md` | 功能开发时由 `/finish` 同步更新 | 活跃 |
 | 过程记录 | `docs/workstreams/<slug>/status.md` | 任务生命周期内由 `/start`→`/finish` 维护；合并后归档保留 | 活跃→归档 |
 | 发布归档 | `docs/releases/<version>/` | 发布时由 `/release` 维护；发布后只补勘误 | 归档 |
 | 审查记录 | `docs/reviews/` | 历史事实，不再新增（审查落盘到台账） | 归档 |

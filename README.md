@@ -28,7 +28,7 @@ PaperFlow 是面向个人研究者的 Flutter 论文发现、阅读和 AI 研究
 - DeepSeek API Key 验证、保存、替换和删除。
 - 应用版本、隐私说明和开源许可。
 
-社区、私信、通知、账号、云同步和内容发布不属于 0.1.0 生产范围。后续论文发现与阅读改进见 [论文频道、索引与阅读计划](docs/product/papers/channels-and-reading.md)。
+社区、私信、通知、账号、云同步和内容发布不属于 0.1.0 生产范围。后续论文发现与阅读改进见 [开发计划](docs/development.md)。
 
 ## 数据与隐私
 
@@ -50,8 +50,7 @@ PaperFlow 是面向个人研究者的 Flutter 论文发现、阅读和 AI 研究
 |-- windows/                   Windows 桌面宿主工程
 |-- docs/
 |   |-- README.md              开发文档总入口
-|   |-- development-roadmap.md 持续开发总路线
-|   |-- product/               按产品领域维护的持续开发文档
+|   |-- development.md         开发计划（产品边界、优先级、领域方向）
 |   |-- standards/             架构、协作和版本管理规范
 |   |-- templates/             Workstream 状态和开发报告模板
 |   |-- workstreams/           各开发分支的状态与报告
@@ -88,8 +87,7 @@ presentation -> application -> domain <- data
 ## 开发文档
 
 - [文档总入口](docs/README.md)
-- [开发总路线](docs/development-roadmap.md)
-- [论文频道与阅读计划](docs/product/papers/channels-and-reading.md)
+- [开发计划](docs/development.md)
 - [发布与兼容性管理](docs/standards/release-management.md)
 - [0.1.0 发布资料](docs/releases/0.1.0/README.md)
 - [AI Agent 协作规范](AGENTS.md)

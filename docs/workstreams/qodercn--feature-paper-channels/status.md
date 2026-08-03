@@ -9,7 +9,7 @@
 - 基线提交：`b1a667b`（origin/main）
 - 负责人：Fantasy（编排者）；执行：QoderCN Agent
 - 状态：开发中
-- 最近更新：2026-08-04 03:55
+- 最近更新：2026-08-04 04:10
 
 ## 目标
 
@@ -113,6 +113,7 @@
 | 70d2e5a | fix(papers): only lazy-load channels on first visit instead of refreshing every switch | 验收反馈修复：切换频道不再刷新 | analyze 通过；219 测试通过；格式门禁通过 |
 | 28fdf52 | refactor(papers): drop topic search from channel manager while catalog has four entries | 编排者决定：4 个主题无需搜索 | analyze 通过；217 测试通过；格式门禁通过 |
 | 415146f | feat(papers): split channel manager into swipeable subject and conference tabs | 编排者要求：按主题/按会议做成 Tab 翻页 | analyze 通过；217 测试通过；格式门禁通过 |
+| ab5aed1 | refactor(papers): rename channel manager tabs to 主题/会议 | 编排者要求：Tab 文案去掉「按」字 | analyze 通过；217 测试通过；格式门禁通过 |
 
 ## 交付记录（合并前补齐）
 

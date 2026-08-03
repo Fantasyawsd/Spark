@@ -31,7 +31,7 @@ disable-model-invocation: true
    - 完成标准：定向测试通过；无新增 analyze 问题；格式通过。
 
 6. **原子提交**
-   - 按明确路径暂存（`git add -- <paths>`），提交信息 `<type>: <摘要>`；规则见 `docs/standards/version-control.md`「提交原则」。
+   - 按明确路径暂存（`git add -- <paths>`），提交信息 `<type>(<scope>): <摘要>`；规则见 `docs/standards/version-control.md`「提交原则」。
    - 更新 status.md「检查点与提交」记录 SHA 与验证摘要。
    - 完成标准：提交职责单一；`git diff --cached --check` 通过；台账已记录。
 

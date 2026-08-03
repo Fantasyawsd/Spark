@@ -96,6 +96,24 @@ void main() {
       await refresh;
       expect(notifications, 1);
     });
+
+    test('refreshes automatically when the repository emits changes',
+        () async {
+      final repository = _FakeChatSessionRepository([
+        _session('paper-1', minute: 1),
+      ]);
+      final controller = _controller(repository);
+      addTearDown(controller.dispose);
+      await controller.refresh();
+      expect(controller.entries.single.context.id, 'paper-1');
+
+      repository.updateSessions([_session('paper-2', minute: 2)]);
+      repository.emitChanges();
+      await pumpEventQueue();
+
+      expect(controller.entries.single.context.id, 'paper-2');
+      expect(repository.listCalls, greaterThan(1));
+    });
   });
 }
 
@@ -134,8 +152,18 @@ class _FakeChatSessionRepository implements ChatSessionRepository {
   final ChatSessionPersistenceException? listError;
   final List<(String, bool)> pinnedChanges = [];
   final List<String> clearedIds = [];
+  final _changesController = StreamController<void>.broadcast();
   List<ChatSessionSummary> _sessions;
   int listCalls = 0;
+
+  @override
+  Stream<void> get changes => _changesController.stream;
+
+  void updateSessions(List<ChatSessionSummary> sessions) {
+    _sessions = List.of(sessions);
+  }
+
+  void emitChanges() => _changesController.add(null);
 
   @override
   Future<List<ChatSessionSummary>> listSessions() async {
@@ -183,6 +211,9 @@ class _DeferredChatSessionRepository implements ChatSessionRepository {
 
   void complete(List<ChatSessionSummary> sessions) =>
       _completer.complete(sessions);
+
+  @override
+  Stream<void> get changes => Stream.empty();
 
   @override
   Future<List<ChatSessionSummary>> listSessions() => _completer.future;

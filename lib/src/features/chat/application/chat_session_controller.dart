@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 
 import '../domain/chat_session_repository.dart';
@@ -31,9 +33,12 @@ class ChatSessionController extends ChangeNotifier {
     Iterable<ChatContextSummary> contexts = const [],
   })  : _repository = repository,
         _mainSessionId = mainSessionId,
-        _contexts = {for (final context in contexts) context.id: context};
+        _contexts = {for (final context in contexts) context.id: context} {
+    _changesSubscription = _repository.changes.listen((_) => refresh());
+  }
 
   final ChatSessionRepository _repository;
+  late final StreamSubscription<void> _changesSubscription;
   final String _mainSessionId;
   Map<String, ChatContextSummary> _contexts;
   List<ChatSessionEntry> _entries = const [];
@@ -161,6 +166,7 @@ class ChatSessionController extends ChangeNotifier {
   @override
   void dispose() {
     _disposed = true;
+    unawaited(_changesSubscription.cancel());
     super.dispose();
   }
 }

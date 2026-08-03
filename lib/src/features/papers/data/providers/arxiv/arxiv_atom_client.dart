@@ -23,6 +23,19 @@ class ArxivApiException implements Exception {
   String toString() => message;
 }
 
+/// arXiv 官方计算机科学分类（cs.*）。
+///
+/// 「全部/最新」流使用这些分类的并集，而不是通配查询 `all:*`：
+/// `all:*` 在 arXiv 服务端长期不稳定（2026-08 实测持续返回 HTTP 500），
+/// 而 PaperFlow 的论文流定位就是 CS/ML 论文（频道计划见 development.md），
+/// 分类并集查询稳定（HTTP 200）且语义一致。
+const defaultArxivCategories = [
+  'cs.AI', 'cs.CL', 'cs.CV', 'cs.LG', 'cs.LO', 'cs.CR', 'cs.CC', 'cs.CE',
+  'cs.DB', 'cs.DC', 'cs.DS', 'cs.ET', 'cs.FL', 'cs.GT', 'cs.HC', 'cs.IR',
+  'cs.IT', 'cs.MA', 'cs.MM', 'cs.MS', 'cs.NE', 'cs.NI', 'cs.PF', 'cs.PL',
+  'cs.SC', 'cs.SD', 'cs.SE', 'cs.SI', 'cs.SY',
+];
+
 class ArxivAtomClient implements ArxivCatalogSource {
   ArxivAtomClient({
     this.endpoint = 'https://export.arxiv.org/api/query',
@@ -57,13 +70,17 @@ class ArxivAtomClient implements ArxivCatalogSource {
     required int limit,
   }) {
     final normalizedCategory = category?.trim();
+    final categories = (normalizedCategory == null ||
+            normalizedCategory.isEmpty)
+        ? defaultArxivCategories
+        : normalizedCategory
+            .split('|')
+            .map((category) => category.trim())
+            .where((category) => category.isNotEmpty)
+            .toList(growable: false);
     return _query({
-      'search_query': normalizedCategory == null || normalizedCategory.isEmpty
-          ? 'all:*'
-          : normalizedCategory
-              .split('|')
-              .map((category) => 'cat:${category.trim()}')
-              .join(' OR '),
+      'search_query':
+          categories.map((category) => 'cat:$category').join(' OR '),
       'start': '$offset',
       'max_results': '$limit',
       'sortBy': 'submittedDate',

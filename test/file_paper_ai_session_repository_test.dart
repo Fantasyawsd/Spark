@@ -53,4 +53,24 @@ void main() {
 
     expect(messages.single.status, PaperAiMessageStatus.complete);
   });
+
+  test('emits changes after save and clear', () async {
+    final repository = FilePaperAiSessionRepository(
+      store: LocalJsonStore(fileName: 'unused.json', file: file),
+    );
+    var events = 0;
+    final subscription = repository.changes.listen((_) => events++);
+
+    await repository.save('paper-1', const [
+      PaperAiMessage(fromUser: true, content: '问题'),
+    ]);
+    await pumpEventQueue();
+    expect(events, 1);
+
+    await repository.clear('paper-1');
+    await pumpEventQueue();
+    expect(events, 2);
+
+    await subscription.cancel();
+  });
 }

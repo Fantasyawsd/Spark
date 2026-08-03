@@ -164,7 +164,7 @@ docs/workstreams/<branch-slug>/
 
 ## 8. Git 与提交约定
 
-- 一个提交只表达一个主要意图，使用 `feat:`、`fix:`、`refactor:`、`test:`、`docs:` 或 `chore:`。
+- 一个提交只表达一个主要意图，使用 `<type>(<scope>):` 格式，如 `feat(chat):`、`fix(papers):`；type 为 `feat`、`fix`、`refactor`、`test`、`docs`、`chore`，scope 为 `lib/src/` 下的模块名；纯文档、全局配置与不改变行为的全局调整可不带 scope。
 - 默认按明确路径暂存；只有独占且已逐项审查的干净工作树才允许整体暂存。
 - 代码、相关测试和功能契约文档应在同一逻辑提交中保持一致。
 - 不提交 build、缓存、日志、临时截图、设备数据、密钥或本机配置。
@@ -181,7 +181,7 @@ docs/workstreams/<branch-slug>/
 
 | 分类 | 文档 | 维护责任 | 状态 |
 | --- | --- | --- | --- |
-| 规范（Skill 事实源） | `AGENTS.md`、`docs/standards/{code-structure,version-control,release-management}.md` | 规则变更由编排者批准；SKILL.md 只引用不复制 | 活跃 |
+| 规范（Skill 事实源） | `AGENTS.md`、`docs/standards/{code-structure,design,version-control,release-management}.md` | 规则变更由编排者批准；SKILL.md 只引用不复制 | 活跃 |
 | 索引 | `docs/README.md` | 随文档增删同步，索引表含状态列 | 活跃 |
 | 开发计划 | `docs/development.md` | 功能开发时由 `/finish` 同步更新 | 活跃 |
 | 过程记录 | `docs/workstreams/<slug>/status.md` | 任务生命周期内由 `/start`→`/finish` 维护；合并后归档保留 | 活跃→归档 |
@@ -200,7 +200,7 @@ docs/workstreams/<branch-slug>/
 
 ## 10. 验证与界面约束
 
-每个任务分支按风险运行定向验证，并在台账中记录。合并前后默认执行完整验证：
+每个任务分支按风险运行定向验证，并在台账中记录。无测试的功能视为不存在——新增业务行为必须伴随可独立验证的测试。合并前后默认执行完整验证：
 
 ```powershell
 .\tool\verify_changed_dart_format.ps1

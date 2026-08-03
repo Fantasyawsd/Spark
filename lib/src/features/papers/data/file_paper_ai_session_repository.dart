@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import '../../../core/storage/local_json_store.dart';
 import '../../../core/storage/versioned_local_json_store.dart';
 import '../../chat/domain/chat_message.dart';
@@ -13,6 +15,10 @@ class FilePaperAiSessionRepository implements ChatSessionRepository {
         );
 
   final VersionedLocalJsonStore _store;
+  final _changes = StreamController<void>.broadcast();
+
+  @override
+  Stream<void> get changes => _changes.stream;
 
   @override
   Future<List<ChatMessage>> load(String paperId) async {
@@ -41,6 +47,7 @@ class FilePaperAiSessionRepository implements ChatSessionRepository {
         };
         return json;
       });
+      _changes.add(null);
     } catch (error) {
       throw ChatSessionPersistenceException('无法保存 AI 对话记录。', error);
     }
@@ -54,6 +61,7 @@ class FilePaperAiSessionRepository implements ChatSessionRepository {
         json.remove(paperId);
         return json;
       });
+      _changes.add(null);
     } catch (error) {
       throw ChatSessionPersistenceException('无法清空 AI 对话记录。', error);
     }
@@ -78,6 +86,7 @@ class FilePaperAiSessionRepository implements ChatSessionRepository {
         }
         return json;
       });
+      _changes.add(null);
     } catch (error) {
       throw ChatSessionPersistenceException('无法更新 AI 会话置顶状态。', error);
     }

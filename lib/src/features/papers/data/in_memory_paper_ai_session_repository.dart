@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import '../../chat/domain/chat_message.dart';
 import '../../chat/domain/chat_session_repository.dart';
 
@@ -5,6 +7,10 @@ class InMemoryPaperAiSessionRepository implements ChatSessionRepository {
   final Map<String, List<ChatMessage>> _sessions = {};
   final Map<String, DateTime> _updatedAt = {};
   final Set<String> _pinned = {};
+  final _changes = StreamController<void>.broadcast();
+
+  @override
+  Stream<void> get changes => _changes.stream;
 
   @override
   Future<List<ChatMessage>> load(String paperId) async =>
@@ -14,6 +20,7 @@ class InMemoryPaperAiSessionRepository implements ChatSessionRepository {
   Future<void> save(String paperId, List<ChatMessage> messages) async {
     _sessions[paperId] = List.from(messages);
     _updatedAt[paperId] = DateTime.now();
+    _changes.add(null);
   }
 
   @override
@@ -21,6 +28,7 @@ class InMemoryPaperAiSessionRepository implements ChatSessionRepository {
     _sessions.remove(paperId);
     _updatedAt.remove(paperId);
     _pinned.remove(paperId);
+    _changes.add(null);
   }
 
   @override
@@ -31,6 +39,7 @@ class InMemoryPaperAiSessionRepository implements ChatSessionRepository {
     } else {
       _pinned.remove(paperId);
     }
+    _changes.add(null);
   }
 
   @override

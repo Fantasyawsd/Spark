@@ -9,7 +9,7 @@
 - 基线提交：`b1a667b`（origin/main）
 - 负责人：Fantasy（编排者）；执行：QoderCN Agent
 - 状态：开发中
-- 最近更新：2026-08-04 01:30
+- 最近更新：2026-08-04 02:20
 
 ## 目标
 
@@ -25,16 +25,16 @@
 
 ## 验收标准
 
-- [ ] `Paper` 领域实体区分 `source`、`venue`、`journalReference`、`affiliation`；单位未知时为空，不以 `arXiv` 或其他占位值填充。
-- [ ] 未知引用数不以 `0` 冒充真实数据（领域层改为可空未知语义）。
-- [ ] arXiv 论文保存并展示 Primary Subject 与全部 Subjects；Subjects 只用于分类索引，不混入内容关键词。
-- [ ] 频道栏为「文字 + 选中下划线」样式，横向滚动；推荐、关注、最新固定存在；「＋」固定在右侧始终可见。
-- [ ] 「＋」打开频道管理页，含「按主题」分组、搜索与已添加状态；首批主题使用中文显示名并保留真实 arXiv 分类编号（cs.AI / cs.CL / cs.CV / cs.LG）。
-- [ ] 用户频道支持添加、删除、排序，并持久化到版本化本地存储；添加或移除后频道栏与本地配置同步更新。
-- [ ] 每个频道独立保存论文位置、加载状态和分页状态，互不污染。
-- [ ] 频道与偏好的持久化结构带 schema 版本与 Migration；旧数据升级测试通过。
-- [ ] 新增业务行为均有可独立运行的单元 / Widget 测试（频道领域模型、偏好迁移、频道栏与管理页关键流程）。
-- [ ] `flutter analyze`、`flutter test`、定向格式检查通过。
+- [x] `Paper` 领域实体区分 `source`、`venue`、`journalReference`、`affiliation`；单位未知时为空，不以 `arXiv` 或其他占位值填充。
+- [x] 未知引用数不以 `0` 冒充真实数据（领域层改为可空未知语义）。
+- [ ] arXiv 论文保存并展示 Primary Subject 与全部 Subjects；Subjects 只用于分类索引，不混入内容关键词。（保存已完成；完整展示随六页阅读结构，属后续步骤）
+- [x] 频道栏为「文字 + 选中下划线」样式，横向滚动；推荐、关注、最新固定存在；「＋」固定在右侧始终可见。
+- [x] 「＋」打开频道管理页，含「按主题」分组、搜索与已添加状态；首批主题使用中文显示名并保留真实 arXiv 分类编号（cs.AI / cs.CL / cs.CV / cs.LG）。
+- [x] 用户频道支持添加、删除、排序，并持久化到版本化本地存储；添加或移除后频道栏与本地配置同步更新。
+- [x] 每个频道独立保存论文位置、加载状态和分页状态，互不污染。
+- [x] 频道与偏好的持久化结构带 schema 版本与 Migration；旧数据升级测试通过。
+- [x] 新增业务行为均有可独立运行的单元 / Widget 测试（频道领域模型、偏好迁移、频道栏与管理页关键流程）。
+- [x] `flutter analyze`、`flutter test`、定向格式检查通过。
 
 ## 写入范围
 
@@ -62,9 +62,9 @@
 
 ## 当前进度
 
-- 已完成：必读文档读取、基线确认、分支与 worktree 创建、台账初始化；步骤 1（`Paper` 元数据语义修正，提交 1b3f8bb）；步骤 2（频道模型、arXiv 主题目录与版本化频道偏好仓储，提交 f2cf901）。
+- 已完成：必读文档读取、基线确认、分支与 worktree 创建、台账初始化；步骤 1（`Paper` 元数据语义修正，提交 1b3f8bb）；步骤 2（频道模型、arXiv 主题目录与版本化频道偏好仓储，提交 f2cf901）；步骤 3（频道栏与频道管理页重构，提交 8a103e6）。
 - 正在进行：无。
-- 下一步：步骤 3（频道栏 UI 与「＋」频道管理页）。
+- 下一步：等待编排者决定——开发验收（Windows 桌面运行）、`/test` 完整门禁或继续后续步骤。
 - 阻塞项：无。
 
 ## 决策记录
@@ -78,14 +78,17 @@
 | 2026-08-04 | `RelatedPaper.venue` 一并改为可空 | 相关论文同样不能用 `arXiv` 冒充 venue | 缓存 schema v2 迁移同时还原相关论文占位 venue |
 | 2026-08-04 | 论文缓存 `papers.catalog-cache` schema 升到 v2，提供单步 1→2 迁移 | 持久化结构变化必须版本化迁移 | 旧缓存可读且还原未知语义；迁移测试覆盖 |
 | 2026-08-04 | 频道偏好新建独立 schema `papers.channel-preferences`（v1），不迁移旧 `extraTopics` 自由文本 | 旧自定义主题为非结构化字符串，不符合「主题必须来自结构化 arXiv 分类目录」要求 | 旧自由文本主题不保留；旧偏好字段留待清理任务处理 |
+| 2026-08-04 | 频道栏完全替换旧主题筛选（推荐页临时筛选），频道即索引；浏览位置按频道键独立保存 | 落实开发计划「主题和会议是独立索引」 | `PaperTopicMatcher`、`paper_category_picker.dart` 删除；旧偏好 `topicIndex` 字段保留未用 |
+| 2026-08-04 | 频道选中态优先读频道偏好 `selectedChannelKey`，为空时回退旧偏好 `primaryCategoryIndex` | 旧安装无频道偏好文件，保持固定频道选择可恢复 | `initializeChannels` 需在 `initializePreferences` 之后执行 |
+| 2026-08-04 | 频道管理页「按会议」区块只展示未开放说明，不提供添加 | 会议频道需真实数据源（步骤 6） | 后续任务接入 `VenueCatalogSource` 后开放 |
 
 ## 验证记录
 
 | 命令或人工检查 | 结果 | 日期 |
 | --- | --- | --- |
 | `flutter analyze` | 通过（No issues found） | 2026-08-04 |
-| `flutter test` | 通过（204/204，步骤 1）；通过（215/215，步骤 2） | 2026-08-04 |
-| `tool/verify_changed_dart_format.ps1` | 通过（步骤 1：26 个文件；步骤 2：35 个文件） | 2026-08-04 |
+| `flutter test` | 通过（步骤 1：204；步骤 2：215；步骤 3：218） | 2026-08-04 |
+| `tool/verify_changed_dart_format.ps1` | 通过（步骤 3：42 个文件） | 2026-08-04 |
 
 ## 审查结论
 
@@ -103,6 +106,7 @@
 | 6e5f87a | docs: add paper-channels workstream ledger | /start 台账初始化 | 仅文档 |
 | 1b3f8bb | feat(papers): split paper metadata semantics and keep unknown data unknown | 步骤 1：元数据语义修正 | analyze 通过；204 测试通过；格式门禁通过 |
 | f2cf901 | feat(papers): add channel model, arXiv subject catalog and channel preferences | 步骤 2：频道模型与偏好持久化 | analyze 通过；215 测试通过；格式门禁通过 |
+| 8a103e6 | feat(papers): rebuild top channel bar and channel manager around structured channels | 步骤 3：频道栏与频道管理页 | analyze 通过；218 测试通过；格式门禁通过 |
 
 ## 交付记录（合并前补齐）
 

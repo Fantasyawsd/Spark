@@ -14,7 +14,7 @@
 ## 2. 项目关键信息
 
 - 产品：面向个人研究者的 Flutter 论文发现、阅读和 ChatPaper 应用。
-- 当前发布版本：`0.1.0+1`，一级页面为论文、ChatPaper、我的。
+- 当前代码版本：`0.0.1+1`（未正式发布），一级页面为论文、ChatPaper、我的。
 - 当前重点方向：论文频道、时间索引、结构化元数据和 PDF AI 解读；持续计划见产品领域文档，不预先绑定发布版本。
 - 第一验收平台：Android 手机；不得启动 Android 模拟器，直接构建 APK。
 - Flutter：`D:\App\flutter`，当前稳定版 Flutter 3.44.8 / Dart 3.12.2；执行前仍应以 `flutter --version` 为准。
@@ -221,7 +221,7 @@ flutter build apk --debug --flavor development --dart-define=PAPERFLOW_ENV=devel
 
 - 不从 Claude、Codex、Shell 历史或其他工具配置中提取 API Key。
 - 不把 DeepSeek Key、签名密钥或 Token 写入源码、文档、日志或 Git。
-- 0.1.0 正式构建使用用户 BYOK；开发环境变量只能用于拒绝 release 的辅助脚本。
+- 正式构建使用用户 BYOK；开发环境变量只能用于拒绝 release 的辅助脚本。
 - 外部论文、AI 和会议接口必须位于数据或基础设施适配器，不进入领域层和 Widget。
 - 引用数、作者单位、会议 Track 等未知数据保持未知，不用占位字符串或 `0` 冒充真实数据。
 

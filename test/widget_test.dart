@@ -70,7 +70,7 @@ void main() {
     expect(find.byKey(const ValueKey('paper-feed')), findsOneWidget);
   });
 
-  testWidgets('0.1.0 shell exposes only papers, AI chat and profile',
+  testWidgets('shell exposes only papers, AI chat and profile',
       (tester) async {
     await tester.binding.setSurfaceSize(const Size(390, 844));
     addTearDown(() => tester.binding.setSurfaceSize(null));

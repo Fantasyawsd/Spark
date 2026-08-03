@@ -22,12 +22,6 @@
 | --- | --- |
 | [任务台账说明](workstreams/README.md)：`docs/workstreams/<slug>/status.md` 的创建与归档规则 | 活跃 |
 
-## 发布归档
-
-| 版本 | 状态 | 入口 |
-| --- | --- | --- |
-| 0.1.0 | 功能代码候选，等待发布门 | [0.1.0 版本说明](releases/0.1.0/README.md) |
-
 ## 维护规则
 
 1. 开发计划统一在 `development.md` 维护，不为每个版本或领域复制一份。

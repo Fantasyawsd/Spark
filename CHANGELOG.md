@@ -15,7 +15,7 @@ PaperFlow 的用户可见变更记录在此文件中。格式遵循 Keep a Chang
 - Android 渠道只通过包名和应用名称区分，版本名称统一来自 `pubspec.yaml`。
 - 发布门拒绝环境错配、版本倒退、未签名 release、轻量 Tag 和未填写发布日期的正式 Tag。
 
-## [0.1.0] - Release candidate
+## [0.0.1]
 
 ### Added
 
@@ -28,6 +28,3 @@ PaperFlow 的用户可见变更记录在此文件中。格式遵循 Keep a Chang
 
 - DeepSeek API Key 使用设备安全存储，公开构建不包含共享 Key。
 - Android release 缺少正式签名配置时拒绝构建。
-
-[Unreleased]: https://github.com/Fantasyawsd/PaperFlowDev/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/Fantasyawsd/PaperFlowDev/releases/tag/v0.1.0

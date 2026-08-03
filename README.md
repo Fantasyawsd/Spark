@@ -2,7 +2,7 @@
 
 PaperFlow 是面向个人研究者的 Flutter 论文发现、阅读和 AI 研究助手。产品希望把论文信息流的快速发现、结构化阅读、中文理解和围绕论文的持续对话整合到一个移动端应用中。
 
-当前版本为 `0.1.0+1`，第一验收平台是 Android 手机。
+当前为未发布开发版本 `0.0.1+1`，第一验收平台是 Android 手机。
 
 ## 当前功能
 
@@ -28,7 +28,7 @@ PaperFlow 是面向个人研究者的 Flutter 论文发现、阅读和 AI 研究
 - DeepSeek API Key 验证、保存、替换和删除。
 - 应用版本、隐私说明和开源许可。
 
-社区、私信、通知、账号、云同步和内容发布不属于 0.1.0 生产范围。后续论文发现与阅读改进见 [开发计划](docs/development.md)。
+社区、私信、通知、账号、云同步和内容发布不属于当前生产范围。后续论文发现与阅读改进见 [开发计划](docs/development.md)。
 
 ## 数据与隐私
 
@@ -67,8 +67,8 @@ PaperFlow 是面向个人研究者的 Flutter 论文发现、阅读和 AI 研究
 |           |-- search/        论文搜索和历史
 |           |-- profile/       我的页面与个人研究数据入口
 |           |-- local_data/    本地数据统计和清理
-|           |-- community/     延期模块，不进入 0.1.0 生产导航
-|           `-- messages/      旧模块，不进入 0.1.0 生产导航
+|           |-- community/     延期模块，不进入生产导航
+|           `-- messages/      旧模块，不进入生产导航
 |-- test/                      单元测试和 Widget 测试
 |-- tool/                      开发、构建和密钥安全辅助脚本
 |-- pubspec.yaml               Flutter 包、资源和版本配置
@@ -88,7 +88,6 @@ presentation -> application -> domain <- data
 - [文档总入口](docs/README.md)
 - [开发计划](docs/development.md)
 - [发布与兼容性管理](docs/standards/release-management.md)
-- [0.1.0 发布资料](docs/releases/0.1.0/README.md)
 - [AI Agent 协作规范](AGENTS.md)
 
 ## 开发环境
@@ -119,4 +118,4 @@ flutter test
 flutter build apk --debug --flavor development --dart-define=PAPERFLOW_ENV=development
 ```
 
-项目不使用 Android 模拟器作为日常验收方式。Android 正式签名、真机验收和发布门见 [0.1.0 版本说明](docs/releases/0.1.0/README.md)。
+项目不使用 Android 模拟器作为日常验收方式。Android 正式签名、真机验收和发布门见 [发布与兼容性管理](docs/standards/release-management.md)。

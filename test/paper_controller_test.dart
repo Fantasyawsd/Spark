@@ -335,6 +335,44 @@ void main() {
       );
     });
 
+    test('switching back to loaded channels does not refetch', () async {
+      final catalog = _RecordingPaperCatalogRepository();
+      final controller = PaperController(
+        const ArxivSeedRepository(),
+        catalogRepository: catalog,
+      );
+      addTearDown(controller.dispose);
+
+      await controller.initialize();
+      expect(catalog.queries, hasLength(1));
+
+      await controller.saveUserChannels(const [
+        UserPaperChannel(
+          kind: PaperChannelKind.subject,
+          id: 'cs.CL',
+          displayName: '计算与语言',
+        ),
+      ]);
+      controller.selectChannel(3);
+      await controller.feed.flushCatalogOperations();
+      expect(catalog.queries, hasLength(2));
+
+      controller.selectChannel(0);
+      controller.selectChannel(3);
+      await controller.feed.flushCatalogOperations();
+      expect(catalog.queries, hasLength(2));
+
+      controller.selectChannel(2);
+      await controller.feed.flushCatalogOperations();
+      expect(catalog.queries, hasLength(3));
+
+      controller.selectChannel(0);
+      controller.selectChannel(3);
+      controller.selectChannel(2);
+      await controller.feed.flushCatalogOperations();
+      expect(catalog.queries, hasLength(3));
+    });
+
     test(
         'channel refresh keeps previously loaded papers available to following',
         () async {

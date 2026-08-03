@@ -50,6 +50,7 @@ class PaperFeedController extends ChangeNotifier {
   String? _preferenceError;
   String? _channelPreferenceError;
   final Map<String, int> _positions = {};
+  final Set<String> _loadedChannelKeys = {};
   List<UserPaperChannel> _userChannels = const [];
   int _channelIndex = 0;
   int _legacyPrimaryIndex = 0;
@@ -168,7 +169,7 @@ class PaperFeedController extends ChangeNotifier {
       if (!_disposed &&
           queryRevision != _catalogQueryRevision &&
           _channelMode != PaperFeedMode.following) {
-        unawaited(refreshCatalog());
+        _ensureCurrentChannelLoaded();
       }
     }
   }
@@ -294,8 +295,15 @@ class PaperFeedController extends ChangeNotifier {
     _queueChannelPreferencePersistence();
     _catalogQueryRevision++;
     if (_channelMode != PaperFeedMode.following) {
-      unawaited(refreshCatalog());
+      _ensureCurrentChannelLoaded();
     }
+  }
+
+  /// 频道首次进入时按需拉取；已加载的频道不重复请求，
+  /// 强制刷新只由用户下拉触发。
+  void _ensureCurrentChannelLoaded() {
+    if (_loadedChannelKeys.contains(currentChannelKey)) return;
+    unawaited(refreshCatalog(forceRefresh: false));
   }
 
   Future<void> saveUserChannels(List<UserPaperChannel> channels) async {
@@ -319,7 +327,7 @@ class PaperFeedController extends ChangeNotifier {
     _queueChannelPreferencePersistence();
     _catalogQueryRevision++;
     if (_channelMode != PaperFeedMode.following) {
-      unawaited(refreshCatalog());
+      _ensureCurrentChannelLoaded();
     }
   }
 
@@ -376,6 +384,9 @@ class PaperFeedController extends ChangeNotifier {
   }
 
   void _applyCatalogPage(PaperPage page, {required bool append}) {
+    if (!append) {
+      _loadedChannelKeys.add(currentChannelKey);
+    }
     final currentPaperId = _visiblePapers.isEmpty
         ? null
         : _visiblePapers[_currentPaperIndex.clamp(
@@ -480,6 +491,7 @@ class PaperFeedController extends ChangeNotifier {
     await flushPreferenceWrites();
     await flushChannelPreferenceWrites();
     _positions.clear();
+    _loadedChannelKeys.clear();
     _userChannels = const [];
     _channelIndex = 0;
     _legacyPrimaryIndex = 0;

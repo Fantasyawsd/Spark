@@ -101,7 +101,7 @@
 - 建议：
   3. code-structure.md §2.9「core 或 shared」与 2.13 顶层三目录不一致（实际无 shared 目录），统一为「core」。
   4. AGENTS.md §8 与 version-control.md §6 的 scope 豁免措辞可统一。
-- 结论：需修复（修复缺陷 1、2 后即可合并）
+- 结论：需修复 → 已复核：缺陷 1、2 与建议 3、4 在 `2d76fbe` 修复，复核无新问题，结论更新为**可合并**
 
 ## 检查点与提交
 
@@ -111,12 +111,17 @@
 | e0e96fe | docs(standards): add design spec | 设计规范 | 链接检查通过 |
 | 78926f1 | docs: scope conventional commits and add testing philosophy | 提交规范 | 引用检查通过 |
 | 830b141 | docs: add standards revamp workstream ledger | 台账 | — |
+| 2d76fbe | docs: fix review findings on standards revamp | review 修复 | diff --check 通过 |
 
-## 交付记录（合并前补齐）
+## 交付记录
 
 ### 交付摘要
 
-（合并前补齐）
+三项 cherry-studio 参考点已落地为 PaperFlow 规范文档改进，与原计划一致：
+① `code-structure.md` 新增顶层目录 charter、闭合顶层规则、模块公共入口与放置反模式（2.13–2.16）；
+② `docs/standards/design.md` 新建（设计哲学、颜色 token、语义色边界、检查清单）；
+③ 提交规范改为 `<type>(<scope>):`（`AGENTS.md` §8 与 `version-control.md` §6），并写入「无测试视为不存在」。
+review 缺陷 1、2 与建议 3、4 全部修复。
 
 ### 实际变更
 
@@ -124,23 +129,25 @@
 - 数据与基础设施：无
 - 界面与交互：无
 - 测试与工具：无
-- 文档：`code-structure.md` 增强、`design.md` 新建、`AGENTS.md` 与 `version-control.md` 提交规范、索引同步
+- 文档：`code-structure.md` +46 行（2.13–2.16）；`design.md` 新建 44 行；`AGENTS.md` 3 处；`version-control.md` §6；`docs/README.md` 索引；`develop/SKILL.md` 示例同步
 
 ### 兼容性与迁移
 
 - 本地数据迁移：无
 - API 或领域契约变化：无
-- 旧版本兼容性：无影响
+- 旧版本兼容性：无影响（纯文档改动，不触碰代码）
 
 ### 已知风险与回滚
 
-- 已知风险：设计规范若写得太详细会超出 solo 维护成本；控制在简版（原则 + 规则，不写组件级规格）。
-- 回滚方式：说明需要 revert 的提交及数据影响。
+- 已知风险：① `design.md` 与新代码的一致性待定——编排者在 main 上新增了 `accent/popover/foregroundTertiary` 等主题 token，合并后 `design.md` §2.1 中性层级列表需补充（本次任务不处理 main 上的改动）；② 历史硬编码 `Color(0x...)`（约 68 处）逐步迁移，迁移须为独立提交。
+- 回滚方式：revert 提交 `7828c8f` 至 `2d76fbe`（按依赖逆序），均为纯文档改动，无数据影响。
 
 ### 文档更新建议
 
-- 需要编排者更新的开发计划；若关联发布，再列出发布资料更新建议。
+- 需要编排者更新的开发计划：无（不涉及产品方向）。
+- `design.md` 与 `cherry-studio-ui.md`（编排者 main 上新建）的关系待后续理清（可合并或互引）。
 
 ### 未完成与后续工作
 
-- 无；如有，写明后续方向和依赖。
+- 编排者 main 上的 Cherry UI/UX 代码落地（`paperflow_design_tokens` / `cherry_motion` / `cherry_primitives` 等）与 `cherry-studio-ui.md` 不在本任务范围，由其自行提交处理。
+- `design.md` 中性层级列表需随 main 新 token 补充。

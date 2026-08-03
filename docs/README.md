@@ -9,7 +9,7 @@
 | 文档 | 维护状态 |
 | --- | --- |
 | [AI Agent 开发规范](../AGENTS.md)：单人编排、skill 工作流、提交与验证约束 | 活跃 |
-| [开发计划](development.md)：产品边界、优先级和各领域（论文 / ChatPaper / 我的）现状与方向 | 活跃 |
+| [开发计划](development.md)：产品边界、优先级和各领域（论文 / ChatPaper / 我的）及扩展功能（社区 / 私信）现状与方向 | 活跃 |
 | [代码结构原则](standards/code-structure.md)：所有开发必须遵守的架构与代码质量约束 | 活跃 |
 | [Git 与任务集成管理](standards/version-control.md)：分支、worktree、提交、验证、回滚和集成规则 | 活跃 |
 | [发布与兼容性管理](standards/release-management.md)：五层版本、环境渠道、数据/API 兼容和 Feature Flag 规则 | 活跃 |

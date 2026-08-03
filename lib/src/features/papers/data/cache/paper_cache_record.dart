@@ -1,16 +1,20 @@
 class PaperCacheRecord {
   const PaperCacheRecord({
     required this.id,
-    required this.venue,
     required this.title,
     required this.authors,
-    required this.firstAffiliation,
-    required this.topics,
+    required this.affiliations,
+    required this.contentKeywords,
+    required this.subjects,
+    this.primarySubject,
+    this.venue,
+    this.journalReference,
+    this.comment,
     required this.abstractMarkdown,
     required this.chineseAbstractMarkdown,
     required this.relatedPapers,
     required this.readMinutes,
-    required this.citations,
+    this.citations,
     required this.likes,
     required this.comments,
     required this.saves,
@@ -27,16 +31,20 @@ class PaperCacheRecord {
   });
 
   final String id;
-  final String venue;
   final String title;
   final List<String> authors;
-  final String firstAffiliation;
-  final List<String> topics;
+  final List<String> affiliations;
+  final List<String> contentKeywords;
+  final List<String> subjects;
+  final String? primarySubject;
+  final String? venue;
+  final String? journalReference;
+  final String? comment;
   final String abstractMarkdown;
   final String chineseAbstractMarkdown;
   final List<RelatedPaperCacheRecord> relatedPapers;
   final int readMinutes;
-  final int citations;
+  final int? citations;
   final int likes;
   final int comments;
   final int saves;
@@ -56,13 +64,13 @@ class RelatedPaperCacheRecord {
   const RelatedPaperCacheRecord({
     required this.id,
     required this.title,
-    required this.venue,
+    this.venue,
     required this.relation,
   });
 
   final String id;
   final String title;
-  final String venue;
+  final String? venue;
   final String relation;
 }
 

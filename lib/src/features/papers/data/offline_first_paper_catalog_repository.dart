@@ -163,9 +163,11 @@ class OfflineFirstPaperCatalogRepository implements PaperCatalogRepository {
       final text = [
         paper.title,
         paper.content.originalAbstractMarkdown,
-        paper.venue,
+        paper.venue ?? '',
+        paper.journalReference ?? '',
         ...paper.authors,
-        ...paper.topics,
+        ...paper.contentKeywords,
+        ...paper.subjects,
       ].join(' ').toLowerCase();
       return text.contains(normalized);
     }).toList(growable: false);
@@ -201,8 +203,13 @@ class OfflineFirstPaperCatalogRepository implements PaperCatalogRepository {
       return papers;
     }
     return papers.where((paper) {
-      final text =
-          [paper.title, paper.venue, ...paper.topics].join(' ').toLowerCase();
+      final text = [
+        paper.title,
+        paper.venue ?? '',
+        paper.journalReference ?? '',
+        ...paper.contentKeywords,
+        ...paper.subjects,
+      ].join(' ').toLowerCase();
       return text.contains(normalized.toLowerCase());
     }).toList(growable: false);
   }

@@ -6,10 +6,13 @@ class PaperChatContext {
   const PaperChatContext._();
 
   static ChatContext fromPaper(Paper paper) {
+    final venue = paper.venue ?? paper.journalReference;
+    final subtitle =
+        venue == null ? paper.firstAuthor : '${paper.firstAuthor} · $venue';
     return ChatContext(
       id: paper.id,
       title: paper.title,
-      subtitle: '${paper.firstAuthor} · ${paper.venue}',
+      subtitle: subtitle,
       systemPrompt: PaperAiPromptBuilder.systemPrompt(paper),
       webSearchSystemPrompt: PaperAiPromptBuilder.systemPrompt(
         paper,

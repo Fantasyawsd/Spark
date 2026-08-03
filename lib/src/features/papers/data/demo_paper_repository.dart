@@ -23,8 +23,8 @@ final demoPapers = <Paper>[
       'Lu Wang',
       'Weizhu Chen',
     ],
-    firstAffiliation: 'Microsoft Research',
-    topics: [
+    affiliations: const ['Microsoft Research'],
+    contentKeywords: [
       'Large Language Models',
       'Parameter Efficient Fine-tuning',
       'PEFT',
@@ -73,8 +73,12 @@ Instead of updating every model parameter, LoRA injects trainable low-rank matri
     venue: 'NeurIPS 2024',
     title: 'Mamba: Linear-Time Sequence Modeling with Selective State Spaces',
     authors: const ['Albert Gu', 'Tri Dao'],
-    firstAffiliation: 'Carnegie Mellon University',
-    topics: ['State Space Models', 'Efficient Architecture', 'Long Context'],
+    affiliations: const ['Carnegie Mellon University'],
+    contentKeywords: [
+      'State Space Models',
+      'Efficient Architecture',
+      'Long Context'
+    ],
     abstractText:
         'Mamba introduces a selective state space architecture that scales linearly with sequence length. The model combines hardware-aware parallel algorithms with input-dependent state transitions, delivering strong language modeling quality without attention or key-value caches.',
     chineseAbstractMarkdown:
@@ -106,8 +110,12 @@ Instead of updating every model parameter, LoRA injects trainable low-rank matri
     venue: 'ACL 2025',
     title: 'Rethinking Retrieval for Long-Context Language Models',
     authors: const ['Mina Park', 'Leo Chen', 'Ananya Rao', 'Daniel Kim'],
-    firstAffiliation: 'Stanford University',
-    topics: ['Retrieval-Augmented Generation', 'Long Context', 'Evaluation'],
+    affiliations: const ['Stanford University'],
+    contentKeywords: [
+      'Retrieval-Augmented Generation',
+      'Long Context',
+      'Evaluation'
+    ],
     abstractText:
         'This work studies when retrieval still helps language models with very long context windows. A controlled benchmark reveals that selective retrieval improves factual consistency, lowers inference cost, and remains complementary to long-context reasoning.',
     chineseAbstractMarkdown:
@@ -146,8 +154,8 @@ Instead of updating every model parameter, LoRA injects trainable low-rank matri
       'Ari Holtzman',
       'Luke Zettlemoyer',
     ],
-    firstAffiliation: 'University of Washington',
-    topics: ['Quantization', 'Efficient Fine-tuning', 'LLM'],
+    affiliations: const ['University of Washington'],
+    contentKeywords: ['Quantization', 'Efficient Fine-tuning', 'LLM'],
     abstractText:
         'QLoRA reduces memory usage enough to fine-tune a 65B parameter model on a single GPU while preserving full fine-tuning task performance.',
     chineseAbstractMarkdown:
@@ -178,8 +186,8 @@ Instead of updating every model parameter, LoRA injects trainable low-rank matri
       'Nikhila Ravi',
       'Hanzi Mao',
     ],
-    firstAffiliation: 'Meta AI Research',
-    topics: ['Computer Vision', 'Foundation Models', 'Segmentation'],
+    affiliations: const ['Meta AI Research'],
+    contentKeywords: ['Computer Vision', 'Foundation Models', 'Segmentation'],
     abstractText:
         'The Segment Anything project introduces a promptable segmentation model and a large-scale mask dataset for general-purpose image segmentation.',
     chineseAbstractMarkdown:
@@ -204,8 +212,8 @@ Instead of updating every model parameter, LoRA injects trainable low-rank matri
       'Alexander Wettig',
       'Kilian Lieret',
     ],
-    firstAffiliation: 'Princeton University',
-    topics: ['Agents', 'Software Engineering', 'Tool Use'],
+    affiliations: const ['Princeton University'],
+    contentKeywords: ['Agents', 'Software Engineering', 'Tool Use'],
     abstractText:
         'SWE-agent studies agent-computer interfaces that allow language models to navigate repositories, edit code, and resolve real GitHub issues.',
     chineseAbstractMarkdown:

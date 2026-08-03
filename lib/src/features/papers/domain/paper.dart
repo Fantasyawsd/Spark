@@ -1,16 +1,20 @@
 class Paper {
   Paper({
     required this.id,
-    required this.venue,
     required this.title,
     required List<String> authors,
-    required this.firstAffiliation,
-    required List<String> topics,
+    List<String> affiliations = const [],
+    List<String> contentKeywords = const [],
+    List<String> subjects = const [],
+    this.primarySubject,
+    this.venue,
+    this.journalReference,
+    this.comment,
     required String abstractText,
     required String chineseAbstractMarkdown,
     List<RelatedPaper> relatedPapers = const [],
     required this.readMinutes,
-    int citations = 0,
+    int? citations,
     int likes = 0,
     int comments = 0,
     int saves = 0,
@@ -24,7 +28,9 @@ class Paper {
     this.license,
     this.source = 'demo',
   })  : authors = List.unmodifiable(authors),
-        topics = List.unmodifiable(topics),
+        affiliations = List.unmodifiable(affiliations),
+        contentKeywords = List.unmodifiable(contentKeywords),
+        subjects = List.unmodifiable(subjects),
         relatedPapers = List.unmodifiable(relatedPapers),
         content = PaperContent(
           originalAbstractMarkdown: abstractText,
@@ -39,11 +45,15 @@ class Paper {
         );
 
   final String id;
-  final String venue;
   final String title;
   final List<String> authors;
-  final String firstAffiliation;
-  final List<String> topics;
+  final List<String> affiliations;
+  final List<String> contentKeywords;
+  final List<String> subjects;
+  final String? primarySubject;
+  final String? venue;
+  final String? journalReference;
+  final String? comment;
   final PaperContent content;
   final List<RelatedPaper> relatedPapers;
   final int readMinutes;
@@ -61,6 +71,13 @@ class Paper {
         (author) => author.trim().isNotEmpty,
         orElse: () => id,
       );
+
+  String? get firstAffiliation {
+    for (final affiliation in affiliations) {
+      if (affiliation.trim().isNotEmpty) return affiliation;
+    }
+    return null;
+  }
 }
 
 class PaperContent {
@@ -75,47 +92,32 @@ class PaperContent {
 
 class PaperMetrics {
   const PaperMetrics({
-    this.citations = 0,
+    this.citations,
     this.likes = 0,
     this.comments = 0,
     this.saves = 0,
     this.shares = 0,
   });
 
-  final int citations;
+  /// 引用数；`null` 表示未知，不使用 0 冒充真实数据。
+  final int? citations;
   final int likes;
   final int comments;
   final int saves;
   final int shares;
-
-  PaperMetrics copyWith({
-    int? citations,
-    int? likes,
-    int? comments,
-    int? saves,
-    int? shares,
-  }) {
-    return PaperMetrics(
-      citations: citations ?? this.citations,
-      likes: likes ?? this.likes,
-      comments: comments ?? this.comments,
-      saves: saves ?? this.saves,
-      shares: shares ?? this.shares,
-    );
-  }
 }
 
 class RelatedPaper {
   const RelatedPaper({
     required this.id,
     required this.title,
-    required this.venue,
+    this.venue,
     required this.relation,
   });
 
   final String id;
   final String title;
-  final String venue;
+  final String? venue;
   final String relation;
 }
 

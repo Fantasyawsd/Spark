@@ -92,7 +92,9 @@ class _RelatedPaperRow extends StatelessWidget {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    '${paper.venue} · ${paper.relation}',
+                    paper.venue == null
+                        ? paper.relation
+                        : '${paper.venue} · ${paper.relation}',
                     style: const TextStyle(
                       color: PaperFlowColors.muted,
                       fontSize: 11.5,

@@ -1,8 +1,64 @@
 import 'package:http/http.dart' as http;
 import 'package:paperflow/paperflow.dart';
+import 'package:paperflow/src/features/papers/data/providers/arxiv/arxiv_atom_dto.dart';
+import 'package:paperflow/src/features/papers/data/providers/arxiv/arxiv_atom_mapper.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  group('ArxivAtomMapper', () {
+    test('keeps unknown metadata unknown instead of using placeholders', () {
+      final paper = const ArxivAtomMapper().toDomain(
+        ArxivAtomPaperDto(
+          id: 'arXiv:2401.00001',
+          title: 'A paper',
+          summary: 'An abstract.',
+          authors: const ['Alice Smith'],
+          affiliations: const [],
+          categories: const ['cs.LG'],
+          primaryCategory: 'cs.AI',
+          publishedAt: DateTime.utc(2024, 1, 1),
+          updatedAt: DateTime.utc(2024, 1, 2),
+          paperUrl: 'https://arxiv.org/abs/2401.00001',
+          pdfUrl: 'https://arxiv.org/pdf/2401.00001',
+          comment: '12 pages',
+        ),
+      );
+
+      expect(paper.venue, isNull);
+      expect(paper.journalReference, isNull);
+      expect(paper.affiliations, isEmpty);
+      expect(paper.firstAffiliation, isNull);
+      expect(paper.metrics.citations, isNull);
+      expect(paper.subjects, containsAll(['cs.AI', 'cs.LG']));
+      expect(paper.primarySubject, 'cs.AI');
+      expect(paper.contentKeywords, isEmpty);
+      expect(paper.comment, '12 pages');
+      expect(paper.source, 'arxiv');
+    });
+
+    test('keeps journal reference separate from venue', () {
+      final paper = const ArxivAtomMapper().toDomain(
+        ArxivAtomPaperDto(
+          id: '2401.00002',
+          title: 'Published paper',
+          summary: 'An abstract.',
+          authors: const ['Bob Jones'],
+          affiliations: const ['Research Lab', ''],
+          categories: const ['cs.CL'],
+          publishedAt: DateTime.utc(2024, 1, 1),
+          updatedAt: DateTime.utc(2024, 1, 1),
+          paperUrl: 'https://arxiv.org/abs/2401.00002',
+          pdfUrl: 'https://arxiv.org/pdf/2401.00002',
+          journalReference: 'Nature 615 (2024)',
+        ),
+      );
+
+      expect(paper.venue, isNull);
+      expect(paper.journalReference, 'Nature 615 (2024)');
+      expect(paper.affiliations, ['Research Lab']);
+    });
+  });
+
   group('ArxivJsonlImporter', () {
     test('filters target categories and maps snapshot fields', () async {
       const lines = '''

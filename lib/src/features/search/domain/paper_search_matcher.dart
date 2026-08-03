@@ -19,9 +19,11 @@ class PaperSearchMatcher {
       final searchable = [
         paper.title,
         paper.authors.join(' '),
-        paper.venue,
-        paper.firstAffiliation,
-        ...paper.topics,
+        paper.venue ?? '',
+        paper.journalReference ?? '',
+        paper.firstAffiliation ?? '',
+        ...paper.contentKeywords,
+        ...paper.subjects,
       ].join(' ').toLowerCase();
       return terms.every(searchable.contains);
     }).toList();

@@ -39,7 +39,7 @@ class ArxivSeedRepository implements PaperRepository {
       return RelatedPaper(
         id: candidate.metadata.normalizedId,
         title: candidate.metadata.title,
-        venue: candidate.metadata.journalReference ?? 'arXiv',
+        venue: candidate.metadata.journalReference,
         relation: shared.isEmpty ? '同属近期研究' : '共同领域 ${shared.join(' / ')}',
       );
     }).toList(growable: false);

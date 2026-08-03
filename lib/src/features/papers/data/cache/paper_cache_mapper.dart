@@ -7,11 +7,15 @@ class PaperCacheMapper {
   PaperCacheRecord toRecord(Paper paper, {required DateTime cachedAt}) {
     return PaperCacheRecord(
       id: paper.id,
-      venue: paper.venue,
       title: paper.title,
       authors: paper.authors,
-      firstAffiliation: paper.firstAffiliation,
-      topics: paper.topics,
+      affiliations: paper.affiliations,
+      contentKeywords: paper.contentKeywords,
+      subjects: paper.subjects,
+      primarySubject: paper.primarySubject,
+      venue: paper.venue,
+      journalReference: paper.journalReference,
+      comment: paper.comment,
       abstractMarkdown: paper.content.originalAbstractMarkdown,
       chineseAbstractMarkdown: paper.content.chineseAbstractMarkdown,
       relatedPapers: paper.relatedPapers
@@ -45,11 +49,15 @@ class PaperCacheMapper {
   Paper toDomain(PaperCacheRecord record) {
     return Paper(
       id: record.id,
-      venue: record.venue,
       title: record.title,
       authors: record.authors,
-      firstAffiliation: record.firstAffiliation,
-      topics: record.topics,
+      affiliations: record.affiliations,
+      contentKeywords: record.contentKeywords,
+      subjects: record.subjects,
+      primarySubject: record.primarySubject,
+      venue: record.venue,
+      journalReference: record.journalReference,
+      comment: record.comment,
       abstractText: record.abstractMarkdown,
       chineseAbstractMarkdown: record.chineseAbstractMarkdown,
       relatedPapers: record.relatedPapers
@@ -136,11 +144,15 @@ class PaperCacheMapper {
   static Map<String, dynamic> _paperToJson(PaperCacheRecord record) {
     return {
       'id': record.id,
-      'venue': record.venue,
       'title': record.title,
       'authors': record.authors,
-      'firstAffiliation': record.firstAffiliation,
-      'topics': record.topics,
+      'affiliations': record.affiliations,
+      'contentKeywords': record.contentKeywords,
+      'subjects': record.subjects,
+      'primarySubject': record.primarySubject,
+      'venue': record.venue,
+      'journalReference': record.journalReference,
+      'comment': record.comment,
       'abstractMarkdown': record.abstractMarkdown,
       'chineseAbstractMarkdown': record.chineseAbstractMarkdown,
       'relatedPapers': record.relatedPapers
@@ -174,11 +186,15 @@ class PaperCacheMapper {
   static PaperCacheRecord _paperFromJson(Map<String, dynamic> json) {
     return PaperCacheRecord(
       id: _requiredString(json, 'id'),
-      venue: _requiredString(json, 'venue'),
       title: _requiredString(json, 'title'),
       authors: _stringList(json, 'authors'),
-      firstAffiliation: _requiredString(json, 'firstAffiliation'),
-      topics: _stringList(json, 'topics'),
+      affiliations: _stringList(json, 'affiliations'),
+      contentKeywords: _stringList(json, 'contentKeywords'),
+      subjects: _stringList(json, 'subjects'),
+      primarySubject: _optionalString(json, 'primarySubject'),
+      venue: _optionalString(json, 'venue'),
+      journalReference: _optionalString(json, 'journalReference'),
+      comment: _optionalString(json, 'comment'),
       abstractMarkdown: _requiredString(json, 'abstractMarkdown'),
       chineseAbstractMarkdown: _requiredString(json, 'chineseAbstractMarkdown'),
       relatedPapers: _list(json, 'relatedPapers').map((value) {
@@ -186,12 +202,12 @@ class PaperCacheMapper {
         return RelatedPaperCacheRecord(
           id: _requiredString(related, 'id'),
           title: _requiredString(related, 'title'),
-          venue: _requiredString(related, 'venue'),
+          venue: _optionalString(related, 'venue'),
           relation: _requiredString(related, 'relation'),
         );
       }).toList(growable: false),
       readMinutes: _requiredInt(json, 'readMinutes'),
-      citations: _requiredInt(json, 'citations'),
+      citations: _optionalInt(json, 'citations'),
       likes: _requiredInt(json, 'likes'),
       comments: _requiredInt(json, 'comments'),
       saves: _requiredInt(json, 'saves'),
@@ -276,6 +292,13 @@ class PaperCacheMapper {
   static int _requiredInt(Map<String, dynamic> json, String key) {
     final value = json[key];
     if (value is! int) throw FormatException('论文缓存字段 $key 必须是整数。');
+    return value;
+  }
+
+  static int? _optionalInt(Map<String, dynamic> json, String key) {
+    final value = json[key];
+    if (value == null) return null;
+    if (value is! int) throw FormatException('论文缓存字段 $key 必须是整数或 null。');
     return value;
   }
 

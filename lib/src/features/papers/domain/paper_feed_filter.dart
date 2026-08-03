@@ -67,8 +67,10 @@ class PaperTopicMatcher {
     final searchable = [
       paper.title,
       paper.content.originalAbstractMarkdown,
-      paper.venue,
-      ...paper.topics,
+      paper.venue ?? '',
+      paper.journalReference ?? '',
+      ...paper.contentKeywords,
+      ...paper.subjects,
     ].join(' ').toLowerCase();
     final terms = _aliases[topic] ?? [normalizedTopic];
     return terms.any(searchable.contains);

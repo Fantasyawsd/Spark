@@ -276,7 +276,7 @@ class _PaperReaderCardState extends State<PaperReaderCard> {
       return PaperRelatedPapers(
         key: ValueKey('${paper.id}-related-papers'),
         papers: paper.relatedPapers,
-        topics: paper.topics,
+        topics: paper.contentKeywords,
         onOpen: widget.onOpenRelatedPaper,
       );
     }

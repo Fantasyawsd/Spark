@@ -7,17 +7,21 @@ class ArxivAtomMapper {
 
   Paper toDomain(ArxivAtomPaperDto dto) {
     final id = normalizeArxivId(dto.id);
-    final topics = <String>{
+    final subjects = <String>{
       ...dto.categories,
       if (dto.primaryCategory case final category?) category,
     }.toList(growable: false);
     return Paper(
       id: id,
-      venue: dto.journalReference ?? 'arXiv',
       title: dto.title,
       authors: dto.authors,
-      firstAffiliation: dto.affiliations.firstOrNull ?? 'arXiv',
-      topics: topics.isEmpty ? const ['arXiv'] : topics,
+      affiliations: dto.affiliations
+          .where((affiliation) => affiliation.trim().isNotEmpty)
+          .toList(growable: false),
+      subjects: subjects,
+      primarySubject: dto.primaryCategory,
+      journalReference: dto.journalReference,
+      comment: dto.comment,
       abstractText: dto.summary,
       chineseAbstractMarkdown: '中文摘要尚未生成。',
       readMinutes: _estimateReadMinutes(dto.summary),
@@ -40,8 +44,4 @@ class ArxivAtomMapper {
         .length;
     return (words / 180).ceil().clamp(1, 60);
   }
-}
-
-extension _FirstOrNull<T> on Iterable<T> {
-  T? get firstOrNull => isEmpty ? null : first;
 }

@@ -104,6 +104,82 @@ void main() {
       throwsA(isA<LocalDataCorruptionException>()),
     );
   });
+
+  test('migrates v1 snapshots to the split metadata schema', () async {
+    await file.writeAsString('''
+{
+  "_format": "paperflow.local-json",
+  "formatVersion": 1,
+  "schema": "papers.catalog-cache",
+  "schemaVersion": 1,
+  "revision": 1,
+  "payload": {
+    "papers": {
+      "2401.00001": {
+        "id": "2401.00001",
+        "venue": "arXiv",
+        "title": "Legacy arXiv paper",
+        "authors": ["Alice"],
+        "firstAffiliation": "arXiv",
+        "topics": ["cs.AI", "cs.LG"],
+        "abstractMarkdown": "Abstract.",
+        "chineseAbstractMarkdown": "摘要。",
+        "relatedPapers": [
+          {"id": "2401.00002", "title": "Related", "venue": "arXiv", "relation": "共同领域 cs.AI"}
+        ],
+        "readMinutes": 2,
+        "citations": 0,
+        "likes": 0,
+        "comments": 0,
+        "saves": 0,
+        "shares": 0,
+        "source": "arxiv",
+        "cachedAt": "2024-03-01T00:00:00.000Z"
+      },
+      "lora-2021": {
+        "id": "lora-2021",
+        "venue": "ICLR 2024",
+        "title": "Legacy conference paper",
+        "authors": ["Bob"],
+        "firstAffiliation": "Research Lab",
+        "topics": ["PEFT"],
+        "abstractMarkdown": "Abstract.",
+        "chineseAbstractMarkdown": "摘要。",
+        "relatedPapers": [],
+        "readMinutes": 3,
+        "citations": 120,
+        "likes": 0,
+        "comments": 0,
+        "saves": 0,
+        "shares": 0,
+        "source": "demo",
+        "cachedAt": "2024-03-01T00:00:00.000Z"
+      }
+    },
+    "pages": {}
+  }
+}
+''');
+
+    final migratedArxiv = await store.readPaper('2401.00001');
+    expect(migratedArxiv, isNotNull);
+    expect(migratedArxiv!.venue, isNull);
+    expect(migratedArxiv.journalReference, isNull);
+    expect(migratedArxiv.affiliations, isEmpty);
+    expect(migratedArxiv.subjects, ['cs.AI', 'cs.LG']);
+    expect(migratedArxiv.contentKeywords, isEmpty);
+    expect(migratedArxiv.citations, isNull);
+    expect(migratedArxiv.relatedPapers.single.venue, isNull);
+
+    final migratedDemo = await store.readPaper('lora-2021');
+    expect(migratedDemo, isNotNull);
+    expect(migratedDemo!.venue, 'ICLR 2024');
+    expect(migratedDemo.journalReference, isNull);
+    expect(migratedDemo.affiliations, ['Research Lab']);
+    expect(migratedDemo.subjects, isEmpty);
+    expect(migratedDemo.contentKeywords, ['PEFT']);
+    expect(migratedDemo.citations, 120);
+  });
 }
 
 Paper _paper() {
@@ -112,8 +188,8 @@ Paper _paper() {
     venue: 'ICLR 2024',
     title: 'Cached paper',
     authors: const ['Alice Smith', 'Bob Jones'],
-    firstAffiliation: 'PaperFlow Lab',
-    topics: const ['cs.AI', 'cs.LG'],
+    affiliations: const ['PaperFlow Lab'],
+    subjects: const ['cs.AI', 'cs.LG'],
     abstractText: r'Equation $x^2$.',
     chineseAbstractMarkdown: '中文摘要。',
     relatedPapers: const [

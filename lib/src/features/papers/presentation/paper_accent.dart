@@ -12,7 +12,7 @@ extension PaperAccentForRecord on Paper {
         'qlora-2023' => PaperAccent.pink,
         'segment-anything-2023' => PaperAccent.azure,
         'swe-agent-2024' => PaperAccent.orange,
-        _ => _accentForTopic(topics),
+        _ => _accentForTopic([...contentKeywords, ...subjects]),
       };
 }
 

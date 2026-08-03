@@ -55,7 +55,7 @@ void main() {
 
     expect(find.text('关注作者'), findsOneWidget);
     expect(find.textContaining('· arXiv'), findsNothing);
-    expect(find.textContaining('被引 0'), findsOneWidget);
+    expect(find.textContaining('被引'), findsNothing);
     expect(find.byKey(const ValueKey('paper-open-link')), findsOneWidget);
     expect(find.byKey(const ValueKey('paper-ai-entry')), findsOneWidget);
     expect(
@@ -504,7 +504,7 @@ void main() {
 
     expect(tester.getSize(find.byKey(const ValueKey('paper-feed'))).height,
         greaterThan(700));
-    expect(find.textContaining('被引 0'), findsOneWidget);
+    expect(find.textContaining('被引'), findsNothing);
     expect(find.text('中文解读'), findsWidgets);
 
     await tester.tap(find.text('论文 ⇄'));
@@ -1138,11 +1138,10 @@ class _GridPagedPaperCatalogRepository implements PaperCatalogRepository {
 
 Paper _gridPaper(int index) => Paper(
       id: 'grid-paper-$index',
-      venue: 'arXiv',
       title: 'Grid paper $index with a sufficiently descriptive title',
       authors: const ['Researcher'],
-      firstAffiliation: 'PaperFlow Lab',
-      topics: const ['cs.AI'],
+      affiliations: const ['PaperFlow Lab'],
+      subjects: const ['cs.AI'],
       abstractText: 'Abstract for grid paper $index.',
       chineseAbstractMarkdown: '',
       readMinutes: 3,
@@ -1252,8 +1251,8 @@ Paper _testPaper(String abstractText) {
     venue: 'TestConf 2026',
     title: 'A Test Paper for Reading Layout',
     authors: const ['Alex Chen', 'Lin Zhang'],
-    firstAffiliation: 'PaperFlow Lab',
-    topics: const ['Testing'],
+    affiliations: const ['PaperFlow Lab'],
+    contentKeywords: const ['Testing'],
     abstractText: abstractText,
     chineseAbstractMarkdown: '**中文摘要**',
     relatedPapers: const [],

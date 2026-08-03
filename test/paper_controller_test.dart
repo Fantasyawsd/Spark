@@ -67,7 +67,7 @@ void main() {
       expect(controller.topicIndex, 3);
       expect(controller.categories[controller.topicIndex], 'CV');
       expect(controller.papers, hasLength(1));
-      expect(controller.papers.single.topics, contains('cs.CV'));
+      expect(controller.papers.single.subjects, contains('cs.CV'));
     });
 
     test('following feed only exposes followed papers', () {
@@ -440,11 +440,10 @@ class _PagedPaperCatalogRepository implements PaperCatalogRepository {
 
 Paper _catalogPaper(String id, {String? title}) => Paper(
       id: id,
-      venue: 'arXiv',
       title: title ?? 'Paper $id',
       authors: const ['Researcher'],
-      firstAffiliation: 'Research Lab',
-      topics: const ['cs.AI'],
+      affiliations: const ['Research Lab'],
+      subjects: const ['cs.AI'],
       abstractText: 'Abstract for $id.',
       chineseAbstractMarkdown: '',
       readMinutes: 3,

@@ -15,9 +15,10 @@ class PaperAiPromptBuilder {
 # 论文
 标题：${paper.title}
 作者：${paper.authors.join(', ')}
-第一单位：${paper.firstAffiliation}
-会议：${paper.venue}
-主题：${paper.topics.join(', ')}
+第一单位：${paper.firstAffiliation ?? '未知'}
+会议或期刊：${paper.venue ?? paper.journalReference ?? '未知'}
+内容关键词：${paper.contentKeywords.isEmpty ? '未知' : paper.contentKeywords.join(', ')}
+arXiv 分类：${paper.subjects.isEmpty ? '无' : paper.subjects.join(', ')}
 
 ## 摘要
 ${paper.content.originalAbstractMarkdown}

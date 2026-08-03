@@ -275,7 +275,6 @@ class _PaperSearchResult extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final firstAuthor = paper.firstAuthor;
     return ListTile(
       key: ValueKey('paper-search-result-${paper.id}'),
       contentPadding: const EdgeInsets.symmetric(vertical: 7),
@@ -294,7 +293,7 @@ class _PaperSearchResult extends StatelessWidget {
       subtitle: Padding(
         padding: const EdgeInsets.only(top: 6),
         child: Text(
-          '$firstAuthor · ${paper.venue} · ${paper.topics.first}',
+          _searchResultSubtitle(paper),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: const TextStyle(color: PaperFlowColors.muted, fontSize: 11),
@@ -302,6 +301,21 @@ class _PaperSearchResult extends StatelessWidget {
       ),
       trailing: const Icon(Icons.chevron_right_rounded, size: 20),
     );
+  }
+
+  String _searchResultSubtitle(Paper paper) {
+    final venue = paper.venue ??
+        paper.journalReference ??
+        (paper.source == 'arxiv' ? 'arXiv' : paper.source);
+    final topic = paper.contentKeywords.isNotEmpty
+        ? paper.contentKeywords.first
+        : (paper.primarySubject ??
+            (paper.subjects.isNotEmpty ? paper.subjects.first : null));
+    return [
+      paper.firstAuthor,
+      venue,
+      if (topic != null) topic,
+    ].join(' · ');
   }
 }
 

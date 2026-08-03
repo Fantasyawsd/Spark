@@ -633,7 +633,11 @@ class _FavoritesCardState extends State<_FavoritesCard> {
                           ),
                           const Spacer(),
                           Text(
-                            paper.venue,
+                            paper.venue ??
+                                paper.journalReference ??
+                                (paper.source == 'arxiv'
+                                    ? 'arXiv'
+                                    : paper.source),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
@@ -833,7 +837,11 @@ class _PaperShelfCard extends StatelessWidget {
                           ),
                           const Spacer(),
                           Text(
-                            paper.venue,
+                            paper.venue ??
+                                paper.journalReference ??
+                                (paper.source == 'arxiv'
+                                    ? 'arXiv'
+                                    : paper.source),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(

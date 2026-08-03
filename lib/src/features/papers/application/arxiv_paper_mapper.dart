@@ -6,22 +6,23 @@ extension ArxivPaperMapping on ArxivMetadata {
     int? citationCount,
     List<RelatedPaper> relatedPapers = const [],
   }) {
-    final topicLabels = <String>{
+    final subjects = <String>{
       ...categories,
       if (primaryCategory != null) primaryCategory!,
     }.toList(growable: false);
     return Paper(
       id: normalizedId,
-      venue: journalReference ?? 'arXiv',
       title: title,
       authors: List.unmodifiable(authors),
-      firstAffiliation: 'arXiv',
-      topics: topicLabels.isEmpty ? const ['arXiv'] : topicLabels,
+      subjects: subjects,
+      primarySubject: primaryCategory,
+      journalReference: journalReference,
+      comment: comment,
       abstractText: abstractText,
       chineseAbstractMarkdown: '中文摘要尚未生成。',
       relatedPapers: relatedPapers,
       readMinutes: _estimateReadMinutes(abstractText),
-      citations: citationCount ?? 0,
+      citations: citationCount,
       arxivId: normalizedId,
       doi: doi,
       paperUrl: absUrl,
@@ -38,13 +39,18 @@ extension PaperEnhancementMapping on Paper {
   Paper copyWithEnhancement(PaperEnhancement enhancement) {
     return Paper(
       id: id,
-      venue: venue,
       title: title,
       authors: authors,
-      firstAffiliation: enhancement.institutions.isEmpty
-          ? firstAffiliation
-          : enhancement.institutions.first,
-      topics: {...topics, ...enhancement.concepts}.toList(growable: false),
+      affiliations: enhancement.institutions.isEmpty
+          ? affiliations
+          : enhancement.institutions,
+      contentKeywords:
+          enhancement.concepts.isEmpty ? contentKeywords : enhancement.concepts,
+      subjects: subjects,
+      primarySubject: primarySubject,
+      venue: venue,
+      journalReference: journalReference,
+      comment: comment,
       abstractText: content.originalAbstractMarkdown,
       chineseAbstractMarkdown: content.chineseAbstractMarkdown,
       relatedPapers: relatedPapers,

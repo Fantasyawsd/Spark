@@ -67,7 +67,8 @@ class PaperGridCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 9),
-                  TopicChip(label: paper.topics.first, compact: true),
+                  if (topicLabel(paper) case final label?)
+                    TopicChip(label: label, compact: true),
                   const SizedBox(height: 10),
                   Row(
                     children: [
@@ -151,7 +152,7 @@ class _PaperGridCover extends StatelessWidget {
               const SizedBox(width: 5),
               Expanded(
                 child: Text(
-                  paper.venue,
+                  venueLabel(paper),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -176,24 +177,25 @@ class _PaperGridCover extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 11),
-          Row(
-            children: [
-              const Icon(
-                Icons.format_quote_rounded,
-                color: PaperFlowColors.muted,
-                size: 14,
-              ),
-              const SizedBox(width: 4),
-              Text(
-                '被引 ${adjustedCompactCount(paper.metrics.citations)}',
-                style: const TextStyle(
+          if (citationLine(paper) case final citations?)
+            Row(
+              children: [
+                const Icon(
+                  Icons.format_quote_rounded,
                   color: PaperFlowColors.muted,
-                  fontSize: 9.5,
-                  fontWeight: FontWeight.w600,
+                  size: 14,
                 ),
-              ),
-            ],
-          ),
+                const SizedBox(width: 4),
+                Text(
+                  citations,
+                  style: const TextStyle(
+                    color: PaperFlowColors.muted,
+                    fontSize: 9.5,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
         ],
       ),
     );

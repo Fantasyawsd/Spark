@@ -19,6 +19,7 @@ class PaperMetadata extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final year = paper.publishedAt?.year;
+    final citations = citationLine(paper);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -77,7 +78,7 @@ class PaperMetadata extends StatelessWidget {
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
             Text(
-              paper.venue,
+              venueLabel(paper),
               style: const TextStyle(
                 color: PaperFlowColors.muted,
                 fontSize: 11,
@@ -93,14 +94,15 @@ class PaperMetadata extends StatelessWidget {
                   fontWeight: FontWeight.w600,
                 ),
               ),
-            Text(
-              '被引 ${adjustedCompactCount(paper.metrics.citations)}',
-              style: const TextStyle(
-                color: PaperFlowColors.muted,
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
+            if (citations != null)
+              Text(
+                citations,
+                style: const TextStyle(
+                  color: PaperFlowColors.muted,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
-            ),
           ],
         ),
       ],

@@ -25,11 +25,11 @@
 
 ## 验收标准
 
-- [ ] 在受限宽度下，前文已经折行但末行仍有空间时，普通 `$...$` 公式接续在该末行，而不是另起一行。
-- [ ] 行内公式与其后的逗号、句号和正文处于同一段排版流，不产生截图中的孤立标点。
-- [ ] 公式保持正确 LaTeX 样式；`$$...$$` 块公式仍按块展示。
-- [ ] Abstract 文本仍可选择；论文阅读和 ChatPaper 共用 Markdown 路径无现有行为回归。
-- [ ] 新增回归测试先稳定复现缺陷，修复后通过；现有 Markdown 测试通过。
+- [x] 在受限宽度下，前文已经折行但末行仍有空间时，普通 `$...$` 公式接续在该末行，而不是另起一行。
+- [x] 行内公式与其后的逗号、句号和正文处于同一段排版流，不产生截图中的孤立标点。
+- [x] 公式保持正确 LaTeX 样式；`$$...$$` 块公式仍按块展示。
+- [x] Abstract 文本仍可选择；论文阅读和 ChatPaper 共用 Markdown 路径无现有行为回归。
+- [x] 新增回归测试先稳定复现缺陷，修复后通过；现有 Markdown 测试通过。
 - [ ] 格式检查、`flutter analyze`、全量 `flutter test` 和 development APK 构建通过。
 
 ## 写入范围
@@ -59,9 +59,9 @@
 
 ## 当前进度
 
-- 已完成：目标与验收标准确认；开发必读读取；基线、工作区与重叠台账核对；独立分支和 worktree 创建；验证证据路径设计。
-- 正在进行：建立持久回归测试并评估真正的行内渲染方案。
-- 下一步：运行失败回归测试，确定实现路径。
+- 已完成：`/start` 全部步骤；失败回归测试；真正的 `InlineSpan` 段落排版实现；邻接标点、块公式、选择能力与 ChatPaper 定向回归；功能提交 `4756631`。
+- 正在进行：`/develop` 已完成，准备执行 `/test` 完整验证门禁。
+- 下一步：运行格式、analyze、全量测试与 development APK 构建并记录结果。
 - 阻塞项：无。
 
 ## 决策记录
@@ -71,13 +71,20 @@
 | 2026-08-04 | 本任务不关联发布版本 | 当前为 `0.0.1+1` 未发布阶段的日常兼容性缺陷修复 | 不更新版本号、CHANGELOG 或发布归档 |
 | 2026-08-04 | 以真实布局坐标作为核心验证证据 | 现有测试只检查公式外层没有滚动容器，无法捕获截图中的断行 | 回归测试必须验证前文末行与公式的垂直重叠或等价的真实行内布局结果 |
 | 2026-08-04 | 保留 `$...$` 与 `$$...$$` 的语义区分 | 缺陷只针对行内公式，不能用全部转纯文本或全部块级展示规避 | 实现需同时覆盖行内和块级公式 |
+| 2026-08-04 | 让 LaTeX builder 返回含 `WidgetSpan(Math.tex)` 的 `Text.rich` | `flutter_markdown_plus` 会合并相邻文本节点，而直接返回 `Math` 会成为 `Wrap` 的独立子项 | 前文、公式和后文进入同一 `RenderParagraph`；无需 fork、升级或新增依赖 |
+| 2026-08-04 | Markdown 内部统一使用 `Text.rich`，以 `SelectionArea` 提供选择 | `Text.rich` 支持嵌入 `WidgetSpan`，同时 `SelectionArea` 可保留 Abstract 文本选择；`selectable=false` 用 `SelectionContainer.disabled` 保持 ChatPaper 语义 | 论文 Abstract 可选择，AI 流式消息仍保持不可选择且不重建选择树 |
 
 ## 验证记录
 
 | 命令或人工检查 | 结果 | 日期 |
 | --- | --- | --- |
-| 诊断最小 Widget 用例（260px，前文折行后接 `$\beta > 2$`） | 基线稳定失败：前文底部 66.0px，公式顶部 69.4px；公式宽 61.3px，确认被强制另起一行 | 2026-08-04 |
+| 诊断最小 Widget 用例（前文折行后接 `$\beta > 2$`） | 基线稳定失败：公式没有统一 `Text` 段落祖先，而是 `Wrap` 中与前后文本并列的独立 Widget | 2026-08-04 |
 | `flutter test test\paper_markdown_test.dart --plain-name "inline formulas render without a wrapping scroll view"` | 基线通过，但仅证明无滚动容器，不能证明真正行内布局 | 2026-08-04 |
+| `flutter test test\paper_markdown_test.dart --plain-name "wrapped text keeps inline formulas and punctuation in one flow"` | 修复后通过；320px 下前词、公式 Widget 与逗号的实际行框垂直重叠，且统一段落序列为“前文 + WidgetSpan + 逗号 + 后文” | 2026-08-04 |
+| `.\tool\verify_changed_dart_format.ps1` | 通过：2 个 Dart 文件，0 个需改格式 | 2026-08-04 |
+| `flutter analyze` | 通过：No issues found | 2026-08-04 |
+| `flutter test test\paper_markdown_test.dart` | 通过：17 项 Markdown/LaTeX 测试 | 2026-08-04 |
+| `flutter test test\paper_ai_message_view_test.dart` | 通过：3 项 ChatPaper 可选择性测试 | 2026-08-04 |
 
 ## 审查结论
 
@@ -92,7 +99,8 @@
 
 | SHA | 提交信息 | 对应阶段 | 验证摘要 |
 | --- | --- | --- | --- |
-| 待提交 | `docs: initialize inline-math-flow workstream` | `/start` 台账初始化 | 仅文档；`git diff --check` 待执行 |
+| d3fcefa | `docs: initialize inline-math-flow workstream` | `/start` 台账初始化 | `git diff --check` 通过 |
+| 4756631 | `fix(markdown): keep inline formulas in paragraph flow` | `/develop` 纵向实现 | 格式、analyze、Markdown 17 项与 ChatPaper 3 项定向测试通过 |
 
 ## 交付记录（合并前补齐）
 

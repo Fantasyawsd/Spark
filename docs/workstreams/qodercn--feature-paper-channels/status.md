@@ -9,7 +9,7 @@
 - 基线提交：`b1a667b`（origin/main）
 - 负责人：Fantasy（编排者）；执行：QoderCN Agent
 - 状态：开发中
-- 最近更新：2026-08-04 02:20
+- 最近更新：2026-08-04 03:05
 
 ## 目标
 
@@ -81,6 +81,7 @@
 | 2026-08-04 | 频道栏完全替换旧主题筛选（推荐页临时筛选），频道即索引；浏览位置按频道键独立保存 | 落实开发计划「主题和会议是独立索引」 | `PaperTopicMatcher`、`paper_category_picker.dart` 删除；旧偏好 `topicIndex` 字段保留未用 |
 | 2026-08-04 | 频道选中态优先读频道偏好 `selectedChannelKey`，为空时回退旧偏好 `primaryCategoryIndex` | 旧安装无频道偏好文件，保持固定频道选择可恢复 | `initializeChannels` 需在 `initializePreferences` 之后执行 |
 | 2026-08-04 | 频道管理页「按会议」区块只展示未开放说明，不提供添加 | 会议频道需真实数据源（步骤 6） | 后续任务接入 `VenueCatalogSource` 后开放 |
+| 2026-08-04 | 切换频道只对未加载频道做懒加载，已加载频道不重新请求；强制刷新仅由下拉触发（编排者验收反馈） | 避免每次选 tab 都刷新 | 回归测试覆盖来回切换不重复请求 |
 
 ## 验证记录
 
@@ -107,6 +108,7 @@
 | 1b3f8bb | feat(papers): split paper metadata semantics and keep unknown data unknown | 步骤 1：元数据语义修正 | analyze 通过；204 测试通过；格式门禁通过 |
 | f2cf901 | feat(papers): add channel model, arXiv subject catalog and channel preferences | 步骤 2：频道模型与偏好持久化 | analyze 通过；215 测试通过；格式门禁通过 |
 | 8a103e6 | feat(papers): rebuild top channel bar and channel manager around structured channels | 步骤 3：频道栏与频道管理页 | analyze 通过；218 测试通过；格式门禁通过 |
+| 70d2e5a | fix(papers): only lazy-load channels on first visit instead of refreshing every switch | 验收反馈修复：切换频道不再刷新 | analyze 通过；219 测试通过；格式门禁通过 |
 
 ## 交付记录（合并前补齐）
 

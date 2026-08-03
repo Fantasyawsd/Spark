@@ -81,34 +81,13 @@ void main() {
     expect(find.text('已添加频道'), findsNothing);
   });
 
-  testWidgets('search narrows the catalog by name and code', (tester) async {
+  testWidgets('lists all catalog topics directly', (tester) async {
     await openSheet(tester, onChannelsChanged: (_) {});
 
-    await tester.enterText(
-      find.byKey(const ValueKey('paper-channel-search')),
-      '机器',
-    );
-    await tester.pump();
-    expect(find.byKey(const ValueKey('paper-channel-subject-cs.LG')),
-        findsOneWidget);
-    expect(find.byKey(const ValueKey('paper-channel-subject-cs.AI')),
-        findsNothing);
-
-    await tester.enterText(
-      find.byKey(const ValueKey('paper-channel-search')),
-      'cs.cv',
-    );
-    await tester.pump();
-    expect(find.byKey(const ValueKey('paper-channel-subject-cs.CV')),
-        findsOneWidget);
-    expect(find.text('没有匹配的主题。'), findsNothing);
-
-    await tester.enterText(
-      find.byKey(const ValueKey('paper-channel-search')),
-      '量子',
-    );
-    await tester.pump();
-    expect(find.text('没有匹配的主题。'), findsOneWidget);
+    for (final code in ['cs.AI', 'cs.CL', 'cs.CV', 'cs.LG']) {
+      expect(
+          find.byKey(ValueKey('paper-channel-subject-$code')), findsOneWidget);
+    }
   });
 
   testWidgets('conference section is visible but not addable', (tester) async {

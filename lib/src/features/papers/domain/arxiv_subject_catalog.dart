@@ -21,26 +21,4 @@ class ArxivSubjectCatalog {
     ArxivSubject(code: 'cs.CV', displayName: '计算机视觉与模式识别'),
     ArxivSubject(code: 'cs.LG', displayName: '机器学习'),
   ];
-
-  static ArxivSubject? findByCode(String code) {
-    final normalized = code.trim();
-    for (final subject in initialSubjects) {
-      if (subject.code == normalized) return subject;
-    }
-    return null;
-  }
-
-  static List<ArxivSubject> search(String query) {
-    final normalized = query.trim().toLowerCase();
-    if (normalized.isEmpty) {
-      return List.unmodifiable(initialSubjects);
-    }
-    return initialSubjects
-        .where(
-          (subject) =>
-              subject.code.toLowerCase().contains(normalized) ||
-              subject.displayName.contains(query.trim()),
-        )
-        .toList(growable: false);
-  }
 }

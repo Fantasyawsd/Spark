@@ -41,7 +41,6 @@ class PaperChannelManagerSheet extends StatefulWidget {
 
 class _PaperChannelManagerSheetState extends State<PaperChannelManagerSheet> {
   late List<UserPaperChannel> _channels;
-  String _query = '';
 
   @override
   void initState() {
@@ -140,33 +139,11 @@ class _PaperChannelManagerSheetState extends State<PaperChannelManagerSheet> {
                       const SizedBox(height: 8),
                     ],
                     const _SectionTitle('按主题'),
-                    TextField(
-                      key: const ValueKey('paper-channel-search'),
-                      decoration: const InputDecoration(
-                        hintText: '搜索 arXiv 主题',
-                        isDense: true,
-                        prefixIcon: Icon(Icons.search_rounded, size: 18),
-                        border: OutlineInputBorder(),
-                      ),
-                      onChanged: (value) => setState(() => _query = value),
-                    ),
-                    const SizedBox(height: 6),
-                    for (final subject in ArxivSubjectCatalog.search(_query))
+                    for (final subject in ArxivSubjectCatalog.initialSubjects)
                       _SubjectRow(
                         subject: subject,
                         added: _isAdded(subject.code),
                         onToggle: () => _toggleSubject(subject),
-                      ),
-                    if (ArxivSubjectCatalog.search(_query).isEmpty)
-                      const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 12),
-                        child: Text(
-                          '没有匹配的主题。',
-                          style: TextStyle(
-                            color: PaperFlowColors.muted,
-                            fontSize: 12,
-                          ),
-                        ),
                       ),
                     const SizedBox(height: 8),
                     const _SectionTitle('按会议'),

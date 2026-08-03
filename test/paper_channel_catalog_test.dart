@@ -17,31 +17,6 @@ void main() {
         ['人工智能', '计算与语言', '计算机视觉与模式识别', '机器学习'],
       );
     });
-
-    test('finds subjects by exact arXiv code', () {
-      expect(
-          ArxivSubjectCatalog.findByCode('cs.CV')?.displayName, '计算机视觉与模式识别');
-      expect(ArxivSubjectCatalog.findByCode(' cs.AI ')?.displayName, '人工智能');
-      expect(ArxivSubjectCatalog.findByCode('cs.UNKNOWN'), isNull);
-    });
-
-    test('searches by code and Chinese display name', () {
-      expect(
-        ArxivSubjectCatalog.search('cs.lg')
-            .map((subject) => subject.code)
-            .toList(),
-        ['cs.LG'],
-      );
-      expect(
-        ArxivSubjectCatalog.search('语言')
-            .map((subject) => subject.code)
-            .toList(),
-        ['cs.CL'],
-      );
-      expect(ArxivSubjectCatalog.search('  '),
-          ArxivSubjectCatalog.initialSubjects);
-      expect(ArxivSubjectCatalog.search('量子'), isEmpty);
-    });
   });
 
   group('UserPaperChannel', () {

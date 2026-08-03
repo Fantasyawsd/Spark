@@ -61,6 +61,36 @@ void main() {
       expect(fallback, contains('θ'));
       expect(fallback, contains('∞'));
     });
+
+    test('converts abstract text commands outside math to Markdown', () {
+      expect(
+        PaperMarkdownPreprocessor.prepare(r'We present \textbf{ViewMind3D}'),
+        'We present **ViewMind3D**',
+      );
+      expect(
+        PaperMarkdownPreprocessor.prepare(r'an \emph{important} result'),
+        'an *important* result',
+      );
+      expect(
+        PaperMarkdownPreprocessor.prepare(r'\textit{prior} work'),
+        '*prior* work',
+      );
+    });
+
+    test('leaves text commands inside math mode untouched', () {
+      expect(
+        PaperMarkdownPreprocessor.prepare(r'where $\textbf{x} \sim \mathcal{N}$'),
+        r'where $\textbf{x} \sim \mathcal{N}$',
+      );
+    });
+
+    test('keeps formulas intact when text commands are converted', () {
+      expect(
+        PaperMarkdownPreprocessor.prepare(
+            r'\textbf{ViewMind3D} achieves $\beta > 2$ on \emph{benchmarks}'),
+        r'**ViewMind3D** achieves $\beta > 2$ on *benchmarks*',
+      );
+    });
   });
 
   group('PaperLatexInlineSyntax', () {

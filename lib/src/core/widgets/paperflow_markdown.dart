@@ -366,6 +366,7 @@ class PaperMarkdownPreprocessor {
         .replaceAll(r'\]', r'$$')
         .replaceAll(r'\(', r'$')
         .replaceAll(r'\)', r'$');
+    normalized = _convertLatexTextCommands(normalized);
 
     if (stabilizeGeneratedSyntax || _containsLikelyLatex(normalized)) {
       normalized = GeneratedMarkdownStabilizer.stabilize(normalized);
@@ -420,6 +421,36 @@ class PaperMarkdownPreprocessor {
       RegExp(r'\\([A-Za-z]+)'),
       (match) => match.group(1) ?? '',
     );
+  }
+
+  /// Converts arXiv abstract text-formatting commands outside math to their
+  /// Markdown equivalents: `\textbf{X}` → `**X**`, `\emph{X}`/`\textit{X}` →
+  /// `*X*`. Formulas (`$...$`) are protected first so a `\textbf` inside math
+  /// mode is left untouched; the argument is simple text without nested
+  /// braces.
+  static String _convertLatexTextCommands(String source) {
+    final formulas = <String>[];
+    var working = source.replaceAllMapped(
+      RegExp(r'\$\$(?:\\[\s\S]|[^$\n])*?\$\$|\$(?:\\[\s\S]|[^$\n])*?\$'),
+      (match) {
+        final token = '\u0000PAPERFLOW_MATH_${formulas.length}\u0000';
+        formulas.add(match.group(0)!);
+        return token;
+      },
+    );
+    working = working.replaceAllMapped(
+      RegExp(r'\\(textbf|emph|textit)\{([^{}]+)\}'),
+      (match) => match.group(1) == 'textbf'
+          ? '**${match.group(2)}**'
+          : '*${match.group(2)}*',
+    );
+    for (var index = 0; index < formulas.length; index++) {
+      working = working.replaceAll(
+        '\u0000PAPERFLOW_MATH_$index\u0000',
+        formulas[index],
+      );
+    }
+    return working;
   }
 
   static String _replaceSimpleSymbolMath(String source) {

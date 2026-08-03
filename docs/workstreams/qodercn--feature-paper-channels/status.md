@@ -8,8 +8,8 @@
 - Worktree：`../PaperFlow-worktrees/qodercn--feature-paper-channels`
 - 基线提交：`b1a667b`（origin/main）
 - 负责人：Fantasy（编排者）；执行：QoderCN Agent
-- 状态：开发中
-- 最近更新：2026-08-04 05:00
+- 状态：待合并
+- 最近更新：2026-08-04 05:30
 
 ## 目标
 
@@ -95,6 +95,7 @@
 | `flutter analyze` | 通过（No issues found） | 2026-08-04 |
 | `flutter test` | 通过（步骤 1：204；步骤 2：215；步骤 3：218） | 2026-08-04 |
 | `tool/verify_changed_dart_format.ps1` | 通过（步骤 3：42 个文件） | 2026-08-04 |
+| `flutter build apk --debug --flavor development` | 通过（app-development-debug.apk） | 2026-08-04 |
 
 ## 审查结论
 

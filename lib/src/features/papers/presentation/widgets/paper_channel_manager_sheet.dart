@@ -111,57 +111,6 @@ class _PaperChannelManagerSheetState extends State<PaperChannelManagerSheet> {
                               mainAxisSize: MainAxisSize.min,
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                if (_channels.isNotEmpty) ...[
-                                  const _SectionTitle('已添加频道'),
-                                  ReorderableListView.builder(
-                                    key: const ValueKey(
-                                        'paper-channel-added-list'),
-                                    shrinkWrap: true,
-                                    buildDefaultDragHandles: true,
-                                    itemCount: _channels.length,
-                                    onReorderItem: _handleReorder,
-                                    itemBuilder: (context, index) {
-                                      final channel = _channels[index];
-                                      return ListTile(
-                                        key: ValueKey(
-                                            'paper-channel-added-${channel.storageKey}'),
-                                        dense: true,
-                                        contentPadding: EdgeInsets.zero,
-                                        leading: ReorderableDragStartListener(
-                                          index: index,
-                                          child: const Icon(
-                                            Icons.drag_indicator_rounded,
-                                            color: PaperFlowColors.muted,
-                                            size: 18,
-                                          ),
-                                        ),
-                                        title: Text(channel.displayName),
-                                        subtitle: Text(
-                                          channel.id,
-                                          style: const TextStyle(
-                                            color: PaperFlowColors.muted,
-                                            fontSize: 11,
-                                          ),
-                                        ),
-                                        trailing: IconButton(
-                                          key: ValueKey(
-                                            'paper-channel-remove-${channel.storageKey}',
-                                          ),
-                                          tooltip: '移除频道',
-                                          onPressed: () =>
-                                              _removeChannel(channel),
-                                          icon: const Icon(
-                                            Icons.remove_circle_outline_rounded,
-                                            color: PaperFlowColors.muted,
-                                            size: 19,
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                  const SizedBox(height: 8),
-                                ],
-                                const _SectionTitle('全部主题'),
                                 for (final subject
                                     in ArxivSubjectCatalog.initialSubjects)
                                   _SubjectRow(
@@ -229,42 +178,8 @@ class _PaperChannelManagerSheetState extends State<PaperChannelManagerSheet> {
     _publish();
   }
 
-  void _removeChannel(UserPaperChannel channel) {
-    setState(() => _channels.remove(channel));
-    _publish();
-  }
-
-  void _handleReorder(int oldIndex, int newIndex) {
-    setState(() {
-      final channel = _channels.removeAt(oldIndex);
-      _channels.insert(newIndex, channel);
-    });
-    _publish();
-  }
-
   void _publish() {
     widget.onChannelsChanged(List.of(_channels));
-  }
-}
-
-class _SectionTitle extends StatelessWidget {
-  const _SectionTitle(this.title);
-
-  final String title;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 8, bottom: 8),
-      child: Text(
-        title,
-        style: const TextStyle(
-          color: PaperFlowColors.muted,
-          fontSize: 12,
-          fontWeight: FontWeight.w700,
-        ),
-      ),
-    );
   }
 }
 

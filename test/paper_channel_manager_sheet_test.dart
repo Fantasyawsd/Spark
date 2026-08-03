@@ -47,11 +47,18 @@ void main() {
       onChannelsChanged: (channels) => lastSaved = channels,
     );
 
-    expect(find.text('已添加频道'), findsOneWidget);
+    expect(find.text('已添加频道'), findsNothing);
     expect(find.byKey(const ValueKey('paper-channel-manager-tabs')),
         findsOneWidget);
     expect(find.text('主题'), findsOneWidget);
     expect(find.text('会议'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey('paper-channel-subject-cs.LG')),
+        matching: find.byIcon(Icons.check_circle_rounded),
+      ),
+      findsOneWidget,
+    );
 
     await tester.ensureVisible(
       find.byKey(const ValueKey('paper-channel-subject-cs.AI')),
@@ -60,25 +67,21 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('paper-channel-subject-cs.AI')));
     await tester.pump();
     expect(lastSaved!.map((channel) => channel.id), ['cs.LG', 'cs.AI']);
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey('paper-channel-subject-cs.AI')),
+        matching: find.byIcon(Icons.check_circle_rounded),
+      ),
+      findsOneWidget,
+    );
 
-    await tester.ensureVisible(
-      find.byKey(const ValueKey('paper-channel-remove-subject:cs.LG')),
-    );
-    await tester.pump();
-    await tester.tap(
-      find.byKey(const ValueKey('paper-channel-remove-subject:cs.LG')),
-    );
+    await tester.tap(find.byKey(const ValueKey('paper-channel-subject-cs.LG')));
     await tester.pump();
     expect(lastSaved!.map((channel) => channel.id), ['cs.AI']);
 
-    await tester.ensureVisible(
-      find.byKey(const ValueKey('paper-channel-subject-cs.AI')),
-    );
-    await tester.pump();
     await tester.tap(find.byKey(const ValueKey('paper-channel-subject-cs.AI')));
     await tester.pump();
     expect(lastSaved, isEmpty);
-    expect(find.text('已添加频道'), findsNothing);
   });
 
   testWidgets('lists all catalog topics directly', (tester) async {

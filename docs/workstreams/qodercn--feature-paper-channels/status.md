@@ -8,8 +8,8 @@
 - Worktree：`../PaperFlow-worktrees/qodercn--feature-paper-channels`
 - 基线提交：`b1a667b`（origin/main）
 - 负责人：Fantasy（编排者）；执行：QoderCN Agent
-- 状态：规划中
-- 最近更新：2026-08-03 23:09
+- 状态：开发中
+- 最近更新：2026-08-04 00:55
 
 ## 目标
 
@@ -62,9 +62,9 @@
 
 ## 当前进度
 
-- 已完成：必读文档读取、基线确认、分支与 worktree 创建、台账初始化。
+- 已完成：必读文档读取、基线确认、分支与 worktree 创建、台账初始化；步骤 1（`Paper` 元数据语义修正，提交 1b3f8bb）。
 - 正在进行：无。
-- 下一步：等待编排者触发 `/develop`，从步骤 1（`Paper` 元数据语义修正）开始。
+- 下一步：步骤 2（频道领域模型、arXiv 分类目录与版本化频道偏好持久化）。
 - 阻塞项：无。
 
 ## 决策记录
@@ -74,11 +74,17 @@
 | 2026-08-03 | 任务范围取开发顺序步骤 1–3，编排者确认 | 步骤 1–3 构成频道能力的最小纵向闭环 | 时间筛选、arXiv 主题查询验证、会议数据源留给后续任务 |
 | 2026-08-03 | 分支命名 `qodercn/feature-paper-channels`，遵循 release-management.md §2 Agent 分支格式，编排者确认 | Agent 分支与人类分支区分 | worktree slug 为 `qodercn--feature-paper-channels` |
 | 2026-08-03 | 会议频道不进入可添加状态 | 会议频道需真实 `VenueCatalogSource`（步骤 6），无真实数据源不得进入生产入口 | 频道管理页会议部分暂不开放添加，具体形态在 /develop 阶段与编排者确认 |
+| 2026-08-04 | `Paper.topics` 拆为 `subjects`（arXiv 分类）与 `contentKeywords`（内容关键词），`venue`/`journalReference`/`comment` 分离，`firstAffiliation` 改为 `affiliations` 列表，引用数改可空 | 落实开发计划「数据语义」要求，未知数据保持未知 | 全量映射、缓存、展示与测试同步改造 |
+| 2026-08-04 | `RelatedPaper.venue` 一并改为可空 | 相关论文同样不能用 `arXiv` 冒充 venue | 缓存 schema v2 迁移同时还原相关论文占位 venue |
+| 2026-08-04 | 论文缓存 `papers.catalog-cache` schema 升到 v2，提供单步 1→2 迁移 | 持久化结构变化必须版本化迁移 | 旧缓存可读且还原未知语义；迁移测试覆盖 |
 
 ## 验证记录
 
 | 命令或人工检查 | 结果 | 日期 |
 | --- | --- | --- |
+| `flutter analyze` | 通过（No issues found） | 2026-08-04 |
+| `flutter test` | 通过（204/204） | 2026-08-04 |
+| `tool/verify_changed_dart_format.ps1` | 通过（26 个文件） | 2026-08-04 |
 
 ## 审查结论
 
@@ -93,6 +99,8 @@
 
 | SHA | 提交信息 | 对应阶段 | 验证摘要 |
 | --- | --- | --- | --- |
+| 6e5f87a | docs: add paper-channels workstream ledger | /start 台账初始化 | 仅文档 |
+| 1b3f8bb | feat(papers): split paper metadata semantics and keep unknown data unknown | 步骤 1：元数据语义修正 | analyze 通过；204 测试通过；格式门禁通过 |
 
 ## 交付记录（合并前补齐）
 

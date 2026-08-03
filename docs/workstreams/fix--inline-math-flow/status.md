@@ -9,7 +9,7 @@
 - 基线提交：`63c00491503ad4fdad8c2f213c7d240f18a4bc1f`（`origin/main`）
 - 负责人：Fantasy（编排者）；执行：Codex
 - 状态：待合并
-- 最近更新：2026-08-04 03:58
+- 最近更新：2026-08-04 04:02
 
 ## 目标
 
@@ -124,7 +124,7 @@
 - 数据与基础设施：无；未新增依赖或修改缓存/API。
 - 界面与交互：`PaperLatexElementBuilder` 使用 `Text.rich + WidgetSpan(Math.tex)`；`PaperMarkdown` 通过 `SelectionArea` 保留 Abstract 文本选择，并用 `SelectionContainer.disabled` 保持不可选择场景。
 - 测试与工具：新增真实 `RenderParagraph` 行框回归；更新行内/块公式断言；全量门禁通过。
-- 文档：本台账记录实施、验证与审查证据；开发计划不需新增产品方向。
+- 文档：本台账记录实施、验证与审查证据；`docs/development.md` §2.1 已同步行内 LaTeX 与选择能力现状。
 
 ### 兼容性与迁移
 
@@ -139,7 +139,7 @@
 
 ### 文档更新建议
 
-- 已核对 `docs/development.md`：Abstract 与 ChatPaper 已有 Markdown/公式能力描述，无需修改共享计划文档。
+- 已更新 `docs/development.md` §2.1：记录 Abstract/ChatPaper 共用 Markdown 的真正行内 LaTeX 与选择语义。
 
 ### 未完成与后续工作
 

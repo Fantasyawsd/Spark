@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/motion/motion_tokens.dart';
 import '../../../../core/theme/paperflow_theme.dart';
+import '../../../../core/widgets/cherry_primitives.dart';
 
 class PapersHeader extends StatelessWidget {
   const PapersHeader({
@@ -47,15 +49,12 @@ class PapersHeader extends StatelessWidget {
                   topic: selectedTopic,
                   onPressed: onTopicFilter,
                 ),
-              IconButton(
+              CherryIconButton(
                 tooltip: '搜索',
-                visualDensity: VisualDensity.compact,
                 onPressed: onSearch,
-                icon: const Icon(
-                  Icons.search_rounded,
-                  size: 24,
-                  color: PaperFlowColors.ink,
-                ),
+                icon: Icons.search_rounded,
+                iconSize: 20,
+                size: 36,
               ),
             ],
           ),
@@ -82,8 +81,9 @@ class _PrimaryNavigation extends StatelessWidget {
       children: [
         for (var index = 0; index < categories.length; index++)
           Padding(
-            padding:
-                EdgeInsets.only(right: index == categories.length - 1 ? 0 : 22),
+            padding: EdgeInsets.only(
+              right: index == categories.length - 1 ? 0 : 22,
+            ),
             child: _PrimaryTab(
               key: ValueKey('paper-primary-category-$index'),
               label: categories[index],
@@ -130,11 +130,15 @@ class _PrimaryTab extends StatelessWidget {
             ),
             const SizedBox(height: 7),
             AnimatedContainer(
-              duration: const Duration(milliseconds: 180),
+              duration: MotionTokens.duration(
+                context,
+                MotionTokens.tabDuration,
+              ),
+              curve: MotionTokens.enterCurve,
               width: selected ? 24 : 0,
               height: 3,
               decoration: BoxDecoration(
-                color: PaperFlowColors.ink,
+                color: PaperFlowColors.primary,
                 borderRadius: BorderRadius.circular(99),
               ),
             ),
@@ -155,18 +159,21 @@ class _TopicFilterButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final filtered = topic != '全部';
-    return IconButton(
+    return CherryIconButton(
       key: const ValueKey('paper-topic-filter'),
       tooltip: filtered ? '研究领域：$topic' : '筛选研究领域',
-      visualDensity: VisualDensity.compact,
       onPressed: onPressed,
-      icon: Badge(
+      icon: Icons.tune_rounded,
+      iconSize: 19,
+      size: 36,
+      selected: filtered,
+      badge: Badge(
         isLabelVisible: filtered,
         smallSize: 7,
-        backgroundColor: PaperFlowColors.ink,
-        child: Icon(
+        backgroundColor: PaperFlowColors.primary,
+        child: const Icon(
           Icons.tune_rounded,
-          size: 21,
+          size: 19,
           color: PaperFlowColors.ink,
         ),
       ),

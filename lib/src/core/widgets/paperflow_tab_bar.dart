@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../motion/motion_tokens.dart';
 import '../theme/paperflow_theme.dart';
 
 class PaperFlowTabBar extends StatelessWidget {
@@ -84,7 +85,12 @@ class PaperFlowTabBar extends StatelessWidget {
                     bottom: 0,
                     width: indicatorWidth,
                     height: 2.5,
-                    child: DecoratedBox(
+                    child: AnimatedContainer(
+                      duration: MotionTokens.duration(
+                        context,
+                        MotionTokens.tabDuration,
+                      ),
+                      curve: MotionTokens.enterCurve,
                       decoration: BoxDecoration(
                         color: indicatorColor ?? PaperFlowColors.primary,
                         borderRadius: BorderRadius.circular(99),
@@ -109,7 +115,11 @@ class PaperFlowTabBar extends StatelessWidget {
         alignment: Alignment.bottomCenter,
         child: Padding(
           padding: EdgeInsets.fromLTRB(
-              contentWidth ? 2 : 0, 0, contentWidth ? 2 : 0, 8),
+            contentWidth ? 2 : 0,
+            0,
+            contentWidth ? 2 : 0,
+            8,
+          ),
           child: Text(
             tabs[index],
             maxLines: 1,
@@ -146,11 +156,7 @@ class PaperFlowTabBar extends StatelessWidget {
     }).toList();
   }
 
-  double _contentIndicatorLeft(
-    List<double> widths,
-    double gap,
-    double page,
-  ) {
+  double _contentIndicatorLeft(List<double> widths, double gap, double page) {
     double start = 0;
     for (var index = 0; index < page.floor(); index++) {
       start += widths[index] + gap;

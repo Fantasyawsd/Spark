@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+import 'paperflow_design_tokens.dart';
 import 'paper_theme_color.dart';
 import 'theme_controller.dart';
 
@@ -11,11 +12,17 @@ abstract final class PaperFlowColors {
   static const ink = Color(0xFF182230);
   static const muted = Color(0xFF667085);
   static const subtle = Color(0xFF98A2B3);
+  static const foregroundTertiary = Color(0xFF7C8798);
+  static const foregroundDisabled = Color(0xFFB6BFCC);
   static const line = Color(0xFFE4E7EC);
-  static const canvas = Color(0xFFF5F7FA);
+  static const lineStrong = Color(0xFFD0D5DD);
+  static const canvas = Color(0xFFF7F8FA);
   static const card = Colors.white;
+  static const popover = Color(0xFFFCFCFD);
   static const surfaceMuted = Color(0xFFF2F4F7);
   static const surfaceStrong = Color(0xFFEAECF0);
+  static const accent = Color(0xFFF0F2F5);
+  static const accentForeground = Color(0xFF182230);
   static const blue = Color(0xFF356FAE);
   static const purple = Color(0xFF7256A8);
   static const green = Color(0xFF267A65);
@@ -90,7 +97,7 @@ abstract final class PaperFlowTheme {
         elevation: 0,
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(PaperFlowDesignTokens.radiusLg),
           side: const BorderSide(color: PaperFlowColors.line),
         ),
       ),
@@ -99,7 +106,7 @@ abstract final class PaperFlowTheme {
         surfaceTintColor: Colors.transparent,
         elevation: 12,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(PaperFlowDesignTokens.radius3Xl),
         ),
       ),
       bottomSheetTheme: const BottomSheetThemeData(
@@ -116,7 +123,7 @@ abstract final class PaperFlowTheme {
         elevation: 8,
         shadowColor: const Color(0x1A182230),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(PaperFlowDesignTokens.radiusXl),
         ),
         textStyle: const TextStyle(
           color: PaperFlowColors.ink,
@@ -133,8 +140,10 @@ abstract final class PaperFlowTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: PaperFlowColors.surfaceMuted,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: 13,
+        ),
         hintStyle: const TextStyle(color: PaperFlowColors.subtle, fontSize: 14),
         border: _inputBorder(Colors.transparent),
         enabledBorder: _inputBorder(Colors.transparent),
@@ -156,7 +165,7 @@ abstract final class PaperFlowTheme {
           minimumSize: const Size(44, 44),
           elevation: 0,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(PaperFlowDesignTokens.radiusMd),
           ),
         ),
       ),
@@ -164,7 +173,7 @@ abstract final class PaperFlowTheme {
         style: TextButton.styleFrom(
           foregroundColor: PaperFlowColors.primary,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(9),
+            borderRadius: BorderRadius.circular(PaperFlowDesignTokens.radiusMd),
           ),
         ),
       ),
@@ -175,7 +184,7 @@ abstract final class PaperFlowTheme {
         behavior: SnackBarBehavior.floating,
         elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(PaperFlowDesignTokens.radiusLg),
         ),
       ),
       chipTheme: ChipThemeData(
@@ -184,7 +193,7 @@ abstract final class PaperFlowTheme {
         disabledColor: PaperFlowColors.surfaceMuted,
         side: BorderSide.none,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(9),
+          borderRadius: BorderRadius.circular(PaperFlowDesignTokens.radiusSm),
         ),
         labelStyle: const TextStyle(
           color: PaperFlowColors.ink,
@@ -244,7 +253,7 @@ abstract final class PaperFlowTheme {
 
   static OutlineInputBorder _inputBorder(Color color, {double width = 1}) {
     return OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(PaperFlowDesignTokens.radiusMd),
       borderSide: BorderSide(color: color, width: width),
     );
   }
@@ -271,11 +280,3 @@ abstract final class PaperFlowTheme {
     }
   }
 }
-
-const paperFlowCardShadow = <BoxShadow>[
-  BoxShadow(
-    color: Color(0x0A182230),
-    blurRadius: 16,
-    offset: Offset(0, 4),
-  ),
-];

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../motion/motion_tokens.dart';
 import '../theme/paperflow_theme.dart';
 
 /// Flat content tabs for dense reading surfaces.
@@ -27,9 +28,7 @@ class PaperFlowSegmentedControl extends StatelessWidget {
       alignment: Alignment.centerLeft,
       child: DecoratedBox(
         decoration: const BoxDecoration(
-          border: Border(
-            bottom: BorderSide(color: PaperFlowColors.line),
-          ),
+          border: Border(bottom: BorderSide(color: PaperFlowColors.line)),
         ),
         child: SizedBox(
           height: height,
@@ -71,8 +70,8 @@ class _ContentTab extends StatelessWidget {
         splashFactory: NoSplash.splashFactory,
         overlayColor: WidgetStateProperty.all(Colors.transparent),
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 160),
-          curve: Curves.easeOutCubic,
+          duration: MotionTokens.duration(context, MotionTokens.tabDuration),
+          curve: MotionTokens.enterCurve,
           padding: const EdgeInsets.symmetric(horizontal: 12),
           alignment: Alignment.center,
           decoration: BoxDecoration(

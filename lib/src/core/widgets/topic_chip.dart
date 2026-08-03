@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../theme/paperflow_design_tokens.dart';
 import '../theme/paperflow_theme.dart';
 
 class TopicChip extends StatelessWidget {
@@ -28,7 +29,7 @@ class TopicChip extends StatelessWidget {
         color: selected
             ? accent.withValues(alpha: 0.09)
             : PaperFlowColors.surfaceMuted,
-        borderRadius: BorderRadius.circular(99),
+        borderRadius: BorderRadius.circular(PaperFlowDesignTokens.radiusSm),
         border:
             selected ? Border.all(color: accent.withValues(alpha: 0.55)) : null,
       ),

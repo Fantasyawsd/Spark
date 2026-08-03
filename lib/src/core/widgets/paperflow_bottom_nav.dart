@@ -2,6 +2,8 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 
+import '../motion/motion_tokens.dart';
+import '../theme/paperflow_design_tokens.dart';
 import '../theme/paperflow_theme.dart';
 
 class PaperFlowBottomNav extends StatelessWidget {
@@ -19,23 +21,26 @@ class PaperFlowBottomNav extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.fromLTRB(10, 0, 10, 6),
+      margin: const EdgeInsets.fromLTRB(10, 0, 10, 8),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(PaperFlowDesignTokens.radiusXl),
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
           child: Container(
-            padding: const EdgeInsets.fromLTRB(4, 4, 4, 3),
+            padding: const EdgeInsets.fromLTRB(4, 4, 4, 4),
             decoration: BoxDecoration(
-              color: PaperFlowColors.card.withValues(alpha: 0.92),
-              borderRadius: BorderRadius.circular(20),
+              color: PaperFlowColors.popover.withValues(alpha: 0.96),
+              borderRadius: BorderRadius.circular(
+                PaperFlowDesignTokens.radiusXl,
+              ),
               border: Border.all(color: PaperFlowColors.line),
+              boxShadow: PaperFlowDesignTokens.floatingShadow,
             ),
             child: SafeArea(
               top: false,
               minimum: EdgeInsets.zero,
               child: SizedBox(
-                height: 52,
+                height: 50,
                 child: Row(
                   children: [
                     _NavItem(
@@ -99,36 +104,56 @@ class _NavItem extends StatelessWidget {
     final selected = index == selectedIndex;
     final color = selected ? PaperFlowColors.ink : PaperFlowColors.muted;
     return Expanded(
-      child: InkResponse(
-        key: ValueKey('bottom-nav-$index'),
-        onTap: () => onSelected(index),
-        radius: 34,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            SizedBox(
-              width: 32,
-              height: 27,
-              child: Align(
-                alignment: Alignment.center,
-                child: Icon(
-                  selected ? selectedIcon : icon,
-                  size: 25,
-                  color: color,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 2),
+        child: Material(
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(PaperFlowDesignTokens.radiusMd),
+          child: InkWell(
+            key: ValueKey('bottom-nav-$index'),
+            onTap: () => onSelected(index),
+            borderRadius: BorderRadius.circular(PaperFlowDesignTokens.radiusMd),
+            child: AnimatedContainer(
+              duration: MotionTokens.duration(
+                context,
+                MotionTokens.tabDuration,
+              ),
+              curve: MotionTokens.enterCurve,
+              decoration: BoxDecoration(
+                color: selected ? PaperFlowColors.accent : Colors.transparent,
+                borderRadius: BorderRadius.circular(
+                  PaperFlowDesignTokens.radiusMd,
                 ),
               ),
-            ),
-            const SizedBox(height: 3),
-            Text(
-              label,
-              maxLines: 1,
-              style: TextStyle(
-                color: color,
-                fontSize: 10,
-                fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SizedBox(
+                    width: 32,
+                    height: 25,
+                    child: Align(
+                      alignment: Alignment.center,
+                      child: Icon(
+                        selected ? selectedIcon : icon,
+                        size: 22,
+                        color: color,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    label,
+                    maxLines: 1,
+                    style: TextStyle(
+                      color: color,
+                      fontSize: 10,
+                      fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                    ),
+                  ),
+                ],
               ),
             ),
-          ],
+          ),
         ),
       ),
     );

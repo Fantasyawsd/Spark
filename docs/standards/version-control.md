@@ -93,10 +93,12 @@ docs/workstreams/<branch-slug>/
 
 - `feat(chat):` 新功能（scope 为 `lib/src/` 下模块名）
 - `fix(papers):` 缺陷修复
-- `refactor:` 不改变行为的结构调整（可不带 scope）
+- `refactor:` 不改变行为的结构调整
 - `test:` 测试变更
 - `docs:` 文档变更
 - `chore:` 工具、依赖和构建配置
+
+纯文档、全局配置与不改变行为的全局调整可不带 scope。
 
 一个提交只有一个主要意图，并满足：
 

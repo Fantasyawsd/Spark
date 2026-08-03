@@ -18,6 +18,7 @@ PaperFlow 的视觉语言是「中性界面 + 内容出彩」：
 ### 2.1 只用主题 token
 
 - 颜色一律通过 `PaperFlowColors` / `PaperFlowTheme`（`lib/src/core/theme/`）取用，禁止在 Widget 中硬编码 `Color(0x...)`。
+- 现有代码中的历史硬编码色属于遗留：逐步迁移到主题 token（迁移作为独立提交，遵循 `version-control.md` 提交原则）；历史遗留不构成新代码硬编码的例外。
 - 中性层级：`ink`（主文字）→ `muted`（次要文字）→ `subtle`（弱化）→ `line`（分割线）→ `canvas` / `card` / `surface*`（表面）。
 - 主题色三档：`primary`（实色，选中与主要行动）、`primarySoft`（浅底）、`primaryPale`（更浅底）。
 - 表面堆叠用色阶（`canvas` → `card` → `surfaceMuted` → `surfaceStrong`），不用阴影模拟层级。

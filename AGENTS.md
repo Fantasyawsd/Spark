@@ -164,7 +164,7 @@ docs/workstreams/<branch-slug>/
 
 ## 8. Git 与提交约定
 
-- 一个提交只表达一个主要意图，使用 `<type>(<scope>):` 格式，如 `feat(chat):`、`fix(papers):`；type 为 `feat`、`fix`、`refactor`、`test`、`docs`、`chore`，scope 为 `lib/src/` 下的模块名，纯文档与全局配置可不带 scope。
+- 一个提交只表达一个主要意图，使用 `<type>(<scope>):` 格式，如 `feat(chat):`、`fix(papers):`；type 为 `feat`、`fix`、`refactor`、`test`、`docs`、`chore`，scope 为 `lib/src/` 下的模块名；纯文档、全局配置与不改变行为的全局调整可不带 scope。
 - 默认按明确路径暂存；只有独占且已逐项审查的干净工作树才允许整体暂存。
 - 代码、相关测试和功能契约文档应在同一逻辑提交中保持一致。
 - 不提交 build、缓存、日志、临时截图、设备数据、密钥或本机配置。

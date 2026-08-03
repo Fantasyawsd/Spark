@@ -10,7 +10,7 @@
 - Worktree：`C:\Users\Fantasy\Desktop\PaperFlow-worktrees\docs--standards-revamp`
 - 基线提交：`447f1a8`
 - 负责人：Fantasy（编排者）+ Claude Code Agent
-- 状态：规划中
+- 状态：待审查
 - 最近更新：2026-08-03 20:00
 
 ## 目标
@@ -93,15 +93,24 @@
 
 > 由 `/review` 填写摘要（阻断项、缺陷、结论）。
 
-- 审查日期：
-- 阻断项：
+- 审查日期：2026-08-03
+- 阻断项：无
 - 缺陷：
-- 结论：可合并 / 需修复 / 需重新审查
+  1. 台账「检查点与提交」表未记录 4 个提交 SHA；「状态」仍为「规划中」（应改为「待审查」）——违反 version-control.md §7 检查点规则。
+  2. design.md「禁止硬编码 Color(0x...)」未说明历史遗留过渡：lib/ 现有 68 处硬编码（core/widgets 与多个 features），应补「历史硬编码逐步迁移到主题 token，不作为新代码例外」。
+- 建议：
+  3. code-structure.md §2.9「core 或 shared」与 2.13 顶层三目录不一致（实际无 shared 目录），统一为「core」。
+  4. AGENTS.md §8 与 version-control.md §6 的 scope 豁免措辞可统一。
+- 结论：需修复（修复缺陷 1、2 后即可合并）
 
 ## 检查点与提交
 
 | SHA | 提交信息 | 对应阶段 | 验证摘要 |
 | --- | --- | --- | --- |
+| 7828c8f | docs(standards): add top-level charter, closed-set and placement rules | 结构规则 | diff --check 通过 |
+| e0e96fe | docs(standards): add design spec | 设计规范 | 链接检查通过 |
+| 78926f1 | docs: scope conventional commits and add testing philosophy | 提交规范 | 引用检查通过 |
+| 830b141 | docs: add standards revamp workstream ledger | 台账 | — |
 
 ## 交付记录（合并前补齐）
 

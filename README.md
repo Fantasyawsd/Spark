@@ -54,7 +54,6 @@ PaperFlow 是面向个人研究者的 Flutter 论文发现、阅读和 AI 研究
 |   |-- standards/             架构、协作和版本管理规范
 |   |-- templates/             Workstream 状态和开发报告模板
 |   |-- workstreams/           各开发分支的状态与报告
-|   |-- reviews/               架构和质量审查记录
 |   `-- releases/<version>/    仅保存版本发布资料
 |-- lib/
 |   |-- main.dart              应用入口和生产依赖装配

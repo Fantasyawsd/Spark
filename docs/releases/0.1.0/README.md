@@ -9,8 +9,6 @@
 - [发布计划](release-plan.md)
 - [发布检查清单](release-checklist.md)
 - [当前进度审计](progress-audit.md)
-- [架构审查](../../reviews/architecture-2026-08.md)
-- [早期论文与社区体验记录](../../reviews/paper-experience-history.md)
 - [隐私政策草案](privacy-policy-draft.md)
 
 ## 冻结范围

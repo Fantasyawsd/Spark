@@ -16,13 +16,11 @@
 | [开发技能](../.claude/skills/)：`/start`、`/develop`、`/test`、`/review`、`/finish`、`/version`、`/release`，入口见 AGENTS.md「Skill 工作流」 | 活跃 |
 | [任务台账模板](templates/workstream-status.md)：单文件任务台账，skill 引用 | 活跃 |
 
-## 任务与审查
+## 任务与过程
 
 | 文档 | 维护状态 |
 | --- | --- |
 | [任务台账说明](workstreams/README.md)：`docs/workstreams/<slug>/status.md` 的创建与归档规则 | 活跃 |
-| [2026-08 架构审查](reviews/architecture-2026-08.md) | 归档 |
-| [早期论文与社区体验记录](reviews/paper-experience-history.md) | 归档 |
 
 ## 发布归档
 

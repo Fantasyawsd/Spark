@@ -186,7 +186,6 @@ docs/workstreams/<branch-slug>/
 | 开发计划 | `docs/development.md` | 功能开发时由 `/finish` 同步更新 | 活跃 |
 | 过程记录 | `docs/workstreams/<slug>/status.md` | 任务生命周期内由 `/start`→`/finish` 维护；合并后归档保留 | 活跃→归档 |
 | 发布归档 | `docs/releases/<version>/` | 发布时由 `/release` 维护；发布后只补勘误 | 归档 |
-| 审查记录 | `docs/reviews/` | 历史事实，不再新增（审查落盘到台账） | 归档 |
 | 模板 | `docs/templates/` | 随台账模型调整；skill 引用 | 活跃 |
 | 其他 | `README.md`、`CHANGELOG.md`、根 `CLAUDE.md` | README 产品背景；CHANGELOG 由 `/version` 更新；CLAUDE.md 桥接 | 活跃 |
 
@@ -195,7 +194,7 @@ docs/workstreams/<branch-slug>/
 1. 规范变更由编排者批准，skill 无需改动（单一事实源）。
 2. 功能开发时文档同步由 skill 步骤触发：`/develop` 维护台账、`/finish` 更新产品与路线、`/version` 更新 CHANGELOG、`/release` 更新发布归档。
 3. 台账合并后归档保留，不删除、不更新。
-4. `/review` 报告摘要写入台账，`docs/reviews/` 不再新增。
+4. `/review` 报告摘要写入台账，审查结论不单独落盘。
 5. 归档文档不覆盖历史，只补勘误。
 6. 一个文档一个事实源，SKILL.md 不复制规范内容。
 

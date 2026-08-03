@@ -70,7 +70,7 @@
 | `/develop` | `/start` 后，可反复 | 迭代实现、定向验证、原子提交、更新台账 |
 | `/test` | 实现完成后、审查前 | 运行完整验证门禁并记录证据 |
 | `/review` | `/test` 通过后、收尾前 | 只读审查 diff，报告阻断项并写入台账 |
-| `/finish` | `/review` 通过后、合并前 | 完成交付记录、核对完成定义、PR 合并、清理 |
+| `/finish` | `/review` 通过后、合并前 | 完成交付记录、核对完成定义、合入 main（版本迭代才走 PR）、清理 |
 | `/version` | 需要新版本号时 | 升版本号、更新 CHANGELOG、校验 |
 | `/release` | 正式发布时 | 发布清单、签名构建、真机与 Play 门、annotated Tag |
 
@@ -171,7 +171,7 @@ docs/workstreams/<branch-slug>/
 - 不提交 build、缓存、日志、临时截图、设备数据、密钥或本机配置。
 - 不修改、回退或重新格式化编排者或其他来源的无关改动。
 - 已共享提交使用 `git revert` 回滚；是否 rebase、merge 或 cherry-pick 由编排者决定。
-- 普通开发通过 Pull Request 合并到 `main`，且必须通过所需 CI；不得直接强推或绕过保护规则。
+- 日常开发由编排者确认后直接合并到 `main`（本地 merge 或 push，日常 push 不触发 CI）；版本迭代通过 Pull Request 合并并要求所需 CI。
 - 合并前分支必须工作区干净、提交可解释、台账完整。
 
 完整规则见 `docs/standards/version-control.md`。

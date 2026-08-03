@@ -24,8 +24,8 @@ disable-model-invocation: true
    - 完成标准：全部满足；不满足项已记录并停止合并。
 
 4. **合并**
-   - 通过 Pull Request 合并到 main，要求 CI（`Flutter CI / verify`）通过；规则见 `docs/standards/version-control.md`「审查与集成」。
-   - 完成标准：PR 已合并且 CI 通过；未本地强推。
+   - 日常开发由编排者直接合并到 main（本地 merge 或 push，日常不要求 CI）；版本迭代通过 Pull Request 合并并要求 CI（`Flutter CI / verify`）通过；规则见 `docs/standards/version-control.md`「审查与集成」。
+   - 完成标准：已合入 main（版本迭代时 PR 已合并）；日常不要求 CI 通过；未本地强推。
 
 5. **清理**
    - 从控制工作树执行 `git worktree remove` 与 `git worktree prune`，合并后删除分支；规则见 `docs/standards/version-control.md`「Worktree 清理」。

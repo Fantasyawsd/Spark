@@ -152,7 +152,7 @@ git diff --cached --check
 7. 更新开发路线和产品领域文档；关联发布时再更新发布进度与清单。
 8. 形成合并提交。
 
-普通开发必须通过 Pull Request 合并到 `main`。GitHub 上的 `main` 禁止强推，并要求 `Flutter CI / verify` 状态检查通过；不得以本地管理员权限绕过门禁。
+日常开发由编排者直接合并到 `main`（本地 merge 或 push；CI 只在 Pull Request 与发布 tag 时运行，日常 push 不触发）。版本迭代通过 Pull Request 合并到 `main`，并要求 `Flutter CI / verify` 状态检查通过；不得以本地管理员权限绕过门禁。
 
 功能分支不得以“本地测试通过”替代集成分支回归。
 

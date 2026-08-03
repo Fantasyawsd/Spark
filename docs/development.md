@@ -53,6 +53,7 @@ PaperFlow 面向个人研究者，核心闭环由三个一级能力组成：
 - 论文元数据语义已拆分（source / venue / journalReference / comment / affiliations / subjects），未知单位与未知引用数不再显示占位数据；生产 arXiv 链路不产生引用数，展示入口保留待接入可靠引用来源。
 - 本地搜索、点赞、收藏、评论、分享、阅读历史、稍后阅读和自定义收藏分组已持久化；搜索框支持 arXiv ID / abs / PDF 链接直达论文。
 - DeepSeek BYOK 流式翻译与对话；密钥存设备安全存储，公开构建不含共享 Key。
+- 论文与 ChatPaper 共用 Markdown 渲染路径已支持真正的行内 LaTeX：公式、前后正文和标点保持同一段排版；论文 Abstract 通过选择区域保持文本可选，AI 内容继续支持不可选模式。
 - 主要 UI 流程有 Widget 测试覆盖，Android debug APK 可重复构建。
 
 ### 2.2 当前边界

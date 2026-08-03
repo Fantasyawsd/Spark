@@ -95,6 +95,22 @@ void main() {
       );
     });
 
+    test('default feed uses the CS category union instead of all:*', () async {
+      final client = _RecordingClient([_response(_emptyFeed)]);
+      final api = ArxivAtomClient(
+        endpoint: 'https://example.test/api/query',
+        client: client,
+        minimumRequestInterval: Duration.zero,
+      );
+
+      await api.loadLatest(category: null, offset: 0, limit: 20);
+
+      final query =
+          client.requests.single.url.queryParameters['search_query']!;
+      expect(query, startsWith('cat:cs.AI OR cat:cs.CL'));
+      expect(query, isNot(contains('all:*')));
+    });
+
     test('serializes requests and injects the three-second throttle', () async {
       var now = DateTime.utc(2024, 1, 1);
       final delays = <Duration>[];

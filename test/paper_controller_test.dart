@@ -373,6 +373,39 @@ void main() {
       expect(catalog.queries, hasLength(3));
     });
 
+    test('each channel keeps its own loaded papers', () async {
+      final controller = PaperController(
+        const ArxivSeedRepository(),
+        catalogRepository: _CategoryPaperCatalogRepository(),
+      );
+      addTearDown(controller.dispose);
+
+      await controller.initialize();
+      expect(controller.papers.take(2).map((paper) => paper.id),
+          ['union-1', 'union-2']);
+
+      await controller.saveUserChannels(const [
+        UserPaperChannel(
+          kind: PaperChannelKind.subject,
+          id: 'cs.CL',
+          displayName: '计算与语言',
+        ),
+      ]);
+      controller.selectChannel(3);
+      await controller.feed.flushCatalogOperations();
+      expect(controller.papers.take(2).map((paper) => paper.id),
+          ['cs.CL-1', 'cs.CL-2']);
+      expect(
+        controller.papers.map((paper) => paper.id),
+        isNot(contains('union-1')),
+      );
+
+      controller.selectChannel(0);
+      await controller.feed.flushCatalogOperations();
+      expect(controller.papers.take(2).map((paper) => paper.id),
+          ['union-1', 'union-2']);
+    });
+
     test(
         'channel refresh keeps previously loaded papers available to following',
         () async {
@@ -466,6 +499,27 @@ class _RecordingPaperCatalogRepository implements PaperCatalogRepository {
   Future<PaperPage> loadFeed(PaperFeedQuery query) async {
     queries.add(query);
     return PaperPage(papers: const [], source: PaperPageSource.remote);
+  }
+
+  @override
+  Future<PaperPage> search(PaperSearchQuery query) async =>
+      PaperPage(papers: const [], source: PaperPageSource.remote);
+}
+
+class _CategoryPaperCatalogRepository implements PaperCatalogRepository {
+  @override
+  Future<Paper?> findById(String paperId) async => null;
+
+  @override
+  Future<PaperPage> loadFeed(PaperFeedQuery query) async {
+    final category = query.category ?? '';
+    final papers = category.contains('|')
+        ? [_catalogPaper('union-1'), _catalogPaper('union-2')]
+        : [
+            _catalogPaper('$category-1'),
+            _catalogPaper('$category-2'),
+          ];
+    return PaperPage(papers: papers, source: PaperPageSource.remote);
   }
 
   @override

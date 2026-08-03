@@ -51,6 +51,7 @@ class PaperFeedController extends ChangeNotifier {
   String? _channelPreferenceError;
   final Map<String, int> _positions = {};
   final Set<String> _loadedChannelKeys = {};
+  final Map<String, List<Paper>> _channelPapers = {};
   List<UserPaperChannel> _userChannels = const [];
   int _channelIndex = 0;
   int _legacyPrimaryIndex = 0;
@@ -255,13 +256,21 @@ class PaperFeedController extends ChangeNotifier {
   }
 
   void openPaperById(String paperId) {
-    final exists = _allPapers.any((paper) => paper.id == paperId);
-    if (!exists) return;
+    final paper =
+        _allPapers.where((candidate) => candidate.id == paperId).firstOrNull;
+    if (paper == null) return;
     _rememberPosition();
     _channelIndex = 0;
+    final key = currentChannelKey;
+    final list = List<Paper>.of(_papersForChannel(key));
+    var index = list.indexWhere((candidate) => candidate.id == paperId);
+    if (index < 0) {
+      list.insert(0, paper);
+      index = 0;
+    }
+    _channelPapers[key] = List.unmodifiable(list);
     _refreshVisiblePapers();
-    _currentPaperIndex =
-        _visiblePapers.indexWhere((paper) => paper.id == paperId);
+    _currentPaperIndex = index.clamp(0, _visiblePapers.length - 1);
     _positions[currentChannelKey] = _currentPaperIndex;
     _gridMode = false;
     notifyListeners();
@@ -375,12 +384,40 @@ class PaperFeedController extends ChangeNotifier {
   }
 
   void _refreshVisiblePapers() {
-    _visiblePapers = PaperFeedFilter.apply(
-      papers: _allPapers,
-      mode: _channelMode,
-      subjectCode: _channelSubjectCode,
-      followedPaperIds: _followedPaperIds,
-    );
+    if (_channelMode == PaperFeedMode.following) {
+      _visiblePapers = PaperFeedFilter.apply(
+        papers: _allPapers,
+        mode: PaperFeedMode.following,
+        followedPaperIds: _followedPaperIds,
+      );
+      return;
+    }
+    _visiblePapers = List.unmodifiable(_papersForChannel(currentChannelKey));
+  }
+
+  List<Paper> _papersForChannel(String channelKey) {
+    return _channelPapers[channelKey] ?? _fallbackPapersFor(channelKey);
+  }
+
+  List<Paper> _fallbackPapersFor(String channelKey) {
+    if (channelKey == 'fixed:${FixedPaperChannel.latest.name}') {
+      return PaperFeedFilter.apply(
+        papers: _allPapers,
+        mode: PaperFeedMode.latest,
+        followedPaperIds: const {},
+      );
+    }
+    if (channelKey.startsWith('fixed:')) {
+      return _allPapers;
+    }
+    const subjectPrefix = 'subject:';
+    if (!channelKey.startsWith(subjectPrefix)) {
+      return const [];
+    }
+    final code = channelKey.substring(subjectPrefix.length);
+    return _allPapers
+        .where((paper) => paper.subjects.contains(code))
+        .toList(growable: false);
   }
 
   void _applyCatalogPage(PaperPage page, {required bool append}) {
@@ -395,7 +432,21 @@ class PaperFeedController extends ChangeNotifier {
           )]
             .id;
     if (page.papers.isNotEmpty) {
-      _allPapers = _mergeCatalogPapers(page.papers, append: append);
+      final key = currentChannelKey;
+      final existing = _papersForChannel(key);
+      final ordered = append
+          ? [...existing, ...page.papers]
+          : [...page.papers, ...existing];
+      final seen = <String>{};
+      _channelPapers[key] = List.unmodifiable([
+        for (final paper in ordered)
+          if (seen.add(paper.id)) paper,
+      ]);
+      final poolById = <String, Paper>{
+        for (final paper in _allPapers) paper.id: paper,
+        for (final paper in page.papers) paper.id: paper,
+      };
+      _allPapers = List.unmodifiable(poolById.values);
     }
     _catalogNextOffset = page.nextOffset;
     _catalogOffline = page.isOffline;
@@ -414,30 +465,6 @@ class PaperFeedController extends ChangeNotifier {
     _currentPaperIndex = restoredIndex >= 0
         ? restoredIndex
         : _currentPaperIndex.clamp(0, _visiblePapers.length - 1);
-  }
-
-  List<Paper> _mergeCatalogPapers(
-    List<Paper> incoming, {
-    required bool append,
-  }) {
-    final latestById = <String, Paper>{
-      for (final paper in _allPapers) paper.id: paper,
-      for (final paper in incoming) paper.id: paper,
-    };
-    final orderedIds = append
-        ? [
-            ..._allPapers.map((paper) => paper.id),
-            ...incoming.map((paper) => paper.id),
-          ]
-        : [
-            ...incoming.map((paper) => paper.id),
-            ..._allPapers.map((paper) => paper.id),
-          ];
-    final seen = <String>{};
-    return List.unmodifiable([
-      for (final id in orderedIds)
-        if (seen.add(id)) latestById[id]!,
-    ]);
   }
 
   void _prefetchCatalogForIndex(int index) {
@@ -492,6 +519,7 @@ class PaperFeedController extends ChangeNotifier {
     await flushChannelPreferenceWrites();
     _positions.clear();
     _loadedChannelKeys.clear();
+    _channelPapers.clear();
     _userChannels = const [];
     _channelIndex = 0;
     _legacyPrimaryIndex = 0;

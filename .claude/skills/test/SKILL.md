@@ -1,6 +1,6 @@
 ---
 name: test
-description: 运行验证门禁（格式、analyze、全量测试、development APK 构建）并记录证据到台账。
+description: 运行验证门禁（格式、analyze、全量测试、development APK 构建）并记录证据到台账；用户要求验收时启动 Windows 桌面应用。
 disable-model-invocation: true
 ---
 
@@ -18,10 +18,14 @@ disable-model-invocation: true
    - 按顺序运行格式检查、`flutter analyze`、`flutter test`、development APK 构建；命令清单见 `docs/standards/version-control.md`「验证门禁」。
    - 完成标准：每个命令有明确成功/失败输出；失败时区分本次引入 / 基线已有 / 环境缺失 / 外部服务不可用。
 
-3. **记录证据**
+3. **验收运行（用户要求检验时）**
+   - 执行 `flutter pub get` + `flutter run -d windows` 启动 Windows 桌面应用，等待编排者实际运行检验；不自行替代为 APK、模拟器或其他平台，运行前先与编排者确认。
+   - 完成标准：应用窗口成功启动，无构建失败。
+
+4. **记录证据**
    - 把每个命令结果写入 status.md「验证记录」。
    - 完成标准：台账验证表完整；不存在未运行却声称通过的情况。
 
-4. **汇报**
+5. **汇报**
    - 汇总通过项与失败项给编排者。
    - 完成标准：汇报含每个门禁结果与失败归属。

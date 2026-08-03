@@ -16,7 +16,7 @@
 - 产品：面向个人研究者的 Flutter 论文发现、阅读和 ChatPaper 应用。
 - 当前代码版本：`0.0.1+1`（未正式发布），一级页面为论文、ChatPaper、我的。
 - 当前重点方向：论文频道、时间索引、结构化元数据和 PDF AI 解读；持续计划见 `docs/development.md`，不预先绑定发布版本。
-- 第一验收平台：Android 手机；不得启动 Android 模拟器，直接构建 APK。
+- 开发验收：代码任务（尤其 UI/功能修复）完成后，用 `flutter pub get` + `flutter run -d windows` 在 Windows 桌面启动应用，由用户实际运行检验；启动前先与用户确认。
 - Flutter：`D:\App\flutter`，当前稳定版 Flutter 3.44.8 / Dart 3.12.2；执行前仍应以 `flutter --version` 为准。
 - 应用入口：`lib/main.dart`。
 - 组合根与导航：`lib/src/app/`。
@@ -212,7 +212,7 @@ flutter build apk --debug --flavor development --dart-define=PAPERFLOW_ENV=devel
 纯文档任务至少执行 Markdown 链接检查和 `git diff --check`，不需要无意义地运行 Flutter 构建。
 
 - 不启动 Android 模拟器。
-- 用户未要求时不自动打开应用或执行桌面操控。
+- 开发验收（用户要求检验时）：执行 `flutter pub get` + `flutter run -d windows` 启动 Windows 桌面应用，等待用户操作检验；不自行替代为 APK、模拟器或其他平台。运行前先与用户确认。
 - Windows release 只在任务涉及 Windows 发布或回归时执行。
 - UI 修改使用 Widget 测试、静态检查和构建验证；不使用浏览器自动化验证 Flutter 应用。
 - 无法执行某项验证时必须在台账中说明原因，不能声称已经通过。

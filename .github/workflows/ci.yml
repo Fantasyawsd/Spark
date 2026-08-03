@@ -84,6 +84,7 @@ jobs:
             $output | Write-Output
             throw 'Production release failed for an unexpected reason.'
           }
+          exit 0
 
       - name: Upload development APK
         uses: actions/upload-artifact@v4

@@ -83,78 +83,114 @@ class _PaperChannelManagerSheetState extends State<PaperChannelManagerSheet> {
               ),
             ),
             Flexible(
-              child: SingleChildScrollView(
-                key: const ValueKey('paper-channel-manager-body'),
-                padding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
+              child: DefaultTabController(
+                length: 2,
                 child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (_channels.isNotEmpty) ...[
-                      const _SectionTitle('已添加频道'),
-                      ReorderableListView.builder(
-                        key: const ValueKey('paper-channel-added-list'),
-                        shrinkWrap: true,
-                        buildDefaultDragHandles: true,
-                        itemCount: _channels.length,
-                        onReorderItem: _handleReorder,
-                        itemBuilder: (context, index) {
-                          final channel = _channels[index];
-                          return ListTile(
-                            key: ValueKey(
-                                'paper-channel-added-${channel.storageKey}'),
-                            dense: true,
-                            contentPadding: EdgeInsets.zero,
-                            leading: ReorderableDragStartListener(
-                              index: index,
-                              child: const Icon(
-                                Icons.drag_indicator_rounded,
-                                color: PaperFlowColors.muted,
-                                size: 18,
-                              ),
-                            ),
-                            title: Text(channel.displayName),
-                            subtitle: Text(
-                              channel.id,
-                              style: const TextStyle(
-                                color: PaperFlowColors.muted,
-                                fontSize: 11,
-                              ),
-                            ),
-                            trailing: IconButton(
-                              key: ValueKey(
-                                'paper-channel-remove-${channel.storageKey}',
-                              ),
-                              tooltip: '移除频道',
-                              onPressed: () => _removeChannel(channel),
-                              icon: const Icon(
-                                Icons.remove_circle_outline_rounded,
-                                color: PaperFlowColors.muted,
-                                size: 19,
-                              ),
-                            ),
-                          );
-                        },
+                    TabBar(
+                      key: const ValueKey('paper-channel-manager-tabs'),
+                      labelColor: PaperFlowColors.ink,
+                      unselectedLabelColor: PaperFlowColors.muted,
+                      indicatorColor: PaperFlowColors.primary,
+                      labelStyle: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
                       ),
-                      const SizedBox(height: 8),
-                    ],
-                    const _SectionTitle('按主题'),
-                    for (final subject in ArxivSubjectCatalog.initialSubjects)
-                      _SubjectRow(
-                        subject: subject,
-                        added: _isAdded(subject.code),
-                        onToggle: () => _toggleSubject(subject),
-                      ),
-                    const SizedBox(height: 8),
-                    const _SectionTitle('按会议'),
-                    const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 4),
-                      child: Text(
-                        '会议频道尚未开放，真实会议数据源接入后可编辑。',
-                        style: TextStyle(
-                          color: PaperFlowColors.muted,
-                          fontSize: 12,
-                        ),
+                      tabs: const [
+                        Tab(text: '按主题'),
+                        Tab(text: '按会议'),
+                      ],
+                    ),
+                    Expanded(
+                      child: TabBarView(
+                        children: [
+                          SingleChildScrollView(
+                            key: const ValueKey('paper-channel-subject-page'),
+                            padding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                if (_channels.isNotEmpty) ...[
+                                  const _SectionTitle('已添加频道'),
+                                  ReorderableListView.builder(
+                                    key: const ValueKey(
+                                        'paper-channel-added-list'),
+                                    shrinkWrap: true,
+                                    buildDefaultDragHandles: true,
+                                    itemCount: _channels.length,
+                                    onReorderItem: _handleReorder,
+                                    itemBuilder: (context, index) {
+                                      final channel = _channels[index];
+                                      return ListTile(
+                                        key: ValueKey(
+                                            'paper-channel-added-${channel.storageKey}'),
+                                        dense: true,
+                                        contentPadding: EdgeInsets.zero,
+                                        leading: ReorderableDragStartListener(
+                                          index: index,
+                                          child: const Icon(
+                                            Icons.drag_indicator_rounded,
+                                            color: PaperFlowColors.muted,
+                                            size: 18,
+                                          ),
+                                        ),
+                                        title: Text(channel.displayName),
+                                        subtitle: Text(
+                                          channel.id,
+                                          style: const TextStyle(
+                                            color: PaperFlowColors.muted,
+                                            fontSize: 11,
+                                          ),
+                                        ),
+                                        trailing: IconButton(
+                                          key: ValueKey(
+                                            'paper-channel-remove-${channel.storageKey}',
+                                          ),
+                                          tooltip: '移除频道',
+                                          onPressed: () =>
+                                              _removeChannel(channel),
+                                          icon: const Icon(
+                                            Icons.remove_circle_outline_rounded,
+                                            color: PaperFlowColors.muted,
+                                            size: 19,
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                  const SizedBox(height: 8),
+                                ],
+                                const _SectionTitle('全部主题'),
+                                for (final subject
+                                    in ArxivSubjectCatalog.initialSubjects)
+                                  _SubjectRow(
+                                    subject: subject,
+                                    added: _isAdded(subject.code),
+                                    onToggle: () => _toggleSubject(subject),
+                                  ),
+                              ],
+                            ),
+                          ),
+                          SingleChildScrollView(
+                            key:
+                                const ValueKey('paper-channel-conference-page'),
+                            padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+                            child: const Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '会议频道尚未开放，真实会议数据源接入后可编辑。',
+                                  style: TextStyle(
+                                    color: PaperFlowColors.muted,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],

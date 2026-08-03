@@ -48,9 +48,9 @@ void main() {
     );
 
     expect(find.text('已添加频道'), findsOneWidget);
+    expect(find.byKey(const ValueKey('paper-channel-manager-tabs')),
+        findsOneWidget);
     expect(find.text('按主题'), findsOneWidget);
-    await tester.ensureVisible(find.text('按会议'));
-    await tester.pump();
     expect(find.text('按会议'), findsOneWidget);
 
     await tester.ensureVisible(
@@ -90,16 +90,25 @@ void main() {
     }
   });
 
-  testWidgets('conference section is visible but not addable', (tester) async {
+  testWidgets('conference tab is reachable by swipe and not addable',
+      (tester) async {
     await openSheet(tester, onChannelsChanged: (_) {});
 
-    await tester.ensureVisible(
-      find.text('会议频道尚未开放，真实会议数据源接入后可编辑。'),
+    const hint = '会议频道尚未开放，真实会议数据源接入后可编辑。';
+    expect(find.text(hint), findsNothing);
+
+    await tester.drag(
+      find.byKey(const ValueKey('paper-channel-subject-page')),
+      const Offset(-400, 0),
     );
-    await tester.pump();
-    expect(
-      find.text('会议频道尚未开放，真实会议数据源接入后可编辑。'),
-      findsOneWidget,
-    );
+    await tester.pumpAndSettle();
+    expect(find.text(hint), findsOneWidget);
+    expect(find.byKey(const ValueKey('paper-channel-subject-cs.AI')),
+        findsNothing);
+
+    await tester.tap(find.text('按主题'));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('paper-channel-subject-cs.AI')),
+        findsOneWidget);
   });
 }

@@ -68,8 +68,8 @@ class PaperLatexInlineSyntax extends md.InlineSyntax {
 /// The package builder wraps every formula in a [SingleChildScrollView]. As an
 /// inline [WidgetSpan] inside a paragraph that viewport has no bounded width,
 /// so it forces the formula onto its own line and breaks the surrounding text
-/// flow. Rendering [Math.tex] directly keeps the formula inline on the text
-/// baseline.
+/// flow. Returning a [Text] with a [WidgetSpan] lets flutter_markdown_plus merge
+/// the formula with the surrounding [TextSpan]s into one paragraph.
 class PaperLatexElementBuilder extends MarkdownElementBuilder {
   PaperLatexElementBuilder({
     this.textStyle,
@@ -91,7 +91,7 @@ class PaperLatexElementBuilder extends MarkdownElementBuilder {
   ) {
     final text = element.textContent;
     if (text.isEmpty) {
-      return const SizedBox.shrink();
+      return const Text('');
     }
 
     MathStyle mathStyle;
@@ -104,11 +104,21 @@ class PaperLatexElementBuilder extends MarkdownElementBuilder {
         mathStyle = MathStyle.text;
     }
 
-    return Math.tex(
-      text,
-      textStyle: textStyle,
-      mathStyle: mathStyle,
-      textScaleFactor: textScaleFactor,
+    return Text.rich(
+      TextSpan(
+        children: [
+          WidgetSpan(
+            alignment: PlaceholderAlignment.baseline,
+            baseline: TextBaseline.alphabetic,
+            child: Math.tex(
+              text,
+              textStyle: textStyle,
+              mathStyle: mathStyle,
+              textScaleFactor: textScaleFactor,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -144,7 +154,7 @@ class PaperMarkdown extends StatelessWidget {
     Widget markdownBody(String value) {
       return MarkdownBody(
         data: value,
-        selectable: selectable,
+        selectable: false,
         softLineBreak: false,
         extensionSet: md.ExtensionSet(
           <md.BlockSyntax>[
@@ -164,22 +174,32 @@ class PaperMarkdown extends StatelessWidget {
     }
 
     final segments = _MarkdownCodeFenceParser.split(markdown);
+    late final Widget content;
     if (segments.length == 1 && !segments.first.isCode) {
-      return markdownBody(markdown);
+      content = markdownBody(markdown);
+    } else {
+      content = Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          for (final segment in segments)
+            segment.isCode
+                ? _MarkdownCodeBlock(
+                    code: segment.content,
+                    language: segment.language,
+                    textStyle: styleSheet.code,
+                  )
+                : markdownBody(segment.content),
+        ],
+      );
     }
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        for (final segment in segments)
-          segment.isCode
-              ? _MarkdownCodeBlock(
-                  code: segment.content,
-                  language: segment.language,
-                  textStyle: styleSheet.code,
-                )
-              : markdownBody(segment.content),
-      ],
-    );
+
+    if (!selectable) {
+      return SelectionContainer.disabled(child: content);
+    }
+    if (SelectionContainer.maybeOf(context) != null) {
+      return content;
+    }
+    return SelectionArea(child: content);
   }
 }
 

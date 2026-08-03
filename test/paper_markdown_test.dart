@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:markdown/markdown.dart' as md;
@@ -9,10 +10,7 @@ import 'package:paperflow/src/features/papers/presentation/widgets/paper_markdow
 void main() {
   group('GeneratedMarkdownStabilizer', () {
     test('temporarily closes unfinished rich text delimiters', () {
-      expect(
-        GeneratedMarkdownStabilizer.stabilize('**结论'),
-        '**结论**',
-      );
+      expect(GeneratedMarkdownStabilizer.stabilize('**结论'), '**结论**');
       expect(
         GeneratedMarkdownStabilizer.stabilize(r'公式 $E=mc^2'),
         r'公式 $E=mc^2$',
@@ -35,10 +33,7 @@ void main() {
         PaperMarkdownPreprocessor.prepare(r'值为 \(\theta + \epsilon\)'),
         r'值为 $\theta + \epsilon$',
       );
-      expect(
-        PaperMarkdownPreprocessor.prepare(r'公式 $E=mc^2'),
-        r'公式 $E=mc^2$',
-      );
+      expect(PaperMarkdownPreprocessor.prepare(r'公式 $E=mc^2'), r'公式 $E=mc^2$');
     });
 
     test('keeps simple Greek symbols inline as readable Unicode', () {
@@ -46,21 +41,20 @@ void main() {
         PaperMarkdownPreprocessor.prepare(r'其中 $\varepsilon$ 比例'),
         '其中 ε 比例',
       );
-      expect(
-        PaperMarkdownPreprocessor.prepare(r'趋于 $\infty$'),
-        '趋于 ∞',
-      );
+      expect(PaperMarkdownPreprocessor.prepare(r'趋于 $\infty$'), '趋于 ∞');
     });
 
-    test('falls back to readable Unicode when formula structure is invalid',
-        () {
-      final fallback = PaperMarkdownPreprocessor.prepare(
-        r'极限 $\theta \to \infty_{',
-      );
-      expect(fallback, isNot(contains(r'$')));
-      expect(fallback, contains('θ'));
-      expect(fallback, contains('∞'));
-    });
+    test(
+      'falls back to readable Unicode when formula structure is invalid',
+      () {
+        final fallback = PaperMarkdownPreprocessor.prepare(
+          r'极限 $\theta \to \infty_{',
+        );
+        expect(fallback, isNot(contains(r'$')));
+        expect(fallback, contains('θ'));
+        expect(fallback, contains('∞'));
+      },
+    );
 
     test('converts abstract text commands outside math to Markdown', () {
       expect(
@@ -79,7 +73,9 @@ void main() {
 
     test('leaves text commands inside math mode untouched', () {
       expect(
-        PaperMarkdownPreprocessor.prepare(r'where $\textbf{x} \sim \mathcal{N}$'),
+        PaperMarkdownPreprocessor.prepare(
+          r'where $\textbf{x} \sim \mathcal{N}$',
+        ),
         r'where $\textbf{x} \sim \mathcal{N}$',
       );
     });
@@ -87,7 +83,8 @@ void main() {
     test('keeps formulas intact when text commands are converted', () {
       expect(
         PaperMarkdownPreprocessor.prepare(
-            r'\textbf{ViewMind3D} achieves $\beta > 2$ on \emph{benchmarks}'),
+          r'\textbf{ViewMind3D} achieves $\beta > 2$ on \emph{benchmarks}',
+        ),
         r'**ViewMind3D** achieves $\beta > 2$ on *benchmarks*',
       );
     });
@@ -104,8 +101,7 @@ void main() {
           ],
         ),
       );
-      final nodes =
-          document.parseLines(LineSplitter.split(source).toList());
+      final nodes = document.parseLines(LineSplitter.split(source).toList());
       final found = <md.Element>[];
       void visit(md.Node node) {
         if (node is md.Element) {
@@ -122,8 +118,7 @@ void main() {
       return found;
     }
 
-    test('closes a formula followed by a hyphen without swallowing `\$`',
-        () {
+    test('closes a formula followed by a hyphen without swallowing `\$`', () {
       final elements = latexElements(
         r'for all $(\varepsilon,\delta)$-DP mechanisms with $\varepsilon > 0$.',
       );
@@ -161,8 +156,9 @@ void main() {
     });
   });
 
-  testWidgets('inline formulas render without a wrapping scroll view',
-      (tester) async {
+  testWidgets('inline formulas render without a wrapping scroll view', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
@@ -189,13 +185,100 @@ void main() {
     );
   });
 
+  testWidgets(
+    'wrapped text keeps inline formulas and punctuation in one flow',
+    (tester) async {
+      const prefix = 'The density belongs to a smooth class ';
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 320,
+              child: PaperMarkdown(
+                data:
+                    r'The density belongs to a smooth class $\beta > 2$, after',
+                styleSheet: paperReaderMarkdownStyle(),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      expect(tester.takeException(), isNull);
+      final mathWidget = find.byWidgetPredicate(
+        (widget) => widget.runtimeType.toString() == 'Math',
+      );
+      expect(mathWidget, findsOneWidget);
+
+      final paragraphFinder = find.ancestor(
+        of: mathWidget,
+        matching: find.byType(Text),
+      );
+      expect(
+        paragraphFinder,
+        findsOneWidget,
+        reason: 'Inline math must be a WidgetSpan inside one text paragraph.',
+      );
+      expect(find.byType(SelectionArea), findsOneWidget);
+
+      final richTextFinder = find.ancestor(
+        of: mathWidget,
+        matching: find.byType(RichText),
+      );
+      expect(richTextFinder, findsOneWidget);
+      final richText = tester.widget<RichText>(richTextFinder);
+      expect(
+        richText.text.toPlainText(includePlaceholders: true),
+        '$prefix\uFFFC, after',
+      );
+      final paragraph = tester.renderObject<RenderParagraph>(richTextFinder);
+      final paragraphRect = tester.getRect(richTextFinder);
+      final mathRect = tester.getRect(mathWidget).shift(-paragraphRect.topLeft);
+      final precedingWordBox = paragraph
+          .getBoxesForSelection(
+            const TextSelection(
+              baseOffset: prefix.length - 6,
+              extentOffset: prefix.length - 1,
+            ),
+          )
+          .single;
+      final punctuationBox = paragraph
+          .getBoxesForSelection(
+            const TextSelection(
+              baseOffset: prefix.length + 1,
+              extentOffset: prefix.length + 2,
+            ),
+          )
+          .single;
+
+      bool overlapsVertically(Rect first, Rect second) {
+        return first.bottom > second.top && second.bottom > first.top;
+      }
+
+      expect(
+        overlapsVertically(mathRect, precedingWordBox.toRect()),
+        isTrue,
+        reason: 'The formula must use the remaining space after the last word. '
+            'word=${precedingWordBox.toRect()} math=$mathRect',
+      );
+      expect(
+        overlapsVertically(mathRect, punctuationBox.toRect()),
+        isTrue,
+        reason: 'The following punctuation must stay beside the formula. '
+            'math=$mathRect punctuation=${punctuationBox.toRect()}',
+      );
+    },
+  );
+
   testWidgets('paper Markdown renders inline and block LaTeX', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
           body: SingleChildScrollView(
             child: PaperMarkdown(
-              data: r'行内公式 $E=mc^2$。' '\n\n' r'$$\frac{a}{b}$$',
+              data: r'行内公式 $E=mc^2$。'
+                  '\n\n'
+                  r'$$\frac{a}{b}$$',
               styleSheet: paperReaderMarkdownStyle(),
             ),
           ),
@@ -204,11 +287,15 @@ void main() {
     );
 
     expect(tester.takeException(), isNull);
-    expect(find.text('行内公式 '), findsOneWidget);
+    expect(find.textContaining('行内公式', findRichText: true), findsOneWidget);
+    final mathWidgets = find.byWidgetPredicate(
+      (widget) => widget.runtimeType.toString() == 'Math',
+    );
+    expect(mathWidgets, findsNWidgets(2));
     expect(
-      find.byWidgetPredicate(
-          (widget) => widget.runtimeType.toString() == 'Math'),
-      findsNWidgets(2),
+      tester.getRect(mathWidgets.at(1)).top,
+      greaterThan(tester.getRect(mathWidgets.at(0)).bottom),
+      reason: 'Display math must remain in its own block below inline text.',
     );
   });
 
@@ -223,10 +310,7 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
-          body: PaperMarkdown(
-            data: code,
-            styleSheet: paperAiMarkdownStyle(),
-          ),
+          body: PaperMarkdown(data: code, styleSheet: paperAiMarkdownStyle()),
         ),
       ),
     );

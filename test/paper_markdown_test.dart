@@ -161,6 +161,34 @@ void main() {
     });
   });
 
+  testWidgets('inline formulas render without a wrapping scroll view',
+      (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: PaperMarkdown(
+            data: r'行内公式 $E=mc^2$ 与文本同行。',
+            styleSheet: paperReaderMarkdownStyle(),
+          ),
+        ),
+      ),
+    );
+
+    expect(tester.takeException(), isNull);
+    final mathWidget = find.byWidgetPredicate(
+      (widget) => widget.runtimeType.toString() == 'Math',
+    );
+    expect(mathWidget, findsOneWidget);
+    // 行内公式不能包在 SingleChildScrollView 里，否则会被顶成独立一行。
+    expect(
+      find.ancestor(
+        of: mathWidget,
+        matching: find.byType(SingleChildScrollView),
+      ),
+      findsNothing,
+    );
+  });
+
   testWidgets('paper Markdown renders inline and block LaTeX', (tester) async {
     await tester.pumpWidget(
       MaterialApp(

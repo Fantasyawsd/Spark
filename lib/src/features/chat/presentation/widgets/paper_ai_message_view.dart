@@ -104,6 +104,7 @@ class PaperAiMessageView extends StatelessWidget {
               data: message.content,
               styleSheet: paperAiMarkdownStyle(color: PaperFlowColors.ink),
               stabilizeGeneratedSyntax: true,
+              selectable: !streaming,
             ),
           if (message.sources.isNotEmpty)
             _SourcesPanel(sources: message.sources),
@@ -389,6 +390,7 @@ class _ReasoningPanelState extends State<_ReasoningPanel> {
                         reasoning: true,
                       ),
                       stabilizeGeneratedSyntax: true,
+                      selectable: !widget.streaming,
                     ),
                   )
                 : const SizedBox.shrink(),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:flutter_markdown_plus_latex/flutter_markdown_plus_latex.dart';
+import 'package:flutter_math_fork/flutter_math.dart';
 import 'package:markdown/markdown.dart' as md;
 
 import '../theme/paperflow_theme.dart';
@@ -62,6 +63,56 @@ class PaperLatexInlineSyntax extends md.InlineSyntax {
   }
 }
 
+/// Replaces [LatexElementBuilder] from flutter_markdown_plus_latex.
+///
+/// The package builder wraps every formula in a [SingleChildScrollView]. As an
+/// inline [WidgetSpan] inside a paragraph that viewport has no bounded width,
+/// so it forces the formula onto its own line and breaks the surrounding text
+/// flow. Rendering [Math.tex] directly keeps the formula inline on the text
+/// baseline.
+class PaperLatexElementBuilder extends MarkdownElementBuilder {
+  PaperLatexElementBuilder({
+    this.textStyle,
+    this.textScaleFactor,
+  });
+
+  /// The style to apply to the formula text.
+  final TextStyle? textStyle;
+
+  /// The text scale factor to apply to the formula.
+  final double? textScaleFactor;
+
+  @override
+  Widget visitElementAfterWithContext(
+    BuildContext context,
+    md.Element element,
+    TextStyle? preferredStyle,
+    TextStyle? parentStyle,
+  ) {
+    final text = element.textContent;
+    if (text.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    MathStyle mathStyle;
+    switch (element.attributes['MathStyle']) {
+      case 'text':
+        mathStyle = MathStyle.text;
+      case 'display':
+        mathStyle = MathStyle.display;
+      default:
+        mathStyle = MathStyle.text;
+    }
+
+    return Math.tex(
+      text,
+      textStyle: textStyle,
+      mathStyle: mathStyle,
+      textScaleFactor: textScaleFactor,
+    );
+  }
+}
+
 /// The single Markdown rendering path used by paper content and AI output.
 ///
 /// Generated text can end a streaming frame with an unfinished Markdown or
@@ -106,7 +157,7 @@ class PaperMarkdown extends StatelessWidget {
           ],
         ),
         builders: <String, MarkdownElementBuilder>{
-          'latex': LatexElementBuilder(textStyle: bodyStyle),
+          'latex': PaperLatexElementBuilder(textStyle: bodyStyle),
         },
         styleSheet: styleSheet,
       );

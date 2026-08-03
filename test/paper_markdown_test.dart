@@ -1,6 +1,9 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:markdown/markdown.dart' as md;
 import 'package:paperflow/src/features/papers/presentation/widgets/paper_markdown.dart';
 
 void main() {
@@ -57,6 +60,74 @@ void main() {
       expect(fallback, isNot(contains(r'$')));
       expect(fallback, contains('θ'));
       expect(fallback, contains('∞'));
+    });
+  });
+
+  group('PaperLatexInlineSyntax', () {
+    List<md.Element> latexElements(String source) {
+      final document = md.Document(
+        extensionSet: md.ExtensionSet(
+          md.ExtensionSet.gitHubFlavored.blockSyntaxes,
+          <md.InlineSyntax>[
+            PaperLatexInlineSyntax(),
+            ...md.ExtensionSet.gitHubFlavored.inlineSyntaxes,
+          ],
+        ),
+      );
+      final nodes =
+          document.parseLines(LineSplitter.split(source).toList());
+      final found = <md.Element>[];
+      void visit(md.Node node) {
+        if (node is md.Element) {
+          if (node.tag == 'latex') found.add(node);
+          for (final child in node.children ?? const <md.Node>[]) {
+            visit(child);
+          }
+        }
+      }
+
+      for (final node in nodes) {
+        visit(node);
+      }
+      return found;
+    }
+
+    test('closes a formula followed by a hyphen without swallowing `\$`',
+        () {
+      final elements = latexElements(
+        r'for all $(\varepsilon,\delta)$-DP mechanisms with $\varepsilon > 0$.',
+      );
+      expect(elements, hasLength(2));
+      expect(elements[0].textContent, r'(\varepsilon,\delta)');
+      expect(elements[1].textContent, r'\varepsilon > 0');
+      expect(elements[0].textContent, isNot(contains(r'$')));
+      expect(elements[1].textContent, isNot(contains(r'$')));
+      expect(elements[0].attributes['MathStyle'], 'text');
+    });
+
+    test('keeps surrounding text intact when a formula adjoins a word', () {
+      final elements = latexElements(
+        r'with $\epsilon$-greedy exploration and $\mathcal{O}(n)$ cost.',
+      );
+      expect(elements, hasLength(2));
+      expect(elements[0].textContent, r'\epsilon');
+      expect(elements[1].textContent, r'\mathcal{O}(n)');
+    });
+
+    test('parses inline formulas inside Chinese text', () {
+      final elements = latexElements(
+        r'其中 $h_{\mathrm{DAP}}$ 表示带宽，$\beta > 2$ 为平滑参数。',
+      );
+      expect(elements, hasLength(2));
+      expect(elements[0].textContent, r'h_{\mathrm{DAP}}');
+      expect(elements[1].textContent, r'\beta > 2');
+    });
+
+    test('marks single-line `\$\$...\$\$` as display style', () {
+      final elements = latexElements(r'公式 $$\frac{a}{b}$$ 居中显示');
+      expect(elements, hasLength(1));
+      expect(elements[0].textContent, r'\frac{a}{b}');
+      expect(elements[0].attributes['MathStyle'], 'display');
     });
   });
 

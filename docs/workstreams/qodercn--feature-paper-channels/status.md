@@ -9,7 +9,7 @@
 - 基线提交：`b1a667b`（origin/main）
 - 负责人：Fantasy（编排者）；执行：QoderCN Agent
 - 状态：开发中
-- 最近更新：2026-08-04 04:10
+- 最近更新：2026-08-04 04:40
 
 ## 目标
 
@@ -84,6 +84,8 @@
 | 2026-08-04 | 切换频道只对未加载频道做懒加载，已加载频道不重新请求；强制刷新仅由下拉触发（编排者验收反馈） | 避免每次选 tab 都刷新 | 回归测试覆盖来回切换不重复请求 |
 | 2026-08-04 | 频道管理页暂不提供主题搜索，直接列出全部主题（编排者决定） | 目录仅 4 个条目，搜索无价值；目录扩大后再恢复 | `ArxivSubjectCatalog.search/findByCode` 一并移除；合并前需在开发计划建议中同步该调整 |
 | 2026-08-04 | 频道管理页「按主题 / 按会议」改为两个 Tab，支持左右滑动翻页（编排者要求） | 分区更清晰，会议页后续可独立扩展 | Widget 测试覆盖滑动翻页 |
+| 2026-08-04 | 每个频道保存各自查询加载的论文列表，共享池仅服务关注频道与按 ID 打开（编排者验收反馈） | 不同频道内容不得互相顶替 | 删除全局合并逻辑，新增频道列表独立测试 |
+| 2026-08-04 | 双栏点击论文推入详情页（可返回），不再切换单栏模式（编排者验收反馈） | 双栏浏览可中断可恢复 | 未接入详情导航时保留原选中行为 |
 
 ## 验证记录
 
@@ -114,6 +116,8 @@
 | 28fdf52 | refactor(papers): drop topic search from channel manager while catalog has four entries | 编排者决定：4 个主题无需搜索 | analyze 通过；217 测试通过；格式门禁通过 |
 | 415146f | feat(papers): split channel manager into swipeable subject and conference tabs | 编排者要求：按主题/按会议做成 Tab 翻页 | analyze 通过；217 测试通过；格式门禁通过 |
 | ab5aed1 | refactor(papers): rename channel manager tabs to 主题/会议 | 编排者要求：Tab 文案去掉「按」字 | analyze 通过；217 测试通过；格式门禁通过 |
+| 5928858 | fix(papers): keep a separate loaded feed per channel instead of one shared pool | 验收反馈：不同频道需各自缓存论文列表 | analyze 通过；218 测试通过；格式门禁通过 |
+| a40c3a8 | fix(papers): open grid papers in a temporary detail page instead of leaving grid | 验收反馈：双栏点击为临时进入、可返回 | analyze 通过；218 测试通过；格式门禁通过 |
 
 ## 交付记录（合并前补齐）
 

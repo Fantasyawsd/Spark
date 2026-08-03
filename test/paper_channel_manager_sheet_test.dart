@@ -50,8 +50,8 @@ void main() {
     expect(find.text('已添加频道'), findsOneWidget);
     expect(find.byKey(const ValueKey('paper-channel-manager-tabs')),
         findsOneWidget);
-    expect(find.text('按主题'), findsOneWidget);
-    expect(find.text('按会议'), findsOneWidget);
+    expect(find.text('主题'), findsOneWidget);
+    expect(find.text('会议'), findsOneWidget);
 
     await tester.ensureVisible(
       find.byKey(const ValueKey('paper-channel-subject-cs.AI')),
@@ -106,7 +106,7 @@ void main() {
     expect(find.byKey(const ValueKey('paper-channel-subject-cs.AI')),
         findsNothing);
 
-    await tester.tap(find.text('按主题'));
+    await tester.tap(find.text('主题'));
     await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey('paper-channel-subject-cs.AI')),
         findsOneWidget);

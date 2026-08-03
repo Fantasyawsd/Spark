@@ -97,8 +97,8 @@ class _PaperChannelManagerSheetState extends State<PaperChannelManagerSheet> {
                         fontWeight: FontWeight.w700,
                       ),
                       tabs: const [
-                        Tab(text: '按主题'),
-                        Tab(text: '按会议'),
+                        Tab(text: '主题'),
+                        Tab(text: '会议'),
                       ],
                     ),
                     Expanded(

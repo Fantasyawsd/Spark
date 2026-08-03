@@ -1,7 +1,7 @@
 # PaperFlow 开发计划
 
 > 状态：持续维护
-> 最近更新：2026-08-03
+> 最近更新：2026-08-04
 
 本文是开发计划的唯一文件，涵盖产品边界、优先级和各领域（论文 / ChatPaper / 我的）的能力现状与未来方向。发布范围和发布证据归入 `releases/<version>/`；架构、Git 与发布规则分别见 [`standards/code-structure.md`](standards/code-structure.md)、[`standards/version-control.md`](standards/version-control.md)、[`standards/release-management.md`](standards/release-management.md)。
 
@@ -49,6 +49,8 @@ PaperFlow 面向个人研究者，核心闭环由三个一级能力组成：
 
 - 论文、ChatPaper、我的三个一级页面，本地功能形成完整单机闭环。
 - 正式组合根接入 arXiv Atom 远程目录、版本化论文缓存与离线回退，内置种子保证冷启动。
+- 结构化频道体系：推荐 / 关注 / 最新固定频道 + 用户主题频道（首批 cs.AI / cs.CL / cs.CV / cs.LG），频道栏与「主题 / 会议」Tab 管理页已上线；频道偏好版本化持久化，每频道独立论文列表、浏览位置与懒加载。
+- 论文元数据语义已拆分（source / venue / journalReference / comment / affiliations / subjects），未知单位与未知引用数不再显示占位数据。
 - 本地搜索、点赞、收藏、评论、分享、阅读历史、稍后阅读和自定义收藏分组已持久化。
 - DeepSeek BYOK 流式翻译与对话；密钥存设备安全存储，公开构建不含共享 Key。
 - 主要 UI 流程有 Widget 测试覆盖，Android debug APK 可重复构建。
@@ -351,11 +353,11 @@ Abstract
 
 #### 开发顺序
 
-1. 改造顶部频道栏和 `＋` 频道管理。
-2. 建立 arXiv 主题与会议频道的数据模型。
+1. 改造顶部频道栏和 `＋` 频道管理。（已完成；管理页为「主题 / 会议」Tab，对勾即添加状态，主题搜索与排序待目录扩大后恢复，见 `docs/workstreams/qodercn--feature-paper-channels/status.md`）
+2. 建立 arXiv 主题与会议频道的数据模型。（已完成；主题模型与首批目录落地，会议频道模型保留、待真实数据源）
 3. 将旧筛选按钮改为时间筛选。
-4. 修正 source、venue、subject、publish time 和单位字段。
-5. 移除引用数展示。
+4. 修正 source、venue、subject、publish time 和单位字段。（已完成；缓存 schema v2 迁移同步还原未知语义）
+5. 移除引用数展示。（已完成；引用数改为可空未知语义，未知不显示）
 6. 将论文内容改成六个横向页面。
 7. 完成中文摘要和内容关键词本地缓存。
 8. 实现 PDF 下载、正文提取和六问 AI 解读。

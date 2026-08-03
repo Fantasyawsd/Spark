@@ -19,7 +19,7 @@ void main() {
     return tester.widget<PaperMarkdown>(find.byType(PaperMarkdown).first);
   }
 
-  testWidgets('assistant content is not selectable while streaming',
+  testWidgets('assistant content stays non-selectable while streaming',
       (tester) async {
     await tester.pumpWidget(
       wrap(PaperAiMessageView(
@@ -32,7 +32,7 @@ void main() {
     expect(markdownOf(tester).selectable, isFalse);
   });
 
-  testWidgets('assistant content becomes selectable after streaming ends',
+  testWidgets('assistant content stays non-selectable after streaming ends',
       (tester) async {
     await tester.pumpWidget(
       wrap(PaperAiMessageView(
@@ -42,11 +42,10 @@ void main() {
       )),
     );
 
-    expect(markdownOf(tester).selectable, isTrue);
+    expect(markdownOf(tester).selectable, isFalse);
   });
 
-  testWidgets('reasoning panel is not selectable while streaming',
-      (tester) async {
+  testWidgets('reasoning panel is not selectable', (tester) async {
     await tester.pumpWidget(
       wrap(PaperAiMessageView(
         message: const ChatMessage(

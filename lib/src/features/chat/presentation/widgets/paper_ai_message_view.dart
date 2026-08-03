@@ -104,7 +104,12 @@ class PaperAiMessageView extends StatelessWidget {
               data: message.content,
               styleSheet: paperAiMarkdownStyle(color: PaperFlowColors.ink),
               stabilizeGeneratedSyntax: true,
-              selectable: !streaming,
+              // AI 回复始终不可选择：流式期间 selectable 切换会让
+              // MarkdownBody 在 Text.rich 与 SelectableText.rich 之间重建整棵
+              // 文字子树（回复完成的瞬间文字消失再重新出现），且
+              // EditableText 在流式更新 + 滚动时与滚动手势冲突导致文字
+              // 不绘制。复制代码使用代码块上的复制按钮。
+              selectable: false,
             ),
           if (message.sources.isNotEmpty)
             _SourcesPanel(sources: message.sources),
@@ -390,7 +395,7 @@ class _ReasoningPanelState extends State<_ReasoningPanel> {
                         reasoning: true,
                       ),
                       stabilizeGeneratedSyntax: true,
-                      selectable: !widget.streaming,
+                      selectable: false,
                     ),
                   )
                 : const SizedBox.shrink(),

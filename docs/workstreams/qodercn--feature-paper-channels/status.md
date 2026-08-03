@@ -9,7 +9,7 @@
 - 基线提交：`b1a667b`（origin/main）
 - 负责人：Fantasy（编排者）；执行：QoderCN Agent
 - 状态：开发中
-- 最近更新：2026-08-04 00:55
+- 最近更新：2026-08-04 01:30
 
 ## 目标
 
@@ -62,9 +62,9 @@
 
 ## 当前进度
 
-- 已完成：必读文档读取、基线确认、分支与 worktree 创建、台账初始化；步骤 1（`Paper` 元数据语义修正，提交 1b3f8bb）。
+- 已完成：必读文档读取、基线确认、分支与 worktree 创建、台账初始化；步骤 1（`Paper` 元数据语义修正，提交 1b3f8bb）；步骤 2（频道模型、arXiv 主题目录与版本化频道偏好仓储，提交 f2cf901）。
 - 正在进行：无。
-- 下一步：步骤 2（频道领域模型、arXiv 分类目录与版本化频道偏好持久化）。
+- 下一步：步骤 3（频道栏 UI 与「＋」频道管理页）。
 - 阻塞项：无。
 
 ## 决策记录
@@ -77,14 +77,15 @@
 | 2026-08-04 | `Paper.topics` 拆为 `subjects`（arXiv 分类）与 `contentKeywords`（内容关键词），`venue`/`journalReference`/`comment` 分离，`firstAffiliation` 改为 `affiliations` 列表，引用数改可空 | 落实开发计划「数据语义」要求，未知数据保持未知 | 全量映射、缓存、展示与测试同步改造 |
 | 2026-08-04 | `RelatedPaper.venue` 一并改为可空 | 相关论文同样不能用 `arXiv` 冒充 venue | 缓存 schema v2 迁移同时还原相关论文占位 venue |
 | 2026-08-04 | 论文缓存 `papers.catalog-cache` schema 升到 v2，提供单步 1→2 迁移 | 持久化结构变化必须版本化迁移 | 旧缓存可读且还原未知语义；迁移测试覆盖 |
+| 2026-08-04 | 频道偏好新建独立 schema `papers.channel-preferences`（v1），不迁移旧 `extraTopics` 自由文本 | 旧自定义主题为非结构化字符串，不符合「主题必须来自结构化 arXiv 分类目录」要求 | 旧自由文本主题不保留；旧偏好字段留待清理任务处理 |
 
 ## 验证记录
 
 | 命令或人工检查 | 结果 | 日期 |
 | --- | --- | --- |
 | `flutter analyze` | 通过（No issues found） | 2026-08-04 |
-| `flutter test` | 通过（204/204） | 2026-08-04 |
-| `tool/verify_changed_dart_format.ps1` | 通过（26 个文件） | 2026-08-04 |
+| `flutter test` | 通过（204/204，步骤 1）；通过（215/215，步骤 2） | 2026-08-04 |
+| `tool/verify_changed_dart_format.ps1` | 通过（步骤 1：26 个文件；步骤 2：35 个文件） | 2026-08-04 |
 
 ## 审查结论
 
@@ -101,6 +102,7 @@
 | --- | --- | --- | --- |
 | 6e5f87a | docs: add paper-channels workstream ledger | /start 台账初始化 | 仅文档 |
 | 1b3f8bb | feat(papers): split paper metadata semantics and keep unknown data unknown | 步骤 1：元数据语义修正 | analyze 通过；204 测试通过；格式门禁通过 |
+| f2cf901 | feat(papers): add channel model, arXiv subject catalog and channel preferences | 步骤 2：频道模型与偏好持久化 | analyze 通过；215 测试通过；格式门禁通过 |
 
 ## 交付记录（合并前补齐）
 

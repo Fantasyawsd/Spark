@@ -66,6 +66,82 @@ void main() {
     });
   });
 
+  group('PaperSearchController with arXiv ID queries', () {
+    late InMemoryPaperSearchHistoryRepository historyRepository;
+    late _FakeCatalogRepository catalog;
+    late PaperSearchController controller;
+
+    setUp(() {
+      historyRepository = InMemoryPaperSearchHistoryRepository();
+      catalog = _FakeCatalogRepository(
+        paperById: DemoPaperRepository().getAll().first,
+      );
+      controller = PaperSearchController(
+        papers: const DemoPaperRepository().getAll(),
+        historyRepository: historyRepository,
+        catalogRepository: catalog,
+        debounceDuration: const Duration(milliseconds: 5),
+      );
+    });
+
+    tearDown(() => controller.dispose());
+
+    test('an arXiv ID query fetches by id and returns a single result',
+        () async {
+      await controller.initialize();
+      await controller.submitQuery('2306.12345');
+
+      expect(catalog.findByIdCalls, ['2306.12345']);
+      expect(catalog.searchTerms, isEmpty);
+      expect(controller.results, hasLength(1));
+      expect(controller.results.first.id, 'lora-2021');
+      expect(controller.hasMoreResults, isFalse);
+    });
+
+    test('normalizes arXiv ID input forms before fetching', () async {
+      await controller.submitQuery('arXiv:2306.12345v2');
+      expect(catalog.findByIdCalls, ['2306.12345']);
+    });
+
+    test('a keyword query still goes through remote search', () async {
+      await controller.submitQuery('LoRA');
+      expect(catalog.searchTerms, ['LoRA']);
+      expect(catalog.findByIdCalls, isEmpty);
+    });
+
+    test('an unknown arXiv ID yields an empty result without an error',
+        () async {
+      catalog = _FakeCatalogRepository(paperById: null);
+      controller = PaperSearchController(
+        papers: const DemoPaperRepository().getAll(),
+        historyRepository: historyRepository,
+        catalogRepository: catalog,
+        debounceDuration: const Duration(milliseconds: 5),
+      );
+      await controller.submitQuery('2306.99999');
+
+      expect(controller.results, isEmpty);
+      expect(controller.resultsError, isNull);
+    });
+
+    test('a fetch failure surfaces the arXiv ID error message', () async {
+      catalog = _FakeCatalogRepository(
+        paperById: DemoPaperRepository().getAll().first,
+        throwOnFindById: true,
+      );
+      controller = PaperSearchController(
+        papers: const DemoPaperRepository().getAll(),
+        historyRepository: historyRepository,
+        catalogRepository: catalog,
+        debounceDuration: const Duration(milliseconds: 5),
+      );
+      await controller.submitQuery('2306.12345');
+
+      expect(controller.results, isEmpty);
+      expect(controller.resultsError?.message, '按 arXiv ID 获取论文失败。');
+    });
+  });
+
   test('file search history survives repository recreation', () async {
     final directory =
         await Directory.systemTemp.createTemp('paperflow-search-');
@@ -77,4 +153,33 @@ void main() {
 
     expect(restored, ['LoRA', 'Mamba']);
   });
+}
+
+class _FakeCatalogRepository implements PaperCatalogRepository {
+  _FakeCatalogRepository({
+    required this.paperById,
+    this.throwOnFindById = false,
+  });
+
+  final Paper? paperById;
+  final bool throwOnFindById;
+  final List<String> searchTerms = [];
+  final List<String> findByIdCalls = [];
+
+  @override
+  Future<PaperPage> loadFeed(PaperFeedQuery query) async =>
+      PaperPage(papers: const [], source: PaperPageSource.remote);
+
+  @override
+  Future<PaperPage> search(PaperSearchQuery query) async {
+    searchTerms.add(query.term);
+    return PaperPage(papers: const [], source: PaperPageSource.remote);
+  }
+
+  @override
+  Future<Paper?> findById(String paperId) async {
+    findByIdCalls.add(paperId);
+    if (throwOnFindById) throw StateError('fetch failed');
+    return paperById;
+  }
 }

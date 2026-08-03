@@ -9,7 +9,7 @@
 - 基线提交：`b1a667b`（origin/main）
 - 负责人：Fantasy（编排者）；执行：QoderCN Agent
 - 状态：开发中
-- 最近更新：2026-08-04 03:30
+- 最近更新：2026-08-04 03:55
 
 ## 目标
 
@@ -83,6 +83,7 @@
 | 2026-08-04 | 频道管理页「按会议」区块只展示未开放说明，不提供添加 | 会议频道需真实数据源（步骤 6） | 后续任务接入 `VenueCatalogSource` 后开放 |
 | 2026-08-04 | 切换频道只对未加载频道做懒加载，已加载频道不重新请求；强制刷新仅由下拉触发（编排者验收反馈） | 避免每次选 tab 都刷新 | 回归测试覆盖来回切换不重复请求 |
 | 2026-08-04 | 频道管理页暂不提供主题搜索，直接列出全部主题（编排者决定） | 目录仅 4 个条目，搜索无价值；目录扩大后再恢复 | `ArxivSubjectCatalog.search/findByCode` 一并移除；合并前需在开发计划建议中同步该调整 |
+| 2026-08-04 | 频道管理页「按主题 / 按会议」改为两个 Tab，支持左右滑动翻页（编排者要求） | 分区更清晰，会议页后续可独立扩展 | Widget 测试覆盖滑动翻页 |
 
 ## 验证记录
 
@@ -111,6 +112,7 @@
 | 8a103e6 | feat(papers): rebuild top channel bar and channel manager around structured channels | 步骤 3：频道栏与频道管理页 | analyze 通过；218 测试通过；格式门禁通过 |
 | 70d2e5a | fix(papers): only lazy-load channels on first visit instead of refreshing every switch | 验收反馈修复：切换频道不再刷新 | analyze 通过；219 测试通过；格式门禁通过 |
 | 28fdf52 | refactor(papers): drop topic search from channel manager while catalog has four entries | 编排者决定：4 个主题无需搜索 | analyze 通过；217 测试通过；格式门禁通过 |
+| 415146f | feat(papers): split channel manager into swipeable subject and conference tabs | 编排者要求：按主题/按会议做成 Tab 翻页 | analyze 通过；217 测试通过；格式门禁通过 |
 
 ## 交付记录（合并前补齐）
 

@@ -4,9 +4,13 @@ import 'paper_channel.dart';
 class PaperChannelPreferences {
   PaperChannelPreferences({
     Iterable<UserPaperChannel> userChannels = const [],
+    this.selectedChannelKey,
   }) : userChannels = List.unmodifiable(userChannels);
 
   final List<UserPaperChannel> userChannels;
+
+  /// 最近选中频道的稳定标识；`null` 表示默认选中推荐。
+  final String? selectedChannelKey;
 }
 
 abstract interface class PaperChannelPreferenceRepository {

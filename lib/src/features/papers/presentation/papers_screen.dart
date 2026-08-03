@@ -16,7 +16,7 @@ import '../application/paper_link_service.dart';
 import '../application/paper_reading_controller.dart';
 import '../application/paper_share_service.dart';
 import '../application/paper_translation_service.dart';
-import 'widgets/paper_category_picker.dart';
+import 'widgets/paper_channel_manager_sheet.dart';
 import 'widgets/paper_empty_state.dart';
 import 'widgets/paper_favorite_group_sheet.dart';
 import 'widgets/paper_grid_card.dart';
@@ -139,10 +139,13 @@ class _PapersScreenState extends State<PapersScreen> {
             bottom: false,
             child: PapersHeader(
               key: const ValueKey('papers-header'),
-              primaryIndex: _feed.primaryCategoryIndex,
-              selectedTopic: _feed.topics[_feed.topicIndex],
-              onPrimarySelected: _feed.selectPrimaryCategory,
-              onTopicFilter: _showTopicPicker,
+              channels: [
+                ...PapersHeader.fixedChannelLabels,
+                ..._feed.userChannels.map((channel) => channel.displayName),
+              ],
+              selectedIndex: _feed.channelIndex,
+              onChannelSelected: _feed.selectChannel,
+              onManageChannels: _showChannelManager,
               onSearch: widget.onSearch ?? () {},
             ),
           ),
@@ -180,15 +183,13 @@ class _PapersScreenState extends State<PapersScreen> {
   Widget _buildPaperContent(List<Paper> papers) {
     if (papers.isEmpty) {
       return PaperEmptyState(
-        title: _feed.primaryCategoryIndex == 1 ? '还没有关注作者' : '当前领域暂无论文',
+        title: _feed.primaryCategoryIndex == 1 ? '还没有关注作者' : '当前频道暂无论文',
         message: _feed.primaryCategoryIndex == 1
             ? '关注作者后，他们的论文会出现在这里。'
-            : '可以切换到“全部”或选择其他研究领域。',
+            : '可以切换频道，或通过「＋」添加更多研究主题。',
         topInset: 0,
-        actionLabel: _feed.primaryCategoryIndex == 1 ? '查看推荐' : '查看全部',
-        onAction: _feed.primaryCategoryIndex == 1
-            ? () => _feed.selectPrimaryCategory(0)
-            : () => _feed.selectTopic(0),
+        actionLabel: _feed.primaryCategoryIndex == 1 ? '查看推荐' : '查看推荐',
+        onAction: () => _feed.selectChannel(0),
       );
     }
 
@@ -326,17 +327,12 @@ class _PapersScreenState extends State<PapersScreen> {
     );
   }
 
-  Future<void> _showTopicPicker() async {
-    final result = await showPaperTopicPicker(
+  Future<void> _showChannelManager() async {
+    await showPaperChannelManagerSheet(
       context,
-      topics: {
-        ..._feed.topics,
-        ...availablePaperCategories,
-      },
-      selectedTopic: _feed.topics[_feed.topicIndex],
+      userChannels: _feed.userChannels,
+      onChannelsChanged: (channels) => _feed.saveUserChannels(channels),
     );
-    if (result == null || !mounted) return;
-    _feed.selectTopicByName(result);
   }
 
   void _handleControllerChanged() {

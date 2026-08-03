@@ -2,6 +2,8 @@ import 'package:flutter/foundation.dart';
 
 import '../domain/paper.dart';
 import '../domain/paper_catalog.dart';
+import '../domain/paper_channel.dart';
+import '../domain/paper_channel_preference_repository.dart';
 import '../domain/paper_interaction_repository.dart';
 import '../domain/paper_preference_repository.dart';
 import '../domain/paper_repository.dart';
@@ -15,11 +17,13 @@ class PaperController extends ChangeNotifier {
     PaperInteractionRepository? interactionRepository,
     PaperPreferenceRepository? preferenceRepository,
     PaperCatalogRepository? catalogRepository,
+    PaperChannelPreferenceRepository? channelPreferenceRepository,
   }) : this._fromPapers(
           repository.getAll(),
           interactionRepository: interactionRepository,
           preferenceRepository: preferenceRepository,
           catalogRepository: catalogRepository,
+          channelPreferenceRepository: channelPreferenceRepository,
         );
 
   PaperController._fromPapers(
@@ -27,10 +31,12 @@ class PaperController extends ChangeNotifier {
     PaperInteractionRepository? interactionRepository,
     PaperPreferenceRepository? preferenceRepository,
     PaperCatalogRepository? catalogRepository,
+    PaperChannelPreferenceRepository? channelPreferenceRepository,
   })  : feed = PaperFeedController.fromPapers(
           papers,
           preferenceRepository: preferenceRepository,
           catalogRepository: catalogRepository,
+          channelPreferenceRepository: channelPreferenceRepository,
         ),
         interactions = PaperInteractionController(
           repository: interactionRepository,
@@ -43,11 +49,10 @@ class PaperController extends ChangeNotifier {
   final PaperInteractionController interactions;
 
   List<Paper> get papers => feed.papers;
-  List<String> get extraCategories => feed.extraCategories;
-  List<String> get categories => feed.topics;
-  int get categoryIndex => feed.topicIndex;
+  List<UserPaperChannel> get userChannels => feed.userChannels;
+  int get channelCount => feed.channelCount;
+  int get channelIndex => feed.channelIndex;
   int get primaryCategoryIndex => feed.primaryCategoryIndex;
-  int get topicIndex => feed.topicIndex;
   int get currentPaperIndex => feed.currentPaperIndex;
   bool get gridMode => feed.gridMode;
 
@@ -56,6 +61,7 @@ class PaperController extends ChangeNotifier {
       interactions.initialize(),
       feed.initializePreferences(),
     ]);
+    await feed.initializeChannels();
     await feed.initializeCatalog();
   }
 
@@ -75,11 +81,10 @@ class PaperController extends ChangeNotifier {
   void openPaper(int index) => feed.openPaper(index);
   void openPaperById(String paperId) => feed.openPaperById(paperId);
   void selectPaper(int index) => feed.selectPaper(index);
-  void selectCategory(int index) => feed.selectCategory(index);
   void selectPrimaryCategory(int index) => feed.selectPrimaryCategory(index);
-  void selectTopic(int index) => feed.selectTopic(index);
-  void setExtraCategories(List<String> categories) =>
-      feed.setExtraCategories(categories);
+  void selectChannel(int index) => feed.selectChannel(index);
+  Future<void> saveUserChannels(List<UserPaperChannel> channels) =>
+      feed.saveUserChannels(channels);
   void toggleLike(String paperId) => interactions.toggleLike(paperId);
   void toggleSave(String paperId) => interactions.toggleSave(paperId);
   void toggleFollow(String paperId) => interactions.toggleFollow(paperId);

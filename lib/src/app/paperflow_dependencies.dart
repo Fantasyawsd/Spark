@@ -19,6 +19,7 @@ import '../features/papers/data/deepseek_paper_ai_service.dart';
 import '../features/papers/data/deepseek_paper_translation_service.dart';
 import '../features/papers/data/deepseek_web_search_ai_service.dart';
 import '../features/papers/data/file_paper_ai_session_repository.dart';
+import '../features/papers/data/file_paper_channel_preference_repository.dart';
 import '../features/papers/data/file_paper_comment_repository.dart';
 import '../features/papers/data/file_paper_interaction_repository.dart';
 import '../features/papers/data/file_paper_preference_repository.dart';
@@ -26,6 +27,7 @@ import '../features/papers/data/file_paper_reading_repository.dart';
 import '../features/papers/data/file_paper_translation_repository.dart';
 import '../features/papers/data/cache/file_paper_cache_store.dart';
 import '../features/papers/data/in_memory_paper_ai_session_repository.dart';
+import '../features/papers/data/in_memory_paper_channel_preference_repository.dart';
 import '../features/papers/data/in_memory_paper_comment_repository.dart';
 import '../features/papers/data/in_memory_paper_interaction_repository.dart';
 import '../features/papers/data/in_memory_paper_preference_repository.dart';
@@ -35,6 +37,7 @@ import '../features/papers/data/platform_paper_share_service.dart';
 import '../features/papers/data/offline_first_paper_catalog_repository.dart';
 import '../features/papers/data/providers/arxiv/arxiv_atom_client.dart';
 import '../features/papers/domain/paper_catalog.dart';
+import '../features/papers/domain/paper_channel_preference_repository.dart';
 import '../features/papers/domain/paper_comment_repository.dart';
 import '../features/papers/domain/paper_interaction_repository.dart';
 import '../features/papers/domain/paper_preference_repository.dart';
@@ -53,6 +56,7 @@ class PaperFlowDependencies {
     required this.commentRepository,
     required this.interactionRepository,
     required this.preferenceRepository,
+    required this.channelPreferenceRepository,
     required this.readingRepository,
     required this.searchHistoryRepository,
     required this.shareService,
@@ -79,6 +83,9 @@ class PaperFlowDependencies {
       fileName: 'paper_interactions.json',
     );
     final preferenceStore = LocalJsonStore(fileName: 'paper_preferences.json');
+    final channelPreferenceStore = LocalJsonStore(
+      fileName: 'paper_channel_preferences.json',
+    );
     final readingStore = LocalJsonStore(fileName: 'paper_reading.json');
     final searchHistoryStore = LocalJsonStore(fileName: 'search_history.json');
     final aiSessionStore = LocalJsonStore(fileName: 'paper_ai_sessions.json');
@@ -100,6 +107,9 @@ class PaperFlowDependencies {
           FilePaperInteractionRepository(store: interactionStore),
       preferenceRepository:
           FilePaperPreferenceRepository(store: preferenceStore),
+      channelPreferenceRepository: FilePaperChannelPreferenceRepository(
+        store: channelPreferenceStore,
+      ),
       readingRepository: FilePaperReadingRepository(store: readingStore),
       searchHistoryRepository:
           FilePaperSearchHistoryRepository(store: searchHistoryStore),
@@ -130,6 +140,7 @@ class PaperFlowDependencies {
           commentStore,
           interactionStore,
           preferenceStore,
+          channelPreferenceStore,
           readingStore,
           searchHistoryStore,
           themeStore,
@@ -149,6 +160,7 @@ class PaperFlowDependencies {
     PaperCommentRepository? commentRepository,
     PaperInteractionRepository? interactionRepository,
     PaperPreferenceRepository? preferenceRepository,
+    PaperChannelPreferenceRepository? channelPreferenceRepository,
     PaperReadingRepository? readingRepository,
     PaperSearchHistoryRepository? searchHistoryRepository,
     PaperShareService? shareService,
@@ -183,6 +195,8 @@ class PaperFlowDependencies {
           interactionRepository ?? InMemoryPaperInteractionRepository(),
       preferenceRepository:
           preferenceRepository ?? InMemoryPaperPreferenceRepository(),
+      channelPreferenceRepository: channelPreferenceRepository ??
+          InMemoryPaperChannelPreferenceRepository(),
       readingRepository: readingRepository ?? InMemoryPaperReadingRepository(),
       searchHistoryRepository:
           searchHistoryRepository ?? InMemoryPaperSearchHistoryRepository(),
@@ -214,6 +228,7 @@ class PaperFlowDependencies {
   final PaperCommentRepository commentRepository;
   final PaperInteractionRepository interactionRepository;
   final PaperPreferenceRepository preferenceRepository;
+  final PaperChannelPreferenceRepository channelPreferenceRepository;
   final PaperReadingRepository readingRepository;
   final PaperSearchHistoryRepository searchHistoryRepository;
   final PaperShareService shareService;

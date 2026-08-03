@@ -33,14 +33,21 @@ void main() {
       expect(controller.gridMode, isFalse);
     });
 
-    test('opening a search result resets filters and selects its paper', () {
-      controller.selectTopic(3);
+    test('opening a search result resets channels and selects its paper',
+        () async {
+      await controller.saveUserChannels([
+        const UserPaperChannel(
+          kind: PaperChannelKind.subject,
+          id: 'cs.CV',
+          displayName: '计算机视觉与模式识别',
+        ),
+      ]);
+      controller.selectChannel(3);
       controller.toggleGridMode();
 
       controller.openPaperById('2404.01356');
 
-      expect(controller.primaryCategoryIndex, 0);
-      expect(controller.topicIndex, 0);
+      expect(controller.channelIndex, 0);
       expect(controller.papers[controller.currentPaperIndex].id, '2404.01356');
       expect(controller.gridMode, isFalse);
     });
@@ -61,11 +68,18 @@ void main() {
       expect(controller.isSaved(paperId), isFalse);
     });
 
-    test('owns primary category and topic state', () {
-      controller.selectTopic(3);
+    test('user subject channels filter papers by arXiv subjects', () async {
+      await controller.saveUserChannels([
+        const UserPaperChannel(
+          kind: PaperChannelKind.subject,
+          id: 'cs.CV',
+          displayName: '计算机视觉与模式识别',
+        ),
+      ]);
 
-      expect(controller.topicIndex, 3);
-      expect(controller.categories[controller.topicIndex], 'CV');
+      controller.selectChannel(3);
+
+      expect(controller.channelIndex, 3);
       expect(controller.papers, hasLength(1));
       expect(controller.papers.single.subjects, contains('cs.CV'));
     });
@@ -93,10 +107,17 @@ void main() {
       }
     });
 
-    test('restores the last paper position for each filter', () {
+    test('restores the last paper position for each channel', () async {
+      await controller.saveUserChannels([
+        const UserPaperChannel(
+          kind: PaperChannelKind.subject,
+          id: 'cs.AI',
+          displayName: '人工智能',
+        ),
+      ]);
       controller.selectPaper(2);
-      controller.selectTopic(3);
-      controller.selectTopic(0);
+      controller.selectChannel(3);
+      controller.selectChannel(0);
 
       expect(controller.currentPaperIndex, 2);
     });
@@ -196,24 +217,40 @@ void main() {
       expect(restored.shareCountDelta(paperId), 2);
     });
 
-    test('restores custom topics after recreation', () async {
-      final repository = InMemoryPaperPreferenceRepository();
+    test('restores user channels and selection after recreation', () async {
+      final repository = InMemoryPaperChannelPreferenceRepository();
       final first = PaperController(
         const ArxivSeedRepository(),
-        preferenceRepository: repository,
+        channelPreferenceRepository: repository,
       );
 
-      first.setExtraCategories(['AI 安全', '机器人']);
-      await first.feed.flushPreferenceWrites();
+      await first.saveUserChannels(const [
+        UserPaperChannel(
+          kind: PaperChannelKind.subject,
+          id: 'cs.AI',
+          displayName: '人工智能',
+        ),
+        UserPaperChannel(
+          kind: PaperChannelKind.subject,
+          id: 'cs.LG',
+          displayName: '机器学习',
+        ),
+      ]);
+      first.selectChannel(3);
+      await first.feed.flushChannelPreferenceWrites();
       first.dispose();
 
       final restored = PaperController(
         const ArxivSeedRepository(),
-        preferenceRepository: repository,
+        channelPreferenceRepository: repository,
       );
       await restored.initialize();
       addTearDown(restored.dispose);
-      expect(restored.extraCategories, ['AI 安全', '机器人']);
+      expect(
+        restored.userChannels.map((channel) => channel.id).toList(),
+        ['cs.AI', 'cs.LG'],
+      );
+      expect(restored.channelIndex, 3);
     });
 
     test('restores the selected filter and paper position after recreation',
@@ -265,8 +302,7 @@ void main() {
       expect(barrierCompleted, isTrue);
     });
 
-    test('sends selected recommendation topics to the remote catalog',
-        () async {
+    test('sends the selected channel category to the remote catalog', () async {
       final catalog = _RecordingPaperCatalogRepository();
       final controller = PaperController(
         const ArxivSeedRepository(),
@@ -280,9 +316,16 @@ void main() {
         'cs.CL|cs.AI|cs.CV|cs.DC|cs.OS|cs.PF|math.OC|math.ST|q-bio.QM|q-bio.BM',
       );
 
-      controller.selectTopic(1);
+      await controller.saveUserChannels(const [
+        UserPaperChannel(
+          kind: PaperChannelKind.subject,
+          id: 'cs.CL',
+          displayName: '计算与语言',
+        ),
+      ]);
+      controller.selectChannel(3);
       await controller.feed.flushCatalogOperations();
-      expect(catalog.queries.last.category, 'cs.CL|cs.AI');
+      expect(catalog.queries.last.category, 'cs.CL');
 
       controller.selectPrimaryCategory(2);
       await controller.feed.flushCatalogOperations();
@@ -292,7 +335,8 @@ void main() {
       );
     });
 
-    test('topic refresh keeps previously loaded papers available to following',
+    test(
+        'channel refresh keeps previously loaded papers available to following',
         () async {
       final catalog = _RecordingPaperCatalogRepository();
       final controller = PaperController(
@@ -304,7 +348,14 @@ void main() {
 
       await controller.initialize();
       controller.toggleFollow(followed.id);
-      controller.selectTopic(1);
+      await controller.saveUserChannels(const [
+        UserPaperChannel(
+          kind: PaperChannelKind.subject,
+          id: 'cs.CL',
+          displayName: '计算与语言',
+        ),
+      ]);
+      controller.selectChannel(3);
       await controller.feed.flushCatalogOperations();
       controller.selectPrimaryCategory(1);
 

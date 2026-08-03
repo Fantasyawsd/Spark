@@ -896,7 +896,7 @@ void main() {
     expect(feed.papers, hasLength(40));
   });
 
-  testWidgets('topic filter stays compact and only appears in recommendations',
+  testWidgets('channel bar keeps fixed channels and opens the channel manager',
       (tester) async {
     await tester.binding.setSurfaceSize(const Size(378, 810));
     addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -904,30 +904,27 @@ void main() {
     await tester.pumpWidget(const PaperFlowApp(showSplash: false));
     await tester.pump();
 
-    expect(find.byKey(const ValueKey('paper-topic-filter')), findsOneWidget);
-    expect(find.text('LLM'), findsNothing);
-    await tester.tap(
-      find.byKey(const ValueKey('paper-primary-category-1')),
-    );
+    expect(find.text('推荐'), findsOneWidget);
+    expect(find.byKey(const ValueKey('paper-channel-manage')), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('paper-channel-1')));
     await tester.pumpAndSettle();
-    expect(find.byKey(const ValueKey('paper-topic-filter')), findsNothing);
     expect(find.text('还没有关注作者'), findsOneWidget);
-    await tester.tap(
-      find.byKey(const ValueKey('paper-primary-category-0')),
-    );
-    await tester.pumpAndSettle();
-    expect(find.byKey(const ValueKey('paper-topic-filter')), findsOneWidget);
-    await tester.tap(find.byKey(const ValueKey('paper-topic-filter')));
+    expect(find.byKey(const ValueKey('paper-channel-manage')), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('paper-channel-0')));
     await tester.pumpAndSettle();
 
-    expect(find.text('研究领域'), findsOneWidget);
-    expect(find.text('全部领域'), findsOneWidget);
-    await tester.tap(
-      find.byKey(const ValueKey('paper-topic-choice-AI Agent')),
-    );
+    await tester.tap(find.byKey(const ValueKey('paper-channel-manage')));
+    await tester.pumpAndSettle();
+    expect(find.text('频道管理'), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('paper-channel-subject-cs.AI')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('paper-channel-manager-close')));
     await tester.pumpAndSettle();
 
-    expect(find.byTooltip('研究领域：AI Agent'), findsOneWidget);
+    expect(find.text('人工智能'), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('paper-channel-3')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('paper-feed')), findsOneWidget);
   });
 
   testWidgets('search detail returns to search and keeps its history',

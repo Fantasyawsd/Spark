@@ -14,11 +14,13 @@ class PaperChannelPreferenceJsonMapper {
   static PaperChannelPreferences fromJson(Map<String, dynamic> json) {
     return PaperChannelPreferences(
       userChannels: _channels(json),
+      selectedChannelKey: _optionalString(json, 'selectedChannelKey'),
     );
   }
 
   static Map<String, dynamic> toJson(PaperChannelPreferences preferences) {
     return {
+      'selectedChannelKey': preferences.selectedChannelKey,
       'userChannels': preferences.userChannels
           .map(
             (channel) => {
@@ -68,6 +70,15 @@ class PaperChannelPreferenceJsonMapper {
     final value = json[key];
     if (value is! String || value.trim().isEmpty) {
       throw FormatException('频道偏好字段 $key 必须是非空字符串。');
+    }
+    return value;
+  }
+
+  static String? _optionalString(Map<String, dynamic> json, String key) {
+    final value = json[key];
+    if (value == null) return null;
+    if (value is! String) {
+      throw FormatException('频道偏好字段 $key 必须是字符串。');
     }
     return value;
   }

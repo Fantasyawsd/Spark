@@ -8,71 +8,32 @@ class PaperFeedFilter {
   static List<Paper> apply({
     required Iterable<Paper> papers,
     required PaperFeedMode mode,
-    required String topic,
+    String? subjectCode,
     required Set<String> followedPaperIds,
   }) {
     final result = switch (mode) {
-      PaperFeedMode.recommended => papers
-          .where((paper) => PaperTopicMatcher.matches(paper, topic))
-          .toList(),
+      PaperFeedMode.recommended =>
+        papers.where((paper) => _matchesSubject(paper, subjectCode)).toList(),
       PaperFeedMode.following => papers
           .where((paper) =>
               followedPaperIds.contains(paper.authorKey) ||
               followedPaperIds.contains(paper.id))
           .toList(),
-      PaperFeedMode.latest => papers.toList()
-        ..sort((left, right) {
-          final byDate = _publishedAt(right).compareTo(_publishedAt(left));
-          return byDate != 0 ? byDate : left.id.compareTo(right.id);
-        }),
+      PaperFeedMode.latest =>
+        papers.where((paper) => _matchesSubject(paper, subjectCode)).toList()
+          ..sort((left, right) {
+            final byDate = _publishedAt(right).compareTo(_publishedAt(left));
+            return byDate != 0 ? byDate : left.id.compareTo(right.id);
+          }),
     };
     return List.unmodifiable(result);
   }
 
+  static bool _matchesSubject(Paper paper, String? subjectCode) {
+    if (subjectCode == null) return true;
+    return paper.subjects.contains(subjectCode);
+  }
+
   static DateTime _publishedAt(Paper paper) =>
       paper.publishedAt ?? DateTime.fromMillisecondsSinceEpoch(0);
-}
-
-class PaperTopicMatcher {
-  const PaperTopicMatcher._();
-
-  static const _aliases = <String, List<String>>{
-    'LLM': ['llm', 'large language model', 'language models'],
-    'NLP': ['cs.cl', 'nlp', 'natural language', 'language model', 'text'],
-    'CV': ['cs.cv', 'computer vision', 'vision', 'image'],
-    'Agent': ['agent', 'tool use', 'planning'],
-    '多模态': ['multimodal', 'multi-modal', 'vision-language', 'cross-modal'],
-    'Systems': [
-      'cs.dc',
-      'cs.os',
-      'cs.pf',
-      'distributed',
-      'operating system',
-      'computer systems',
-    ],
-    'Mathematics': ['math.', 'mathematics', 'theorem', 'proof'],
-    'Biology': [
-      'q-bio',
-      'biology',
-      'biomedical',
-      'bioinformatics',
-      'molecule',
-      'chemical',
-    ],
-  };
-
-  static bool matches(Paper paper, String topic) {
-    if (topic == '全部') return true;
-    final normalizedTopic = topic.trim().toLowerCase();
-    final searchable = [
-      paper.title,
-      paper.content.originalAbstractMarkdown,
-      paper.venue ?? '',
-      paper.journalReference ?? '',
-      ...paper.contentKeywords,
-      ...paper.subjects,
-    ].join(' ').toLowerCase();
-    final terms = _aliases[topic] ?? [normalizedTopic];
-    return terms.any(searchable.contains);
-  }
 }

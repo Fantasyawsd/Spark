@@ -122,12 +122,12 @@ PAPERFLOW_FEATURE_PDF_AI
 
 ## 8. 发布门
 
-1. `main` 工作区干净，Pull Request 与 `main` CI 通过。
+1. `main` 工作区干净，CI 通过。
 2. 使用版本工具递增发布号或构建号，更新 CHANGELOG。
-3. 执行对应版本的 `docs/releases/<version>/release-checklist.md`。
-4. 构建 production AAB，验证签名、包名、版本号和 SHA-256。
-5. 先上传 Internal，再进入 Beta/封闭测试，最后发布 Production。
-6. 完成真机升级、数据 Migration、弱网、凭据和回滚验证。
-7. 创建并推送 annotated Tag；Tag CI 再校验当前 `main`、历史发布单调性、CHANGELOG 日期和链接，随后归档产物、提交 SHA、迁移版本、已知问题和回滚方案。
+3. 编写版本说明 `docs/releases/<version>/README.md`。
+4. 构建 production AAB/APK，验证签名、包名、版本号和 SHA-256。
+5. 完成真机升级、数据 Migration、弱网、凭据和回滚验证。
+6. 创建并推送 annotated Tag；Tag CI 再校验当前 `main`、历史发布单调性、CHANGELOG 日期和链接。
+7. 将构建产物上传到对应 GitHub Release 附件；归档提交 SHA、迁移版本、已知问题和回滚方案；更新版本说明状态。如经应用商店发布，再完成商店测试与审核门。
 
-0.1.0 当前仍是代码候选；在签名、真机和 Play 内部测试完成前不得创建正式发布 Tag。
+0.1.0 当前仍是代码候选；在签名、真机和商店发布门完成前不得创建正式发布 Tag。

@@ -36,7 +36,7 @@ PaperFlow 是面向个人研究者的 Flutter 论文发现、阅读和 AI 研究
 - 阅读状态、互动、评论、搜索历史、中文摘要和聊天会话保存在当前设备。
 - AI 采用 BYOK，用户 Key 存入设备安全存储；正式 APK 不包含共享 Key。
 - ChatPaper 和中文摘要请求会把必要的论文内容发送到 DeepSeek 官方接口。
-- 正式发布前必须完成并公开 [0.1.0 隐私政策](docs/releases/0.1.0/privacy-policy-draft.md)。
+- 正式发布前按应用商店要求提供隐私政策。
 
 ## 项目结构
 
@@ -119,4 +119,4 @@ flutter test
 flutter build apk --debug --flavor development --dart-define=PAPERFLOW_ENV=development
 ```
 
-项目不使用 Android 模拟器作为日常验收方式。Android 正式签名、真机验收和 Play Console 发布门见 [0.1.0 发布检查清单](docs/releases/0.1.0/release-checklist.md)。
+项目不使用 Android 模拟器作为日常验收方式。Android 正式签名、真机验收和发布门见 [0.1.0 版本说明](docs/releases/0.1.0/README.md)。

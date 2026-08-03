@@ -5,6 +5,8 @@ abstract final class MotionTokens {
   static const tabDuration = Duration(milliseconds: 220);
   static const sheetDuration = Duration(milliseconds: 250);
   static const feedbackDuration = Duration(milliseconds: 140);
+  static const entryDuration = Duration(milliseconds: 220);
+  static const popoverDuration = Duration(milliseconds: 260);
   static const splashDuration = Duration(milliseconds: 650);
 
   static const pageCurve = Curves.easeOutCubic;

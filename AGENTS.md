@@ -1,7 +1,7 @@
 # PaperFlow AI Agent 开发规范
 
 > 本文件是 Claude Code 及其他 AI Agent 在本仓库工作的统一入口。
-> 最近更新：2026-08-02
+> 最近更新：2026-08-03
 
 ## 1. 指令优先级与语言
 
@@ -15,7 +15,7 @@
 
 - 产品：面向个人研究者的 Flutter 论文发现、阅读和 ChatPaper 应用。
 - 当前代码版本：`0.0.1+1`（未正式发布），一级页面为论文、ChatPaper、我的。
-- 当前重点方向：论文频道、时间索引、结构化元数据和 PDF AI 解读；持续计划见产品领域文档，不预先绑定发布版本。
+- 当前重点方向：论文频道、时间索引、结构化元数据和 PDF AI 解读；持续计划见 `docs/development.md`，不预先绑定发布版本。
 - 第一验收平台：Android 手机；不得启动 Android 模拟器，直接构建 APK。
 - Flutter：`D:\App\flutter`，当前稳定版 Flutter 3.44.8 / Dart 3.12.2；执行前仍应以 `flutter --version` 为准。
 - 应用入口：`lib/main.dart`。
@@ -36,7 +36,7 @@
 5. `docs/standards/version-control.md`：Git、worktree、提交和集成规则。
 6. `docs/standards/release-management.md`：发布版本、环境、数据/API 兼容和功能开关规则。
 7. 与本任务可能重叠的 `docs/workstreams/<branch-slug>/status.md`。
-8. 只有任务明确面向某次发布时，才读取 `docs/releases/<version>/` 下的发布计划和检查清单。
+8. 只有任务明确面向某次发布时，才读取 `docs/releases/<version>/` 下的版本说明。
 
 不得依据过时对话、旧文件路径或记忆中的进度直接开始修改。
 
@@ -192,7 +192,7 @@ docs/workstreams/<branch-slug>/
 ### 9.2 维护规则
 
 1. 规范变更由编排者批准，skill 无需改动（单一事实源）。
-2. 功能开发时文档同步由 skill 步骤触发：`/develop` 维护台账、`/finish` 更新产品与路线、`/version` 更新 CHANGELOG、`/release` 更新发布归档。
+2. 功能开发时文档同步由 skill 步骤触发：`/develop` 维护台账、`/finish` 更新开发计划、`/version` 更新 CHANGELOG、`/release` 更新发布归档。
 3. 台账合并后归档保留，不删除、不更新。
 4. `/review` 报告摘要写入台账，审查结论不单独落盘。
 5. 归档文档不覆盖历史，只补勘误。

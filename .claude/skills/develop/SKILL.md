@@ -15,7 +15,7 @@ disable-model-invocation: true
    - 完成标准：处于任务 worktree；台账可读；若缺少则提示编排者先运行 `/start`。
 
 2. **读取上下文**
-   - 读 status.md、任务相关代码与测试、相关 `docs/product/` 文档；面向发布时读 `docs/releases/<version>/` 资料。
+   - 读 status.md、任务相关代码与测试、`docs/development.md` 相关领域章节；面向发布时读 `docs/releases/<version>/` 版本说明。
    - 完成标准：本次要改的文件路径与依赖接口清楚。
 
 3. **制定迭代计划**

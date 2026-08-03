@@ -9,7 +9,7 @@
 - 基线提交：`b1a667b`（origin/main）
 - 负责人：Fantasy（编排者）；执行：QoderCN Agent
 - 状态：开发中
-- 最近更新：2026-08-04 03:05
+- 最近更新：2026-08-04 03:30
 
 ## 目标
 
@@ -29,7 +29,7 @@
 - [x] 未知引用数不以 `0` 冒充真实数据（领域层改为可空未知语义）。
 - [ ] arXiv 论文保存并展示 Primary Subject 与全部 Subjects；Subjects 只用于分类索引，不混入内容关键词。（保存已完成；完整展示随六页阅读结构，属后续步骤）
 - [x] 频道栏为「文字 + 选中下划线」样式，横向滚动；推荐、关注、最新固定存在；「＋」固定在右侧始终可见。
-- [x] 「＋」打开频道管理页，含「按主题」分组、搜索与已添加状态；首批主题使用中文显示名并保留真实 arXiv 分类编号（cs.AI / cs.CL / cs.CV / cs.LG）。
+- [x] 「＋」打开频道管理页，含「按主题」分组与已添加状态；首批主题使用中文显示名并保留真实 arXiv 分类编号（cs.AI / cs.CL / cs.CV / cs.LG）。（主题搜索经编排者决定在目录仅 4 项时暂缓，见决策记录）
 - [x] 用户频道支持添加、删除、排序，并持久化到版本化本地存储；添加或移除后频道栏与本地配置同步更新。
 - [x] 每个频道独立保存论文位置、加载状态和分页状态，互不污染。
 - [x] 频道与偏好的持久化结构带 schema 版本与 Migration；旧数据升级测试通过。
@@ -82,6 +82,7 @@
 | 2026-08-04 | 频道选中态优先读频道偏好 `selectedChannelKey`，为空时回退旧偏好 `primaryCategoryIndex` | 旧安装无频道偏好文件，保持固定频道选择可恢复 | `initializeChannels` 需在 `initializePreferences` 之后执行 |
 | 2026-08-04 | 频道管理页「按会议」区块只展示未开放说明，不提供添加 | 会议频道需真实数据源（步骤 6） | 后续任务接入 `VenueCatalogSource` 后开放 |
 | 2026-08-04 | 切换频道只对未加载频道做懒加载，已加载频道不重新请求；强制刷新仅由下拉触发（编排者验收反馈） | 避免每次选 tab 都刷新 | 回归测试覆盖来回切换不重复请求 |
+| 2026-08-04 | 频道管理页暂不提供主题搜索，直接列出全部主题（编排者决定） | 目录仅 4 个条目，搜索无价值；目录扩大后再恢复 | `ArxivSubjectCatalog.search/findByCode` 一并移除；合并前需在开发计划建议中同步该调整 |
 
 ## 验证记录
 
@@ -109,6 +110,7 @@
 | f2cf901 | feat(papers): add channel model, arXiv subject catalog and channel preferences | 步骤 2：频道模型与偏好持久化 | analyze 通过；215 测试通过；格式门禁通过 |
 | 8a103e6 | feat(papers): rebuild top channel bar and channel manager around structured channels | 步骤 3：频道栏与频道管理页 | analyze 通过；218 测试通过；格式门禁通过 |
 | 70d2e5a | fix(papers): only lazy-load channels on first visit instead of refreshing every switch | 验收反馈修复：切换频道不再刷新 | analyze 通过；219 测试通过；格式门禁通过 |
+| 28fdf52 | refactor(papers): drop topic search from channel manager while catalog has four entries | 编排者决定：4 个主题无需搜索 | analyze 通过；217 测试通过；格式门禁通过 |
 
 ## 交付记录（合并前补齐）
 

@@ -161,7 +161,7 @@ class _SearchHeader extends StatelessWidget {
               onChanged: onChanged,
               onSubmitted: onSubmitted,
               decoration: InputDecoration(
-                hintText: '搜索标题、作者、会议或主题',
+                hintText: '搜索标题、作者、会议、主题或 arXiv ID',
                 prefixIcon: const Icon(Icons.search_rounded, size: 20),
                 suffixIcon: IconButton(
                   tooltip: '清除',

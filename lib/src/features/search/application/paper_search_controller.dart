@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 
 import '../../papers/domain/paper.dart';
 import '../../papers/domain/paper_catalog.dart';
+import '../domain/arxiv_paper_id.dart';
 import '../domain/paper_search_history_repository.dart';
 import '../domain/paper_search_matcher.dart';
 
@@ -118,6 +119,33 @@ class PaperSearchController extends ChangeNotifier {
       notifyListeners();
       return;
     }
+    final arxivId = extractArxivId(term);
+    if (arxivId != null) {
+      _loadingResults = true;
+      _resultsError = null;
+      notifyListeners();
+      try {
+        final paper = await repository.findById(arxivId);
+        if (generation != _searchGeneration) return;
+        _results = paper == null ? const [] : [paper];
+        _nextOffset = null;
+      } on Object catch (_) {
+        if (generation != _searchGeneration) return;
+        _results = const [];
+        _nextOffset = null;
+        _resultsError = const PaperCatalogError(
+          kind: PaperCatalogErrorKind.unavailable,
+          message: '按 arXiv ID 获取论文失败。',
+        );
+      } finally {
+        if (generation == _searchGeneration) {
+          _loadingResults = false;
+          notifyListeners();
+        }
+      }
+      return;
+    }
+
     _loadingResults = true;
     _resultsError = null;
     notifyListeners();

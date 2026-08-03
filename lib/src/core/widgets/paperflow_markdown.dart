@@ -6,6 +6,62 @@ import 'package:markdown/markdown.dart' as md;
 
 import '../theme/paperflow_theme.dart';
 
+/// Inline LaTeX syntax that replaces [LatexInlineSyntax] from
+/// flutter_markdown_plus_latex.
+///
+/// The package regex ends with a lookahead `(?=[\s?!.,：？！。，：]|$)` that
+/// only accepts a closing `$` when the next character is whitespace or a
+/// punctuation mark. A formula immediately followed by other characters (e.g.
+/// the `-` in `$(\varepsilon,\delta)$-DP`) fails to close, and the lazy match
+/// swallows everything up to the next `$`. The captured content then still
+/// contains a `$`, which Math.tex rejects with
+/// `Parser Error: Can't use function '$' in math mode`.
+///
+/// This syntax closes a formula at the nearest unescaped delimiter regardless
+/// of the following character, and never passes a `$` inside the content to
+/// the Math widget.
+class PaperLatexInlineSyntax extends md.InlineSyntax {
+  PaperLatexInlineSyntax() : super(_patternSource);
+
+  // `$$...$$` must be tried before `$...$`, otherwise a `$$` block is caught
+  // half-open by the single `$` rule.
+  static final String _patternSource = r'\$\$(?:\\[\s\S]|[^$\n])*?\$\$'
+      r'|\$(?:\\[\s\S]|[^$\n])*?\$'
+      r'|\\\[(?:\\[\s\S]|[^\\\n])*?\\\]'
+      r'|\\\((?:\\[\s\S]|[^\\\n])*?\\\)';
+
+  @override
+  bool onMatch(md.InlineParser parser, Match match) {
+    final raw = match.group(0) ?? '';
+    String equation;
+    String mathStyle;
+    if (raw.startsWith(r'$$') && raw.endsWith(r'$$') && raw.length >= 4) {
+      equation = raw.substring(2, raw.length - 2);
+      mathStyle = 'display';
+    } else if (raw.startsWith(r'\[') &&
+        raw.endsWith(r'\]') &&
+        raw.length >= 4) {
+      equation = raw.substring(2, raw.length - 2);
+      mathStyle = 'display';
+    } else if (raw.startsWith(r'\(') &&
+        raw.endsWith(r'\)') &&
+        raw.length >= 4) {
+      equation = raw.substring(2, raw.length - 2);
+      mathStyle = 'text';
+    } else if (raw.startsWith(r'$') && raw.endsWith(r'$') && raw.length >= 2) {
+      equation = raw.substring(1, raw.length - 1);
+      mathStyle = 'text';
+    } else {
+      parser.addNode(md.Text(raw));
+      return true;
+    }
+    final element = md.Element.text('latex', equation);
+    element.attributes['MathStyle'] = mathStyle;
+    parser.addNode(element);
+    return true;
+  }
+}
+
 /// The single Markdown rendering path used by paper content and AI output.
 ///
 /// Generated text can end a streaming frame with an unfinished Markdown or
@@ -45,7 +101,7 @@ class PaperMarkdown extends StatelessWidget {
             ...md.ExtensionSet.gitHubFlavored.blockSyntaxes,
           ],
           <md.InlineSyntax>[
-            LatexInlineSyntax(),
+            PaperLatexInlineSyntax(),
             ...md.ExtensionSet.gitHubFlavored.inlineSyntaxes,
           ],
         ),
@@ -310,6 +366,7 @@ class PaperMarkdownPreprocessor {
         .replaceAll(r'\]', r'$$')
         .replaceAll(r'\(', r'$')
         .replaceAll(r'\)', r'$');
+    normalized = _convertLatexTextCommands(normalized);
 
     if (stabilizeGeneratedSyntax || _containsLikelyLatex(normalized)) {
       normalized = GeneratedMarkdownStabilizer.stabilize(normalized);
@@ -364,6 +421,36 @@ class PaperMarkdownPreprocessor {
       RegExp(r'\\([A-Za-z]+)'),
       (match) => match.group(1) ?? '',
     );
+  }
+
+  /// Converts arXiv abstract text-formatting commands outside math to their
+  /// Markdown equivalents: `\textbf{X}` → `**X**`, `\emph{X}`/`\textit{X}` →
+  /// `*X*`. Formulas (`$...$`) are protected first so a `\textbf` inside math
+  /// mode is left untouched; the argument is simple text without nested
+  /// braces.
+  static String _convertLatexTextCommands(String source) {
+    final formulas = <String>[];
+    var working = source.replaceAllMapped(
+      RegExp(r'\$\$(?:\\[\s\S]|[^$\n])*?\$\$|\$(?:\\[\s\S]|[^$\n])*?\$'),
+      (match) {
+        final token = '\u0000PAPERFLOW_MATH_${formulas.length}\u0000';
+        formulas.add(match.group(0)!);
+        return token;
+      },
+    );
+    working = working.replaceAllMapped(
+      RegExp(r'\\(textbf|emph|textit)\{([^{}]+)\}'),
+      (match) => match.group(1) == 'textbf'
+          ? '**${match.group(2)}**'
+          : '*${match.group(2)}*',
+    );
+    for (var index = 0; index < formulas.length; index++) {
+      working = working.replaceAll(
+        '\u0000PAPERFLOW_MATH_$index\u0000',
+        formulas[index],
+      );
+    }
+    return working;
   }
 
   static String _replaceSimpleSymbolMath(String source) {

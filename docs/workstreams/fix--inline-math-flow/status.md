@@ -8,8 +8,8 @@
 - Worktree：`C:\Users\Fantasy\Desktop\PaperFlow-worktrees\fix--inline-math-flow`
 - 基线提交：`63c00491503ad4fdad8c2f213c7d240f18a4bc1f`（`origin/main`）
 - 负责人：Fantasy（编排者）；执行：Codex
-- 状态：开发中
-- 最近更新：2026-08-04 03:30
+- 状态：待审查
+- 最近更新：2026-08-04 03:56
 
 ## 目标
 
@@ -30,7 +30,7 @@
 - [x] 公式保持正确 LaTeX 样式；`$$...$$` 块公式仍按块展示。
 - [x] Abstract 文本仍可选择；论文阅读和 ChatPaper 共用 Markdown 路径无现有行为回归。
 - [x] 新增回归测试先稳定复现缺陷，修复后通过；现有 Markdown 测试通过。
-- [ ] 格式检查、`flutter analyze`、全量 `flutter test` 和 development APK 构建通过。
+- [x] 格式检查、`flutter analyze`、全量 `flutter test` 和 development APK 构建通过。
 
 ## 写入范围
 
@@ -60,8 +60,8 @@
 ## 当前进度
 
 - 已完成：`/start` 全部步骤；失败回归测试；真正的 `InlineSpan` 段落排版实现；邻接标点、块公式、选择能力与 ChatPaper 定向回归；功能提交 `4756631`。
-- 正在进行：`/develop` 已完成，准备执行 `/test` 完整验证门禁。
-- 下一步：运行格式、analyze、全量测试与 development APK 构建并记录结果。
+- 正在进行：`/test` 已完成，准备执行 `/review` 只读审查。
+- 下一步：审查 merge-base 到当前分支的全部 diff，确认无阻断项后进入 `/finish`。
 - 阻塞项：无。
 
 ## 决策记录
@@ -85,6 +85,9 @@
 | `flutter analyze` | 通过：No issues found | 2026-08-04 |
 | `flutter test test\paper_markdown_test.dart` | 通过：17 项 Markdown/LaTeX 测试 | 2026-08-04 |
 | `flutter test test\paper_ai_message_view_test.dart` | 通过：3 项 ChatPaper 可选择性测试 | 2026-08-04 |
+| `flutter test` | 通过：全量 239 项测试 | 2026-08-04 |
+| `flutter build apk --debug --flavor development --dart-define=PAPERFLOW_ENV=development` | 通过：`build/app/outputs/flutter-apk/app-development-debug.apk` | 2026-08-04 |
+| `git diff --check` | 通过；构建生成文件无内容差异 | 2026-08-04 |
 
 ## 审查结论
 
@@ -101,6 +104,7 @@
 | --- | --- | --- | --- |
 | d3fcefa | `docs: initialize inline-math-flow workstream` | `/start` 台账初始化 | `git diff --check` 通过 |
 | 4756631 | `fix(markdown): keep inline formulas in paragraph flow` | `/develop` 纵向实现 | 格式、analyze、Markdown 17 项与 ChatPaper 3 项定向测试通过 |
+| 03ea0f2 | `docs: record inline math implementation evidence` | `/develop` 证据记录 | 定向验证结果与决策已记录 |
 
 ## 交付记录（合并前补齐）
 

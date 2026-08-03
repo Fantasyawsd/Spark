@@ -181,7 +181,7 @@ docs/workstreams/<branch-slug>/
 
 | 分类 | 文档 | 维护责任 | 状态 |
 | --- | --- | --- | --- |
-| 规范（Skill 事实源） | `AGENTS.md`、`docs/standards/{code-structure,design,version-control,release-management}.md` | 规则变更由编排者批准；SKILL.md 只引用不复制 | 活跃 |
+| 规范（Skill 事实源） | `AGENTS.md`、`docs/standards/{code-structure,version-control,release-management}.md` | 规则变更由编排者批准；SKILL.md 只引用不复制 | 活跃 |
 | 索引 | `docs/README.md` | 随文档增删同步，索引表含状态列 | 活跃 |
 | 开发计划 | `docs/development.md` | 功能开发时由 `/finish` 同步更新 | 活跃 |
 | 过程记录 | `docs/workstreams/<slug>/status.md` | 任务生命周期内由 `/start`→`/finish` 维护；合并后归档保留 | 活跃→归档 |

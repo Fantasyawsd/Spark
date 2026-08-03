@@ -1,7 +1,7 @@
 # PaperFlow Git 与任务集成管理
 
 > 状态：强制执行
-> 最近更新：2026-08-02
+> 最近更新：2026-08-03
 > 适用范围：代码、测试、文档、配置和发布产物
 > Agent 总规范：[`../../AGENTS.md`](../../AGENTS.md)
 
@@ -89,11 +89,11 @@ docs/workstreams/<branch-slug>/
 
 ## 6. 提交原则
 
-提交信息使用：
+提交信息使用 `<type>(<scope>):` 格式：
 
-- `feat:` 新功能
-- `fix:` 缺陷修复
-- `refactor:` 不改变行为的结构调整
+- `feat(chat):` 新功能（scope 为 `lib/src/` 下模块名）
+- `fix(papers):` 缺陷修复
+- `refactor:` 不改变行为的结构调整（可不带 scope）
 - `test:` 测试变更
 - `docs:` 文档变更
 - `chore:` 工具、依赖和构建配置

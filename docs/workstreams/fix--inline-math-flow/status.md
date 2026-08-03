@@ -8,8 +8,8 @@
 - Worktree：`C:\Users\Fantasy\Desktop\PaperFlow-worktrees\fix--inline-math-flow`
 - 基线提交：`63c00491503ad4fdad8c2f213c7d240f18a4bc1f`（`origin/main`）
 - 负责人：Fantasy（编排者）；执行：Codex
-- 状态：待审查
-- 最近更新：2026-08-04 03:56
+- 状态：待合并
+- 最近更新：2026-08-04 03:58
 
 ## 目标
 
@@ -60,8 +60,8 @@
 ## 当前进度
 
 - 已完成：`/start` 全部步骤；失败回归测试；真正的 `InlineSpan` 段落排版实现；邻接标点、块公式、选择能力与 ChatPaper 定向回归；功能提交 `4756631`。
-- 正在进行：`/test` 已完成，准备执行 `/review` 只读审查。
-- 下一步：审查 merge-base 到当前分支的全部 diff，确认无阻断项后进入 `/finish`。
+- 正在进行：`/review` 已完成，进入 `/finish` 合并与清理。
+- 下一步：补齐交付记录，核对完成定义，合入 `main` 并清理 worktree/分支。
 - 阻塞项：无。
 
 ## 决策记录
@@ -91,12 +91,18 @@
 
 ## 审查结论
 
-> 由 `/review` 填写摘要（阻断项、缺陷、结论）。
+审查范围：`origin/main...HEAD`，merge-base `63c00491503ad4fdad8c2f213c7d240f18a4bc1f`；3 个文件，305 行新增、61 行删除；审查日期 2026-08-04。
 
-- 审查日期：待审查
-- 阻断项：待审查
-- 缺陷：待审查
-- 结论：待审查
+任务规格核对：6 项验收标准全部满足。核心布局测试验证公式、前词和逗号的 `RenderParagraph` 行框垂直重叠；块公式、选择容器、ChatPaper 不可选择和完整验证均有独立证据。
+
+问题清单：阻断项 0，缺陷 0。建议保留当前结构/坐标回归测试，未来升级 `flutter_markdown_plus` 时优先运行，以防其文本节点合并行为变化；不阻塞本任务。
+
+验证证据：格式检查、`flutter analyze`、全量 239 项 `flutter test`、development APK 构建和 `git diff --check` 均通过。
+
+- 审查日期：2026-08-04
+- 阻断项：无
+- 缺陷：无
+- 结论：可合并
 
 ## 检查点与提交
 
@@ -110,31 +116,31 @@
 
 ### 交付摘要
 
-待 `/finish` 根据实际实现补齐。
+修复论文 Abstract 及共用 Markdown 中行内 LaTeX 被拆成独立行的问题：公式现在与前后文字共享同一个富文本段落，能够使用前文末行剩余空间并保持邻接标点连续；块公式和 ChatPaper 渲染语义保持不变。
 
 ### 实际变更
 
-- 领域与业务逻辑：无，待最终核对。
-- 数据与基础设施：无，待最终核对。
-- 界面与交互：待实现真正的行内公式排版。
-- 测试与工具：待补充布局回归测试。
-- 文档：任务台账已初始化；开发计划待 `/finish` 核对。
+- 领域与业务逻辑：无。
+- 数据与基础设施：无；未新增依赖或修改缓存/API。
+- 界面与交互：`PaperLatexElementBuilder` 使用 `Text.rich + WidgetSpan(Math.tex)`；`PaperMarkdown` 通过 `SelectionArea` 保留 Abstract 文本选择，并用 `SelectionContainer.disabled` 保持不可选择场景。
+- 测试与工具：新增真实 `RenderParagraph` 行框回归；更新行内/块公式断言；全量门禁通过。
+- 文档：本台账记录实施、验证与审查证据；开发计划不需新增产品方向。
 
 ### 兼容性与迁移
 
 - 本地数据迁移：无。
 - API 或领域契约变化：无。
-- 旧版本兼容性：只调整展示层渲染，待最终验证。
+- 旧版本兼容性：只调整展示层渲染；应用未正式发布，无数据迁移负担。
 
 ### 已知风险与回滚
 
-- 已知风险：行内 Widget 与文本选择的 Flutter 支持边界、复杂 Markdown 内联样式和流式未闭合公式需回归验证。
-- 回滚方式：任务合并后可整体 `git revert` 本任务提交；不涉及本地数据迁移。
+- 已知风险：实现依赖 `flutter_markdown_plus` 将 builder 返回的 `Text` 合并为段落；当前依赖版本和回归测试已验证，升级依赖时需重新运行布局测试。
+- 回滚方式：合并后整体 revert 本任务的功能与台账提交（`4756631`、`03ea0f2`、`be290be`）；不涉及本地数据迁移。
 
 ### 文档更新建议
 
-- `/finish` 时核对 `docs/development.md` 中 Abstract 与 ChatPaper 的公式渲染能力描述，只更新已验证事实。
+- 已核对 `docs/development.md`：Abstract 与 ChatPaper 已有 Markdown/公式能力描述，无需修改共享计划文档。
 
 ### 未完成与后续工作
 
-- 当前为开发中；最终交付前不得保留未完成项。
+- 无。

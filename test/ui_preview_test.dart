@@ -514,10 +514,12 @@ void main() {
 
     await tester.tap(find.textContaining('Perturbation Effects on Robustness'));
     await tester.pumpAndSettle();
-    expect(find.byKey(const ValueKey('paper-feed')), findsOneWidget);
-    expect(find.textContaining('Perturbation Effects on Robustness'),
-        findsOneWidget);
-    expect(find.text('论文 ⇄'), findsOneWidget);
+    expect(find.byKey(const ValueKey('paper-detail-back')), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('paper-detail-back')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('paper-grid')), findsOneWidget);
+    expect(find.text('‹ 返回'), findsOneWidget);
   });
 
   testWidgets('paper feed is clipped below the fixed header', (tester) async {

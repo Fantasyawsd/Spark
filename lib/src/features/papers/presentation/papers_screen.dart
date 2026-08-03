@@ -211,7 +211,7 @@ class _PapersScreenState extends State<PapersScreen> {
               index: index,
               liked: _interactions.isLiked(papers[index].id),
               saved: _interactions.isSaved(papers[index].id),
-              onOpen: () => _openPaper(index),
+              onOpen: () => _openPaperFromGrid(papers[index], index),
               onLike: () => _interactions.toggleLike(papers[index].id),
               onSave: () => _interactions.toggleSave(papers[index].id),
               onSaveLongPress: () => _showFavoriteGroups(papers[index].id),
@@ -275,6 +275,15 @@ class _PapersScreenState extends State<PapersScreen> {
         _pageController.jumpToPage(index);
       }
     });
+  }
+
+  void _openPaperFromGrid(Paper paper, int index) {
+    final openDetail = widget.onOpenPaperDetail;
+    if (openDetail != null) {
+      openDetail(paper.id);
+      return;
+    }
+    _openPaper(index);
   }
 
   void _handlePageChanged(int index) {

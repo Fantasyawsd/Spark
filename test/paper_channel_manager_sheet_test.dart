@@ -75,10 +75,18 @@ void main() {
       findsOneWidget,
     );
 
+    await tester.ensureVisible(
+      find.byKey(const ValueKey('paper-channel-subject-cs.LG')),
+    );
+    await tester.pump();
     await tester.tap(find.byKey(const ValueKey('paper-channel-subject-cs.LG')));
     await tester.pump();
     expect(lastSaved!.map((channel) => channel.id), ['cs.AI']);
 
+    await tester.ensureVisible(
+      find.byKey(const ValueKey('paper-channel-subject-cs.AI')),
+    );
+    await tester.pump();
     await tester.tap(find.byKey(const ValueKey('paper-channel-subject-cs.AI')));
     await tester.pump();
     expect(lastSaved, isEmpty);

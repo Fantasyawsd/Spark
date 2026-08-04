@@ -11,6 +11,7 @@ import '../../local_data/application/local_data_controller.dart';
 import '../../local_data/presentation/local_data_sheet.dart';
 import '../../papers/domain/favorite_group.dart';
 import '../../papers/domain/paper.dart';
+import '../../papers/presentation/paper_shelf_list_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({
@@ -56,6 +57,24 @@ class ProfileScreen extends StatelessWidget {
               savedCount: savedCount,
               readLaterCount: readLaterPapers.length,
               historyCount: readingHistory.length,
+              onSavedTap: () => _openCollectionList(
+                context,
+                groups: favoriteGroups,
+                papersByGroup: favoritePapersByGroup,
+                onOpenPaper: onOpenPaper,
+              ),
+              onReadLaterTap: () => _openFlatList(
+                context,
+                title: '稍后阅读',
+                papers: readLaterPapers,
+                onOpenPaper: onOpenPaper,
+              ),
+              onHistoryTap: () => _openFlatList(
+                context,
+                title: '阅读历史',
+                papers: readingHistory,
+                onOpenPaper: onOpenPaper,
+              ),
             ),
             if (credentialController case final controller?) ...[
               const SizedBox(height: 16),
@@ -78,11 +97,23 @@ class ProfileScreen extends StatelessWidget {
               keyPrefix: 'profile-read-later-paper',
               papers: readLaterPapers,
               onOpenPaper: onOpenPaper,
+              onViewAll: () => _openFlatList(
+                context,
+                title: '稍后阅读',
+                papers: readLaterPapers,
+                onOpenPaper: onOpenPaper,
+              ),
             ),
             const SizedBox(height: 14),
             _ReadingHistoryCard(
               papers: readingHistory,
               onOpenPaper: onOpenPaper,
+              onViewAll: () => _openFlatList(
+                context,
+                title: '阅读历史',
+                papers: readingHistory,
+                onOpenPaper: onOpenPaper,
+              ),
             ),
             const SizedBox(height: 14),
             _AppSettingsCard(
@@ -99,16 +130,59 @@ class ProfileScreen extends StatelessWidget {
   }
 }
 
+void _openCollectionList(
+  BuildContext context, {
+  required List<FavoriteGroup> groups,
+  required Map<String, List<Paper>> papersByGroup,
+  required ValueChanged<String>? onOpenPaper,
+}) {
+  Navigator.push<void>(
+    context,
+    MaterialPageRoute(
+      builder: (_) => PaperShelfListScreen.collection(
+        title: '我的收藏',
+        groups: groups,
+        papersByGroup: papersByGroup,
+        onOpenPaper: onOpenPaper ?? (_) {},
+      ),
+    ),
+  );
+}
+
+void _openFlatList(
+  BuildContext context, {
+  required String title,
+  required List<Paper> papers,
+  required ValueChanged<String>? onOpenPaper,
+}) {
+  Navigator.push<void>(
+    context,
+    MaterialPageRoute(
+      builder: (_) => PaperShelfListScreen.flat(
+        title: title,
+        papers: papers,
+        onOpenPaper: onOpenPaper ?? (_) {},
+      ),
+    ),
+  );
+}
+
 class _ProfileHeader extends StatelessWidget {
   const _ProfileHeader({
     required this.savedCount,
     required this.readLaterCount,
     required this.historyCount,
+    required this.onSavedTap,
+    required this.onReadLaterTap,
+    required this.onHistoryTap,
   });
 
   final int savedCount;
   final int readLaterCount;
   final int historyCount;
+  final VoidCallback onSavedTap;
+  final VoidCallback onReadLaterTap;
+  final VoidCallback onHistoryTap;
 
   @override
   Widget build(BuildContext context) {
@@ -143,11 +217,23 @@ class _ProfileHeader extends StatelessWidget {
         const SizedBox(height: 16),
         Row(
           children: [
-            _ProfileStat(value: '$savedCount', label: '收藏'),
+            _ProfileStat(
+              value: '$savedCount',
+              label: '收藏',
+              onTap: onSavedTap,
+            ),
             const _StatDivider(),
-            _ProfileStat(value: '$readLaterCount', label: '稍后阅读'),
+            _ProfileStat(
+              value: '$readLaterCount',
+              label: '稍后阅读',
+              onTap: onReadLaterTap,
+            ),
             const _StatDivider(),
-            _ProfileStat(value: '$historyCount', label: '阅读历史'),
+            _ProfileStat(
+              value: '$historyCount',
+              label: '阅读历史',
+              onTap: onHistoryTap,
+            ),
           ],
         ),
       ],
@@ -404,27 +490,42 @@ class _DeepSeekCredentialSheetState extends State<_DeepSeekCredentialSheet> {
 }
 
 class _ProfileStat extends StatelessWidget {
-  const _ProfileStat({required this.value, required this.label});
+  const _ProfileStat({
+    required this.value,
+    required this.label,
+    this.onTap,
+  });
 
   final String value;
   final String label;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     return Expanded(
-      child: Column(
-        children: [
-          Text(value,
-              style: const TextStyle(
-                  color: PaperFlowColors.ink,
-                  fontSize: 20,
-                  fontWeight: FontWeight.w800)),
-          const SizedBox(height: 3),
-          Text(label,
-              maxLines: 1,
-              style: const TextStyle(
-                  color: PaperFlowColors.muted, fontSize: 10.5)),
-        ],
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(10),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: Column(
+              children: [
+                Text(value,
+                    style: const TextStyle(
+                        color: PaperFlowColors.ink,
+                        fontSize: 20,
+                        fontWeight: FontWeight.w800)),
+                const SizedBox(height: 3),
+                Text(label,
+                    maxLines: 1,
+                    style: const TextStyle(
+                        color: PaperFlowColors.muted, fontSize: 10.5)),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -442,12 +543,17 @@ class _StatDivider extends StatelessWidget {
 }
 
 class _SectionHeader extends StatelessWidget {
-  const _SectionHeader(
-      {required this.icon, required this.title, this.action = '查看全部'});
+  const _SectionHeader({
+    required this.icon,
+    required this.title,
+    this.action = '查看全部',
+    this.onActionTap,
+  });
 
   final IconData icon;
   final String title;
   final String action;
+  final VoidCallback? onActionTap;
 
   @override
   Widget build(BuildContext context) {
@@ -462,20 +568,31 @@ class _SectionHeader extends StatelessWidget {
                   fontSize: 16,
                   fontWeight: FontWeight.w800)),
         ),
-        if (action.isNotEmpty) ...[
-          Text(
-            action,
-            style: const TextStyle(
-              color: PaperFlowColors.muted,
-              fontSize: 11.5,
+        if (action.isNotEmpty)
+          InkWell(
+            onTap: onActionTap,
+            borderRadius: BorderRadius.circular(8),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    action,
+                    style: const TextStyle(
+                      color: PaperFlowColors.muted,
+                      fontSize: 11.5,
+                    ),
+                  ),
+                  const Icon(
+                    Icons.chevron_right_rounded,
+                    color: PaperFlowColors.muted,
+                    size: 19,
+                  ),
+                ],
+              ),
             ),
           ),
-          const Icon(
-            Icons.chevron_right_rounded,
-            color: PaperFlowColors.muted,
-            size: 19,
-          ),
-        ],
       ],
     );
   }
@@ -738,10 +855,15 @@ Future<String?> _requestFavoriteGroupName(
 }
 
 class _ReadingHistoryCard extends StatelessWidget {
-  const _ReadingHistoryCard({required this.papers, required this.onOpenPaper});
+  const _ReadingHistoryCard({
+    required this.papers,
+    required this.onOpenPaper,
+    this.onViewAll,
+  });
 
   final List<Paper> papers;
   final ValueChanged<String>? onOpenPaper;
+  final VoidCallback? onViewAll;
 
   @override
   Widget build(BuildContext context) {
@@ -752,6 +874,7 @@ class _ReadingHistoryCard extends StatelessWidget {
       keyPrefix: 'profile-history-paper',
       papers: papers,
       onOpenPaper: onOpenPaper,
+      onViewAll: onViewAll,
     );
   }
 }
@@ -764,6 +887,7 @@ class _PaperShelfCard extends StatelessWidget {
     required this.keyPrefix,
     required this.papers,
     required this.onOpenPaper,
+    this.onViewAll,
   });
 
   final IconData icon;
@@ -772,6 +896,7 @@ class _PaperShelfCard extends StatelessWidget {
   final String keyPrefix;
   final List<Paper> papers;
   final ValueChanged<String>? onOpenPaper;
+  final VoidCallback? onViewAll;
 
   @override
   Widget build(BuildContext context) {
@@ -783,6 +908,7 @@ class _PaperShelfCard extends StatelessWidget {
             icon: icon,
             title: title,
             action: papers.isEmpty ? '' : '共 ${papers.length} 篇',
+            onActionTap: onViewAll,
           ),
           const SizedBox(height: 14),
           if (papers.isEmpty)

@@ -80,6 +80,7 @@ export 'src/features/papers/domain/paper_repository.dart';
 export 'src/features/papers/domain/paper_source.dart';
 export 'src/features/papers/domain/paper_sync_ports.dart';
 export 'src/features/papers/presentation/paper_detail_screen.dart';
+export 'src/features/papers/presentation/paper_shelf_list_screen.dart';
 export 'src/features/papers/presentation/papers_screen.dart';
 export 'src/features/papers/presentation/widgets/paper_action_bar.dart';
 export 'src/features/papers/presentation/widgets/paper_comments_sheet.dart';

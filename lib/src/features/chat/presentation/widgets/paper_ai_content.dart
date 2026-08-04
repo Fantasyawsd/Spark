@@ -5,6 +5,7 @@ import '../../../../core/widgets/paperflow_entry_animation.dart';
 import '../../application/chat_conversation_controller.dart';
 import '../../domain/chat_context.dart';
 import '../../domain/chat_message.dart';
+import '../paper_ai_ui_tokens.dart';
 import 'paper_ai_message_view.dart';
 
 class PaperAiContent extends StatelessWidget {
@@ -24,6 +25,10 @@ class PaperAiContent extends StatelessWidget {
     this.welcomeTitle,
     this.welcomeDescription,
     this.prompts = const ['解释核心方法', '总结实验结果', '分析贡献与局限'],
+    this.previewMode = false,
+    this.assistantLabel = '默认助手',
+    this.modelName = 'deepseek-v4-flash',
+    this.providerName = 'DeepSeek',
   });
 
   final ChatContext chatContext;
@@ -40,24 +45,109 @@ class PaperAiContent extends StatelessWidget {
   final String? welcomeTitle;
   final String? welcomeDescription;
   final List<String> prompts;
+  final bool previewMode;
+  final String assistantLabel;
+  final String modelName;
+  final String providerName;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 180),
+      switchInCurve: Curves.easeOutCubic,
+      switchOutCurve: Curves.easeInCubic,
+      transitionBuilder: (child, animation) => FadeTransition(
+        opacity: animation,
+        child: ScaleTransition(
+          scale: Tween<double>(begin: 0.98, end: 1).animate(animation),
+          child: child,
+        ),
+      ),
+      child: previewMode
+          ? _PaperAiOutline(
+              key: const ValueKey('paper-ai-outline'),
+              messages: messages,
+              modelName: modelName,
+            )
+          : _PaperAiConversation(
+              key: const ValueKey('paper-ai-conversation'),
+              chatContext: chatContext,
+              messages: messages,
+              loading: loading,
+              sending: sending,
+              error: error,
+              onPrompt: onPrompt,
+              onRetry: onRetry,
+              onCancel: onCancel,
+              searching: searching,
+              requestStatus: requestStatus,
+              canRetryRequestError: canRetryRequestError,
+              welcomeTitle: welcomeTitle,
+              welcomeDescription: welcomeDescription,
+              prompts: prompts,
+              assistantLabel: assistantLabel,
+              modelName: modelName,
+              providerName: providerName,
+            ),
+    );
+  }
+}
+
+class _PaperAiConversation extends StatelessWidget {
+  const _PaperAiConversation({
+    super.key,
+    required this.chatContext,
+    required this.messages,
+    required this.loading,
+    required this.sending,
+    required this.error,
+    required this.onPrompt,
+    required this.onRetry,
+    required this.onCancel,
+    required this.searching,
+    required this.requestStatus,
+    required this.canRetryRequestError,
+    required this.welcomeTitle,
+    required this.welcomeDescription,
+    required this.prompts,
+    required this.assistantLabel,
+    required this.modelName,
+    required this.providerName,
+  });
+
+  final ChatContext chatContext;
+  final List<ChatMessage> messages;
+  final bool loading;
+  final bool sending;
+  final String? error;
+  final ValueChanged<String> onPrompt;
+  final VoidCallback onRetry;
+  final VoidCallback onCancel;
+  final bool searching;
+  final ChatRequestStatus requestStatus;
+  final bool canRetryRequestError;
+  final String? welcomeTitle;
+  final String? welcomeDescription;
+  final List<String> prompts;
+  final String assistantLabel;
+  final String modelName;
+  final String providerName;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 18),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 22),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _ConversationContext(chatContext: chatContext),
-          const SizedBox(height: 12),
-          if (messages.isEmpty && !loading)
+          if (messages.isEmpty && !loading) ...[
             _AiWelcome(
               chatContext: chatContext,
-              prompts: prompts,
-              onPrompt: onPrompt,
               title: welcomeTitle,
               description: welcomeDescription,
             ),
+            _SuggestionChips(prompts: prompts, onPrompt: onPrompt),
+          ],
           if (loading)
             const Padding(
               padding: EdgeInsets.symmetric(vertical: 24),
@@ -74,6 +164,10 @@ class PaperAiContent extends StatelessWidget {
                     message: messages[index],
                     streaming: sending && index == messages.length - 1,
                     searching: searching && index == messages.length - 1,
+                    onRetry: onRetry,
+                    assistantLabel: assistantLabel,
+                    modelName: modelName,
+                    providerName: providerName,
                   ),
                 ),
           ],
@@ -90,6 +184,8 @@ class PaperAiContent extends StatelessWidget {
             ),
           if (error == null && requestStatus == ChatRequestStatus.cancelled)
             _AiStoppedMessage(onRetry: onRetry),
+          if (messages.isNotEmpty && !sending && error == null)
+            _SuggestionChips(prompts: prompts, onPrompt: onPrompt),
         ],
       ),
     );
@@ -100,6 +196,142 @@ class PaperAiContent extends StatelessWidget {
         message.content.isEmpty &&
         message.reasoningContent.isEmpty &&
         message.sources.isEmpty;
+  }
+}
+
+class _PaperAiOutline extends StatelessWidget {
+  const _PaperAiOutline({
+    super.key,
+    required this.messages,
+    required this.modelName,
+  });
+
+  final List<ChatMessage> messages;
+  final String modelName;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Text(
+            '对话大纲',
+            style: TextStyle(
+              color: PaperFlowColors.ink,
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            messages.isEmpty ? '还没有消息' : '$modelName · ${messages.length} 条消息',
+            style: const TextStyle(
+              color: PaperFlowColors.muted,
+              fontSize: 12,
+            ),
+          ),
+          const SizedBox(height: 20),
+          if (messages.isEmpty)
+            const _OutlineEmptyState()
+          else
+            for (var index = 0; index < messages.length; index++)
+              _OutlineRow(index: index + 1, message: messages[index]),
+        ],
+      ),
+    );
+  }
+}
+
+class _OutlineRow extends StatelessWidget {
+  const _OutlineRow({required this.index, required this.message});
+
+  final int index;
+  final ChatMessage message;
+
+  @override
+  Widget build(BuildContext context) {
+    final preview = message.content.trim().isNotEmpty
+        ? message.content.trim()
+        : message.reasoningContent.trim();
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 26,
+            height: 26,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: message.fromUser
+                  ? PaperAiUiTokens.userBubble
+                  : PaperAiUiTokens.assistantReasoning,
+              shape: BoxShape.circle,
+            ),
+            child: Text(
+              '$index',
+              style: const TextStyle(
+                color: PaperFlowColors.muted,
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  message.fromUser ? '用户' : 'Assistant',
+                  style: const TextStyle(
+                    color: PaperFlowColors.muted,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  preview.isEmpty ? '多媒体或空消息' : preview,
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: PaperFlowColors.ink,
+                    fontSize: 13,
+                    height: 1.35,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _OutlineEmptyState extends StatelessWidget {
+  const _OutlineEmptyState();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: PaperAiUiTokens.assistantReasoning.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: const Text(
+        '发送第一条消息后，这里会显示会话大纲。',
+        style: TextStyle(
+          color: PaperFlowColors.muted,
+          fontSize: 13,
+          height: 1.4,
+        ),
+      ),
+    );
   }
 }
 
@@ -115,8 +347,8 @@ class _AiStoppedMessage extends StatelessWidget {
       margin: const EdgeInsets.only(top: 6, bottom: 8),
       padding: const EdgeInsets.fromLTRB(12, 8, 8, 8),
       decoration: BoxDecoration(
-        color: const Color(0xFFF3F4F6),
-        borderRadius: BorderRadius.circular(10),
+        color: PaperAiUiTokens.assistantReasoning.withValues(alpha: 0.68),
+        borderRadius: BorderRadius.circular(14),
       ),
       child: Row(
         children: [
@@ -146,146 +378,90 @@ class _AiStoppedMessage extends StatelessWidget {
   }
 }
 
-class _ConversationContext extends StatelessWidget {
-  const _ConversationContext({required this.chatContext});
-
-  final ChatContext chatContext;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Icon(
-              Icons.article_outlined,
-              size: 14,
-              color: PaperFlowColors.primary,
-            ),
-            const SizedBox(width: 6),
-            const Text(
-              '当前上下文',
-              style: TextStyle(
-                color: PaperFlowColors.muted,
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            const SizedBox(width: 6),
-            Expanded(
-              child: Text(
-                chatContext.title,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: PaperFlowColors.ink,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 4),
-        const Text(
-          'AI 生成内容可能有误，请结合论文原文核验。',
-          style: TextStyle(
-            color: PaperFlowColors.subtle,
-            fontSize: 10.5,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
 class _AiWelcome extends StatelessWidget {
   const _AiWelcome({
     required this.chatContext,
-    required this.prompts,
-    required this.onPrompt,
     this.title,
     this.description,
   });
 
   final ChatContext chatContext;
-  final List<String> prompts;
-  final ValueChanged<String> onPrompt;
   final String? title;
   final String? description;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(15, 14, 15, 15),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF6F6F7),
-        borderRadius: BorderRadius.circular(18),
-      ),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(6, 44, 6, 30),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Container(
-                width: 30,
-                height: 30,
-                decoration: BoxDecoration(
-                  color: PaperFlowColors.primarySoft,
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.auto_awesome_rounded,
-                  color: PaperFlowColors.primary,
-                  size: 16,
-                ),
-              ),
-              const SizedBox(width: 9),
+              _AssistantAvatar(size: 38),
+              const SizedBox(width: 10),
               Text(
                 title ?? '与论文对话',
                 style: const TextStyle(
                   color: PaperFlowColors.ink,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w800,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 11),
+          const SizedBox(height: 12),
           Text(
-            description ?? 'DeepSeek 已读取《${chatContext.title}》的摘要和元数据',
+            description ?? 'DeepSeek 已读取《${chatContext.title}》的摘要和元数据。',
             style: const TextStyle(
               color: PaperFlowColors.muted,
-              fontSize: 12.5,
-              height: 1.45,
+              fontSize: 14,
+              height: 1.5,
             ),
           ),
-          const SizedBox(height: 13),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              for (final prompt in prompts)
-                ActionChip(
-                  label: Text(prompt),
-                  onPressed: () => onPrompt(prompt),
-                  backgroundColor: Colors.white,
-                  side: BorderSide.none,
-                  labelStyle: const TextStyle(
-                    color: PaperFlowColors.ink,
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w600,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(9),
-                  ),
-                  visualDensity: VisualDensity.compact,
-                ),
-            ],
-          ),
         ],
+      ),
+    );
+  }
+}
+
+class _SuggestionChips extends StatelessWidget {
+  const _SuggestionChips({required this.prompts, required this.onPrompt});
+
+  final List<String> prompts;
+  final ValueChanged<String> onPrompt;
+
+  @override
+  Widget build(BuildContext context) {
+    if (prompts.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      key: const ValueKey('paper-ai-suggestions'),
+      padding: const EdgeInsets.only(top: 4, bottom: 6),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            for (var index = 0; index < prompts.length; index++) ...[
+              if (index > 0) const SizedBox(width: 8),
+              ActionChip(
+                label: Text(prompts[index]),
+                onPressed: () => onPrompt(prompts[index]),
+                backgroundColor: PaperAiUiTokens.assistantReasoning,
+                side: BorderSide.none,
+                labelStyle: const TextStyle(
+                  color: PaperFlowColors.ink,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                visualDensity: VisualDensity.compact,
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }
@@ -304,16 +480,22 @@ class _AiErrorMessage extends StatelessWidget {
       margin: const EdgeInsets.only(top: 6, bottom: 8),
       padding: const EdgeInsets.fromLTRB(12, 10, 8, 10),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFF1F1),
-        borderRadius: BorderRadius.circular(10),
+        color: const Color(0xFFFFE9E7),
+        borderRadius: BorderRadius.circular(14),
       ),
       child: Row(
         children: [
+          const Icon(
+            Icons.error_outline_rounded,
+            size: 19,
+            color: PaperFlowColors.danger,
+          ),
+          const SizedBox(width: 8),
           Expanded(
             child: Text(
               message,
               style: const TextStyle(
-                color: Color(0xFFB42318),
+                color: PaperFlowColors.danger,
                 fontSize: 12.5,
                 height: 1.4,
               ),
@@ -339,38 +521,24 @@ class _TypingIndicator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.fromLTRB(13, 10, 7, 10),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF6F6F7),
-        borderRadius: BorderRadius.circular(16),
-      ),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
       child: Row(
         children: [
-          Container(
-            width: 28,
-            height: 28,
-            decoration: BoxDecoration(
-              color: PaperFlowColors.primarySoft,
-              shape: BoxShape.circle,
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(7),
-              child: CircularProgressIndicator(
-                strokeWidth: 1.8,
-                color: PaperFlowColors.primary,
-              ),
-            ),
+          _AssistantAvatar(size: 34),
+          const SizedBox(width: 10),
+          const SizedBox(
+            width: 18,
+            height: 18,
+            child: CircularProgressIndicator(strokeWidth: 1.8),
           ),
-          const SizedBox(width: 9),
+          const SizedBox(width: 10),
           Expanded(
             child: Text(
               searching ? '正在联网检索…' : '正在组织回答…',
               style: const TextStyle(
                 color: PaperFlowColors.muted,
-                fontSize: 12,
+                fontSize: 12.5,
               ),
             ),
           ),
@@ -378,10 +546,44 @@ class _TypingIndicator extends StatelessWidget {
             key: const ValueKey('paper-ai-stop'),
             tooltip: '停止生成',
             onPressed: onCancel,
-            icon: const Icon(Icons.stop_circle_outlined, size: 20),
+            icon: const Icon(Icons.stop_circle_outlined, size: 21),
             color: PaperFlowColors.muted,
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _AssistantAvatar extends StatelessWidget {
+  const _AssistantAvatar({this.size = 36});
+
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: const LinearGradient(
+          colors: [Color(0xFF4B83F5), Color(0xFFB9D5FF)],
+          begin: Alignment.bottomLeft,
+          end: Alignment.topRight,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: PaperAiUiTokens.modelBlue.withValues(alpha: 0.18),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Icon(
+        Icons.auto_awesome_rounded,
+        color: Colors.white,
+        size: size * 0.48,
       ),
     );
   }

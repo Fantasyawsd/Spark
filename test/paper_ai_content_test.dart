@@ -56,7 +56,7 @@ void main() {
     expect(find.text('结论'), findsOneWidget);
   });
 
-  testWidgets('finishing a stream does not collapse visible reasoning',
+  testWidgets('finishing a stream auto-collapses visible reasoning',
       (tester) async {
     var sending = true;
     late StateSetter update;
@@ -104,8 +104,9 @@ void main() {
     update(() => sending = false);
     await tester.pumpAndSettle();
 
-    expect(find.text('思考过程'), findsOneWidget);
-    expect(find.textContaining('比较目标函数'), findsOneWidget);
+    expect(
+        find.byKey(const ValueKey('paper-ai-reasoning-panel')), findsOneWidget);
+    expect(find.textContaining('比较目标函数'), findsNothing);
   });
 
   testWidgets('AI answer exposes search and generation states', (tester) async {
@@ -144,7 +145,6 @@ void main() {
       ),
     );
 
-    expect(find.text('当前上下文'), findsOneWidget);
     expect(find.text('正在搜索'), findsOneWidget);
 
     update(() => searching = false);

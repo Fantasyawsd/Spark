@@ -25,7 +25,6 @@ class MainAiChatScreen extends StatelessWidget {
       webSearchAiService: webSearchAiService,
       sessionRepository: sessionRepository,
       screenTitle: '主聊天',
-      screenSubtitle: 'PaperFlow AI',
       welcomeTitle: '今天想研究什么？',
       welcomeDescription: '跨论文提问、整理研究思路，或联网检索最新资料',
       suggestedPrompts: const [

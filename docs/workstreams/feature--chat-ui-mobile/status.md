@@ -105,6 +105,7 @@
 | SHA | 提交信息 | 对应阶段 | 验证摘要 |
 | --- | --- | --- | --- |
 | `8ab4cba` | `fix(chat): refine mobile chat acceptance UI` | 验收反馈修订与完整验证 | analyze 通过；252 个测试通过；development debug APK 构建通过 |
+| `f9cc05e` | `fix(markdown): scale wide inline formulas on mobile` | 行内公式溢出修复 | analyze 通过；253 个测试通过；development debug APK 构建通过 |
 
 ## 交付记录（合并前补齐）
 

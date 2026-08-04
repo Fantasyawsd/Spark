@@ -223,9 +223,9 @@ class _PaperCommentsSheetState extends State<_PaperCommentsSheet> {
               ],
             ),
           ),
-          SizedBox(
-            height: PaperAiComposer.preferredHeight +
-                MediaQuery.paddingOf(context).bottom,
+          AnimatedSize(
+            duration: const Duration(milliseconds: 160),
+            alignment: Alignment.bottomCenter,
             child: _pageIndex == 1
                 ? PaperAiComposer(
                     controller: _aiComposerController,

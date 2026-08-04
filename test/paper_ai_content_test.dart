@@ -109,7 +109,9 @@ void main() {
     expect(find.textContaining('比较目标函数'), findsNothing);
   });
 
-  testWidgets('AI answer exposes search and generation states', (tester) async {
+  testWidgets(
+      'AI answer does not add a generating label to the assistant header',
+      (tester) async {
     var searching = true;
     late StateSetter update;
 
@@ -145,11 +147,13 @@ void main() {
       ),
     );
 
-    expect(find.text('正在搜索'), findsOneWidget);
+    expect(find.text('正在搜索'), findsNothing);
+    expect(find.text('正在生成'), findsNothing);
 
     update(() => searching = false);
     await tester.pump();
-    expect(find.text('正在生成'), findsOneWidget);
+    expect(find.text('正在搜索'), findsNothing);
+    expect(find.text('正在生成'), findsNothing);
   });
 
   testWidgets('cancelled AI request shows a neutral regenerate action',

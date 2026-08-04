@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:paperflow/src/features/chat/application/chat_ai_service.dart';
@@ -31,16 +29,18 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.byKey(const ValueKey('paper-ai-menu')), findsOneWidget);
-    expect(find.text('问候欢迎'), findsOneWidget);
+    expect(find.byKey(const ValueKey('paper-ai-menu')), findsNothing);
+    expect(find.byKey(const ValueKey('paper-ai-new-chat')), findsNothing);
+    expect(find.text('问候欢迎'), findsNWidgets(2));
+    expect(find.text('默认助手 / deepseek-v4-flash (DeepSeek)'), findsNothing);
     expect(
-      find.text('默认助手 / deepseek-v4-flash (DeepSeek)'),
+      find.byKey(const ValueKey('paper-ai-outline-toggle')),
       findsOneWidget,
     );
     expect(
-        find.byKey(const ValueKey('paper-ai-outline-toggle')), findsOneWidget);
-    expect(find.byKey(const ValueKey('paper-ai-composer-surface')),
-        findsOneWidget);
+      find.byKey(const ValueKey('paper-ai-composer-surface')),
+      findsOneWidget,
+    );
 
     await tester.tap(find.byKey(const ValueKey('paper-ai-outline-toggle')));
     await tester.pumpAndSettle();
@@ -51,6 +51,41 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('paper-ai-outline-toggle')));
     await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey('paper-ai-conversation')), findsOneWidget);
+  });
+
+  testWidgets(
+      'conversation title is editable and subtitle is supplied by session type',
+      (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: PaperAiChatScreen(
+          chatContext: const ChatContext(
+            id: 'paper-ui-test',
+            title: '论文名称',
+            systemPrompt: '回答问题。',
+          ),
+          aiService: const _FakeChatAiService(),
+          sessionRepository: _FakeChatSessionRepository(),
+          screenTitle: '初始标题',
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('初始标题'), findsOneWidget);
+    expect(find.text('论文名称'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('paper-ai-title')));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const ValueKey('paper-ai-title-input')),
+      '修改后的标题',
+    );
+    await tester.tap(find.text('保存'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('修改后的标题'), findsOneWidget);
+    expect(find.text('论文名称'), findsOneWidget);
   });
 }
 

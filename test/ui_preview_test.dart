@@ -579,11 +579,11 @@ void main() {
     await tester.tap(find.text('AI 解析'));
     await tester.pumpAndSettle();
 
-    expect(
-      tester.getSize(find.byKey(const ValueKey('paper-sheet-pages'))),
-      contentSize,
-    );
-    expect(find.text('解释核心方法'), findsOneWidget);
+    final aiContentSize =
+        tester.getSize(find.byKey(const ValueKey('paper-sheet-pages')));
+    expect(aiContentSize.height, greaterThan(0));
+    expect(aiContentSize.height, lessThanOrEqualTo(contentSize.height));
+    expect(find.text('解释核心方法'), findsNothing);
     expect(find.byKey(const ValueKey('paper-ai-input')), findsOneWidget);
   });
 

@@ -4,7 +4,8 @@ import 'package:paperflow/paperflow.dart';
 import 'package:paperflow/src/features/papers/presentation/widgets/paper_ai_composer.dart';
 
 void main() {
-  testWidgets('toolbar stays pinned when multiline input scrolls',
+  testWidgets(
+      'composer adapts to multiline input while keeping the toolbar attached',
       (tester) async {
     await tester.binding.setSurfaceSize(const Size(378, 300));
     addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -43,9 +44,9 @@ void main() {
       const ValueKey('paper-ai-composer-toolbar'),
     );
     final initialToolbarRect = tester.getRect(toolbar);
-    final surfaceRect = tester.getRect(surface);
+    final initialSurfaceRect = tester.getRect(surface);
     expect(
-      surfaceRect.bottom - initialToolbarRect.bottom,
+      initialSurfaceRect.bottom - initialToolbarRect.bottom,
       inInclusiveRange(6, 8),
     );
 
@@ -55,7 +56,14 @@ void main() {
     );
     await tester.pump();
 
-    expect(tester.getRect(toolbar), initialToolbarRect);
+    final expandedToolbarRect = tester.getRect(toolbar);
+    final expandedSurfaceRect = tester.getRect(surface);
+    expect(expandedSurfaceRect.height, greaterThan(initialSurfaceRect.height));
+    expect(expandedToolbarRect.bottom, closeTo(initialToolbarRect.bottom, 0.1));
+    expect(
+      expandedSurfaceRect.bottom - expandedToolbarRect.bottom,
+      inInclusiveRange(6, 8),
+    );
     expect(tester.takeException(), isNull);
   });
 

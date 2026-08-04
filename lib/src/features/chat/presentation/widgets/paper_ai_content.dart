@@ -19,12 +19,14 @@ class PaperAiContent extends StatelessWidget {
     required this.onPrompt,
     required this.onRetry,
     required this.onCancel,
+    this.onDelete,
+    this.onFork,
+    this.onEdit,
     required this.searching,
     required this.requestStatus,
     required this.canRetryRequestError,
     this.welcomeTitle,
     this.welcomeDescription,
-    this.prompts = const ['解释核心方法', '总结实验结果', '分析贡献与局限'],
     this.previewMode = false,
     this.assistantLabel = '默认助手',
     this.modelName = 'deepseek-v4-flash',
@@ -39,12 +41,14 @@ class PaperAiContent extends StatelessWidget {
   final ValueChanged<String> onPrompt;
   final VoidCallback onRetry;
   final VoidCallback onCancel;
+  final ValueChanged<int>? onDelete;
+  final ValueChanged<int>? onFork;
+  final ValueChanged<String>? onEdit;
   final bool searching;
   final ChatRequestStatus requestStatus;
   final bool canRetryRequestError;
   final String? welcomeTitle;
   final String? welcomeDescription;
-  final List<String> prompts;
   final bool previewMode;
   final String assistantLabel;
   final String modelName;
@@ -79,12 +83,14 @@ class PaperAiContent extends StatelessWidget {
               onPrompt: onPrompt,
               onRetry: onRetry,
               onCancel: onCancel,
+              onDelete: onDelete,
+              onFork: onFork,
+              onEdit: onEdit,
               searching: searching,
               requestStatus: requestStatus,
               canRetryRequestError: canRetryRequestError,
               welcomeTitle: welcomeTitle,
               welcomeDescription: welcomeDescription,
-              prompts: prompts,
               assistantLabel: assistantLabel,
               modelName: modelName,
               providerName: providerName,
@@ -104,12 +110,14 @@ class _PaperAiConversation extends StatelessWidget {
     required this.onPrompt,
     required this.onRetry,
     required this.onCancel,
+    required this.onDelete,
+    required this.onFork,
+    required this.onEdit,
     required this.searching,
     required this.requestStatus,
     required this.canRetryRequestError,
     required this.welcomeTitle,
     required this.welcomeDescription,
-    required this.prompts,
     required this.assistantLabel,
     required this.modelName,
     required this.providerName,
@@ -123,12 +131,14 @@ class _PaperAiConversation extends StatelessWidget {
   final ValueChanged<String> onPrompt;
   final VoidCallback onRetry;
   final VoidCallback onCancel;
+  final ValueChanged<int>? onDelete;
+  final ValueChanged<int>? onFork;
+  final ValueChanged<String>? onEdit;
   final bool searching;
   final ChatRequestStatus requestStatus;
   final bool canRetryRequestError;
   final String? welcomeTitle;
   final String? welcomeDescription;
-  final List<String> prompts;
   final String assistantLabel;
   final String modelName;
   final String providerName;
@@ -140,14 +150,12 @@ class _PaperAiConversation extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          if (messages.isEmpty && !loading) ...[
+          if (messages.isEmpty && !loading)
             _AiWelcome(
               chatContext: chatContext,
               title: welcomeTitle,
               description: welcomeDescription,
             ),
-            _SuggestionChips(prompts: prompts, onPrompt: onPrompt),
-          ],
           if (loading)
             const Padding(
               padding: EdgeInsets.symmetric(vertical: 24),
@@ -164,7 +172,11 @@ class _PaperAiConversation extends StatelessWidget {
                     message: messages[index],
                     streaming: sending && index == messages.length - 1,
                     searching: searching && index == messages.length - 1,
+                    isLatest: index == messages.length - 1,
                     onRetry: onRetry,
+                    onDelete: () => onDelete?.call(index),
+                    onFork: () => onFork?.call(index),
+                    onEdit: () => onEdit?.call(messages[index].content),
                     assistantLabel: assistantLabel,
                     modelName: modelName,
                     providerName: providerName,
@@ -184,8 +196,6 @@ class _PaperAiConversation extends StatelessWidget {
             ),
           if (error == null && requestStatus == ChatRequestStatus.cancelled)
             _AiStoppedMessage(onRetry: onRetry),
-          if (messages.isNotEmpty && !sending && error == null)
-            _SuggestionChips(prompts: prompts, onPrompt: onPrompt),
         ],
       ),
     );
@@ -425,48 +435,6 @@ class _AiWelcome extends StatelessWidget {
   }
 }
 
-class _SuggestionChips extends StatelessWidget {
-  const _SuggestionChips({required this.prompts, required this.onPrompt});
-
-  final List<String> prompts;
-  final ValueChanged<String> onPrompt;
-
-  @override
-  Widget build(BuildContext context) {
-    if (prompts.isEmpty) return const SizedBox.shrink();
-    return Padding(
-      key: const ValueKey('paper-ai-suggestions'),
-      padding: const EdgeInsets.only(top: 4, bottom: 6),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Row(
-          children: [
-            for (var index = 0; index < prompts.length; index++) ...[
-              if (index > 0) const SizedBox(width: 8),
-              ActionChip(
-                label: Text(prompts[index]),
-                onPressed: () => onPrompt(prompts[index]),
-                backgroundColor: PaperAiUiTokens.assistantReasoning,
-                side: BorderSide.none,
-                labelStyle: const TextStyle(
-                  color: PaperFlowColors.ink,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(18),
-                ),
-                visualDensity: VisualDensity.compact,
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 class _AiErrorMessage extends StatelessWidget {
   const _AiErrorMessage({required this.message, required this.onRetry});
 
@@ -580,10 +548,18 @@ class _AssistantAvatar extends StatelessWidget {
           ),
         ],
       ),
-      child: Icon(
-        Icons.auto_awesome_rounded,
-        color: Colors.white,
-        size: size * 0.48,
+      child: ClipOval(
+        child: Image.network(
+          'https://www.deepseek.com/favicon.ico',
+          width: size,
+          height: size,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) => Icon(
+            Icons.auto_awesome_rounded,
+            color: Colors.white,
+            size: size * 0.48,
+          ),
+        ),
       ),
     );
   }

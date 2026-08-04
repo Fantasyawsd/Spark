@@ -36,6 +36,29 @@ void main() {
     expect(context.promptFor(webSearch: false), isNotEmpty);
     expect(context.promptFor(webSearch: true), contains('网络搜索'));
   });
+
+  test(
+      'deleteMessageAt removes an assistant message without changing the user prompt',
+      () async {
+    const context = ChatContext(
+      id: 'delete-message-test',
+      title: '删除测试',
+      systemPrompt: '回答问题。',
+    );
+    final controller = ChatConversationController(
+      context: context,
+      service: _CapturingChatAiService(),
+    );
+
+    await controller.send('保留这条问题');
+    expect(controller.messages, hasLength(2));
+
+    controller.deleteMessageAt(1);
+
+    expect(controller.messages, hasLength(1));
+    expect(controller.messages.single.content, '保留这条问题');
+    controller.dispose();
+  });
 }
 
 class _CapturingChatAiService implements ChatAiService {

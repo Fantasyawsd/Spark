@@ -20,6 +20,7 @@ class PaperAiComposer extends StatefulWidget {
     required this.onChanged,
     required this.onSend,
     required this.onCancel,
+    this.focusNode,
     this.modelName = 'deepseek-v4-flash',
   });
 
@@ -36,15 +37,56 @@ class PaperAiComposer extends StatefulWidget {
   final ValueChanged<String> onChanged;
   final VoidCallback onSend;
   final VoidCallback onCancel;
+  final FocusNode? focusNode;
   final String modelName;
-
-  static const double preferredHeight = 164;
 
   @override
   State<PaperAiComposer> createState() => _PaperAiComposerState();
 }
 
 class _PaperAiComposerState extends State<PaperAiComposer> {
+  @override
+  void initState() {
+    super.initState();
+    widget.controller.addListener(_handleControllerChanged);
+  }
+
+  @override
+  void didUpdateWidget(covariant PaperAiComposer oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.controller != widget.controller) {
+      oldWidget.controller.removeListener(_handleControllerChanged);
+      widget.controller.addListener(_handleControllerChanged);
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.controller.removeListener(_handleControllerChanged);
+    super.dispose();
+  }
+
+  void _handleControllerChanged() {
+    if (mounted) setState(() {});
+  }
+
+  double _inputHeight(BuildContext context) {
+    const style = TextStyle(
+      color: PaperFlowColors.ink,
+      fontSize: 16,
+      height: 1.35,
+    );
+    final availableWidth = MediaQuery.sizeOf(context).width - 42;
+    final painter = TextPainter(
+      text: TextSpan(
+        text: widget.controller.text.isEmpty ? ' ' : widget.controller.text,
+        style: style,
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout(maxWidth: availableWidth.clamp(1, double.infinity));
+    return (painter.height + 12).clamp(48.0, 132.0);
+  }
+
   @override
   Widget build(BuildContext context) {
     final canSend = widget.enabled && widget.controller.text.trim().isNotEmpty;
@@ -54,147 +96,150 @@ class _PaperAiComposerState extends State<PaperAiComposer> {
       top: false,
       child: Padding(
         padding: const EdgeInsets.fromLTRB(14, 4, 14, 10),
-        child: AnimatedContainer(
+        child: AnimatedSize(
           duration: const Duration(milliseconds: 160),
           curve: Curves.easeOutCubic,
-          key: const ValueKey('paper-ai-composer-surface'),
-          constraints: const BoxConstraints(
-            minHeight: PaperAiComposer.preferredHeight,
-            maxHeight: 216,
-          ),
-          padding: const EdgeInsets.fromLTRB(15, 12, 9, 6),
-          decoration: BoxDecoration(
-            color: PaperAiUiTokens.composer,
-            borderRadius: BorderRadius.only(
-              topLeft: const Radius.circular(28),
-              topRight: const Radius.circular(28),
-              bottomLeft: Radius.circular(keyboardVisible ? 0 : 28),
-              bottomRight: Radius.circular(keyboardVisible ? 0 : 28),
+          alignment: Alignment.bottomCenter,
+          child: Container(
+            key: const ValueKey('paper-ai-composer-surface'),
+            padding: const EdgeInsets.fromLTRB(15, 12, 9, 6),
+            decoration: BoxDecoration(
+              color: PaperAiUiTokens.composer,
+              borderRadius: BorderRadius.only(
+                topLeft: const Radius.circular(28),
+                topRight: const Radius.circular(28),
+                bottomLeft: Radius.circular(keyboardVisible ? 0 : 28),
+                bottomRight: Radius.circular(keyboardVisible ? 0 : 28),
+              ),
+              border: Border.all(color: PaperAiUiTokens.composerBorder),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x10182230),
+                  blurRadius: 18,
+                  offset: Offset(0, -2),
+                ),
+              ],
             ),
-            border: Border.all(color: PaperAiUiTokens.composerBorder),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x10182230),
-                blurRadius: 18,
-                offset: Offset(0, -2),
-              ),
-            ],
-          ),
-          child: Column(
-            children: [
-              Expanded(
-                child: TextField(
-                  key: const ValueKey('paper-ai-input'),
-                  controller: widget.controller,
-                  readOnly: !widget.enabled,
-                  onChanged: widget.onChanged,
-                  minLines: 2,
-                  maxLines: 4,
-                  textAlignVertical: TextAlignVertical.top,
-                  textInputAction: TextInputAction.newline,
-                  style: const TextStyle(
-                    color: PaperFlowColors.ink,
-                    fontSize: 16,
-                    height: 1.35,
-                  ),
-                  decoration: const InputDecoration(
-                    hintText: '输入消息与AI聊天',
-                    hintStyle: TextStyle(
-                      color: PaperFlowColors.muted,
-                      fontSize: 16,
-                    ),
-                    filled: false,
-                    border: InputBorder.none,
-                    isDense: true,
-                    contentPadding: EdgeInsets.fromLTRB(2, 4, 2, 4),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 6),
-              SizedBox(
-                key: const ValueKey('paper-ai-composer-toolbar'),
-                height: 40,
-                child: Row(
-                  children: [
-                    _ToolbarIconButton(
-                      key: const ValueKey('paper-ai-model-setting'),
-                      tooltip: '选择模型',
-                      icon: Icons.auto_awesome_rounded,
-                      color: PaperAiUiTokens.modelBlue,
-                      onTap: widget.enabled ? _showModelSheet : null,
-                    ),
-                    const SizedBox(width: 8),
-                    _ToolbarIconButton(
-                      key: const ValueKey('paper-ai-web-search'),
-                      tooltip: widget.webSearchEnabled ? '关闭联网搜索' : '开启联网搜索',
-                      icon: Icons.search_rounded,
-                      color: widget.webSearchEnabled
-                          ? PaperAiUiTokens.modelBlue
-                          : PaperFlowColors.muted,
-                      onTap: widget.enabled && widget.webSearchAvailable
-                          ? () => widget.onWebSearchChanged(
-                                !widget.webSearchEnabled,
-                              )
-                          : null,
-                    ),
-                    const SizedBox(width: 8),
-                    _ToolbarIconButton(
-                      key: const ValueKey('paper-ai-reasoning-setting'),
-                      tooltip: '调整思考深度',
-                      icon: Icons.lightbulb_outline_rounded,
-                      color: widget.reasoningEffort == ChatReasoningEffort.none
-                          ? PaperFlowColors.muted
-                          : PaperAiUiTokens.reasoning,
-                      onTap: widget.enabled ? _showReasoningSheet : null,
-                    ),
-                    const SizedBox(width: 8),
-                    _ToolbarIconButton(
-                      key: const ValueKey('paper-ai-clear-context'),
-                      tooltip: widget.hasContext ? '清除上下文' : '更多选项',
-                      icon: Icons.add_rounded,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(
+                  height: _inputHeight(context),
+                  child: TextField(
+                    key: const ValueKey('paper-ai-input'),
+                    controller: widget.controller,
+                    focusNode: widget.focusNode,
+                    readOnly: !widget.enabled,
+                    onChanged: widget.onChanged,
+                    minLines: 1,
+                    maxLines: null,
+                    textAlignVertical: TextAlignVertical.top,
+                    textInputAction: TextInputAction.newline,
+                    style: const TextStyle(
                       color: PaperFlowColors.ink,
-                      onTap: widget.enabled
-                          ? widget.hasContext
-                              ? widget.onClearContext
-                              : _showMoreSheet
-                          : null,
+                      fontSize: 16,
+                      height: 1.35,
                     ),
-                    const Spacer(),
-                    IconButton(
-                      key: ValueKey(
-                        widget.sending
-                            ? 'paper-ai-composer-stop'
-                            : 'paper-ai-send',
+                    decoration: const InputDecoration(
+                      hintText: '输入消息与AI聊天',
+                      hintStyle: TextStyle(
+                        color: PaperFlowColors.muted,
+                        fontSize: 16,
                       ),
-                      tooltip: widget.sending ? '停止生成' : '发送',
-                      onPressed: widget.sending
-                          ? widget.onCancel
-                          : canSend
-                              ? widget.onSend
-                              : null,
-                      style: IconButton.styleFrom(
-                        backgroundColor: widget.sending || canSend
-                            ? PaperAiUiTokens.reasoning
-                            : const Color(0xFFEBDDDC),
-                        foregroundColor: widget.sending || canSend
-                            ? Colors.white
-                            : PaperFlowColors.subtle,
-                        minimumSize: const Size(42, 42),
-                        maximumSize: const Size(42, 42),
-                        padding: EdgeInsets.zero,
-                        shape: const CircleBorder(),
-                      ),
-                      icon: Icon(
-                        widget.sending
-                            ? Icons.stop_rounded
-                            : Icons.arrow_upward_rounded,
-                        size: 22,
-                      ),
+                      filled: false,
+                      border: InputBorder.none,
+                      isDense: true,
+                      contentPadding: EdgeInsets.fromLTRB(2, 4, 2, 4),
                     ),
-                  ],
+                  ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 6),
+                SizedBox(
+                  key: const ValueKey('paper-ai-composer-toolbar'),
+                  height: 40,
+                  child: Row(
+                    children: [
+                      _ToolbarIconButton(
+                        key: const ValueKey('paper-ai-model-setting'),
+                        tooltip: '选择模型',
+                        icon: Icons.auto_awesome_rounded,
+                        color: PaperAiUiTokens.modelBlue,
+                        onTap: widget.enabled ? _showModelSheet : null,
+                      ),
+                      const SizedBox(width: 8),
+                      _ToolbarIconButton(
+                        key: const ValueKey('paper-ai-web-search'),
+                        tooltip: widget.webSearchEnabled ? '关闭联网搜索' : '开启联网搜索',
+                        icon: Icons.search_rounded,
+                        color: widget.webSearchEnabled
+                            ? PaperAiUiTokens.modelBlue
+                            : PaperFlowColors.muted,
+                        onTap: widget.enabled && widget.webSearchAvailable
+                            ? () => widget.onWebSearchChanged(
+                                  !widget.webSearchEnabled,
+                                )
+                            : null,
+                      ),
+                      const SizedBox(width: 8),
+                      _ToolbarIconButton(
+                        key: const ValueKey('paper-ai-reasoning-setting'),
+                        tooltip: '调整思考深度',
+                        icon: Icons.lightbulb_outline_rounded,
+                        color:
+                            widget.reasoningEffort == ChatReasoningEffort.none
+                                ? PaperFlowColors.muted
+                                : PaperAiUiTokens.reasoning,
+                        onTap: widget.enabled ? _showReasoningSheet : null,
+                      ),
+                      const SizedBox(width: 8),
+                      _ToolbarIconButton(
+                        key: const ValueKey('paper-ai-clear-context'),
+                        tooltip: widget.hasContext ? '清除上下文' : '更多选项',
+                        icon: Icons.add_rounded,
+                        color: PaperFlowColors.ink,
+                        onTap: widget.enabled
+                            ? widget.hasContext
+                                ? widget.onClearContext
+                                : _showMoreSheet
+                            : null,
+                      ),
+                      const Spacer(),
+                      IconButton(
+                        key: ValueKey(
+                          widget.sending
+                              ? 'paper-ai-composer-stop'
+                              : 'paper-ai-send',
+                        ),
+                        tooltip: widget.sending ? '停止生成' : '发送',
+                        onPressed: widget.sending
+                            ? widget.onCancel
+                            : canSend
+                                ? widget.onSend
+                                : null,
+                        style: IconButton.styleFrom(
+                          backgroundColor: widget.sending || canSend
+                              ? PaperAiUiTokens.reasoning
+                              : const Color(0xFFEBDDDC),
+                          foregroundColor: widget.sending || canSend
+                              ? Colors.white
+                              : PaperFlowColors.subtle,
+                          minimumSize: const Size(42, 42),
+                          maximumSize: const Size(42, 42),
+                          padding: EdgeInsets.zero,
+                          shape: const CircleBorder(),
+                        ),
+                        icon: Icon(
+                          widget.sending
+                              ? Icons.stop_rounded
+                              : Icons.arrow_upward_rounded,
+                          size: 22,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

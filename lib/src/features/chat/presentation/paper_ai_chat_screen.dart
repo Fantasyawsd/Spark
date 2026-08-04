@@ -23,11 +23,6 @@ class PaperAiChatScreen extends StatefulWidget {
     this.providerName = 'DeepSeek',
     this.welcomeTitle,
     this.welcomeDescription,
-    this.suggestedPrompts = const [
-      '解释核心方法',
-      '总结实验结果',
-      '分析贡献与局限',
-    ],
     this.clearConfirmation = '这会删除当前论文的全部 AI 对话记录。',
   });
 
@@ -42,7 +37,6 @@ class PaperAiChatScreen extends StatefulWidget {
   final String providerName;
   final String? welcomeTitle;
   final String? welcomeDescription;
-  final List<String> suggestedPrompts;
   final String clearConfirmation;
 
   @override
@@ -51,16 +45,19 @@ class PaperAiChatScreen extends StatefulWidget {
 
 class _PaperAiChatScreenState extends State<PaperAiChatScreen> {
   final TextEditingController _composer = TextEditingController();
+  final FocusNode _composerFocusNode = FocusNode();
   final ScrollController _scrollController = ScrollController();
   late final ChatConversationController _conversation;
+  late String _conversationTitle;
   bool _previewMode = false;
 
-  String get _modelSubtitle =>
-      '${widget.assistantLabel} / ${widget.modelName} (${widget.providerName})';
+  String get _conversationSubtitle =>
+      widget.screenSubtitle ?? widget.chatContext.title;
 
   @override
   void initState() {
     super.initState();
+    _conversationTitle = widget.screenTitle;
     _conversation = ChatConversationController(
       context: widget.chatContext,
       service: widget.aiService,
@@ -73,6 +70,7 @@ class _PaperAiChatScreenState extends State<PaperAiChatScreen> {
   @override
   void dispose() {
     _composer.dispose();
+    _composerFocusNode.dispose();
     _scrollController.dispose();
     _conversation
       ..removeListener(_handleConversationChanged)
@@ -85,55 +83,52 @@ class _PaperAiChatScreenState extends State<PaperAiChatScreen> {
     return Scaffold(
       key: const ValueKey('paper-ai-chat-screen'),
       backgroundColor: PaperAiUiTokens.canvas,
-      drawer: _PaperAiDrawer(
-        chatContext: widget.chatContext,
-        onNewChat: _confirmClearContext,
-        onClearContext: _confirmClearContext,
-      ),
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         backgroundColor: PaperAiUiTokens.canvas,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         scrolledUnderElevation: 0,
-        titleSpacing: 0,
-        leading: Builder(
-          builder: (context) => IconButton(
-            key: const ValueKey('paper-ai-menu'),
-            tooltip: '打开对话列表',
-            onPressed: () => Scaffold.of(context).openDrawer(),
-            icon: const Icon(Icons.menu_rounded, size: 28),
-          ),
-        ),
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              widget.screenTitle,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: PaperFlowColors.ink,
-                fontSize: 17,
-                height: 1.1,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            const SizedBox(height: 4),
-            SizedBox(
-              width: MediaQuery.sizeOf(context).width * 0.62,
-              child: Text(
-                widget.screenSubtitle ?? _modelSubtitle,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: PaperFlowColors.muted,
-                  fontSize: 10.5,
-                  height: 1.1,
-                  fontWeight: FontWeight.w500,
+        titleSpacing: 16,
+        title: Semantics(
+          button: true,
+          label: '编辑会话标题',
+          child: GestureDetector(
+            key: const ValueKey('paper-ai-title'),
+            onTap: _editConversationTitle,
+            behavior: HitTestBehavior.opaque,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _conversationTitle,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: PaperFlowColors.ink,
+                    fontSize: 17,
+                    height: 1.1,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
-              ),
+                const SizedBox(height: 4),
+                SizedBox(
+                  width: MediaQuery.sizeOf(context).width * 0.64,
+                  child: Text(
+                    _conversationSubtitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: PaperFlowColors.muted,
+                      fontSize: 10.5,
+                      height: 1.1,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
         actions: [
           IconButton(
@@ -146,12 +141,6 @@ class _PaperAiChatScreenState extends State<PaperAiChatScreen> {
                   : Icons.format_list_bulleted_rounded,
               size: 28,
             ),
-          ),
-          IconButton(
-            key: const ValueKey('paper-ai-new-chat'),
-            tooltip: '新建对话',
-            onPressed: _confirmClearContext,
-            icon: const Icon(Icons.add_comment_outlined, size: 28),
           ),
           const SizedBox(width: 4),
         ],
@@ -171,15 +160,17 @@ class _PaperAiChatScreenState extends State<PaperAiChatScreen> {
                   loading: _conversation.loading,
                   sending: _conversation.sending,
                   error: _conversation.error,
-                  onPrompt: _send,
+                  onPrompt: (_) {},
                   onRetry: _conversation.retry,
                   onCancel: _conversation.cancel,
+                  onDelete: _deleteMessage,
+                  onFork: _forkMessage,
+                  onEdit: _editMessage,
                   searching: _conversation.searching,
                   requestStatus: _conversation.requestStatus,
                   canRetryRequestError: _conversation.canRetryRequestError,
                   welcomeTitle: widget.welcomeTitle,
                   welcomeDescription: widget.welcomeDescription,
-                  prompts: widget.suggestedPrompts,
                   previewMode: _previewMode,
                   assistantLabel: widget.assistantLabel,
                   modelName: widget.modelName,
@@ -190,6 +181,7 @@ class _PaperAiChatScreenState extends State<PaperAiChatScreen> {
           ),
           PaperAiComposer(
             controller: _composer,
+            focusNode: _composerFocusNode,
             enabled: !_conversation.sending,
             sending: _conversation.sending,
             reasoningEffort: _conversation.reasoningEffort,
@@ -217,11 +209,45 @@ class _PaperAiChatScreenState extends State<PaperAiChatScreen> {
     await _conversation.send(text);
   }
 
+  Future<void> _editConversationTitle() async {
+    var editedTitle = _conversationTitle;
+    final nextTitle = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('编辑会话标题'),
+        content: TextFormField(
+          key: const ValueKey('paper-ai-title-input'),
+          initialValue: editedTitle,
+          autofocus: true,
+          maxLength: 80,
+          textInputAction: TextInputAction.done,
+          onChanged: (value) => editedTitle = value,
+          onFieldSubmitted: (value) => Navigator.pop(context, value),
+          decoration: const InputDecoration(hintText: '输入会话标题'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, editedTitle),
+            child: const Text('保存'),
+          ),
+        ],
+      ),
+    );
+    final normalized = nextTitle?.trim();
+    if (normalized != null && normalized.isNotEmpty && mounted) {
+      setState(() => _conversationTitle = normalized);
+    }
+  }
+
   Future<void> _confirmClearContext() async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('新建对话？'),
+        title: const Text('清除对话？'),
         content: Text(widget.clearConfirmation),
         actions: [
           TextButton(
@@ -230,12 +256,33 @@ class _PaperAiChatScreenState extends State<PaperAiChatScreen> {
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('新建'),
+            child: const Text('清除'),
           ),
         ],
       ),
     );
     if (confirmed == true) await _conversation.clear();
+  }
+
+  void _editMessage(String content) {
+    _composer.value = TextEditingValue(
+      text: content,
+      selection: TextSelection.collapsed(offset: content.length),
+    );
+    setState(() {});
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _composerFocusNode.requestFocus();
+    });
+  }
+
+  void _deleteMessage(int index) {
+    _conversation.deleteMessageAt(index);
+  }
+
+  void _forkMessage(int index) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Fork 会话将在会话分支能力接入后启用。')),
+    );
   }
 
   void _handleConversationChanged() {
@@ -254,126 +301,5 @@ class _PaperAiChatScreenState extends State<PaperAiChatScreen> {
         curve: Curves.easeOut,
       );
     });
-  }
-}
-
-class _PaperAiDrawer extends StatelessWidget {
-  const _PaperAiDrawer({
-    required this.chatContext,
-    required this.onNewChat,
-    required this.onClearContext,
-  });
-
-  final ChatContext chatContext;
-  final VoidCallback onNewChat;
-  final VoidCallback onClearContext;
-
-  @override
-  Widget build(BuildContext context) {
-    return Drawer(
-      backgroundColor: PaperAiUiTokens.canvas,
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 18, 16, 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                '对话',
-                style: TextStyle(
-                  color: PaperFlowColors.ink,
-                  fontSize: 24,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: 24),
-              _DrawerAction(
-                icon: Icons.add_rounded,
-                label: '新建对话',
-                onTap: () {
-                  Navigator.of(context).pop();
-                  onNewChat();
-                },
-              ),
-              _DrawerAction(
-                icon: Icons.search_rounded,
-                label: '搜索对话',
-                onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('对话搜索即将接入。')),
-                ),
-              ),
-              const SizedBox(height: 28),
-              const Text(
-                '当前会话',
-                style: TextStyle(
-                  color: PaperFlowColors.muted,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: 10),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: PaperAiUiTokens.userBubble.withValues(alpha: 0.55),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Text(
-                  chatContext.title,
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: PaperFlowColors.ink,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    height: 1.35,
-                  ),
-                ),
-              ),
-              const Spacer(),
-              _DrawerAction(
-                icon: Icons.delete_sweep_outlined,
-                label: '清除当前对话',
-                onTap: () {
-                  Navigator.of(context).pop();
-                  onClearContext();
-                },
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _DrawerAction extends StatelessWidget {
-  const _DrawerAction({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return ListTile(
-      contentPadding: EdgeInsets.zero,
-      dense: true,
-      leading: Icon(icon, size: 22, color: PaperFlowColors.ink),
-      title: Text(
-        label,
-        style: const TextStyle(
-          color: PaperFlowColors.ink,
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-      onTap: onTap,
-    );
   }
 }

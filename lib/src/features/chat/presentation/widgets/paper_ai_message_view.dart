@@ -14,7 +14,11 @@ class PaperAiMessageView extends StatelessWidget {
     required this.message,
     required this.streaming,
     required this.searching,
+    this.isLatest = false,
     this.onRetry,
+    this.onDelete,
+    this.onFork,
+    this.onEdit,
     this.assistantLabel = '默认助手',
     this.modelName = 'deepseek-v4-flash',
     this.providerName = 'DeepSeek',
@@ -23,7 +27,11 @@ class PaperAiMessageView extends StatelessWidget {
   final ChatMessage message;
   final bool streaming;
   final bool searching;
+  final bool isLatest;
   final VoidCallback? onRetry;
+  final VoidCallback? onDelete;
+  final VoidCallback? onFork;
+  final VoidCallback? onEdit;
   final String assistantLabel;
   final String modelName;
   final String providerName;
@@ -40,15 +48,16 @@ class PaperAiMessageView extends StatelessWidget {
     if (message.fromUser) {
       return _UserMessage(
         message: message,
-        onRetry: onRetry,
+        onEdit: isLatest ? onEdit : null,
       );
     }
 
     return _AssistantMessage(
       message: message,
       streaming: streaming,
-      searching: searching,
-      onRetry: onRetry,
+      onRetry: isLatest ? onRetry : null,
+      onDelete: onDelete,
+      onFork: onFork,
       assistantLabel: assistantLabel,
       modelName: modelName,
       providerName: providerName,
@@ -57,10 +66,10 @@ class PaperAiMessageView extends StatelessWidget {
 }
 
 class _UserMessage extends StatelessWidget {
-  const _UserMessage({required this.message, required this.onRetry});
+  const _UserMessage({required this.message, required this.onEdit});
 
   final ChatMessage message;
-  final VoidCallback? onRetry;
+  final VoidCallback? onEdit;
 
   @override
   Widget build(BuildContext context) {
@@ -71,8 +80,6 @@ class _UserMessage extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          const _UserHeader(),
-          const SizedBox(height: 6),
           Align(
             alignment: Alignment.centerRight,
             child: ConstrainedBox(
@@ -96,44 +103,10 @@ class _UserMessage extends StatelessWidget {
           _MessageActionRow(
             message: message,
             assistant: false,
-            onRetry: onRetry,
+            onEdit: onEdit,
           ),
         ],
       ),
-    );
-  }
-}
-
-class _UserHeader extends StatelessWidget {
-  const _UserHeader();
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        const Text(
-          '用户',
-          style: TextStyle(
-            color: PaperFlowColors.ink,
-            fontSize: 15,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        const SizedBox(width: 10),
-        Container(
-          width: 40,
-          height: 40,
-          decoration: const BoxDecoration(
-            shape: BoxShape.circle,
-            gradient: LinearGradient(
-              colors: [Color(0xFF8EDB54), Color(0xFF46B8D9)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-          ),
-        ),
-      ],
     );
   }
 }
@@ -142,8 +115,9 @@ class _AssistantMessage extends StatelessWidget {
   const _AssistantMessage({
     required this.message,
     required this.streaming,
-    required this.searching,
     required this.onRetry,
+    required this.onDelete,
+    required this.onFork,
     required this.assistantLabel,
     required this.modelName,
     required this.providerName,
@@ -151,8 +125,9 @@ class _AssistantMessage extends StatelessWidget {
 
   final ChatMessage message;
   final bool streaming;
-  final bool searching;
   final VoidCallback? onRetry;
+  final VoidCallback? onDelete;
+  final VoidCallback? onFork;
   final String assistantLabel;
   final String modelName;
   final String providerName;
@@ -186,11 +161,6 @@ class _AssistantMessage extends StatelessWidget {
                           ),
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      if (searching || streaming)
-                        _StatusPill(
-                          label: searching ? '正在搜索' : '正在生成',
-                        ),
                     ],
                   ),
                 ),
@@ -218,6 +188,8 @@ class _AssistantMessage extends StatelessWidget {
             message: message,
             assistant: true,
             onRetry: onRetry,
+            onDelete: onDelete,
+            onFork: onFork,
           ),
           if (message.status != ChatMessageStatus.complete)
             Padding(
@@ -263,34 +235,17 @@ class _AssistantAvatar extends StatelessWidget {
           ),
         ],
       ),
-      child: Icon(
-        Icons.auto_awesome_rounded,
-        color: Colors.white,
-        size: size * 0.48,
-      ),
-    );
-  }
-}
-
-class _StatusPill extends StatelessWidget {
-  const _StatusPill({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-      decoration: BoxDecoration(
-        color: PaperAiUiTokens.assistantReasoning,
-        borderRadius: BorderRadius.circular(99),
-      ),
-      child: Text(
-        label,
-        style: const TextStyle(
-          color: PaperAiUiTokens.assistantReasoningText,
-          fontSize: 9.5,
-          fontWeight: FontWeight.w600,
+      child: ClipOval(
+        child: Image.network(
+          'https://www.deepseek.com/favicon.ico',
+          width: size,
+          height: size,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) => Icon(
+            Icons.auto_awesome_rounded,
+            color: Colors.white,
+            size: size * 0.48,
+          ),
         ),
       ),
     );
@@ -301,12 +256,18 @@ class _MessageActionRow extends StatelessWidget {
   const _MessageActionRow({
     required this.message,
     required this.assistant,
-    required this.onRetry,
+    this.onRetry,
+    this.onEdit,
+    this.onDelete,
+    this.onFork,
   });
 
   final ChatMessage message;
   final bool assistant;
   final VoidCallback? onRetry;
+  final VoidCallback? onEdit;
+  final VoidCallback? onDelete;
+  final VoidCallback? onFork;
 
   @override
   Widget build(BuildContext context) {
@@ -323,34 +284,27 @@ class _MessageActionRow extends StatelessWidget {
             icon: Icons.copy_all_outlined,
             onPressed: () => _copy(context),
           ),
-          _MessageActionButton(
-            key: ValueKey(
-              assistant ? 'paper-ai-assistant-retry' : 'paper-ai-user-retry',
+          if (assistant && onRetry != null)
+            _MessageActionButton(
+              key: const ValueKey('paper-ai-assistant-retry'),
+              tooltip: '重新生成',
+              icon: Icons.refresh_rounded,
+              onPressed: onRetry,
             ),
-            tooltip: '重新生成',
-            icon: Icons.refresh_rounded,
-            onPressed: onRetry,
-          ),
+          if (!assistant && onEdit != null)
+            _MessageActionButton(
+              key: const ValueKey('paper-ai-user-edit'),
+              tooltip: '修改',
+              icon: Icons.edit_outlined,
+              onPressed: onEdit,
+            ),
           if (assistant)
             _MessageActionButton(
-              tooltip: '朗读',
-              icon: Icons.volume_up_outlined,
-              onPressed: () => _showMessageHint(context, '朗读功能即将接入。'),
+              key: const ValueKey('paper-ai-assistant-more'),
+              tooltip: '更多',
+              icon: Icons.more_vert_rounded,
+              onPressed: () => _showMore(context),
             ),
-          if (assistant)
-            _MessageActionButton(
-              tooltip: '翻译',
-              icon: Icons.translate_rounded,
-              onPressed: () => _showMessageHint(context, '翻译功能即将接入。'),
-            ),
-          _MessageActionButton(
-            key: ValueKey(
-              assistant ? 'paper-ai-assistant-more' : 'paper-ai-user-more',
-            ),
-            tooltip: '更多',
-            icon: Icons.more_vert_rounded,
-            onPressed: () => _showMore(context),
-          ),
         ],
       ),
     );
@@ -379,32 +333,29 @@ class _MessageActionRow extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: const Icon(Icons.copy_all_outlined),
-              title: const Text('复制消息'),
-              onTap: () async {
-                Navigator.pop(context);
-                await _copy(context);
-              },
+              leading: const Icon(Icons.delete_outline_rounded),
+              title: const Text('删除消息'),
+              onTap: onDelete == null
+                  ? null
+                  : () {
+                      Navigator.pop(context);
+                      onDelete!();
+                    },
             ),
             ListTile(
-              leading: const Icon(Icons.info_outline_rounded),
-              title: const Text('查看消息详情'),
-              onTap: () {
-                Navigator.pop(context);
-                _showMessageHint(context, '当前消息由 $modelLabel 生成。');
-              },
+              leading: const Icon(Icons.call_split_rounded),
+              title: const Text('Fork 会话'),
+              onTap: onFork == null
+                  ? null
+                  : () {
+                      Navigator.pop(context);
+                      onFork!();
+                    },
             ),
           ],
         ),
       ),
     );
-  }
-
-  String get modelLabel => assistant ? 'Assistant' : '用户';
-
-  void _showMessageHint(BuildContext context, String message) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(message)));
   }
 }
 

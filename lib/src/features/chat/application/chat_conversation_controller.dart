@@ -124,6 +124,18 @@ class ChatConversationController extends ChangeNotifier {
     await _requestAnswer();
   }
 
+  void deleteMessageAt(int index) {
+    if (_sending || index < 0 || index >= _messages.length) return;
+    _messages.removeAt(index);
+    _failedAssistantIndex = null;
+    _requestError = null;
+    _requestStatus = _messages.isEmpty
+        ? ChatRequestStatus.idle
+        : ChatRequestStatus.completed;
+    _persist();
+    _notify();
+  }
+
   void cancel() {
     if (!_sending) return;
     _requestVersion++;

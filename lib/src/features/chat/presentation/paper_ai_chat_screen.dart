@@ -85,6 +85,12 @@ class _PaperAiChatScreenState extends State<PaperAiChatScreen> {
       backgroundColor: PaperAiUiTokens.canvas,
       appBar: AppBar(
         automaticallyImplyLeading: false,
+        leading: IconButton(
+          key: const ValueKey('paper-ai-back'),
+          tooltip: '返回',
+          onPressed: () => Navigator.of(context).maybePop(),
+          icon: const Icon(Icons.arrow_back_rounded),
+        ),
         backgroundColor: PaperAiUiTokens.canvas,
         surfaceTintColor: Colors.transparent,
         elevation: 0,

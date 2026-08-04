@@ -30,6 +30,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(const ValueKey('paper-ai-menu')), findsNothing);
+    expect(find.byKey(const ValueKey('paper-ai-back')), findsOneWidget);
     expect(find.byKey(const ValueKey('paper-ai-new-chat')), findsNothing);
     expect(find.text('问候欢迎'), findsNWidgets(2));
     expect(find.text('默认助手 / deepseek-v4-flash (DeepSeek)'), findsNothing);

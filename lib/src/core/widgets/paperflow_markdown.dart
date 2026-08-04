@@ -110,11 +110,15 @@ class PaperLatexElementBuilder extends MarkdownElementBuilder {
           WidgetSpan(
             alignment: PlaceholderAlignment.baseline,
             baseline: TextBaseline.alphabetic,
-            child: Math.tex(
-              text,
-              textStyle: textStyle,
-              mathStyle: mathStyle,
-              textScaleFactor: textScaleFactor,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Math.tex(
+                text,
+                textStyle: textStyle,
+                mathStyle: mathStyle,
+                textScaleFactor: textScaleFactor,
+              ),
             ),
           ),
         ],

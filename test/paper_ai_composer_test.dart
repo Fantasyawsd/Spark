@@ -4,7 +4,8 @@ import 'package:paperflow/paperflow.dart';
 import 'package:paperflow/src/features/papers/presentation/widgets/paper_ai_composer.dart';
 
 void main() {
-  testWidgets('toolbar stays pinned when multiline input scrolls',
+  testWidgets(
+      'composer adapts to multiline input while keeping the toolbar attached',
       (tester) async {
     await tester.binding.setSurfaceSize(const Size(378, 300));
     addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -43,9 +44,9 @@ void main() {
       const ValueKey('paper-ai-composer-toolbar'),
     );
     final initialToolbarRect = tester.getRect(toolbar);
-    final surfaceRect = tester.getRect(surface);
+    final initialSurfaceRect = tester.getRect(surface);
     expect(
-      surfaceRect.bottom - initialToolbarRect.bottom,
+      initialSurfaceRect.bottom - initialToolbarRect.bottom,
       inInclusiveRange(6, 8),
     );
 
@@ -55,7 +56,14 @@ void main() {
     );
     await tester.pump();
 
-    expect(tester.getRect(toolbar), initialToolbarRect);
+    final expandedToolbarRect = tester.getRect(toolbar);
+    final expandedSurfaceRect = tester.getRect(surface);
+    expect(expandedSurfaceRect.height, greaterThan(initialSurfaceRect.height));
+    expect(expandedToolbarRect.bottom, closeTo(initialToolbarRect.bottom, 0.1));
+    expect(
+      expandedSurfaceRect.bottom - expandedToolbarRect.bottom,
+      inInclusiveRange(6, 8),
+    );
     expect(tester.takeException(), isNull);
   });
 
@@ -97,8 +105,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('AI composer configures reasoning, search and context',
-      (tester) async {
+  testWidgets('AI composer opens the reasoning depth picker', (tester) async {
     final controller = TextEditingController();
     addTearDown(controller.dispose);
     var effort = PaperAiReasoningEffort.high;
@@ -120,7 +127,8 @@ void main() {
                     setState(() => effort = value),
                 webSearchAvailable: true,
                 webSearchEnabled: webSearch,
-                onWebSearchChanged: (value) => webSearch = value,
+                onWebSearchChanged: (value) =>
+                    setState(() => webSearch = value),
                 hasContext: true,
                 onClearContext: () => cleared = true,
                 onChanged: (_) {},
@@ -141,15 +149,25 @@ void main() {
     expect(cleared, isTrue);
 
     await tester.tap(find.byKey(const ValueKey('paper-ai-reasoning-setting')));
-    await tester.pump();
+    await tester.pumpAndSettle();
+    expect(find.text('调整模型思考深度'), findsOneWidget);
+    await tester.tap(
+      find.byKey(const ValueKey('paper-ai-reasoning-option-none')),
+    );
     expect(effort, PaperAiReasoningEffort.none);
-    await tester.pump();
+    Navigator.of(tester.element(find.text('调整模型思考深度'))).pop();
+    await tester.pumpAndSettle();
+
     await tester.tap(find.byKey(const ValueKey('paper-ai-reasoning-setting')));
-    await tester.pump();
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const ValueKey('paper-ai-reasoning-option-high')),
+    );
     expect(effort, PaperAiReasoningEffort.high);
+    Navigator.of(tester.element(find.text('调整模型思考深度'))).pop();
   });
 
-  testWidgets('deep thinking button toggles between enabled and disabled',
+  testWidgets('deep thinking picker supports enabled and disabled states',
       (tester) async {
     final controller = TextEditingController();
     addTearDown(controller.dispose);
@@ -181,11 +199,19 @@ void main() {
     );
 
     await tester.tap(find.byKey(const ValueKey('paper-ai-reasoning-setting')));
-    await tester.pump();
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const ValueKey('paper-ai-reasoning-option-high')),
+    );
     expect(effort, PaperAiReasoningEffort.high);
-    await tester.pump();
+    Navigator.of(tester.element(find.text('调整模型思考深度'))).pop();
+    await tester.pumpAndSettle();
+
     await tester.tap(find.byKey(const ValueKey('paper-ai-reasoning-setting')));
-    await tester.pump();
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const ValueKey('paper-ai-reasoning-option-none')),
+    );
     expect(effort, PaperAiReasoningEffort.none);
   });
 }

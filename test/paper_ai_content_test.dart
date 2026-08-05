@@ -7,6 +7,7 @@ import 'package:paperflow/src/features/papers/presentation/widgets/paper_ai_cont
 void main() {
   testWidgets('AI answer exposes a collapsible reasoning chain',
       (tester) async {
+    Uri? openedSource;
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
@@ -34,6 +35,10 @@ void main() {
                 onPrompt: (_) {},
                 onRetry: () {},
                 onCancel: () {},
+                onOpenSource: (uri) async {
+                  openedSource = uri;
+                  return true;
+                },
                 searching: false,
                 requestStatus: PaperAiRequestStatus.completed,
                 canRetryRequestError: false,
@@ -49,6 +54,9 @@ void main() {
     expect(find.text('1 个'), findsOneWidget);
     expect(find.text('先检查方法，再核对实验。'), findsNothing);
 
+    await tester.tap(find.byKey(const ValueKey('paper-ai-source-1')));
+    expect(openedSource, Uri.parse('https://example.test/paper'));
+
     await tester.tap(find.byKey(const ValueKey('paper-ai-reasoning-toggle')));
     await tester.pumpAndSettle();
 
@@ -56,7 +64,7 @@ void main() {
     expect(find.text('结论'), findsOneWidget);
   });
 
-  testWidgets('finishing a stream does not collapse visible reasoning',
+  testWidgets('finishing a stream auto-collapses visible reasoning',
       (tester) async {
     var sending = true;
     late StateSetter update;
@@ -104,11 +112,14 @@ void main() {
     update(() => sending = false);
     await tester.pumpAndSettle();
 
-    expect(find.text('思考过程'), findsOneWidget);
-    expect(find.textContaining('比较目标函数'), findsOneWidget);
+    expect(
+        find.byKey(const ValueKey('paper-ai-reasoning-panel')), findsOneWidget);
+    expect(find.textContaining('比较目标函数'), findsNothing);
   });
 
-  testWidgets('AI answer exposes search and generation states', (tester) async {
+  testWidgets(
+      'AI answer does not add a generating label to the assistant header',
+      (tester) async {
     var searching = true;
     late StateSetter update;
 
@@ -144,12 +155,13 @@ void main() {
       ),
     );
 
-    expect(find.text('当前上下文'), findsOneWidget);
-    expect(find.text('正在搜索'), findsOneWidget);
+    expect(find.text('正在搜索'), findsNothing);
+    expect(find.text('正在生成'), findsNothing);
 
     update(() => searching = false);
     await tester.pump();
-    expect(find.text('正在生成'), findsOneWidget);
+    expect(find.text('正在搜索'), findsNothing);
+    expect(find.text('正在生成'), findsNothing);
   });
 
   testWidgets('cancelled AI request shows a neutral regenerate action',

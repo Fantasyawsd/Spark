@@ -25,14 +25,9 @@ class MainAiChatScreen extends StatelessWidget {
       webSearchAiService: webSearchAiService,
       sessionRepository: sessionRepository,
       screenTitle: '主聊天',
-      screenSubtitle: 'PaperFlow AI',
+      screenSubtitle: '主会话',
       welcomeTitle: '今天想研究什么？',
       welcomeDescription: '跨论文提问、整理研究思路，或联网检索最新资料',
-      suggestedPrompts: const [
-        '帮我梳理一个研究方向',
-        '比较两篇论文的方法',
-        '搜索近期相关工作',
-      ],
       clearConfirmation: '这会删除主聊天中的全部 AI 对话记录。',
     );
   }

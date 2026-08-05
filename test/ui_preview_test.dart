@@ -592,6 +592,20 @@ void main() {
         tester.getSize(find.byKey(const ValueKey('paper-sheet-pages')));
     expect(halfHeight, inInclusiveRange(350, 450));
 
+    await tester.drag(find.byType(PaperFlowSheetHandle), const Offset(0, -220));
+    await tester.pumpAndSettle();
+    final draggedHeight = tester
+        .getSize(find.byKey(const ValueKey('paper-comments-sheet')))
+        .height;
+    expect(draggedHeight, greaterThan(halfHeight));
+
+    await tester.drag(find.byType(PaperFlowSheetHandle), const Offset(0, 220));
+    await tester.pumpAndSettle();
+    final returnedHeight = tester
+        .getSize(find.byKey(const ValueKey('paper-comments-sheet')))
+        .height;
+    expect(returnedHeight, lessThan(draggedHeight));
+
     await tester.tap(find.byTooltip('全屏'));
     await tester.pumpAndSettle();
     final fullHeight = tester
@@ -605,11 +619,11 @@ void main() {
     await tester.tap(find.text('AI 解析'));
     await tester.pumpAndSettle();
 
-    expect(
-      tester.getSize(find.byKey(const ValueKey('paper-sheet-pages'))),
-      contentSize,
-    );
-    expect(find.text('解释核心方法'), findsOneWidget);
+    final aiContentSize =
+        tester.getSize(find.byKey(const ValueKey('paper-sheet-pages')));
+    expect(aiContentSize.height, greaterThan(0));
+    expect(aiContentSize.height, lessThanOrEqualTo(contentSize.height));
+    expect(find.text('解释核心方法'), findsNothing);
     expect(find.byKey(const ValueKey('paper-ai-input')), findsOneWidget);
   });
 

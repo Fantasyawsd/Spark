@@ -151,7 +151,7 @@ class _PaperCommentsSheetState extends State<_PaperCommentsSheet> {
       ),
       child: Column(
         children: [
-          const PaperFlowSheetHandle(),
+          _buildSheetHandle(),
           _SheetHeader(
             pageIndex: _pageIndex,
             commentCount:
@@ -231,9 +231,9 @@ class _PaperCommentsSheetState extends State<_PaperCommentsSheet> {
               ],
             ),
           ),
-          SizedBox(
-            height: PaperAiComposer.preferredHeight +
-                MediaQuery.paddingOf(context).bottom,
+          AnimatedSize(
+            duration: const Duration(milliseconds: 160),
+            alignment: Alignment.bottomCenter,
             child: _pageIndex == 1
                 ? PaperAiComposer(
                     controller: _aiComposerController,
@@ -294,6 +294,36 @@ class _PaperCommentsSheetState extends State<_PaperCommentsSheet> {
         liked: comment.likedByLocalUser,
       );
     }).toList(growable: false);
+  }
+
+  Widget _buildSheetHandle() {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onVerticalDragUpdate: _handleSheetDragUpdate,
+      onVerticalDragEnd: _handleSheetDragEnd,
+      child: const PaperFlowSheetHandle(height: 18),
+    );
+  }
+
+  void _handleSheetDragUpdate(DragUpdateDetails details) {
+    if (!_sheetController.isAttached) return;
+    final viewportHeight = MediaQuery.sizeOf(context).height;
+    if (viewportHeight <= 0) return;
+    final delta = details.primaryDelta ?? details.delta.dy;
+    final next = (_sheetController.size - (delta / viewportHeight))
+        .clamp(0.50, 1.0)
+        .toDouble();
+    _sheetController.jumpTo(next);
+  }
+
+  void _handleSheetDragEnd(DragEndDetails details) {
+    if (!_sheetController.isAttached) return;
+    final target = _sheetController.size >= 0.75 ? 1.0 : 0.50;
+    _sheetController.animateTo(
+      target,
+      duration: MotionTokens.duration(context, MotionTokens.sheetDuration),
+      curve: MotionTokens.pageCurve,
+    );
   }
 
   bool _handleSheetNotification(DraggableScrollableNotification notification) {
@@ -489,7 +519,7 @@ class _SheetHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 54,
+      height: 50,
       padding: const EdgeInsets.symmetric(horizontal: 6),
       color: Colors.white,
       child: Stack(
@@ -501,7 +531,7 @@ class _SheetHeader extends StatelessWidget {
               tabs: ['评论 $commentCount', 'AI 解析'],
               selectedIndex: pageIndex,
               pageController: pageController,
-              height: 48,
+              height: 44,
               indicatorWidth: 44,
               textSize: 14.5,
               onSelected: onPageSelected,

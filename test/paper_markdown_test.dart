@@ -156,6 +156,29 @@ void main() {
     });
   });
 
+  testWidgets('long inline formulas fit a mobile reply width', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(378, 640));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final formula = List.filled(4, r'\mathrm{attention}').join(r' + ');
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 18),
+            child: PaperMarkdown(
+              data: '回复中使用 \$$formula\$ 进行归一化。',
+              styleSheet: paperReaderMarkdownStyle(),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('inline formulas render without a wrapping scroll view', (
     tester,
   ) async {

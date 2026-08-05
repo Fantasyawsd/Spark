@@ -1,8 +1,14 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/theme/paperflow_theme.dart';
 import '../../../../core/widgets/paperflow_markdown.dart';
 import '../../domain/chat_message.dart';
+import '../paper_ai_ui_tokens.dart';
+import 'paper_ai_model_avatar.dart';
 
 class PaperAiMessageView extends StatelessWidget {
   const PaperAiMessageView({
@@ -10,11 +16,35 @@ class PaperAiMessageView extends StatelessWidget {
     required this.message,
     required this.streaming,
     required this.searching,
+    this.isLatest = false,
+    this.isLatestUserPrompt = false,
+    this.onRetry,
+    this.onDelete,
+    this.onEdit,
+    this.onOpenSource,
+    this.selectionMode = false,
+    this.selected = false,
+    this.onToggleSelection,
+    this.assistantLabel = '默认助手',
+    this.modelName = 'deepseek-v4-flash',
+    this.providerName = 'DeepSeek',
   });
 
   final ChatMessage message;
   final bool streaming;
   final bool searching;
+  final bool isLatest;
+  final bool isLatestUserPrompt;
+  final VoidCallback? onRetry;
+  final VoidCallback? onDelete;
+  final VoidCallback? onEdit;
+  final Future<bool> Function(Uri uri)? onOpenSource;
+  final bool selectionMode;
+  final bool selected;
+  final VoidCallback? onToggleSelection;
+  final String assistantLabel;
+  final String modelName;
+  final String providerName;
 
   @override
   Widget build(BuildContext context) {
@@ -24,151 +54,617 @@ class PaperAiMessageView extends StatelessWidget {
         message.sources.isEmpty) {
       return const SizedBox.shrink();
     }
-    final viewportWidth = MediaQuery.sizeOf(context).width;
-    final maxUserWidth = (viewportWidth * 0.76).clamp(220.0, 460.0).toDouble();
 
-    if (message.fromUser) {
-      return Align(
-        alignment: Alignment.centerRight,
-        child: Container(
-          constraints: BoxConstraints(maxWidth: maxUserWidth),
-          margin: const EdgeInsets.only(left: 46, bottom: 16),
-          padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
-          decoration: BoxDecoration(
-            color: PaperFlowColors.primary,
-            borderRadius: const BorderRadius.only(
-              topLeft: Radius.circular(18),
-              topRight: Radius.circular(18),
-              bottomLeft: Radius.circular(18),
-              bottomRight: Radius.circular(5),
+    final body = message.fromUser
+        ? _UserMessage(
+            message: message,
+            onEdit: selectionMode
+                ? null
+                : ((isLatest || isLatestUserPrompt) ? onEdit : null),
+            selectionMode: selectionMode,
+          )
+        : _AssistantMessage(
+            message: message,
+            streaming: streaming,
+            onRetry: selectionMode ? null : (isLatest ? onRetry : null),
+            onDelete: selectionMode ? null : onDelete,
+            onOpenSource: onOpenSource,
+            selectionMode: selectionMode,
+            assistantLabel: assistantLabel,
+            modelName: modelName,
+            providerName: providerName,
+          );
+
+    if (!selectionMode) return body;
+    return _SelectableMessage(
+      selected: selected,
+      onTap: onToggleSelection,
+      child: body,
+    );
+  }
+}
+
+class _UserMessage extends StatelessWidget {
+  const _UserMessage({
+    required this.message,
+    required this.onEdit,
+    required this.selectionMode,
+  });
+
+  final ChatMessage message;
+  final VoidCallback? onEdit;
+  final bool selectionMode;
+
+  @override
+  Widget build(BuildContext context) {
+    final viewportWidth = MediaQuery.sizeOf(context).width;
+    final maxWidth = (viewportWidth * 0.76).clamp(220.0, 420.0).toDouble();
+    return Padding(
+      padding: const EdgeInsets.only(left: 44, bottom: 18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Align(
+            alignment: Alignment.centerRight,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: maxWidth),
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 15, vertical: 9),
+                decoration: BoxDecoration(
+                  color: PaperAiUiTokens.userBubble,
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                child: PaperMarkdown(
+                  data: message.content,
+                  styleSheet: paperAiMarkdownStyle(color: PaperFlowColors.ink),
+                  selectable: false,
+                ),
+              ),
             ),
           ),
-          child: PaperMarkdown(
-            data: message.content,
-            styleSheet: paperAiMarkdownStyle(color: Colors.white),
-          ),
-        ),
-      );
-    }
-
-    final status = _assistantStatus;
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.only(bottom: 17),
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF6F6F7),
-        borderRadius: BorderRadius.circular(18),
+          if (!selectionMode) ...[
+            const SizedBox(height: 4),
+            _MessageActionRow(
+              message: message,
+              assistant: false,
+              onEdit: onEdit,
+            ),
+          ],
+        ],
       ),
+    );
+  }
+}
+
+class _AssistantMessage extends StatelessWidget {
+  const _AssistantMessage({
+    required this.message,
+    required this.streaming,
+    required this.onRetry,
+    required this.onDelete,
+    this.onOpenSource,
+    required this.selectionMode,
+    required this.assistantLabel,
+    required this.modelName,
+    required this.providerName,
+  });
+
+  final ChatMessage message;
+  final bool streaming;
+  final VoidCallback? onRetry;
+  final VoidCallback? onDelete;
+  final Future<bool> Function(Uri uri)? onOpenSource;
+  final bool selectionMode;
+  final String assistantLabel;
+  final String modelName;
+  final String providerName;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 2, bottom: 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Container(
-                width: 28,
-                height: 28,
-                decoration: BoxDecoration(
-                  color: PaperFlowColors.primarySoft,
-                  shape: BoxShape.circle,
+          Semantics(
+            label: '$assistantLabel / $modelName ($providerName)',
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                const PaperAiModelAvatar(size: 34),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          modelName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: PaperFlowColors.ink,
+                            fontSize: 15.5,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                child: Icon(
-                  Icons.auto_awesome_rounded,
-                  color: PaperFlowColors.primary,
-                  size: 15,
-                ),
-              ),
-              const SizedBox(width: 8),
-              const Text(
-                'DeepSeek',
-                style: TextStyle(
-                  color: PaperFlowColors.ink,
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-              if (status != null) ...[
-                const SizedBox(width: 8),
-                _AssistantStatus(label: status),
               ],
-            ],
+            ),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 8),
           if (message.reasoningContent.isNotEmpty)
-            _ReasoningPanel(
-              reasoning: message.reasoningContent,
-              streaming: streaming && message.content.isEmpty,
+            IgnorePointer(
+              ignoring: selectionMode,
+              child: _ReasoningPanel(
+                key: const ValueKey('paper-ai-reasoning-panel'),
+                reasoning: message.reasoningContent,
+                streaming: streaming && message.content.isEmpty,
+              ),
             ),
           if (message.content.isNotEmpty)
             PaperMarkdown(
               data: message.content,
               styleSheet: paperAiMarkdownStyle(color: PaperFlowColors.ink),
               stabilizeGeneratedSyntax: true,
-              // AI 回复始终不可选择：流式期间 selectable 切换会让
-              // MarkdownBody 在 Text.rich 与 SelectableText.rich 之间重建整棵
-              // 文字子树（回复完成的瞬间文字消失再重新出现），且
-              // EditableText 在流式更新 + 滚动时与滚动手势冲突导致文字
-              // 不绘制。复制代码使用代码块上的复制按钮。
               selectable: false,
             ),
           if (message.sources.isNotEmpty)
-            _SourcesPanel(sources: message.sources),
+            IgnorePointer(
+              ignoring: selectionMode,
+              child: _SourcesPanel(
+                sources: message.sources,
+                onOpenSource: onOpenSource,
+              ),
+            ),
+          if (!selectionMode) ...[
+            const SizedBox(height: 4),
+            _MessageActionRow(
+              message: message,
+              assistant: true,
+              onRetry: onRetry,
+              onDelete: onDelete,
+            ),
+          ],
+          if (!selectionMode && message.status != ChatMessageStatus.complete)
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text(
+                message.status == ChatMessageStatus.cancelled
+                    ? '已停止生成'
+                    : '生成失败',
+                style: const TextStyle(
+                  color: PaperFlowColors.muted,
+                  fontSize: 10.5,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SelectableMessage extends StatelessWidget {
+  const _SelectableMessage({
+    required this.selected,
+    required this.onTap,
+    required this.child,
+  });
+
+  final bool selected;
+  final VoidCallback? onTap;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      selected: selected,
+      button: true,
+      label: selected ? '已选择消息' : '选择消息',
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        margin: const EdgeInsets.only(bottom: 4),
+        padding: const EdgeInsets.fromLTRB(4, 4, 4, 0),
+        decoration: BoxDecoration(
+          color: selected
+              ? PaperAiUiTokens.assistantReasoning.withValues(alpha: 0.55)
+              : Colors.transparent,
+          border: Border.all(
+            color: selected ? PaperAiUiTokens.reasoning : Colors.transparent,
+            width: 1.2,
+          ),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(12),
+          child: Stack(
+            children: [
+              child,
+              Positioned(
+                top: 4,
+                left: 2,
+                child: _SelectionIndicator(selected: selected),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SelectionIndicator extends StatelessWidget {
+  const _SelectionIndicator({required this.selected});
+
+  final bool selected;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: selected ? PaperAiUiTokens.reasoning : Colors.white,
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: selected
+              ? PaperAiUiTokens.reasoning
+              : PaperAiUiTokens.actionMuted,
+          width: 1.4,
+        ),
+      ),
+      child: SizedBox(
+        width: 22,
+        height: 22,
+        child: selected
+            ? const Icon(Icons.check_rounded, size: 15, color: Colors.white)
+            : null,
+      ),
+    );
+  }
+}
+
+class _MessageActionRow extends StatelessWidget {
+  const _MessageActionRow({
+    required this.message,
+    required this.assistant,
+    this.onRetry,
+    this.onEdit,
+    this.onDelete,
+  });
+
+  final ChatMessage message;
+  final bool assistant;
+  final VoidCallback? onRetry;
+  final VoidCallback? onEdit;
+  final VoidCallback? onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: assistant ? Alignment.centerLeft : Alignment.centerRight,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _MessageActionButton(
+            key: ValueKey(
+              assistant ? 'paper-ai-assistant-copy' : 'paper-ai-user-copy',
+            ),
+            tooltip: '复制',
+            icon: Icons.copy_all_outlined,
+            onPressed: () => _copy(context),
+          ),
+          if (assistant && onRetry != null)
+            _MessageActionButton(
+              key: const ValueKey('paper-ai-assistant-retry'),
+              tooltip: '重新生成',
+              icon: Icons.refresh_rounded,
+              onPressed: onRetry,
+            ),
+          if (!assistant && onEdit != null)
+            _MessageActionButton(
+              key: const ValueKey('paper-ai-user-edit'),
+              tooltip: '修改',
+              icon: Icons.edit_outlined,
+              onPressed: onEdit,
+            ),
+          if (assistant)
+            _MessageActionButton(
+              key: const ValueKey('paper-ai-assistant-more'),
+              tooltip: '更多',
+              icon: Icons.more_vert_rounded,
+              onPressed: () => _showMore(context),
+            ),
         ],
       ),
     );
   }
 
-  String? get _assistantStatus {
-    if (searching) return '正在搜索';
-    if (streaming && message.content.isNotEmpty) return '正在生成';
-    if (message.reasoningContent.isNotEmpty) return '思考完成';
-    return null;
+  Future<void> _copy(BuildContext context) async {
+    // COT/reasoning is an internal trace and must never enter the clipboard.
+    final text = message.content;
+    if (text.trim().isEmpty) return;
+    await Clipboard.setData(ClipboardData(text: text));
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('已复制消息')),
+      );
+    }
+  }
+
+  void _showMore(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: PaperAiUiTokens.canvas,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
+      ),
+      clipBehavior: Clip.antiAlias,
+      showDragHandle: true,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.delete_outline_rounded),
+              title: const Text('删除消息'),
+              onTap: onDelete == null
+                  ? null
+                  : () {
+                      Navigator.pop(context);
+                      onDelete!();
+                    },
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 
-class _AssistantStatus extends StatelessWidget {
-  const _AssistantStatus({required this.label});
+class _MessageActionButton extends StatelessWidget {
+  const _MessageActionButton({
+    super.key,
+    required this.tooltip,
+    required this.icon,
+    required this.onPressed,
+  });
 
-  final String label;
+  final String tooltip;
+  final IconData icon;
+  final VoidCallback? onPressed;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.82),
-        borderRadius: BorderRadius.circular(99),
+    return IconButton(
+      tooltip: tooltip,
+      onPressed: onPressed,
+      icon: Icon(
+        icon,
+        size: 20,
+        color: onPressed == null
+            ? PaperAiUiTokens.actionMuted
+            : PaperAiUiTokens.action,
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
+      style: IconButton.styleFrom(
+        minimumSize: const Size(32, 32),
+        maximumSize: const Size(32, 32),
+        padding: EdgeInsets.zero,
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      ),
+    );
+  }
+}
+
+class _ReasoningPanel extends StatefulWidget {
+  const _ReasoningPanel({
+    super.key,
+    required this.reasoning,
+    required this.streaming,
+  });
+
+  final String reasoning;
+  final bool streaming;
+
+  @override
+  State<_ReasoningPanel> createState() => _ReasoningPanelState();
+}
+
+class _ReasoningPanelState extends State<_ReasoningPanel> {
+  Timer? _timer;
+  DateTime? _startedAt;
+  Duration _elapsed = Duration.zero;
+  bool _expanded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _expanded = widget.streaming;
+    if (widget.streaming) _startTimer();
+  }
+
+  @override
+  void didUpdateWidget(covariant _ReasoningPanel oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.streaming && !oldWidget.streaming) {
+      _expanded = true;
+      _startTimer();
+    } else if (!widget.streaming && oldWidget.streaming) {
+      _updateElapsed();
+      _stopTimer();
+      _expanded = false;
+    }
+  }
+
+  @override
+  void dispose() {
+    _stopTimer();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final title = _elapsed.inMilliseconds > 0
+        ? '思考了 ${(_elapsed.inMilliseconds / 1000).toStringAsFixed(1)} 秒'
+        : widget.streaming
+            ? '正在思考'
+            : '思考过程';
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      decoration: BoxDecoration(
+        color: PaperAiUiTokens.assistantReasoning,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Container(
-            width: 5,
-            height: 5,
-            decoration: BoxDecoration(
-              color: PaperFlowColors.primary,
-              shape: BoxShape.circle,
+          InkWell(
+            key: const ValueKey('paper-ai-reasoning-toggle'),
+            onTap: () => setState(() => _expanded = !_expanded),
+            borderRadius: BorderRadius.circular(16),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.lightbulb_outline_rounded,
+                    size: 18,
+                    color: PaperAiUiTokens.reasoning,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: widget.streaming
+                        ? _ShimmerText(text: title)
+                        : Text(
+                            title,
+                            style: const TextStyle(
+                              color: PaperAiUiTokens.assistantReasoningText,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                  ),
+                  Icon(
+                    _expanded
+                        ? Icons.keyboard_arrow_up_rounded
+                        : Icons.keyboard_arrow_down_rounded,
+                    color: PaperAiUiTokens.assistantReasoningText,
+                    size: 20,
+                  ),
+                ],
+              ),
             ),
           ),
-          const SizedBox(width: 4),
-          Text(
-            label,
-            style: const TextStyle(
-              color: PaperFlowColors.muted,
-              fontSize: 9.5,
-              fontWeight: FontWeight.w600,
-            ),
+          AnimatedSize(
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeOutCubic,
+            child: _expanded
+                ? Padding(
+                    padding: const EdgeInsets.fromLTRB(14, 0, 14, 13),
+                    child: Container(
+                      padding: const EdgeInsets.only(left: 16),
+                      decoration: const BoxDecoration(
+                        border: Border(
+                          left: BorderSide(
+                            color: Color(0x55A9797C),
+                            width: 2,
+                          ),
+                        ),
+                      ),
+                      child: PaperMarkdown(
+                        data: widget.reasoning,
+                        styleSheet: paperAiMarkdownStyle(
+                          color: PaperAiUiTokens.assistantReasoningText,
+                          reasoning: true,
+                        ),
+                        stabilizeGeneratedSyntax: true,
+                        selectable: false,
+                      ),
+                    ),
+                  )
+                : const SizedBox.shrink(),
           ),
         ],
+      ),
+    );
+  }
+
+  void _startTimer() {
+    _startedAt ??= DateTime.now();
+    _timer?.cancel();
+    _timer = Timer.periodic(const Duration(milliseconds: 100), (_) {
+      if (!mounted) return;
+      _updateElapsed();
+    });
+  }
+
+  void _stopTimer() {
+    _timer?.cancel();
+    _timer = null;
+  }
+
+  void _updateElapsed() {
+    final startedAt = _startedAt;
+    if (startedAt == null) return;
+    setState(() {
+      _elapsed = DateTime.now().difference(startedAt);
+    });
+  }
+}
+
+class _ShimmerText extends StatefulWidget {
+  const _ShimmerText({required this.text});
+
+  final String text;
+
+  @override
+  State<_ShimmerText> createState() => _ShimmerTextState();
+}
+
+class _ShimmerTextState extends State<_ShimmerText>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1100),
+  )..repeat(reverse: true);
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) => Opacity(
+        opacity: 0.55 + (_controller.value * 0.45),
+        child: child,
+      ),
+      child: Text(
+        widget.text,
+        style: const TextStyle(
+          color: PaperAiUiTokens.assistantReasoningText,
+          fontSize: 15,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }
 }
 
 class _SourcesPanel extends StatelessWidget {
-  const _SourcesPanel({required this.sources});
+  const _SourcesPanel({
+    required this.sources,
+    this.onOpenSource,
+  });
 
   final List<ChatSource> sources;
+  final Future<bool> Function(Uri uri)? onOpenSource;
 
   @override
   Widget build(BuildContext context) {
@@ -176,11 +672,11 @@ class _SourcesPanel extends StatelessWidget {
     final remaining = sources.length - visibleSources.length;
     return Container(
       key: const ValueKey('paper-ai-sources'),
-      margin: const EdgeInsets.only(top: 13),
-      padding: const EdgeInsets.fromLTRB(10, 10, 10, 8),
+      margin: const EdgeInsets.only(top: 14),
+      padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.82),
-        borderRadius: BorderRadius.circular(12),
+        color: PaperAiUiTokens.assistantReasoning.withValues(alpha: 0.64),
+        borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -189,19 +685,19 @@ class _SourcesPanel extends StatelessWidget {
             children: [
               const Icon(
                 Icons.link_rounded,
-                size: 15,
+                size: 17,
                 color: PaperFlowColors.muted,
               ),
-              const SizedBox(width: 6),
+              const SizedBox(width: 7),
               const Text(
                 '来源',
                 style: TextStyle(
                   color: PaperFlowColors.ink,
-                  fontSize: 11.5,
-                  fontWeight: FontWeight.w800,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
-              const SizedBox(width: 5),
+              const SizedBox(width: 6),
               Text(
                 '${sources.length} 个',
                 style: const TextStyle(
@@ -211,9 +707,13 @@ class _SourcesPanel extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 9),
           for (var index = 0; index < visibleSources.length; index++)
-            _SourceRow(index: index + 1, source: visibleSources[index]),
+            _SourceRow(
+              index: index + 1,
+              source: visibleSources[index],
+              onOpenSource: onOpenSource,
+            ),
           if (remaining > 0)
             Padding(
               padding: const EdgeInsets.only(left: 28, top: 2),
@@ -232,176 +732,126 @@ class _SourcesPanel extends StatelessWidget {
 }
 
 class _SourceRow extends StatelessWidget {
-  const _SourceRow({required this.index, required this.source});
+  const _SourceRow({
+    required this.index,
+    required this.source,
+    this.onOpenSource,
+  });
 
   final int index;
   final ChatSource source;
+  final Future<bool> Function(Uri uri)? onOpenSource;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 7),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 20,
-            height: 20,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: const Color(0xFFF0F1F4),
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Text(
-              '$index',
-              style: const TextStyle(
-                color: PaperFlowColors.muted,
-                fontSize: 10,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Column(
+    final uri = _validUri(source.url);
+    return Semantics(
+      button: uri != null,
+      label: uri == null ? source.title : '打开来源 ${source.title}',
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          key: ValueKey('paper-ai-source-$index'),
+          onTap: uri == null ? null : () => _open(context, uri),
+          borderRadius: BorderRadius.circular(10),
+          child: Padding(
+            padding: const EdgeInsets.only(bottom: 7, top: 2),
+            child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  source.title,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: PaperFlowColors.ink,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    height: 1.3,
+                Container(
+                  width: 21,
+                  height: 21,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: PaperAiUiTokens.canvas,
+                    borderRadius: BorderRadius.circular(7),
+                  ),
+                  child: Text(
+                    '$index',
+                    style: const TextStyle(
+                      color: PaperFlowColors.muted,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
-                const SizedBox(height: 1),
-                Text(
-                  _host(source.url),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: PaperFlowColors.subtle,
-                    fontSize: 9.8,
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        source.title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: uri == null
+                              ? PaperFlowColors.ink
+                              : PaperFlowColors.blue,
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w600,
+                          height: 1.3,
+                        ),
+                      ),
+                      const SizedBox(height: 1),
+                      Text(
+                        _host(source.url),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: PaperFlowColors.subtle,
+                          fontSize: 9.8,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
+                if (uri != null)
+                  const Padding(
+                    padding: EdgeInsets.only(left: 6, top: 2),
+                    child: Icon(
+                      Icons.open_in_new_rounded,
+                      size: 15,
+                      color: PaperFlowColors.subtle,
+                    ),
+                  ),
               ],
             ),
           ),
-        ],
+        ),
       ),
     );
+  }
+
+  Future<void> _open(BuildContext context, Uri uri) async {
+    try {
+      final opened = await (onOpenSource?.call(uri) ??
+          launchUrl(uri, mode: LaunchMode.externalApplication));
+      if (!opened && context.mounted) {
+        _showOpenFailure(context);
+      }
+    } catch (_) {
+      if (context.mounted) {
+        _showOpenFailure(context);
+      }
+    }
+  }
+
+  void _showOpenFailure(BuildContext context) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('无法打开来源链接')),
+    );
+  }
+
+  static Uri? _validUri(String value) {
+    final uri = Uri.tryParse(value.trim());
+    if (uri == null || uri.host.isEmpty) return null;
+    if (uri.scheme != 'http' && uri.scheme != 'https') return null;
+    return uri;
   }
 
   static String _host(String url) {
     return Uri.tryParse(url)?.host.replaceFirst('www.', '') ?? url;
-  }
-}
-
-class _ReasoningPanel extends StatefulWidget {
-  const _ReasoningPanel({required this.reasoning, required this.streaming});
-
-  final String reasoning;
-  final bool streaming;
-
-  @override
-  State<_ReasoningPanel> createState() => _ReasoningPanelState();
-}
-
-class _ReasoningPanelState extends State<_ReasoningPanel> {
-  late bool _expanded = widget.streaming;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.86),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          InkWell(
-            key: const ValueKey('paper-ai-reasoning-toggle'),
-            onTap: () => setState(() => _expanded = !_expanded),
-            borderRadius: BorderRadius.circular(12),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
-              child: Row(
-                children: [
-                  if (widget.streaming)
-                    const Padding(
-                      padding: EdgeInsets.only(right: 8),
-                      child: SizedBox(
-                        width: 13,
-                        height: 13,
-                        child: CircularProgressIndicator(strokeWidth: 1.7),
-                      ),
-                    )
-                  else
-                    const Padding(
-                      padding: EdgeInsets.only(right: 7),
-                      child: Icon(
-                        Icons.lightbulb_outline_rounded,
-                        size: 16,
-                        color: PaperFlowColors.muted,
-                      ),
-                    ),
-                  Expanded(
-                    child: Text(
-                      widget.streaming ? '正在思考' : '思考过程',
-                      style: const TextStyle(
-                        color: PaperFlowColors.muted,
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                  if (!widget.streaming && !_expanded)
-                    const Padding(
-                      padding: EdgeInsets.only(right: 4),
-                      child: Text(
-                        '点击展开',
-                        style: TextStyle(
-                          color: PaperFlowColors.subtle,
-                          fontSize: 9.5,
-                        ),
-                      ),
-                    ),
-                  Icon(
-                    _expanded
-                        ? Icons.keyboard_arrow_up_rounded
-                        : Icons.keyboard_arrow_down_rounded,
-                    color: PaperFlowColors.subtle,
-                    size: 18,
-                  ),
-                ],
-              ),
-            ),
-          ),
-          AnimatedSize(
-            duration: const Duration(milliseconds: 180),
-            curve: Curves.easeOutCubic,
-            child: _expanded
-                ? Padding(
-                    padding: const EdgeInsets.fromLTRB(10, 0, 10, 10),
-                    child: PaperMarkdown(
-                      data: widget.reasoning,
-                      styleSheet: paperAiMarkdownStyle(
-                        color: PaperFlowColors.muted,
-                        reasoning: true,
-                      ),
-                      stabilizeGeneratedSyntax: true,
-                      selectable: false,
-                    ),
-                  )
-                : const SizedBox.shrink(),
-          ),
-        ],
-      ),
-    );
   }
 }

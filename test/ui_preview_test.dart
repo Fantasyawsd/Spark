@@ -566,6 +566,20 @@ void main() {
         tester.getSize(find.byKey(const ValueKey('paper-sheet-pages')));
     expect(halfHeight, inInclusiveRange(350, 450));
 
+    await tester.drag(find.byType(PaperFlowSheetHandle), const Offset(0, -220));
+    await tester.pumpAndSettle();
+    final draggedHeight = tester
+        .getSize(find.byKey(const ValueKey('paper-comments-sheet')))
+        .height;
+    expect(draggedHeight, greaterThan(halfHeight));
+
+    await tester.drag(find.byType(PaperFlowSheetHandle), const Offset(0, 220));
+    await tester.pumpAndSettle();
+    final returnedHeight = tester
+        .getSize(find.byKey(const ValueKey('paper-comments-sheet')))
+        .height;
+    expect(returnedHeight, lessThan(draggedHeight));
+
     await tester.tap(find.byTooltip('全屏'));
     await tester.pumpAndSettle();
     final fullHeight = tester

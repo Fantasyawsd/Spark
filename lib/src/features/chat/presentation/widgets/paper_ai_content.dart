@@ -421,7 +421,7 @@ class _AiWelcome extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(6, 44, 6, 30),
+      padding: const EdgeInsets.fromLTRB(6, 18, 6, 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

@@ -182,13 +182,11 @@ class _PaperAiComposerState extends State<PaperAiComposer> {
                       const SizedBox(width: 8),
                       _ToolbarIconButton(
                         key: const ValueKey('paper-ai-clear-context'),
-                        tooltip: widget.hasContext ? '清除上下文' : '更多选项',
+                        tooltip: '清除上下文',
                         icon: Icons.add_rounded,
                         color: PaperFlowColors.ink,
-                        onTap: widget.enabled
-                            ? widget.hasContext
-                                ? widget.onClearContext
-                                : _showMoreSheet
+                        onTap: widget.enabled && widget.hasContext
+                            ? widget.onClearContext
                             : null,
                       ),
                       const Spacer(),
@@ -414,41 +412,6 @@ class _PaperAiComposerState extends State<PaperAiComposer> {
             ),
           );
         },
-      ),
-    );
-  }
-
-  Future<void> _showMoreSheet() async {
-    await showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: PaperAiUiTokens.canvas,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
-      ),
-      clipBehavior: Clip.antiAlias,
-      showDragHandle: true,
-      builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const ListTile(
-              leading: Icon(Icons.attach_file_rounded),
-              title: Text('添加附件'),
-              subtitle: Text('论文聊天暂不需要额外附件'),
-            ),
-            ListTile(
-              leading: const Icon(Icons.history_toggle_off_rounded),
-              title: const Text('清除对话上下文'),
-              enabled: widget.hasContext,
-              onTap: widget.hasContext
-                  ? () {
-                      Navigator.pop(context);
-                      widget.onClearContext();
-                    }
-                  : null,
-            ),
-          ],
-        ),
       ),
     );
   }

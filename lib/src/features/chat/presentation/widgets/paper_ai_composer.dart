@@ -95,27 +95,27 @@ class _PaperAiComposerState extends State<PaperAiComposer> {
     return SafeArea(
       top: false,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(14, 4, 14, 10),
+        padding: const EdgeInsets.fromLTRB(14, 4, 14, 8),
         child: AnimatedSize(
           duration: const Duration(milliseconds: 160),
           curve: Curves.easeOutCubic,
           alignment: Alignment.bottomCenter,
           child: Container(
             key: const ValueKey('paper-ai-composer-surface'),
-            padding: const EdgeInsets.fromLTRB(15, 12, 9, 6),
+            padding: const EdgeInsets.fromLTRB(14, 10, 8, 6),
             decoration: BoxDecoration(
               color: PaperAiUiTokens.composer,
               borderRadius: BorderRadius.only(
-                topLeft: const Radius.circular(28),
-                topRight: const Radius.circular(28),
-                bottomLeft: Radius.circular(keyboardVisible ? 0 : 28),
-                bottomRight: Radius.circular(keyboardVisible ? 0 : 28),
+                topLeft: const Radius.circular(22),
+                topRight: const Radius.circular(22),
+                bottomLeft: Radius.circular(keyboardVisible ? 0 : 22),
+                bottomRight: Radius.circular(keyboardVisible ? 0 : 22),
               ),
               border: Border.all(color: PaperAiUiTokens.composerBorder),
               boxShadow: const [
                 BoxShadow(
-                  color: Color(0x10182230),
-                  blurRadius: 18,
+                  color: Color(0x0D182230),
+                  blurRadius: 12,
                   offset: Offset(0, -2),
                 ),
               ],
@@ -137,14 +137,14 @@ class _PaperAiComposerState extends State<PaperAiComposer> {
                     textInputAction: TextInputAction.newline,
                     style: const TextStyle(
                       color: PaperFlowColors.ink,
-                      fontSize: 16,
-                      height: 1.35,
+                      fontSize: 15.5,
+                      height: 1.4,
                     ),
                     decoration: const InputDecoration(
                       hintText: '输入消息与AI聊天',
                       hintStyle: TextStyle(
                         color: PaperFlowColors.muted,
-                        fontSize: 16,
+                        fontSize: 15.5,
                       ),
                       filled: false,
                       border: InputBorder.none,
@@ -156,7 +156,7 @@ class _PaperAiComposerState extends State<PaperAiComposer> {
                 const SizedBox(height: 6),
                 SizedBox(
                   key: const ValueKey('paper-ai-composer-toolbar'),
-                  height: 40,
+                  height: 38,
                   child: Row(
                     children: [
                       _ToolbarIconButton(
@@ -223,8 +223,8 @@ class _PaperAiComposerState extends State<PaperAiComposer> {
                           foregroundColor: widget.sending || canSend
                               ? Colors.white
                               : PaperFlowColors.subtle,
-                          minimumSize: const Size(42, 42),
-                          maximumSize: const Size(42, 42),
+                          minimumSize: const Size(40, 40),
+                          maximumSize: const Size(40, 40),
                           padding: EdgeInsets.zero,
                           shape: const CircleBorder(),
                         ),
@@ -232,7 +232,7 @@ class _PaperAiComposerState extends State<PaperAiComposer> {
                           widget.sending
                               ? Icons.stop_rounded
                               : Icons.arrow_upward_rounded,
-                          size: 22,
+                          size: 20,
                         ),
                       ),
                     ],
@@ -250,6 +250,10 @@ class _PaperAiComposerState extends State<PaperAiComposer> {
     await showModalBottomSheet<void>(
       context: context,
       backgroundColor: PaperAiUiTokens.canvas,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
+      ),
+      clipBehavior: Clip.antiAlias,
       showDragHandle: true,
       builder: (context) => SafeArea(
         child: Padding(
@@ -430,6 +434,10 @@ class _PaperAiComposerState extends State<PaperAiComposer> {
     await showModalBottomSheet<void>(
       context: context,
       backgroundColor: PaperAiUiTokens.canvas,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
+      ),
+      clipBehavior: Clip.antiAlias,
       showDragHandle: true,
       builder: (context) => SafeArea(
         child: Column(

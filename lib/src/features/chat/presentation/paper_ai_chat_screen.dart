@@ -95,7 +95,7 @@ class _PaperAiChatScreenState extends State<PaperAiChatScreen> {
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         scrolledUnderElevation: 0,
-        titleSpacing: 16,
+        titleSpacing: 8,
         title: Semantics(
           button: true,
           label: '编辑会话标题',
@@ -112,9 +112,9 @@ class _PaperAiChatScreenState extends State<PaperAiChatScreen> {
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     color: PaperFlowColors.ink,
-                    fontSize: 17,
-                    height: 1.1,
-                    fontWeight: FontWeight.w500,
+                    fontSize: 16.5,
+                    height: 1.15,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -126,8 +126,8 @@ class _PaperAiChatScreenState extends State<PaperAiChatScreen> {
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       color: PaperFlowColors.muted,
-                      fontSize: 10.5,
-                      height: 1.1,
+                      fontSize: 11,
+                      height: 1.15,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -145,7 +145,7 @@ class _PaperAiChatScreenState extends State<PaperAiChatScreen> {
               _previewMode
                   ? Icons.close_rounded
                   : Icons.format_list_bulleted_rounded,
-              size: 28,
+              size: 24,
             ),
           ),
           const SizedBox(width: 4),
@@ -154,35 +154,41 @@ class _PaperAiChatScreenState extends State<PaperAiChatScreen> {
       body: Column(
         children: [
           Expanded(
-            child: ListView(
-              key: const ValueKey('global-paper-ai-chat'),
-              controller: _scrollController,
-              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-              padding: EdgeInsets.zero,
-              children: [
-                PaperAiContent(
-                  chatContext: widget.chatContext,
-                  messages: _conversation.messages,
-                  loading: _conversation.loading,
-                  sending: _conversation.sending,
-                  error: _conversation.error,
-                  onPrompt: (_) {},
-                  onRetry: _conversation.retry,
-                  onCancel: _conversation.cancel,
-                  onDelete: _deleteMessage,
-                  onFork: _forkMessage,
-                  onEdit: _editMessage,
-                  searching: _conversation.searching,
-                  requestStatus: _conversation.requestStatus,
-                  canRetryRequestError: _conversation.canRetryRequestError,
-                  welcomeTitle: widget.welcomeTitle,
-                  welcomeDescription: widget.welcomeDescription,
-                  previewMode: _previewMode,
-                  assistantLabel: widget.assistantLabel,
-                  modelName: widget.modelName,
-                  providerName: widget.providerName,
-                ),
-              ],
+            child: ScrollConfiguration(
+              behavior: ScrollConfiguration.of(
+                context,
+              ).copyWith(scrollbars: false),
+              child: ListView(
+                key: const ValueKey('global-paper-ai-chat'),
+                controller: _scrollController,
+                keyboardDismissBehavior:
+                    ScrollViewKeyboardDismissBehavior.onDrag,
+                padding: EdgeInsets.zero,
+                children: [
+                  PaperAiContent(
+                    chatContext: widget.chatContext,
+                    messages: _conversation.messages,
+                    loading: _conversation.loading,
+                    sending: _conversation.sending,
+                    error: _conversation.error,
+                    onPrompt: (_) {},
+                    onRetry: _conversation.retry,
+                    onCancel: _conversation.cancel,
+                    onDelete: _deleteMessage,
+                    onFork: _forkMessage,
+                    onEdit: _editMessage,
+                    searching: _conversation.searching,
+                    requestStatus: _conversation.requestStatus,
+                    canRetryRequestError: _conversation.canRetryRequestError,
+                    welcomeTitle: widget.welcomeTitle,
+                    welcomeDescription: widget.welcomeDescription,
+                    previewMode: _previewMode,
+                    assistantLabel: widget.assistantLabel,
+                    modelName: widget.modelName,
+                    providerName: widget.providerName,
+                  ),
+                ],
+              ),
             ),
           ),
           PaperAiComposer(

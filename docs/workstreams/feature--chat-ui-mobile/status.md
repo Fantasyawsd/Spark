@@ -66,8 +66,9 @@
 - 已完成：本轮完整验证通过。
 - 已完成：修复移动端回复中超宽行内 LaTeX 触发 `RenderLine overflow` 的问题，并增加 Markdown 回归测试。
 - 已完成：通过 Computer Use 验收会话列表到主聊天的返回路径，聊天详情页恢复显式返回按钮。
+- 已完成：根据“AI 会话 UI 丑”的反馈完成第二轮视觉收敛：降低粉色饱和度、统一圆角与间距、缩小操作图标、优化头像加载 fallback、Composer 和底部面板，并隐藏桌面预览滚动条。
 - 已确认：当前 PaperFlow 分支没有 AI 绘画入口或对应路由，不能在此构建中进入该页面。
-- 下一步：由编排者确认 AI 绘画页面所属构建或是否需要新增该功能。
+- 下一步：由编排者复核第二轮 AI 会话视觉调整。
 - 阻塞项：无
 
 ## 决策记录
@@ -94,6 +95,7 @@
 | `flutter build apk --debug --flavor development --dart-define=PAPERFLOW_ENV=development` | 通过，生成 development debug APK | 2026-08-04 |
 | `flutter run -d windows` | 通过：用户确认后启动 Windows 验收窗口，完成 PaperFlow → ChatPaper → 主聊天路径检查 | 2026-08-04 |
 | Computer Use：PaperFlow → ChatPaper → 主聊天 | 通过；确认主聊天顶部显示“返回”按钮，当前构建没有 AI 绘画入口 | 2026-08-04 |
+| 第二轮 AI 会话视觉验收 | 通过：返回按钮、消息正文、推理面板、模型面板和自适应 Composer 均可见；模型面板与思考深度面板采用圆角底部面板 | 2026-08-05 |
 
 ## 审查结论
 
@@ -133,7 +135,7 @@
 
 ### 已知风险与回滚
 
-- 已知风险：未在真实 Android 设备上做截图级人工对照；模型头像依赖 DeepSeek 官方 favicon 网络可用性，失败时回退为内置图标；Fork 当前仅保留入口提示，完整会话分支属于后续能力。 当前 PaperFlow 也未包含 AI 绘画页面；如需该功能需要单独新增页面与入口。
+- 已知风险：未在真实 Android 设备上做截图级人工对照；模型头像依赖 DeepSeek 官方 favicon 网络可用性，失败时回退为内置图标；Fork 当前仅保留入口提示，完整会话分支属于后续能力。当前 PaperFlow 也未包含 AI 绘画页面；如需该功能需要单独新增页面与入口。
 - 回滚方式：revert 本分支提交，不涉及数据迁移
 
 ### 文档更新建议

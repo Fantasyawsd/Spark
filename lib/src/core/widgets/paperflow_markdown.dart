@@ -387,8 +387,8 @@ MarkdownStyleSheet paperAiMarkdownStyle({
 }) {
   final body = TextStyle(
     color: color,
-    fontSize: reasoning ? 12 : 13.5,
-    height: reasoning ? 1.36 : 1.38,
+    fontSize: reasoning ? 12 : 14.2,
+    height: reasoning ? 1.4 : 1.5,
   );
   return MarkdownStyleSheet(
     p: body,
@@ -400,16 +400,16 @@ MarkdownStyleSheet paperAiMarkdownStyle({
     code: TextStyle(
       color: reasoning ? PaperFlowColors.muted : const Color(0xFFE9EDF5),
       fontFamily: 'monospace',
-      fontSize: reasoning ? 11 : 12.5,
-      height: 1.45,
+      fontSize: reasoning ? 11 : 12.8,
+      height: 1.5,
     ),
     codeblockPadding: const EdgeInsets.all(12),
     codeblockDecoration: BoxDecoration(
       color: Color(0xFF172033),
       borderRadius: BorderRadius.all(Radius.circular(12)),
     ),
-    blockSpacing: reasoning ? 3 : 7,
-    listIndent: reasoning ? 16 : 19,
+    blockSpacing: reasoning ? 4 : 9,
+    listIndent: reasoning ? 16 : 20,
   );
 }
 

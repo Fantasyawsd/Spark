@@ -76,7 +76,7 @@ class _UserMessage extends StatelessWidget {
     final viewportWidth = MediaQuery.sizeOf(context).width;
     final maxWidth = (viewportWidth * 0.76).clamp(220.0, 420.0).toDouble();
     return Padding(
-      padding: const EdgeInsets.only(left: 46, bottom: 20),
+      padding: const EdgeInsets.only(left: 44, bottom: 18),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
@@ -86,10 +86,10 @@ class _UserMessage extends StatelessWidget {
               constraints: BoxConstraints(maxWidth: maxWidth),
               child: Container(
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
+                    const EdgeInsets.symmetric(horizontal: 15, vertical: 9),
                 decoration: BoxDecoration(
                   color: PaperAiUiTokens.userBubble,
-                  borderRadius: BorderRadius.circular(22),
+                  borderRadius: BorderRadius.circular(18),
                 ),
                 child: PaperMarkdown(
                   data: message.content,
@@ -135,7 +135,7 @@ class _AssistantMessage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(right: 4, bottom: 24),
+      padding: const EdgeInsets.only(right: 2, bottom: 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -144,7 +144,7 @@ class _AssistantMessage extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                const _AssistantAvatar(size: 40),
+                const _AssistantAvatar(size: 34),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Row(
@@ -156,7 +156,7 @@ class _AssistantMessage extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
                             color: PaperFlowColors.ink,
-                            fontSize: 17,
+                            fontSize: 15.5,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
@@ -167,7 +167,7 @@ class _AssistantMessage extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 9),
+          const SizedBox(height: 8),
           if (message.reasoningContent.isNotEmpty)
             _ReasoningPanel(
               key: const ValueKey('paper-ai-reasoning-panel'),
@@ -183,7 +183,7 @@ class _AssistantMessage extends StatelessWidget {
             ),
           if (message.sources.isNotEmpty)
             _SourcesPanel(sources: message.sources),
-          const SizedBox(height: 6),
+          const SizedBox(height: 4),
           _MessageActionRow(
             message: message,
             assistant: true,
@@ -222,30 +222,35 @@ class _AssistantAvatar extends StatelessWidget {
       height: size,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        gradient: const LinearGradient(
-          colors: [Color(0xFF4C83F5), Color(0xFFBFD8FF)],
-          begin: Alignment.bottomLeft,
-          end: Alignment.topRight,
-        ),
+        color: PaperAiUiTokens.assistantAvatar,
         boxShadow: [
           BoxShadow(
-            color: PaperAiUiTokens.modelBlue.withValues(alpha: 0.18),
+            color: PaperAiUiTokens.modelBlue.withValues(alpha: 0.14),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
         ],
       ),
       child: ClipOval(
-        child: Image.network(
-          'https://www.deepseek.com/favicon.ico',
-          width: size,
-          height: size,
-          fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) => Icon(
-            Icons.auto_awesome_rounded,
-            color: Colors.white,
-            size: size * 0.48,
-          ),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            Center(
+              child: Icon(
+                Icons.auto_awesome_rounded,
+                size: size * 0.5,
+                color: PaperAiUiTokens.modelBlue,
+              ),
+            ),
+            Image.network(
+              'https://www.deepseek.com/favicon.ico',
+              fit: BoxFit.cover,
+              loadingBuilder: (context, child, progress) =>
+                  progress == null ? child : const SizedBox.shrink(),
+              errorBuilder: (context, error, stackTrace) =>
+                  const SizedBox.shrink(),
+            ),
+          ],
         ),
       ),
     );
@@ -327,6 +332,10 @@ class _MessageActionRow extends StatelessWidget {
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: PaperAiUiTokens.canvas,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
+      ),
+      clipBehavior: Clip.antiAlias,
       showDragHandle: true,
       builder: (context) => SafeArea(
         child: Column(
@@ -378,14 +387,14 @@ class _MessageActionButton extends StatelessWidget {
       onPressed: onPressed,
       icon: Icon(
         icon,
-        size: 23,
+        size: 20,
         color: onPressed == null
             ? PaperAiUiTokens.actionMuted
             : PaperAiUiTokens.action,
       ),
       style: IconButton.styleFrom(
-        minimumSize: const Size(34, 34),
-        maximumSize: const Size(34, 34),
+        minimumSize: const Size(32, 32),
+        maximumSize: const Size(32, 32),
         padding: EdgeInsets.zero,
         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
       ),
@@ -450,7 +459,7 @@ class _ReasoningPanelState extends State<_ReasoningPanel> {
       margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
         color: PaperAiUiTokens.assistantReasoning,
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -458,17 +467,17 @@ class _ReasoningPanelState extends State<_ReasoningPanel> {
           InkWell(
             key: const ValueKey('paper-ai-reasoning-toggle'),
             onTap: () => setState(() => _expanded = !_expanded),
-            borderRadius: BorderRadius.circular(22),
+            borderRadius: BorderRadius.circular(16),
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 17, vertical: 13),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
               child: Row(
                 children: [
                   Icon(
                     Icons.lightbulb_outline_rounded,
-                    size: 20,
+                    size: 18,
                     color: PaperAiUiTokens.reasoning,
                   ),
-                  const SizedBox(width: 13),
+                  const SizedBox(width: 10),
                   Expanded(
                     child: widget.streaming
                         ? _ShimmerText(text: title)
@@ -476,7 +485,7 @@ class _ReasoningPanelState extends State<_ReasoningPanel> {
                             title,
                             style: const TextStyle(
                               color: PaperAiUiTokens.assistantReasoningText,
-                              fontSize: 15,
+                              fontSize: 14,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -486,7 +495,7 @@ class _ReasoningPanelState extends State<_ReasoningPanel> {
                         ? Icons.keyboard_arrow_up_rounded
                         : Icons.keyboard_arrow_down_rounded,
                     color: PaperAiUiTokens.assistantReasoningText,
-                    size: 23,
+                    size: 20,
                   ),
                 ],
               ),
@@ -497,9 +506,9 @@ class _ReasoningPanelState extends State<_ReasoningPanel> {
             curve: Curves.easeOutCubic,
             child: _expanded
                 ? Padding(
-                    padding: const EdgeInsets.fromLTRB(17, 0, 17, 15),
+                    padding: const EdgeInsets.fromLTRB(14, 0, 14, 13),
                     child: Container(
-                      padding: const EdgeInsets.only(left: 20),
+                      padding: const EdgeInsets.only(left: 16),
                       decoration: const BoxDecoration(
                         border: Border(
                           left: BorderSide(

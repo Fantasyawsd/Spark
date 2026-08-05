@@ -47,7 +47,7 @@ void main() {
 
     final envelope = jsonDecode(await file.readAsString()) as Map;
     expect(envelope['schema'], 'papers.preferences');
-    expect(envelope['schemaVersion'], 1);
+    expect(envelope['schemaVersion'], 2);
   });
 
   test('translation repository rejects non-string cached translations',

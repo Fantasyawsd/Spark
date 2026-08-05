@@ -4,6 +4,7 @@ import '../../application/paper_ai_service.dart';
 import '../../application/paper_ai_session_repository.dart';
 import '../../application/paper_comment_controller.dart';
 import '../../application/paper_interaction_controller.dart';
+import '../../application/paper_keyword_service.dart';
 import '../../application/paper_link_service.dart';
 import '../../application/paper_reading_controller.dart';
 import '../../application/paper_share_service.dart';
@@ -22,10 +23,12 @@ class PaperReaderView extends StatelessWidget {
     required this.commentController,
     required this.readingController,
     required this.aiService,
+    required this.keywordService,
     required this.translationServiceFactory,
     this.webSearchAiService,
     this.aiSessionRepository,
     this.translationRepository,
+    this.keywordRepository,
     this.shareService,
     this.linkService,
     this.onOpenRelatedPaper,
@@ -39,10 +42,12 @@ class PaperReaderView extends StatelessWidget {
   final PaperCommentController commentController;
   final PaperReadingController readingController;
   final PaperAiService aiService;
+  final PaperAiService keywordService;
   final PaperAiService? webSearchAiService;
   final PaperAiSessionRepository? aiSessionRepository;
   final PaperTranslationServiceFactory translationServiceFactory;
   final PaperTranslationRepository? translationRepository;
+  final PaperKeywordRepository? keywordRepository;
   final PaperShareService? shareService;
   final PaperLinkService? linkService;
   final ValueChanged<String>? onOpenRelatedPaper;
@@ -83,15 +88,19 @@ class PaperReaderView extends StatelessWidget {
           readingController.saveAbstractScrollOffset(paper.id, offset),
       translationServiceFactory: translationServiceFactory,
       translationRepository: translationRepository,
+      keywordService: keywordService,
+      keywordRepository: keywordRepository,
       contentTopInset: contentTopInset,
       actionBarBottomInset: actionBarBottomInset,
     );
   }
 
-  void _openDiscussion(
+  Future<void> _openDiscussion(
     BuildContext context, {
     PaperSheetPage initialPage = PaperSheetPage.comments,
-  }) {
+  }) async {
+    final keywords = await _loadGeneratedKeywords();
+    if (!context.mounted) return;
     showPaperCommentsSheet(
       context,
       paper,
@@ -100,7 +109,16 @@ class PaperReaderView extends StatelessWidget {
       webSearchAiService: webSearchAiService,
       aiSessionRepository: aiSessionRepository,
       commentController: commentController,
+      generatedKeywords: keywords,
     );
+  }
+
+  Future<List<String>> _loadGeneratedKeywords() async {
+    final record = await keywordRepository?.load(paper.id);
+    if (record == null || !isPaperKeywordRecordFresh(record, paper)) {
+      return const [];
+    }
+    return record.keywords;
   }
 
   void _showFavoriteGroups(BuildContext context) {

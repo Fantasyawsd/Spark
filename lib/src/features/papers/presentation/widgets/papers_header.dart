@@ -12,6 +12,8 @@ class PapersHeader extends StatelessWidget {
     required this.onChannelSelected,
     required this.onManageChannels,
     required this.onSearch,
+    required this.timeRangeLabel,
+    required this.onSelectTimeRange,
   });
 
   static const fixedChannelLabels = ['推荐', '关注', '最新'];
@@ -22,6 +24,8 @@ class PapersHeader extends StatelessWidget {
   final ValueChanged<int> onChannelSelected;
   final VoidCallback onManageChannels;
   final VoidCallback onSearch;
+  final String timeRangeLabel;
+  final VoidCallback onSelectTimeRange;
 
   @override
   Widget build(BuildContext context) {
@@ -57,6 +61,14 @@ class PapersHeader extends StatelessWidget {
                     ],
                   ),
                 ),
+              ),
+              CherryIconButton(
+                key: const ValueKey('paper-time-filter'),
+                tooltip: timeRangeLabel,
+                onPressed: onSelectTimeRange,
+                icon: Icons.calendar_today_rounded,
+                iconSize: 18,
+                size: 36,
               ),
               CherryIconButton(
                 key: const ValueKey('paper-channel-manage'),

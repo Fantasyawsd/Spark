@@ -32,16 +32,19 @@ class PaperFlowSegmentedControl extends StatelessWidget {
         ),
         child: SizedBox(
           height: height,
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              for (var index = 0; index < tabs.length; index++)
-                _ContentTab(
-                  label: tabs[index],
-                  selected: index == selectedIndex,
-                  onTap: () => onSelected(index),
-                ),
-            ],
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                for (var index = 0; index < tabs.length; index++)
+                  _ContentTab(
+                    label: tabs[index],
+                    selected: index == selectedIndex,
+                    onTap: () => onSelected(index),
+                  ),
+              ],
+            ),
           ),
         ),
       ),

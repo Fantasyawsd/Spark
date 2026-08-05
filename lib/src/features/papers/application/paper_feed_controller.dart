@@ -9,6 +9,7 @@ import '../domain/paper_channel_preference_repository.dart';
 import '../domain/paper_feed_filter.dart';
 import '../domain/paper_preference_repository.dart';
 import '../domain/paper_repository.dart';
+import '../domain/paper_time_range.dart';
 
 class PaperFeedController extends ChangeNotifier {
   PaperFeedController(
@@ -50,6 +51,7 @@ class PaperFeedController extends ChangeNotifier {
   String? _preferenceError;
   String? _channelPreferenceError;
   final Map<String, int> _positions = {};
+  final Map<String, PaperTimeRange> _timeRanges = {};
   final Set<String> _loadedChannelKeys = {};
   final Map<String, List<Paper>> _channelPapers = {};
   List<UserPaperChannel> _userChannels = const [];
@@ -88,6 +90,8 @@ class PaperFeedController extends ChangeNotifier {
   DateTime? get catalogFetchedAt => _catalogFetchedAt;
   bool get catalogHasMore => _catalogNextOffset != null;
   PaperCatalogError? get catalogError => _catalogError;
+  PaperTimeRange get timeRange =>
+      _timeRanges[currentChannelKey] ?? const PaperTimeRange.all();
 
   String get currentChannelKey => channelKeyAt(_channelIndex);
 
@@ -150,6 +154,7 @@ class PaperFeedController extends ChangeNotifier {
       final page = await repository.loadFeed(
         PaperFeedQuery(
           category: _catalogCategory,
+          timeRange: timeRange,
           limit: 20,
           forceRefresh: forceRefresh,
         ),
@@ -185,9 +190,7 @@ class PaperFeedController extends ChangeNotifier {
         _channelMode == PaperFeedMode.following) {
       return Future.value();
     }
-    return _trackCatalogOperation(
-      _loadMoreCatalog(repository, nextOffset),
-    );
+    return _trackCatalogOperation(_loadMoreCatalog(repository, nextOffset));
   }
 
   Future<void> _loadMoreCatalog(
@@ -201,6 +204,7 @@ class PaperFeedController extends ChangeNotifier {
       final page = await repository.loadFeed(
         PaperFeedQuery(
           category: _catalogCategory,
+          timeRange: timeRange,
           offset: nextOffset,
           limit: 20,
         ),
@@ -229,6 +233,14 @@ class PaperFeedController extends ChangeNotifier {
       _positions
         ..clear()
         ..addAll(preferences.positions);
+      _timeRanges
+        ..clear()
+        ..addEntries(
+          preferences.timeRanges.entries.map(
+            (entry) =>
+                MapEntry(entry.key, PaperTimeRange.fromStorageKey(entry.value)),
+          ),
+        );
       _legacyPrimaryIndex = preferences.primaryCategoryIndex.clamp(
         0,
         FixedPaperChannel.values.length - 1,
@@ -291,6 +303,25 @@ class PaperFeedController extends ChangeNotifier {
   }
 
   void selectPrimaryCategory(int index) => selectChannel(index);
+
+  void selectTimeRange(PaperTimeRange range) {
+    if (range.storageKey == timeRange.storageKey) return;
+    final key = currentChannelKey;
+    _timeRanges[key] = range;
+    _positions[key] = 0;
+    _currentPaperIndex = 0;
+    _catalogNextOffset = null;
+    _catalogError = null;
+    _loadedChannelKeys.remove(key);
+    _channelPapers.remove(key);
+    _catalogQueryRevision++;
+    _refreshVisiblePapers();
+    notifyListeners();
+    _queuePreferencePersistence();
+    if (_channelMode != PaperFeedMode.following) {
+      _ensureCurrentChannelLoaded();
+    }
+  }
 
   void selectChannel(int index) {
     if (index == _channelIndex || index < 0 || index >= channelCount) {
@@ -379,8 +410,10 @@ class PaperFeedController extends ChangeNotifier {
       _currentPaperIndex = 0;
       return;
     }
-    _currentPaperIndex = (_positions[currentChannelKey] ?? 0)
-        .clamp(0, _visiblePapers.length - 1);
+    _currentPaperIndex = (_positions[currentChannelKey] ?? 0).clamp(
+      0,
+      _visiblePapers.length - 1,
+    );
   }
 
   void _refreshVisiblePapers() {
@@ -389,6 +422,7 @@ class PaperFeedController extends ChangeNotifier {
         papers: _allPapers,
         mode: PaperFeedMode.following,
         followedPaperIds: _followedPaperIds,
+        timeRange: timeRange,
       );
       return;
     }
@@ -405,6 +439,7 @@ class PaperFeedController extends ChangeNotifier {
         papers: _allPapers,
         mode: PaperFeedMode.latest,
         followedPaperIds: const {},
+        timeRange: timeRange,
       );
     }
     if (channelKey.startsWith('fixed:')) {
@@ -426,10 +461,7 @@ class PaperFeedController extends ChangeNotifier {
     }
     final currentPaperId = _visiblePapers.isEmpty
         ? null
-        : _visiblePapers[_currentPaperIndex.clamp(
-            0,
-            _visiblePapers.length - 1,
-          )]
+        : _visiblePapers[_currentPaperIndex.clamp(0, _visiblePapers.length - 1)]
             .id;
     if (page.papers.isNotEmpty) {
       final key = currentChannelKey;
@@ -518,6 +550,7 @@ class PaperFeedController extends ChangeNotifier {
     await flushPreferenceWrites();
     await flushChannelPreferenceWrites();
     _positions.clear();
+    _timeRanges.clear();
     _loadedChannelKeys.clear();
     _channelPapers.clear();
     _userChannels = const [];
@@ -540,6 +573,10 @@ class PaperFeedController extends ChangeNotifier {
     if (repository == null) return;
     final preferences = PaperPreferences(
       positions: _positions,
+      timeRanges: {
+        for (final entry in _timeRanges.entries)
+          entry.key: entry.value.storageKey,
+      },
       primaryCategoryIndex: _channelMode.index,
     );
     _preferenceWriteQueue = _preferenceWriteQueue.then((_) async {

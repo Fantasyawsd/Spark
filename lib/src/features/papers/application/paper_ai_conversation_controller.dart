@@ -9,10 +9,14 @@ typedef PaperAiRequestStatus = ChatRequestStatus;
 class PaperAiConversationController extends ChatConversationController {
   PaperAiConversationController({
     required Paper paper,
+    List<String> generatedKeywords = const [],
     required super.service,
     super.webSearchService,
     super.sessionRepository,
   }) : super(
-          context: PaperChatContext.fromPaper(paper),
+          context: PaperChatContext.fromPaper(
+            paper,
+            generatedKeywords: generatedKeywords,
+          ),
         );
 }

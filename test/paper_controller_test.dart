@@ -335,6 +335,50 @@ void main() {
       );
     });
 
+    test('keeps and persists a time range per channel', () async {
+      final preferences = InMemoryPaperPreferenceRepository();
+      final channels = InMemoryPaperChannelPreferenceRepository();
+      final catalog = _RecordingPaperCatalogRepository();
+      final first = PaperController(
+        const ArxivSeedRepository(),
+        preferenceRepository: preferences,
+        channelPreferenceRepository: channels,
+        catalogRepository: catalog,
+      );
+      addTearDown(first.dispose);
+
+      await first.initialize();
+      first.feed.selectTimeRange(const PaperTimeRange.last7Days());
+      await first.feed.flushCatalogOperations();
+      await first.saveUserChannels(const [
+        UserPaperChannel(
+          kind: PaperChannelKind.subject,
+          id: 'cs.CL',
+          displayName: '计算与语言',
+        ),
+      ]);
+      first.selectChannel(3);
+      first.feed.selectTimeRange(const PaperTimeRange.last30Days());
+      await first.feed.flushCatalogOperations();
+      await first.feed.flushPreferenceWrites();
+      await first.feed.flushChannelPreferenceWrites();
+
+      expect(catalog.queries.last.timeRange.storageKey, 'last-30-days');
+      first.selectChannel(0);
+      expect(first.feed.timeRange.storageKey, 'last-7-days');
+
+      final restored = PaperController(
+        const ArxivSeedRepository(),
+        preferenceRepository: preferences,
+        channelPreferenceRepository: channels,
+      );
+      await restored.initialize();
+      addTearDown(restored.dispose);
+      expect(restored.feed.timeRange.storageKey, 'last-7-days');
+      restored.selectChannel(3);
+      expect(restored.feed.timeRange.storageKey, 'last-30-days');
+    });
+
     test('switching back to loaded channels does not refetch', () async {
       final catalog = _RecordingPaperCatalogRepository();
       final controller = PaperController(

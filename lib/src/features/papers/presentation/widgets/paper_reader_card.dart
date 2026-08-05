@@ -6,6 +6,9 @@ import '../../../../core/motion/motion_tokens.dart';
 import '../../../../core/theme/paperflow_theme.dart';
 import '../../../../core/widgets/paperflow_segmented_control.dart';
 import '../../application/paper_link_service.dart';
+import '../../application/paper_ai_service.dart';
+import '../../application/paper_keyword_controller.dart';
+import '../../application/paper_keyword_service.dart';
 import '../../application/paper_translation_controller.dart';
 import '../../application/paper_translation_service.dart';
 import '../../domain/paper.dart';
@@ -38,10 +41,12 @@ class PaperReaderCard extends StatefulWidget {
     required this.onAnalyze,
     required this.onShare,
     required this.translationServiceFactory,
+    required this.keywordService,
     this.active = true,
     this.initialAbstractScrollOffset = 0,
     this.onAbstractScrollChanged,
     this.translationRepository,
+    this.keywordRepository,
     this.onOpenPaper,
     this.onOpenRelatedPaper,
     this.contentTopInset = 8,
@@ -68,7 +73,9 @@ class PaperReaderCard extends StatefulWidget {
   final ValueChanged<Uri>? onOpenPaper;
   final ValueChanged<String>? onOpenRelatedPaper;
   final PaperTranslationServiceFactory translationServiceFactory;
+  final PaperAiService keywordService;
   final PaperTranslationRepository? translationRepository;
+  final PaperKeywordRepository? keywordRepository;
   final bool active;
   final double initialAbstractScrollOffset;
   final ValueChanged<double>? onAbstractScrollChanged;
@@ -80,11 +87,19 @@ class PaperReaderCard extends StatefulWidget {
 }
 
 class _PaperReaderCardState extends State<PaperReaderCard> {
-  static const _tabs = ['原文', '中文解读', '相关论文'];
+  static const _tabs = [
+    'Abstract',
+    '摘要',
+    '关键词',
+    '作者',
+    'AI 解读',
+    '相关论文',
+  ];
 
   late int _tabIndex;
   late final PageController _tabPageController;
   late PaperTranslationController _translationController;
+  late PaperKeywordController _keywordController;
 
   @override
   void initState() {
@@ -92,6 +107,7 @@ class _PaperReaderCardState extends State<PaperReaderCard> {
     _tabIndex = 0;
     _tabPageController = PageController();
     _createTranslationController();
+    _createKeywordController();
   }
 
   @override
@@ -112,8 +128,20 @@ class _PaperReaderCardState extends State<PaperReaderCard> {
         ..dispose();
       _createTranslationController();
     }
+    final keywordDependencyChanged = !identical(
+          oldWidget.keywordService,
+          widget.keywordService,
+        ) ||
+        !identical(oldWidget.keywordRepository, widget.keywordRepository);
+    if (paperChanged || keywordDependencyChanged) {
+      _keywordController
+        ..removeListener(_handleKeywordChanged)
+        ..dispose();
+      _createKeywordController();
+    }
     if (oldWidget.active && !widget.active) {
       _translationController.cancel();
+      _keywordController.cancel();
     }
     if (paperChanged || (!oldWidget.active && widget.active)) {
       _resetToOriginal();
@@ -125,6 +153,9 @@ class _PaperReaderCardState extends State<PaperReaderCard> {
     _tabPageController.dispose();
     _translationController
       ..removeListener(_handleTranslationChanged)
+      ..dispose();
+    _keywordController
+      ..removeListener(_handleKeywordChanged)
       ..dispose();
     super.dispose();
   }
@@ -268,15 +299,32 @@ class _PaperReaderCardState extends State<PaperReaderCard> {
         onExpand: () => _openFullReader(
           paper,
           _translationController.markdown,
-          title: '中文解读',
+          title: '摘要',
         ),
       );
     }
     if (index == 2) {
+      return _KeywordContent(
+        keywords: _keywordController.keywords,
+        loadingCache: _keywordController.loadingCache,
+        generating: _keywordController.generating,
+        error: _keywordController.error,
+        onGenerate: _keywordController.generate,
+        onRefresh: () => _keywordController.generate(force: true),
+        onCancel: _keywordController.cancel,
+      );
+    }
+    if (index == 3) {
+      return _AuthorContent(paper: paper);
+    }
+    if (index == 4) {
+      return _AiInterpretationContent(onOpen: widget.onAnalyze);
+    }
+    if (index == 5) {
       return PaperRelatedPapers(
         key: ValueKey('${paper.id}-related-papers'),
         papers: paper.relatedPapers,
-        topics: paper.contentKeywords,
+        topics: const [],
         onOpen: widget.onOpenRelatedPaper,
       );
     }
@@ -288,7 +336,7 @@ class _PaperReaderCardState extends State<PaperReaderCard> {
       onExpand: () => _openFullReader(
         paper,
         paper.content.originalAbstractMarkdown,
-        title: '原文摘要',
+        title: 'Abstract',
       ),
     );
   }
@@ -305,9 +353,9 @@ class _PaperReaderCardState extends State<PaperReaderCard> {
           markdown: markdown,
           title: title,
           initialScrollOffset:
-              title == '原文摘要' ? widget.initialAbstractScrollOffset : 0,
+              title == 'Abstract' ? widget.initialAbstractScrollOffset : 0,
           onScrollOffsetChanged:
-              title == '原文摘要' ? widget.onAbstractScrollChanged : null,
+              title == 'Abstract' ? widget.onAbstractScrollChanged : null,
         ),
       ),
     );
@@ -322,8 +370,172 @@ class _PaperReaderCardState extends State<PaperReaderCard> {
     _translationController.initialize();
   }
 
+  void _createKeywordController() {
+    _keywordController = PaperKeywordController(
+      paper: widget.paper,
+      service: widget.keywordService,
+      repository: widget.keywordRepository,
+    )..addListener(_handleKeywordChanged);
+    _keywordController.initialize();
+  }
+
   void _handleTranslationChanged() {
     if (mounted) setState(() {});
+  }
+
+  void _handleKeywordChanged() {
+    if (mounted) setState(() {});
+  }
+}
+
+class _KeywordContent extends StatelessWidget {
+  const _KeywordContent({
+    required this.keywords,
+    required this.loadingCache,
+    required this.generating,
+    required this.error,
+    required this.onGenerate,
+    required this.onRefresh,
+    required this.onCancel,
+  });
+
+  final List<String> keywords;
+  final bool loadingCache;
+  final bool generating;
+  final String? error;
+  final VoidCallback onGenerate;
+  final VoidCallback onRefresh;
+  final VoidCallback onCancel;
+
+  @override
+  Widget build(BuildContext context) {
+    if (loadingCache && keywords.isEmpty) {
+      return const Center(child: CircularProgressIndicator(strokeWidth: 2));
+    }
+    if (keywords.isEmpty) {
+      return _ReaderEmptyState(
+        icon: Icons.key_rounded,
+        title: generating ? '正在生成关键词…' : '尚未生成关键词',
+        message: error ?? '关键词将从论文标题和 Abstract 中提取。',
+        actionLabel: generating
+            ? '停止'
+            : error == null
+                ? '生成'
+                : '重试',
+        onAction: generating ? onCancel : onGenerate,
+      );
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Align(
+          alignment: Alignment.centerRight,
+          child: TextButton(
+            key: const ValueKey('paper-keyword-refresh'),
+            onPressed: generating ? onCancel : onRefresh,
+            child: Text(generating ? '停止' : '重新生成'),
+          ),
+        ),
+        if (error != null)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Text(
+              error!,
+              style: const TextStyle(color: Color(0xFFB42318), fontSize: 12),
+            ),
+          ),
+        Expanded(
+          child: SingleChildScrollView(
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (final keyword in keywords) Chip(label: Text(keyword)),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _AuthorContent extends StatelessWidget {
+  const _AuthorContent({required this.paper});
+
+  final Paper paper;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.separated(
+      itemCount: paper.authors.length,
+      separatorBuilder: (_, __) => const Divider(height: 1),
+      itemBuilder: (context, index) => ListTile(
+        contentPadding: EdgeInsets.zero,
+        leading: const Icon(Icons.person_outline_rounded),
+        title: Text(paper.authors[index]),
+      ),
+    );
+  }
+}
+
+class _AiInterpretationContent extends StatelessWidget {
+  const _AiInterpretationContent({required this.onOpen});
+
+  final VoidCallback onOpen;
+
+  @override
+  Widget build(BuildContext context) {
+    return _ReaderEmptyState(
+      icon: Icons.auto_awesome_rounded,
+      title: '围绕当前论文提问',
+      message: '当前对话基于论文元数据和摘要，不包含 PDF 全文。',
+      actionLabel: '打开 ChatPaper',
+      onAction: onOpen,
+    );
+  }
+}
+
+class _ReaderEmptyState extends StatelessWidget {
+  const _ReaderEmptyState({
+    required this.icon,
+    required this.title,
+    required this.message,
+    this.actionLabel,
+    this.onAction,
+  });
+
+  final IconData icon;
+  final String title;
+  final String message;
+  final String? actionLabel;
+  final VoidCallback? onAction;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: PaperFlowColors.muted, size: 28),
+            const SizedBox(height: 12),
+            Text(title, style: const TextStyle(fontWeight: FontWeight.w800)),
+            const SizedBox(height: 6),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: PaperFlowColors.muted, height: 1.5),
+            ),
+            if (actionLabel != null && onAction != null) ...[
+              const SizedBox(height: 16),
+              FilledButton(onPressed: onAction, child: Text(actionLabel!)),
+            ],
+          ],
+        ),
+      ),
+    );
   }
 }
 

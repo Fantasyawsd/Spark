@@ -25,12 +25,33 @@ class PaperRelatedPapers extends StatelessWidget {
           const Padding(
             padding: EdgeInsets.only(top: 44),
             child: Center(
-              child: Text(
-                '暂时没有相关论文',
-                style: TextStyle(
-                  color: PaperFlowColors.muted,
-                  fontSize: 13,
-                ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.article_outlined,
+                    size: 28,
+                    color: PaperFlowColors.muted,
+                  ),
+                  SizedBox(height: 12),
+                  Text(
+                    '相关论文',
+                    style: TextStyle(
+                      color: PaperFlowColors.ink,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  SizedBox(height: 6),
+                  Text(
+                    '相关论文推荐将在后续版本提供。',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: PaperFlowColors.muted,
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
               ),
             ),
           )

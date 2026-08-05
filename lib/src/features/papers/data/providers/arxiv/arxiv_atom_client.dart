@@ -30,10 +30,35 @@ class ArxivApiException implements Exception {
 /// 而 PaperFlow 的论文流定位就是 CS/ML 论文（频道计划见 development.md），
 /// 分类并集查询稳定（HTTP 200）且语义一致。
 const defaultArxivCategories = [
-  'cs.AI', 'cs.CL', 'cs.CV', 'cs.LG', 'cs.LO', 'cs.CR', 'cs.CC', 'cs.CE',
-  'cs.DB', 'cs.DC', 'cs.DS', 'cs.ET', 'cs.FL', 'cs.GT', 'cs.HC', 'cs.IR',
-  'cs.IT', 'cs.MA', 'cs.MM', 'cs.MS', 'cs.NE', 'cs.NI', 'cs.PF', 'cs.PL',
-  'cs.SC', 'cs.SD', 'cs.SE', 'cs.SI', 'cs.SY',
+  'cs.AI',
+  'cs.CL',
+  'cs.CV',
+  'cs.LG',
+  'cs.LO',
+  'cs.CR',
+  'cs.CC',
+  'cs.CE',
+  'cs.DB',
+  'cs.DC',
+  'cs.DS',
+  'cs.ET',
+  'cs.FL',
+  'cs.GT',
+  'cs.HC',
+  'cs.IR',
+  'cs.IT',
+  'cs.MA',
+  'cs.MM',
+  'cs.MS',
+  'cs.NE',
+  'cs.NI',
+  'cs.PF',
+  'cs.PL',
+  'cs.SC',
+  'cs.SD',
+  'cs.SE',
+  'cs.SI',
+  'cs.SY',
 ];
 
 class ArxivAtomClient implements ArxivCatalogSource {
@@ -66,21 +91,26 @@ class ArxivAtomClient implements ArxivCatalogSource {
   @override
   Future<ArxivAtomPageDto> loadLatest({
     String? category,
+    DateTime? publishedFrom,
+    DateTime? publishedUntil,
     required int offset,
     required int limit,
   }) {
     final normalizedCategory = category?.trim();
-    final categories = (normalizedCategory == null ||
-            normalizedCategory.isEmpty)
-        ? defaultArxivCategories
-        : normalizedCategory
-            .split('|')
-            .map((category) => category.trim())
-            .where((category) => category.isNotEmpty)
-            .toList(growable: false);
+    final categories =
+        (normalizedCategory == null || normalizedCategory.isEmpty)
+            ? defaultArxivCategories
+            : normalizedCategory
+                .split('|')
+                .map((category) => category.trim())
+                .where((category) => category.isNotEmpty)
+                .toList(growable: false);
+    final categoryQuery =
+        categories.map((category) => 'cat:$category').join(' OR ');
+    final dateQuery = _submittedDateQuery(publishedFrom, publishedUntil);
     return _query({
       'search_query':
-          categories.map((category) => 'cat:$category').join(' OR '),
+          dateQuery == null ? categoryQuery : '($categoryQuery) AND $dateQuery',
       'start': '$offset',
       'max_results': '$limit',
       'sortBy': 'submittedDate',
@@ -112,6 +142,19 @@ class ArxivAtomClient implements ArxivCatalogSource {
       'max_results': '1',
     });
     return page.entries.firstOrNull;
+  }
+
+  static String? _submittedDateQuery(DateTime? from, DateTime? until) {
+    if (from == null || until == null) return null;
+    return 'submittedDate:[${_arxivDate(from.toUtc())} TO '
+        '${_arxivDate(until.toUtc())}]';
+  }
+
+  static String _arxivDate(DateTime value) {
+    String two(int number) => number.toString().padLeft(2, '0');
+    return '${value.year.toString().padLeft(4, '0')}'
+        '${two(value.month)}${two(value.day)}'
+        '${two(value.hour)}${two(value.minute)}${two(value.second)}';
   }
 
   void close() {

@@ -26,6 +26,7 @@ Future<void> showPaperCommentsSheet(
   PaperAiSessionRepository? aiSessionRepository,
   required PaperCommentController commentController,
   PaperSheetPage initialPage = PaperSheetPage.comments,
+  List<String> generatedKeywords = const [],
 }) {
   return showPaperFlowSheet<void>(
     context: context,
@@ -39,6 +40,7 @@ Future<void> showPaperCommentsSheet(
       webSearchAiService: webSearchAiService,
       aiSessionRepository: aiSessionRepository,
       commentController: commentController,
+      generatedKeywords: generatedKeywords,
     ),
   );
 }
@@ -51,6 +53,7 @@ class _PaperCommentsSheet extends StatefulWidget {
     required this.webSearchAiService,
     required this.aiSessionRepository,
     required this.commentController,
+    required this.generatedKeywords,
   });
 
   final Paper paper;
@@ -59,6 +62,7 @@ class _PaperCommentsSheet extends StatefulWidget {
   final PaperAiService? webSearchAiService;
   final PaperAiSessionRepository? aiSessionRepository;
   final PaperCommentController commentController;
+  final List<String> generatedKeywords;
 
   @override
   State<_PaperCommentsSheet> createState() => _PaperCommentsSheetState();
@@ -86,6 +90,7 @@ class _PaperCommentsSheetState extends State<_PaperCommentsSheet> {
     _pageController = PageController(initialPage: _pageIndex);
     _aiController = PaperAiConversationController(
       paper: widget.paper,
+      generatedKeywords: widget.generatedKeywords,
       service: widget.aiService,
       webSearchService: widget.webSearchAiService,
       sessionRepository: widget.aiSessionRepository,
@@ -206,7 +211,10 @@ class _PaperCommentsSheetState extends State<_PaperCommentsSheet> {
                   padding: EdgeInsets.zero,
                   children: [
                     PaperAiContent(
-                      chatContext: PaperChatContext.fromPaper(widget.paper),
+                      chatContext: PaperChatContext.fromPaper(
+                        widget.paper,
+                        generatedKeywords: widget.generatedKeywords,
+                      ),
                       messages: _aiController.messages,
                       loading: _aiController.loading,
                       sending: _aiController.sending,

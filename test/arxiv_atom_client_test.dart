@@ -105,10 +105,31 @@ void main() {
 
       await api.loadLatest(category: null, offset: 0, limit: 20);
 
-      final query =
-          client.requests.single.url.queryParameters['search_query']!;
+      final query = client.requests.single.url.queryParameters['search_query']!;
       expect(query, startsWith('cat:cs.AI OR cat:cs.CL'));
       expect(query, isNot(contains('all:*')));
+    });
+
+    test('adds UTC submitted-date bounds to category queries', () async {
+      final client = _RecordingClient([_response(_emptyFeed)]);
+      final api = ArxivAtomClient(
+        endpoint: 'https://example.test/api/query',
+        client: client,
+        minimumRequestInterval: Duration.zero,
+      );
+
+      await api.loadLatest(
+        category: 'cs.AI',
+        publishedFrom: DateTime.utc(2026, 8, 1),
+        publishedUntil: DateTime.utc(2026, 8, 6, 23, 59, 59),
+        offset: 0,
+        limit: 20,
+      );
+
+      expect(
+        client.requests.single.url.queryParameters['search_query'],
+        '(cat:cs.AI) AND submittedDate:[20260801000000 TO 20260806235959]',
+      );
     });
 
     test('serializes requests and injects the three-second throttle', () async {

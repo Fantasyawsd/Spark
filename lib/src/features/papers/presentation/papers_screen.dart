@@ -10,8 +10,10 @@ import '../application/paper_ai_session_repository.dart';
 import '../application/paper_comment_controller.dart';
 import '../domain/paper.dart';
 import '../domain/paper_catalog.dart';
+import '../domain/paper_time_range.dart';
 import '../application/paper_feed_controller.dart';
 import '../application/paper_interaction_controller.dart';
+import '../application/paper_keyword_service.dart';
 import '../application/paper_link_service.dart';
 import '../application/paper_reading_controller.dart';
 import '../application/paper_share_service.dart';
@@ -32,15 +34,17 @@ class PapersScreen extends StatefulWidget {
     required this.readingController,
     this.active = true,
     required this.aiService,
+    PaperAiService? keywordService,
     this.webSearchAiService,
     required this.translationServiceFactory,
     this.translationRepository,
+    this.keywordRepository,
     this.aiSessionRepository,
     this.shareService,
     this.linkService,
     this.onSearch,
     this.onOpenPaperDetail,
-  });
+  }) : keywordService = keywordService ?? aiService;
 
   final PaperFeedController feedController;
   final PaperInteractionController interactionController;
@@ -48,9 +52,11 @@ class PapersScreen extends StatefulWidget {
   final PaperReadingController readingController;
   final bool active;
   final PaperAiService aiService;
+  final PaperAiService keywordService;
   final PaperAiService? webSearchAiService;
   final PaperTranslationServiceFactory translationServiceFactory;
   final PaperTranslationRepository? translationRepository;
+  final PaperKeywordRepository? keywordRepository;
   final PaperAiSessionRepository? aiSessionRepository;
   final PaperShareService? shareService;
   final PaperLinkService? linkService;
@@ -74,9 +80,7 @@ class _PapersScreenState extends State<PapersScreen> {
   @override
   void initState() {
     super.initState();
-    _pageController = PageController(
-      initialPage: _feed.currentPaperIndex,
-    );
+    _pageController = PageController(initialPage: _feed.currentPaperIndex);
     _feed.addListener(_handleControllerChanged);
     _interactions.addListener(_handleControllerChanged);
     widget.commentController.addListener(_handleControllerChanged);
@@ -147,6 +151,8 @@ class _PapersScreenState extends State<PapersScreen> {
               onChannelSelected: _feed.selectChannel,
               onManageChannels: _showChannelManager,
               onSearch: widget.onSearch ?? () {},
+              timeRangeLabel: _feed.timeRange.label,
+              onSelectTimeRange: _showTimeRangePicker,
             ),
           ),
           Expanded(
@@ -241,10 +247,12 @@ class _PapersScreenState extends State<PapersScreen> {
             commentController: widget.commentController,
             readingController: widget.readingController,
             aiService: widget.aiService,
+            keywordService: widget.keywordService,
             webSearchAiService: widget.webSearchAiService,
             aiSessionRepository: widget.aiSessionRepository,
             translationServiceFactory: widget.translationServiceFactory,
             translationRepository: widget.translationRepository,
+            keywordRepository: widget.keywordRepository,
             shareService: widget.shareService,
             linkService: widget.linkService,
             onOpenRelatedPaper: widget.onOpenPaperDetail ?? _feed.openPaperById,
@@ -255,10 +263,7 @@ class _PapersScreenState extends State<PapersScreen> {
     );
   }
 
-  Widget _buildModeTransition(
-    Widget child,
-    Animation<double> animation,
-  ) {
+  Widget _buildModeTransition(Widget child, Animation<double> animation) {
     return FadeTransition(
       opacity: animation,
       child: ScaleTransition(
@@ -336,6 +341,81 @@ class _PapersScreenState extends State<PapersScreen> {
     );
   }
 
+  Future<void> _showTimeRangePicker() async {
+    final selected = await showModalBottomSheet<PaperTimeRange>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) => SafeArea(
+        child: ListView(
+          shrinkWrap: true,
+          children: [
+            const ListTile(title: Text('发布时间')),
+            for (final range in const <PaperTimeRange>[
+              PaperTimeRange.all(),
+              PaperTimeRange.latestDay(),
+              PaperTimeRange.last7Days(),
+              PaperTimeRange.last30Days(),
+            ])
+              ListTile(
+                leading: Icon(
+                  range.storageKey == _feed.timeRange.storageKey
+                      ? Icons.radio_button_checked_rounded
+                      : Icons.radio_button_unchecked_rounded,
+                ),
+                title: Text(range.label),
+                onTap: () => Navigator.pop(context, range),
+              ),
+            ListTile(
+              leading: const Icon(Icons.event_rounded),
+              title: const Text('选择日期'),
+              onTap: () async {
+                final date = await showDatePicker(
+                  context: context,
+                  initialDate: DateTime.now(),
+                  firstDate: DateTime(1991),
+                  lastDate: DateTime.now(),
+                );
+                if (date != null && context.mounted) {
+                  Navigator.pop(context, PaperTimeRange.date(date));
+                }
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.date_range_rounded),
+              title: const Text('自定义时间范围'),
+              onTap: () async {
+                final range = await showDateRangePicker(
+                  context: context,
+                  firstDate: DateTime(1991),
+                  lastDate: DateTime.now(),
+                  initialDateRange: _calendarRange(_feed.timeRange),
+                );
+                if (range != null && context.mounted) {
+                  Navigator.pop(
+                    context,
+                    PaperTimeRange.range(range.start, range.end),
+                  );
+                }
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+    if (selected != null) _feed.selectTimeRange(selected);
+  }
+
+  DateTimeRange? _calendarRange(PaperTimeRange range) {
+    return switch (range) {
+      CustomPaperTimeRange(:final from, :final until) => DateTimeRange(
+          start: from,
+          end: until,
+        ),
+      DatePaperTimeRange(:final date) => DateTimeRange(start: date, end: date),
+      _ => null,
+    };
+  }
+
   Future<void> _showChannelManager() async {
     await showPaperChannelManagerSheet(
       context,
@@ -386,8 +466,8 @@ class _PapersScreenState extends State<PapersScreen> {
     }
     if (!widget.active || identical(error, _lastCatalogError)) return;
     _lastCatalogError = error;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(error.message)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(error.message)));
   }
 }

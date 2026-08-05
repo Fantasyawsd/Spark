@@ -8,8 +8,15 @@ class FilePaperPreferenceRepository implements PaperPreferenceRepository {
       : _store = VersionedLocalJsonStore(
           store ?? LocalJsonStore(fileName: 'paper_preferences.json'),
           schemaId: 'papers.preferences',
+          schemaVersion: 2,
+          migrations: const {1: _migrateV1ToV2},
           validatePayload: PaperPreferenceJsonMapper.validatePayload,
         );
+
+  static Object? _migrateV1ToV2(Object? payload) {
+    if (payload is! Map<String, dynamic>) return payload;
+    return Map<String, dynamic>.from(payload)..['timeRanges'] = const {};
+  }
 
   final VersionedLocalJsonStore _store;
 

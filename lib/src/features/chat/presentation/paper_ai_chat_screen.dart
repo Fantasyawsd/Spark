@@ -175,7 +175,6 @@ class _PaperAiChatScreenState extends State<PaperAiChatScreen> {
                     onRetry: _conversation.retry,
                     onCancel: _conversation.cancel,
                     onDelete: _deleteMessage,
-                    onFork: _forkMessage,
                     onEdit: _editMessage,
                     searching: _conversation.searching,
                     requestStatus: _conversation.requestStatus,
@@ -289,12 +288,6 @@ class _PaperAiChatScreenState extends State<PaperAiChatScreen> {
 
   void _deleteMessage(int index) {
     _conversation.deleteMessageAt(index);
-  }
-
-  void _forkMessage(int index) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Fork 会话将在会话分支能力接入后启用。')),
-    );
   }
 
   void _handleConversationChanged() {

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:paperflow/src/core/widgets/paperflow_markdown.dart';
 import 'package:paperflow/src/features/chat/domain/chat_message.dart';
@@ -45,6 +46,43 @@ void main() {
     expect(markdownOf(tester).selectable, isFalse);
   });
 
+  testWidgets('copying an assistant message excludes reasoning COT',
+      (tester) async {
+    String? copiedText;
+    final messenger =
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    messenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
+      if (call.method == 'Clipboard.setData') {
+        copiedText =
+            (call.arguments as Map<Object?, Object?>)['text'] as String?;
+      }
+      return null;
+    });
+    addTearDown(
+      () => messenger.setMockMethodCallHandler(SystemChannels.platform, null),
+    );
+
+    await tester.pumpWidget(
+      wrap(
+        PaperAiMessageView(
+          message: const ChatMessage(
+            fromUser: false,
+            reasoningContent: 'internal chain of thought',
+            content: '公开回答',
+          ),
+          streaming: false,
+          searching: false,
+        ),
+      ),
+    );
+
+    await tester.tap(find.byTooltip('复制'));
+    await tester.pump();
+
+    expect(copiedText, '公开回答');
+    expect(copiedText, isNot(contains('internal chain of thought')));
+  });
+
   testWidgets('reasoning panel is not selectable', (tester) async {
     await tester.pumpWidget(
       wrap(PaperAiMessageView(
@@ -81,7 +119,6 @@ void main() {
               isLatest: false,
               onRetry: () {},
               onDelete: () {},
-              onFork: () {},
             ),
             PaperAiMessageView(
               message: const ChatMessage(fromUser: false, content: '最新回答'),
@@ -90,7 +127,6 @@ void main() {
               isLatest: true,
               onRetry: () {},
               onDelete: () {},
-              onFork: () {},
             ),
           ],
         ),
@@ -103,5 +139,6 @@ void main() {
     expect(find.byTooltip('修改'), findsOneWidget);
     expect(find.byTooltip('重新生成'), findsOneWidget);
     expect(find.byTooltip('更多'), findsNWidgets(2));
+    expect(find.text('Fork 会话'), findsNothing);
   });
 }

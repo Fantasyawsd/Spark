@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/paperflow_theme.dart';
 import '../../application/chat_ai_service.dart';
 import '../paper_ai_ui_tokens.dart';
+import 'paper_ai_model_avatar.dart';
 
 class PaperAiComposer extends StatefulWidget {
   const PaperAiComposer({
@@ -70,23 +71,6 @@ class _PaperAiComposerState extends State<PaperAiComposer> {
     if (mounted) setState(() {});
   }
 
-  double _inputHeight(BuildContext context) {
-    const style = TextStyle(
-      color: PaperFlowColors.ink,
-      fontSize: 16,
-      height: 1.35,
-    );
-    final availableWidth = MediaQuery.sizeOf(context).width - 42;
-    final painter = TextPainter(
-      text: TextSpan(
-        text: widget.controller.text.isEmpty ? ' ' : widget.controller.text,
-        style: style,
-      ),
-      textDirection: TextDirection.ltr,
-    )..layout(maxWidth: availableWidth.clamp(1, double.infinity));
-    return (painter.height + 12).clamp(48.0, 132.0);
-  }
-
   @override
   Widget build(BuildContext context) {
     final canSend = widget.enabled && widget.controller.text.trim().isNotEmpty;
@@ -123,8 +107,11 @@ class _PaperAiComposerState extends State<PaperAiComposer> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                SizedBox(
-                  height: _inputHeight(context),
+                ConstrainedBox(
+                  constraints: const BoxConstraints(
+                    minHeight: 40,
+                    maxHeight: 132,
+                  ),
                   child: TextField(
                     key: const ValueKey('paper-ai-input'),
                     controller: widget.controller,
@@ -132,7 +119,7 @@ class _PaperAiComposerState extends State<PaperAiComposer> {
                     readOnly: !widget.enabled,
                     onChanged: widget.onChanged,
                     minLines: 1,
-                    maxLines: null,
+                    maxLines: 6,
                     textAlignVertical: TextAlignVertical.top,
                     textInputAction: TextInputAction.newline,
                     style: const TextStyle(
@@ -148,6 +135,9 @@ class _PaperAiComposerState extends State<PaperAiComposer> {
                       ),
                       filled: false,
                       border: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      focusedBorder: InputBorder.none,
+                      disabledBorder: InputBorder.none,
                       isDense: true,
                       contentPadding: EdgeInsets.fromLTRB(2, 4, 2, 4),
                     ),
@@ -159,11 +149,9 @@ class _PaperAiComposerState extends State<PaperAiComposer> {
                   height: 38,
                   child: Row(
                     children: [
-                      _ToolbarIconButton(
+                      _ToolbarAvatarButton(
                         key: const ValueKey('paper-ai-model-setting'),
                         tooltip: '选择模型',
-                        icon: Icons.auto_awesome_rounded,
-                        color: PaperAiUiTokens.modelBlue,
                         onTap: widget.enabled ? _showModelSheet : null,
                       ),
                       const SizedBox(width: 8),
@@ -473,6 +461,37 @@ class _PaperAiComposerState extends State<PaperAiComposer> {
       ChatReasoningEffort.high => '高',
       ChatReasoningEffort.max => '超高',
     };
+  }
+}
+
+class _ToolbarAvatarButton extends StatelessWidget {
+  const _ToolbarAvatarButton({
+    super.key,
+    required this.tooltip,
+    required this.onTap,
+  });
+
+  final String tooltip;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tooltip,
+      child: IconButton(
+        onPressed: onTap,
+        style: IconButton.styleFrom(
+          minimumSize: const Size(36, 36),
+          maximumSize: const Size(36, 36),
+          padding: EdgeInsets.zero,
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        ),
+        icon: Opacity(
+          opacity: onTap == null ? 0.45 : 1,
+          child: const PaperAiModelAvatar(size: 24),
+        ),
+      ),
+    );
   }
 }
 

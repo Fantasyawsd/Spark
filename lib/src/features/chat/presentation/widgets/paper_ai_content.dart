@@ -20,7 +20,6 @@ class PaperAiContent extends StatelessWidget {
     required this.onRetry,
     required this.onCancel,
     this.onDelete,
-    this.onFork,
     this.onEdit,
     required this.searching,
     required this.requestStatus,
@@ -42,7 +41,6 @@ class PaperAiContent extends StatelessWidget {
   final VoidCallback onRetry;
   final VoidCallback onCancel;
   final ValueChanged<int>? onDelete;
-  final ValueChanged<int>? onFork;
   final ValueChanged<String>? onEdit;
   final bool searching;
   final ChatRequestStatus requestStatus;
@@ -84,7 +82,6 @@ class PaperAiContent extends StatelessWidget {
               onRetry: onRetry,
               onCancel: onCancel,
               onDelete: onDelete,
-              onFork: onFork,
               onEdit: onEdit,
               searching: searching,
               requestStatus: requestStatus,
@@ -111,7 +108,6 @@ class _PaperAiConversation extends StatelessWidget {
     required this.onRetry,
     required this.onCancel,
     required this.onDelete,
-    required this.onFork,
     required this.onEdit,
     required this.searching,
     required this.requestStatus,
@@ -132,7 +128,6 @@ class _PaperAiConversation extends StatelessWidget {
   final VoidCallback onRetry;
   final VoidCallback onCancel;
   final ValueChanged<int>? onDelete;
-  final ValueChanged<int>? onFork;
   final ValueChanged<String>? onEdit;
   final bool searching;
   final ChatRequestStatus requestStatus;
@@ -175,7 +170,6 @@ class _PaperAiConversation extends StatelessWidget {
                     isLatest: index == messages.length - 1,
                     onRetry: onRetry,
                     onDelete: () => onDelete?.call(index),
-                    onFork: () => onFork?.call(index),
                     onEdit: () => onEdit?.call(messages[index].content),
                     assistantLabel: assistantLabel,
                     modelName: modelName,

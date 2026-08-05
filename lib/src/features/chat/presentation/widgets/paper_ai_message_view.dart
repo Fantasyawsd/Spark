@@ -7,6 +7,7 @@ import '../../../../core/theme/paperflow_theme.dart';
 import '../../../../core/widgets/paperflow_markdown.dart';
 import '../../domain/chat_message.dart';
 import '../paper_ai_ui_tokens.dart';
+import 'paper_ai_model_avatar.dart';
 
 class PaperAiMessageView extends StatelessWidget {
   const PaperAiMessageView({
@@ -17,7 +18,6 @@ class PaperAiMessageView extends StatelessWidget {
     this.isLatest = false,
     this.onRetry,
     this.onDelete,
-    this.onFork,
     this.onEdit,
     this.assistantLabel = '默认助手',
     this.modelName = 'deepseek-v4-flash',
@@ -30,7 +30,6 @@ class PaperAiMessageView extends StatelessWidget {
   final bool isLatest;
   final VoidCallback? onRetry;
   final VoidCallback? onDelete;
-  final VoidCallback? onFork;
   final VoidCallback? onEdit;
   final String assistantLabel;
   final String modelName;
@@ -57,7 +56,6 @@ class PaperAiMessageView extends StatelessWidget {
       streaming: streaming,
       onRetry: isLatest ? onRetry : null,
       onDelete: onDelete,
-      onFork: onFork,
       assistantLabel: assistantLabel,
       modelName: modelName,
       providerName: providerName,
@@ -117,7 +115,6 @@ class _AssistantMessage extends StatelessWidget {
     required this.streaming,
     required this.onRetry,
     required this.onDelete,
-    required this.onFork,
     required this.assistantLabel,
     required this.modelName,
     required this.providerName,
@@ -127,7 +124,6 @@ class _AssistantMessage extends StatelessWidget {
   final bool streaming;
   final VoidCallback? onRetry;
   final VoidCallback? onDelete;
-  final VoidCallback? onFork;
   final String assistantLabel;
   final String modelName;
   final String providerName;
@@ -144,7 +140,7 @@ class _AssistantMessage extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                const _AssistantAvatar(size: 34),
+                const PaperAiModelAvatar(size: 34),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Row(
@@ -189,7 +185,6 @@ class _AssistantMessage extends StatelessWidget {
             assistant: true,
             onRetry: onRetry,
             onDelete: onDelete,
-            onFork: onFork,
           ),
           if (message.status != ChatMessageStatus.complete)
             Padding(
@@ -210,53 +205,6 @@ class _AssistantMessage extends StatelessWidget {
   }
 }
 
-class _AssistantAvatar extends StatelessWidget {
-  const _AssistantAvatar({this.size = 36});
-
-  final double size;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: PaperAiUiTokens.assistantAvatar,
-        boxShadow: [
-          BoxShadow(
-            color: PaperAiUiTokens.modelBlue.withValues(alpha: 0.14),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: ClipOval(
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            Center(
-              child: Icon(
-                Icons.auto_awesome_rounded,
-                size: size * 0.5,
-                color: PaperAiUiTokens.modelBlue,
-              ),
-            ),
-            Image.network(
-              'https://www.deepseek.com/favicon.ico',
-              fit: BoxFit.cover,
-              loadingBuilder: (context, child, progress) =>
-                  progress == null ? child : const SizedBox.shrink(),
-              errorBuilder: (context, error, stackTrace) =>
-                  const SizedBox.shrink(),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 class _MessageActionRow extends StatelessWidget {
   const _MessageActionRow({
     required this.message,
@@ -264,7 +212,6 @@ class _MessageActionRow extends StatelessWidget {
     this.onRetry,
     this.onEdit,
     this.onDelete,
-    this.onFork,
   });
 
   final ChatMessage message;
@@ -272,7 +219,6 @@ class _MessageActionRow extends StatelessWidget {
   final VoidCallback? onRetry;
   final VoidCallback? onEdit;
   final VoidCallback? onDelete;
-  final VoidCallback? onFork;
 
   @override
   Widget build(BuildContext context) {
@@ -316,10 +262,9 @@ class _MessageActionRow extends StatelessWidget {
   }
 
   Future<void> _copy(BuildContext context) async {
-    final text = [message.reasoningContent, message.content]
-        .where((part) => part.trim().isNotEmpty)
-        .join('\n\n');
-    if (text.isEmpty) return;
+    // COT/reasoning is an internal trace and must never enter the clipboard.
+    final text = message.content;
+    if (text.trim().isEmpty) return;
     await Clipboard.setData(ClipboardData(text: text));
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -349,16 +294,6 @@ class _MessageActionRow extends StatelessWidget {
                   : () {
                       Navigator.pop(context);
                       onDelete!();
-                    },
-            ),
-            ListTile(
-              leading: const Icon(Icons.call_split_rounded),
-              title: const Text('Fork 会话'),
-              onTap: onFork == null
-                  ? null
-                  : () {
-                      Navigator.pop(context);
-                      onFork!();
                     },
             ),
           ],

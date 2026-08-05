@@ -55,6 +55,45 @@ void main() {
   });
 
   testWidgets(
+      'deleting an assistant enters multi-selection with its user prompt',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(378, 810));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: PaperAiChatScreen(
+          chatContext: const ChatContext(
+            id: 'selection-ui-test',
+            title: '选择消息测试',
+            systemPrompt: '回答问题。',
+          ),
+          aiService: const _FakeChatAiService(),
+          sessionRepository: const _FakeChatSessionRepository(
+            messages: [
+              ChatMessage(fromUser: true, content: '原始问题'),
+              ChatMessage(fromUser: false, content: '回答内容'),
+            ],
+          ),
+          screenTitle: '选择消息测试',
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey('paper-ai-assistant-more')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('删除消息'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('选择消息'), findsOneWidget);
+    expect(find.text('已选择 2 条消息'), findsOneWidget);
+    expect(find.byIcon(Icons.check_rounded), findsNWidgets(2));
+    expect(
+        find.byKey(const ValueKey('paper-ai-composer-surface')), findsNothing);
+  });
+
+  testWidgets(
       'conversation title is editable and subtitle is supplied by session type',
       (tester) async {
     await tester.pumpWidget(
@@ -103,6 +142,9 @@ class _FakeChatAiService implements ChatAiService {
 }
 
 class _FakeChatSessionRepository implements ChatSessionRepository {
+  const _FakeChatSessionRepository({this.messages = const []});
+
+  final List<ChatMessage> messages;
   @override
   Stream<void> get changes => const Stream<void>.empty();
 
@@ -110,7 +152,7 @@ class _FakeChatSessionRepository implements ChatSessionRepository {
   Future<void> clear(String contextId) async {}
 
   @override
-  Future<List<ChatMessage>> load(String contextId) async => const [];
+  Future<List<ChatMessage>> load(String contextId) async => messages;
 
   @override
   Future<List<ChatSessionSummary>> listSessions() async => const [];

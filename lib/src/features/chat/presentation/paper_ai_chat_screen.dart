@@ -50,6 +50,8 @@ class _PaperAiChatScreenState extends State<PaperAiChatScreen> {
   late final ChatConversationController _conversation;
   late String _conversationTitle;
   bool _previewMode = false;
+  bool _selectionMode = false;
+  final Set<int> _selectedMessageIndexes = <int>{};
 
   String get _conversationSubtitle =>
       widget.screenSubtitle ?? widget.chatContext.title;
@@ -83,74 +85,9 @@ class _PaperAiChatScreenState extends State<PaperAiChatScreen> {
     return Scaffold(
       key: const ValueKey('paper-ai-chat-screen'),
       backgroundColor: PaperAiUiTokens.canvas,
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        leading: IconButton(
-          key: const ValueKey('paper-ai-back'),
-          tooltip: '返回',
-          onPressed: () => Navigator.of(context).maybePop(),
-          icon: const Icon(Icons.arrow_back_rounded),
-        ),
-        backgroundColor: PaperAiUiTokens.canvas,
-        surfaceTintColor: Colors.transparent,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        titleSpacing: 8,
-        title: Semantics(
-          button: true,
-          label: '编辑会话标题',
-          child: GestureDetector(
-            key: const ValueKey('paper-ai-title'),
-            onTap: _editConversationTitle,
-            behavior: HitTestBehavior.opaque,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  _conversationTitle,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: PaperFlowColors.ink,
-                    fontSize: 16.5,
-                    height: 1.15,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                SizedBox(
-                  width: MediaQuery.sizeOf(context).width * 0.64,
-                  child: Text(
-                    _conversationSubtitle,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: PaperFlowColors.muted,
-                      fontSize: 11,
-                      height: 1.15,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        actions: [
-          IconButton(
-            key: const ValueKey('paper-ai-outline-toggle'),
-            tooltip: _previewMode ? '返回聊天' : '查看对话大纲',
-            onPressed: () => setState(() => _previewMode = !_previewMode),
-            icon: Icon(
-              _previewMode
-                  ? Icons.close_rounded
-                  : Icons.format_list_bulleted_rounded,
-              size: 24,
-            ),
-          ),
-          const SizedBox(width: 4),
-        ],
-      ),
+      appBar: _selectionMode
+          ? _buildSelectionAppBar(context)
+          : _buildChatAppBar(context),
       body: Column(
         children: [
           Expanded(
@@ -176,6 +113,9 @@ class _PaperAiChatScreenState extends State<PaperAiChatScreen> {
                     onCancel: _conversation.cancel,
                     onDelete: _deleteMessage,
                     onEdit: _editMessage,
+                    selectionMode: _selectionMode,
+                    selectedMessageIndexes: _selectedMessageIndexes,
+                    onToggleMessageSelection: _toggleMessageSelection,
                     searching: _conversation.searching,
                     requestStatus: _conversation.requestStatus,
                     canRetryRequestError: _conversation.canRetryRequestError,
@@ -190,23 +130,31 @@ class _PaperAiChatScreenState extends State<PaperAiChatScreen> {
               ),
             ),
           ),
-          PaperAiComposer(
-            controller: _composer,
-            focusNode: _composerFocusNode,
-            enabled: !_conversation.sending,
-            sending: _conversation.sending,
-            reasoningEffort: _conversation.reasoningEffort,
-            onReasoningEffortChanged: _conversation.setReasoningEffort,
-            webSearchAvailable: _conversation.webSearchAvailable,
-            webSearchEnabled: _conversation.webSearchEnabled,
-            onWebSearchChanged: _conversation.setWebSearchEnabled,
-            hasContext: _conversation.messages.isNotEmpty,
-            onClearContext: _confirmClearContext,
-            modelName: widget.modelName,
-            onChanged: (_) => setState(() {}),
-            onSend: () => _send(_composer.text),
-            onCancel: _conversation.cancel,
-          ),
+          if (_selectionMode)
+            _MessageSelectionBar(
+              key: const ValueKey('paper-ai-selection-bar'),
+              count: _selectedMessageIndexes.length,
+              onCancel: _exitSelectionMode,
+              onDelete: _confirmDeleteSelectedMessages,
+            )
+          else
+            PaperAiComposer(
+              controller: _composer,
+              focusNode: _composerFocusNode,
+              enabled: !_conversation.sending,
+              sending: _conversation.sending,
+              reasoningEffort: _conversation.reasoningEffort,
+              onReasoningEffortChanged: _conversation.setReasoningEffort,
+              webSearchAvailable: _conversation.webSearchAvailable,
+              webSearchEnabled: _conversation.webSearchEnabled,
+              onWebSearchChanged: _conversation.setWebSearchEnabled,
+              hasContext: _conversation.messages.isNotEmpty,
+              onClearContext: _confirmClearContext,
+              modelName: widget.modelName,
+              onChanged: (_) => setState(() {}),
+              onSend: () => _send(_composer.text),
+              onCancel: _conversation.cancel,
+            ),
         ],
       ),
     );
@@ -287,7 +235,188 @@ class _PaperAiChatScreenState extends State<PaperAiChatScreen> {
   }
 
   void _deleteMessage(int index) {
-    _conversation.deleteMessageAt(index);
+    if (_conversation.sending ||
+        index < 0 ||
+        index >= _conversation.messages.length) {
+      return;
+    }
+    final selected = <int>{index};
+    if (!_conversation.messages[index].fromUser) {
+      for (var previous = index - 1; previous >= 0; previous--) {
+        if (_conversation.messages[previous].fromUser) {
+          selected.add(previous);
+          break;
+        }
+      }
+    }
+    setState(() {
+      _selectionMode = true;
+      _selectedMessageIndexes
+        ..clear()
+        ..addAll(selected);
+    });
+  }
+
+  void _toggleMessageSelection(int index) {
+    if (!_selectionMode) return;
+    setState(() {
+      if (_selectedMessageIndexes.contains(index)) {
+        _selectedMessageIndexes.remove(index);
+      } else {
+        _selectedMessageIndexes.add(index);
+      }
+      if (_selectedMessageIndexes.isEmpty) {
+        _selectionMode = false;
+      }
+    });
+  }
+
+  void _exitSelectionMode() {
+    if (!mounted) return;
+    setState(() {
+      _selectionMode = false;
+      _selectedMessageIndexes.clear();
+    });
+  }
+
+  Future<void> _confirmDeleteSelectedMessages() async {
+    if (_selectedMessageIndexes.isEmpty) return;
+    final count = _selectedMessageIndexes.length;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('删除选中的消息？'),
+        content: Text('将删除 $count 条消息，此操作无法撤销。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: FilledButton.styleFrom(
+              backgroundColor: PaperFlowColors.danger,
+            ),
+            child: const Text('删除'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    final selected = Set<int>.from(_selectedMessageIndexes);
+    _conversation.deleteMessagesAt(selected);
+    _exitSelectionMode();
+  }
+
+  PreferredSizeWidget _buildChatAppBar(BuildContext context) {
+    return AppBar(
+      automaticallyImplyLeading: false,
+      leading: IconButton(
+        key: const ValueKey('paper-ai-back'),
+        tooltip: '返回',
+        onPressed: () => Navigator.of(context).maybePop(),
+        icon: const Icon(Icons.arrow_back_rounded),
+      ),
+      backgroundColor: PaperAiUiTokens.canvas,
+      surfaceTintColor: Colors.transparent,
+      elevation: 0,
+      scrolledUnderElevation: 0,
+      titleSpacing: 8,
+      title: Semantics(
+        button: true,
+        label: '编辑会话标题',
+        child: GestureDetector(
+          key: const ValueKey('paper-ai-title'),
+          onTap: _editConversationTitle,
+          behavior: HitTestBehavior.opaque,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                _conversationTitle,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: PaperFlowColors.ink,
+                  fontSize: 16.5,
+                  height: 1.15,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 4),
+              SizedBox(
+                width: MediaQuery.sizeOf(context).width * 0.64,
+                child: Text(
+                  _conversationSubtitle,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: PaperFlowColors.muted,
+                    fontSize: 11,
+                    height: 1.15,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        IconButton(
+          key: const ValueKey('paper-ai-outline-toggle'),
+          tooltip: _previewMode ? '返回聊天' : '查看对话大纲',
+          onPressed: () => setState(() => _previewMode = !_previewMode),
+          icon: Icon(
+            _previewMode
+                ? Icons.close_rounded
+                : Icons.format_list_bulleted_rounded,
+            size: 24,
+          ),
+        ),
+        const SizedBox(width: 4),
+      ],
+    );
+  }
+
+  PreferredSizeWidget _buildSelectionAppBar(BuildContext context) {
+    return AppBar(
+      automaticallyImplyLeading: false,
+      leading: IconButton(
+        key: const ValueKey('paper-ai-selection-cancel'),
+        tooltip: '取消选择',
+        onPressed: _exitSelectionMode,
+        icon: const Icon(Icons.close_rounded),
+      ),
+      backgroundColor: PaperAiUiTokens.canvas,
+      surfaceTintColor: Colors.transparent,
+      elevation: 0,
+      scrolledUnderElevation: 0,
+      titleSpacing: 8,
+      title: Text(
+        '选择消息',
+        style: const TextStyle(
+          color: PaperFlowColors.ink,
+          fontSize: 17,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+      actions: [
+        Padding(
+          padding: const EdgeInsets.only(right: 16),
+          child: Center(
+            child: Text(
+              '${_selectedMessageIndexes.length} 条',
+              style: const TextStyle(
+                color: PaperFlowColors.muted,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
   }
 
   void _handleConversationChanged() {
@@ -306,5 +435,68 @@ class _PaperAiChatScreenState extends State<PaperAiChatScreen> {
         curve: Curves.easeOut,
       );
     });
+  }
+}
+
+class _MessageSelectionBar extends StatelessWidget {
+  const _MessageSelectionBar({
+    super.key,
+    required this.count,
+    required this.onCancel,
+    required this.onDelete,
+  });
+
+  final int count;
+  final VoidCallback onCancel;
+  final VoidCallback onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(14, 4, 14, 8),
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
+          decoration: BoxDecoration(
+            color: PaperAiUiTokens.composer,
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(color: PaperAiUiTokens.composerBorder),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  '已选择 $count 条消息',
+                  style: const TextStyle(
+                    color: PaperFlowColors.ink,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              TextButton(
+                key: const ValueKey('paper-ai-selection-cancel-button'),
+                onPressed: onCancel,
+                child: const Text('取消'),
+              ),
+              const SizedBox(width: 4),
+              FilledButton.icon(
+                key: const ValueKey('paper-ai-selection-delete'),
+                onPressed: count == 0 ? null : onDelete,
+                style: FilledButton.styleFrom(
+                  backgroundColor: PaperFlowColors.danger,
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size(88, 40),
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                ),
+                icon: const Icon(Icons.delete_outline_rounded, size: 18),
+                label: const Text('删除'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }

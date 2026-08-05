@@ -21,6 +21,9 @@ class PaperAiMessageView extends StatelessWidget {
     this.onDelete,
     this.onEdit,
     this.onOpenSource,
+    this.selectionMode = false,
+    this.selected = false,
+    this.onToggleSelection,
     this.assistantLabel = '默认助手',
     this.modelName = 'deepseek-v4-flash',
     this.providerName = 'DeepSeek',
@@ -34,6 +37,9 @@ class PaperAiMessageView extends StatelessWidget {
   final VoidCallback? onDelete;
   final VoidCallback? onEdit;
   final Future<bool> Function(Uri uri)? onOpenSource;
+  final bool selectionMode;
+  final bool selected;
+  final VoidCallback? onToggleSelection;
   final String assistantLabel;
   final String modelName;
   final String providerName;
@@ -47,31 +53,43 @@ class PaperAiMessageView extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
-    if (message.fromUser) {
-      return _UserMessage(
-        message: message,
-        onEdit: isLatest ? onEdit : null,
-      );
-    }
+    final body = message.fromUser
+        ? _UserMessage(
+            message: message,
+            onEdit: selectionMode ? null : (isLatest ? onEdit : null),
+            selectionMode: selectionMode,
+          )
+        : _AssistantMessage(
+            message: message,
+            streaming: streaming,
+            onRetry: selectionMode ? null : (isLatest ? onRetry : null),
+            onDelete: selectionMode ? null : onDelete,
+            onOpenSource: onOpenSource,
+            selectionMode: selectionMode,
+            assistantLabel: assistantLabel,
+            modelName: modelName,
+            providerName: providerName,
+          );
 
-    return _AssistantMessage(
-      message: message,
-      streaming: streaming,
-      onRetry: isLatest ? onRetry : null,
-      onDelete: onDelete,
-      onOpenSource: onOpenSource,
-      assistantLabel: assistantLabel,
-      modelName: modelName,
-      providerName: providerName,
+    if (!selectionMode) return body;
+    return _SelectableMessage(
+      selected: selected,
+      onTap: onToggleSelection,
+      child: body,
     );
   }
 }
 
 class _UserMessage extends StatelessWidget {
-  const _UserMessage({required this.message, required this.onEdit});
+  const _UserMessage({
+    required this.message,
+    required this.onEdit,
+    required this.selectionMode,
+  });
 
   final ChatMessage message;
   final VoidCallback? onEdit;
+  final bool selectionMode;
 
   @override
   Widget build(BuildContext context) {
@@ -101,12 +119,14 @@ class _UserMessage extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 4),
-          _MessageActionRow(
-            message: message,
-            assistant: false,
-            onEdit: onEdit,
-          ),
+          if (!selectionMode) ...[
+            const SizedBox(height: 4),
+            _MessageActionRow(
+              message: message,
+              assistant: false,
+              onEdit: onEdit,
+            ),
+          ],
         ],
       ),
     );
@@ -120,6 +140,7 @@ class _AssistantMessage extends StatelessWidget {
     required this.onRetry,
     required this.onDelete,
     this.onOpenSource,
+    required this.selectionMode,
     required this.assistantLabel,
     required this.modelName,
     required this.providerName,
@@ -130,6 +151,7 @@ class _AssistantMessage extends StatelessWidget {
   final VoidCallback? onRetry;
   final VoidCallback? onDelete;
   final Future<bool> Function(Uri uri)? onOpenSource;
+  final bool selectionMode;
   final String assistantLabel;
   final String modelName;
   final String providerName;
@@ -171,10 +193,13 @@ class _AssistantMessage extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           if (message.reasoningContent.isNotEmpty)
-            _ReasoningPanel(
-              key: const ValueKey('paper-ai-reasoning-panel'),
-              reasoning: message.reasoningContent,
-              streaming: streaming && message.content.isEmpty,
+            IgnorePointer(
+              ignoring: selectionMode,
+              child: _ReasoningPanel(
+                key: const ValueKey('paper-ai-reasoning-panel'),
+                reasoning: message.reasoningContent,
+                streaming: streaming && message.content.isEmpty,
+              ),
             ),
           if (message.content.isNotEmpty)
             PaperMarkdown(
@@ -184,18 +209,23 @@ class _AssistantMessage extends StatelessWidget {
               selectable: false,
             ),
           if (message.sources.isNotEmpty)
-            _SourcesPanel(
-              sources: message.sources,
-              onOpenSource: onOpenSource,
+            IgnorePointer(
+              ignoring: selectionMode,
+              child: _SourcesPanel(
+                sources: message.sources,
+                onOpenSource: onOpenSource,
+              ),
             ),
-          const SizedBox(height: 4),
-          _MessageActionRow(
-            message: message,
-            assistant: true,
-            onRetry: onRetry,
-            onDelete: onDelete,
-          ),
-          if (message.status != ChatMessageStatus.complete)
+          if (!selectionMode) ...[
+            const SizedBox(height: 4),
+            _MessageActionRow(
+              message: message,
+              assistant: true,
+              onRetry: onRetry,
+              onDelete: onDelete,
+            ),
+          ],
+          if (!selectionMode && message.status != ChatMessageStatus.complete)
             Padding(
               padding: const EdgeInsets.only(top: 4),
               child: Text(
@@ -209,6 +239,85 @@ class _AssistantMessage extends StatelessWidget {
               ),
             ),
         ],
+      ),
+    );
+  }
+}
+
+class _SelectableMessage extends StatelessWidget {
+  const _SelectableMessage({
+    required this.selected,
+    required this.onTap,
+    required this.child,
+  });
+
+  final bool selected;
+  final VoidCallback? onTap;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      selected: selected,
+      button: true,
+      label: selected ? '已选择消息' : '选择消息',
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        margin: const EdgeInsets.only(bottom: 4),
+        padding: const EdgeInsets.fromLTRB(4, 4, 4, 0),
+        decoration: BoxDecoration(
+          color: selected
+              ? PaperAiUiTokens.assistantReasoning.withValues(alpha: 0.55)
+              : Colors.transparent,
+          border: Border.all(
+            color: selected ? PaperAiUiTokens.reasoning : Colors.transparent,
+            width: 1.2,
+          ),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(12),
+          child: Stack(
+            children: [
+              child,
+              Positioned(
+                top: 4,
+                left: 2,
+                child: _SelectionIndicator(selected: selected),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SelectionIndicator extends StatelessWidget {
+  const _SelectionIndicator({required this.selected});
+
+  final bool selected;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: selected ? PaperAiUiTokens.reasoning : Colors.white,
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: selected
+              ? PaperAiUiTokens.reasoning
+              : PaperAiUiTokens.actionMuted,
+          width: 1.4,
+        ),
+      ),
+      child: SizedBox(
+        width: 22,
+        height: 22,
+        child: selected
+            ? const Icon(Icons.check_rounded, size: 15, color: Colors.white)
+            : null,
       ),
     );
   }

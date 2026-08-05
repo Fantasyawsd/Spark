@@ -125,8 +125,21 @@ class ChatConversationController extends ChangeNotifier {
   }
 
   void deleteMessageAt(int index) {
-    if (_sending || index < 0 || index >= _messages.length) return;
-    _messages.removeAt(index);
+    deleteMessagesAt([index]);
+  }
+
+  void deleteMessagesAt(Iterable<int> indexes) {
+    if (_sending) return;
+    final selected = indexes
+        .where((index) => index >= 0 && index < _messages.length)
+        .toSet()
+        .toList()
+      ..sort((a, b) => b.compareTo(a));
+    if (selected.isEmpty) return;
+
+    for (final index in selected) {
+      _messages.removeAt(index);
+    }
     _failedAssistantIndex = null;
     _requestError = null;
     _requestStatus = _messages.isEmpty

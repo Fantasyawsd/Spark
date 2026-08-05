@@ -22,6 +22,9 @@ class PaperAiContent extends StatelessWidget {
     this.onDelete,
     this.onEdit,
     this.onOpenSource,
+    this.selectionMode = false,
+    this.selectedMessageIndexes = const <int>{},
+    this.onToggleMessageSelection,
     required this.searching,
     required this.requestStatus,
     required this.canRetryRequestError,
@@ -44,6 +47,9 @@ class PaperAiContent extends StatelessWidget {
   final ValueChanged<int>? onDelete;
   final ValueChanged<String>? onEdit;
   final Future<bool> Function(Uri uri)? onOpenSource;
+  final bool selectionMode;
+  final Set<int> selectedMessageIndexes;
+  final ValueChanged<int>? onToggleMessageSelection;
   final bool searching;
   final ChatRequestStatus requestStatus;
   final bool canRetryRequestError;
@@ -86,6 +92,9 @@ class PaperAiContent extends StatelessWidget {
               onDelete: onDelete,
               onEdit: onEdit,
               onOpenSource: onOpenSource,
+              selectionMode: selectionMode,
+              selectedMessageIndexes: selectedMessageIndexes,
+              onToggleMessageSelection: onToggleMessageSelection,
               searching: searching,
               requestStatus: requestStatus,
               canRetryRequestError: canRetryRequestError,
@@ -113,6 +122,9 @@ class _PaperAiConversation extends StatelessWidget {
     required this.onDelete,
     required this.onEdit,
     this.onOpenSource,
+    required this.selectionMode,
+    required this.selectedMessageIndexes,
+    this.onToggleMessageSelection,
     required this.searching,
     required this.requestStatus,
     required this.canRetryRequestError,
@@ -134,6 +146,9 @@ class _PaperAiConversation extends StatelessWidget {
   final ValueChanged<int>? onDelete;
   final ValueChanged<String>? onEdit;
   final Future<bool> Function(Uri uri)? onOpenSource;
+  final bool selectionMode;
+  final Set<int> selectedMessageIndexes;
+  final ValueChanged<int>? onToggleMessageSelection;
   final bool searching;
   final ChatRequestStatus requestStatus;
   final bool canRetryRequestError;
@@ -177,6 +192,10 @@ class _PaperAiConversation extends StatelessWidget {
                     onDelete: () => onDelete?.call(index),
                     onEdit: () => onEdit?.call(messages[index].content),
                     onOpenSource: onOpenSource,
+                    selectionMode: selectionMode,
+                    selected: selectedMessageIndexes.contains(index),
+                    onToggleSelection: () =>
+                        onToggleMessageSelection?.call(index),
                     assistantLabel: assistantLabel,
                     modelName: modelName,
                     providerName: providerName,

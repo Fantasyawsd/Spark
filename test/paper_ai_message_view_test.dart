@@ -99,6 +99,28 @@ void main() {
     expect(markdownOf(tester).selectable, isFalse);
   });
 
+  testWidgets('selection mode hides actions and toggles the selected message',
+      (tester) async {
+    var toggled = false;
+    await tester.pumpWidget(
+      wrap(
+        PaperAiMessageView(
+          message: const ChatMessage(fromUser: false, content: '回答'),
+          streaming: false,
+          searching: false,
+          selectionMode: true,
+          selected: true,
+          onToggleSelection: () => toggled = true,
+        ),
+      ),
+    );
+
+    expect(find.byTooltip('复制'), findsNothing);
+    expect(find.byIcon(Icons.check_rounded), findsOneWidget);
+    await tester.tap(find.byType(InkWell));
+    expect(toggled, isTrue);
+  });
+
   testWidgets('message actions keep only the requested mobile controls',
       (tester) async {
     await tester.pumpWidget(

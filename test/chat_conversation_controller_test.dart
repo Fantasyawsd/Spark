@@ -37,6 +37,30 @@ void main() {
     expect(context.promptFor(webSearch: true), contains('网络搜索'));
   });
 
+  test('deleteMessagesAt removes selected messages in descending index order',
+      () async {
+    const context = ChatContext(
+      id: 'delete-selected-messages-test',
+      title: '批量删除测试',
+      systemPrompt: '回答问题。',
+    );
+    final controller = ChatConversationController(
+      context: context,
+      service: _CapturingChatAiService(),
+    );
+
+    await controller.send('第一条问题');
+    await controller.send('第二条问题');
+    expect(controller.messages, hasLength(4));
+
+    controller.deleteMessagesAt({1, 2});
+
+    expect(controller.messages, hasLength(2));
+    expect(controller.messages[0].content, '第一条问题');
+    expect(controller.messages[1].content, '通用回答');
+    controller.dispose();
+  });
+
   test(
       'deleteMessageAt removes an assistant message without changing the user prompt',
       () async {

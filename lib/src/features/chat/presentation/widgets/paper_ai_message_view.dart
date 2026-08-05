@@ -17,6 +17,7 @@ class PaperAiMessageView extends StatelessWidget {
     required this.streaming,
     required this.searching,
     this.isLatest = false,
+    this.isLatestUserPrompt = false,
     this.onRetry,
     this.onDelete,
     this.onEdit,
@@ -33,6 +34,7 @@ class PaperAiMessageView extends StatelessWidget {
   final bool streaming;
   final bool searching;
   final bool isLatest;
+  final bool isLatestUserPrompt;
   final VoidCallback? onRetry;
   final VoidCallback? onDelete;
   final VoidCallback? onEdit;
@@ -56,7 +58,9 @@ class PaperAiMessageView extends StatelessWidget {
     final body = message.fromUser
         ? _UserMessage(
             message: message,
-            onEdit: selectionMode ? null : (isLatest ? onEdit : null),
+            onEdit: selectionMode
+                ? null
+                : ((isLatest || isLatestUserPrompt) ? onEdit : null),
             selectionMode: selectionMode,
           )
         : _AssistantMessage(

@@ -37,7 +37,6 @@ class ChatConversationController extends ChangeNotifier {
   int _requestVersion = 0;
   int _writeVersion = 0;
   int? _activeAssistantIndex;
-  int? _failedAssistantIndex;
   ChatAiService? _activeService;
   Future<void> _writeQueue = Future.value();
   Timer? _streamNotifyTimer;
@@ -51,7 +50,17 @@ class ChatConversationController extends ChangeNotifier {
       _messages.isNotEmpty &&
       (_requestStatus == ChatRequestStatus.cancelled ||
           _requestStatus == ChatRequestStatus.failed);
+
   bool get canRetryRequestError => canRetry && _requestError != null;
+
+  bool get _canRegenerateLatest {
+    if (_sending || _messages.isEmpty) return false;
+
+    final last = _messages.last;
+    return canRetry ||
+        (!last.fromUser && last.status == ChatMessageStatus.complete);
+  }
+
   bool get webSearchAvailable => _webSearchService != null;
   bool get webSearchEnabled => _webSearchEnabled;
   bool get searching => _searching;
@@ -85,14 +94,10 @@ class ChatConversationController extends ChangeNotifier {
         _requestStatus = ChatRequestStatus.idle;
       } else if (stored.last.status == ChatMessageStatus.cancelled) {
         _requestStatus = ChatRequestStatus.cancelled;
-        final lastIndex = stored.length - 1;
-        if (!stored[lastIndex].fromUser) _failedAssistantIndex = lastIndex;
       } else if (stored.last.status == ChatMessageStatus.failed ||
           stored.last.fromUser) {
         _requestStatus = ChatRequestStatus.failed;
         _requestError = '上次回答未完成，请重新生成。';
-        final lastIndex = stored.length - 1;
-        if (!stored[lastIndex].fromUser) _failedAssistantIndex = lastIndex;
       } else {
         _requestStatus = ChatRequestStatus.completed;
       }
@@ -115,12 +120,28 @@ class ChatConversationController extends ChangeNotifier {
   }
 
   Future<void> retry() async {
-    if (!canRetry) return;
-    final failedIndex = _failedAssistantIndex;
-    if (failedIndex != null && failedIndex < _messages.length) {
-      _messages.removeAt(failedIndex);
+    if (!_canRegenerateLatest) return;
+
+    // 重新生成只替换最后一条 Assistant 回复，保留对应的用户 Prompt。
+    // 失败/停止时如果服务还没有来得及创建 Assistant 占位消息，最后一条
+    // 就会是用户消息，此时直接沿用它，不能再次追加同一条 Prompt。
+    if (_messages.last case final last when !last.fromUser) {
+      _messages.removeLast();
     }
-    _failedAssistantIndex = null;
+    await _requestAnswer();
+  }
+
+  Future<void> editLatestPromptAndRetry(String rawText) async {
+    final text = rawText.trim();
+    if (text.isEmpty || _sending) return;
+
+    final promptIndex = _messages.lastIndexWhere((message) => message.fromUser);
+    if (promptIndex < 0) return;
+
+    _messages[promptIndex] = _messages[promptIndex].copyWith(content: text);
+    if (promptIndex + 1 < _messages.length) {
+      _messages.removeRange(promptIndex + 1, _messages.length);
+    }
     await _requestAnswer();
   }
 
@@ -140,7 +161,6 @@ class ChatConversationController extends ChangeNotifier {
     for (final index in selected) {
       _messages.removeAt(index);
     }
-    _failedAssistantIndex = null;
     _requestError = null;
     _requestStatus = _messages.isEmpty
         ? ChatRequestStatus.idle
@@ -172,7 +192,6 @@ class ChatConversationController extends ChangeNotifier {
     _messages.clear();
     _requestError = null;
     _persistenceError = null;
-    _failedAssistantIndex = null;
     _requestStatus = ChatRequestStatus.idle;
     _notify();
     final repository = _sessionRepository;
@@ -196,7 +215,6 @@ class ChatConversationController extends ChangeNotifier {
     _sending = true;
     _requestStatus = ChatRequestStatus.sending;
     _requestError = null;
-    _failedAssistantIndex = null;
     _searching = false;
     _persist();
     _notify();
@@ -330,7 +348,6 @@ class ChatConversationController extends ChangeNotifier {
   void _markActiveAssistant(ChatMessageStatus status) {
     final assistantIndex = _activeAssistantIndex;
     if (assistantIndex == null || assistantIndex >= _messages.length) {
-      _failedAssistantIndex = _messages.length;
       _messages.add(
         ChatMessage(fromUser: false, content: '', status: status),
       );
@@ -340,7 +357,6 @@ class ChatConversationController extends ChangeNotifier {
     _messages[assistantIndex] = assistant.copyWith(
       status: status,
     );
-    _failedAssistantIndex = assistantIndex;
   }
 
   void _removeTrailingEmptyTerminalMessage() {
@@ -354,7 +370,6 @@ class ChatConversationController extends ChangeNotifier {
       return;
     }
     _messages.removeLast();
-    _failedAssistantIndex = null;
   }
 
   @override

@@ -93,6 +93,97 @@ void main() {
         find.byKey(const ValueKey('paper-ai-composer-surface')), findsNothing);
   });
 
+  testWidgets('retry action regenerates the latest assistant answer in place',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(378, 810));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final service = _QueueUiChatAiService(['重新生成后的回答']);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: PaperAiChatScreen(
+          chatContext: const ChatContext(
+            id: 'retry-ui-test',
+            title: '重试测试',
+            systemPrompt: '回答问题。',
+          ),
+          aiService: service,
+          sessionRepository: const _FakeChatSessionRepository(
+            messages: [
+              ChatMessage(fromUser: true, content: '原始问题'),
+              ChatMessage(fromUser: false, content: '旧回答'),
+            ],
+          ),
+          screenTitle: '重试测试',
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('重新生成'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('旧回答'), findsNothing);
+    expect(find.text('重新生成后的回答'), findsOneWidget);
+    expect(service.conversations.single, hasLength(1));
+    expect(service.conversations.single.single.content, '原始问题');
+  });
+
+  testWidgets(
+      'editing the latest prompt replaces its answer instead of appending a turn',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(378, 810));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final service = _QueueUiChatAiService(['重新生成后的回答']);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: PaperAiChatScreen(
+          chatContext: const ChatContext(
+            id: 'edit-prompt-ui-test',
+            title: '编辑 Prompt 测试',
+            systemPrompt: '回答问题。',
+          ),
+          aiService: service,
+          sessionRepository: const _FakeChatSessionRepository(
+            messages: [
+              ChatMessage(fromUser: true, content: '原始 Prompt'),
+              ChatMessage(fromUser: false, content: '旧回答'),
+            ],
+          ),
+          screenTitle: '编辑 Prompt 测试',
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byTooltip('修改'), findsOneWidget);
+    await tester.tap(find.byTooltip('修改'));
+    await tester.pump();
+    expect(
+      tester
+          .widget<TextField>(find.byKey(const ValueKey('paper-ai-input')))
+          .controller
+          ?.text,
+      '原始 Prompt',
+    );
+
+    await tester.enterText(
+      find.byKey(const ValueKey('paper-ai-input')),
+      '修改后的 Prompt',
+    );
+    await tester.tap(find.byKey(const ValueKey('paper-ai-send')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('旧回答'), findsNothing);
+    expect(find.text('重新生成后的回答'), findsOneWidget);
+    expect(
+      service.conversations.single.where((message) => message.fromUser),
+      hasLength(1),
+    );
+    expect(service.conversations.single.first.content, '修改后的 Prompt');
+  });
+
   testWidgets(
       'conversation title is editable and subtitle is supplied by session type',
       (tester) async {
@@ -162,4 +253,20 @@ class _FakeChatSessionRepository implements ChatSessionRepository {
 
   @override
   Future<void> setPinned(String contextId, bool pinned) async {}
+}
+
+class _QueueUiChatAiService implements ChatAiService {
+  _QueueUiChatAiService(this.answers);
+
+  final List<String> answers;
+  final List<List<ChatMessage>> conversations = [];
+
+  @override
+  Future<String> answer({
+    required ChatContext context,
+    required List<ChatMessage> conversation,
+  }) async {
+    conversations.add(List<ChatMessage>.from(conversation));
+    return answers.removeAt(0);
+  }
 }

@@ -160,6 +160,10 @@ class _PaperAiConversation extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final latestUserIndex = messages.lastIndexWhere(
+      (message) => message.fromUser,
+    );
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
       child: Column(
@@ -188,9 +192,12 @@ class _PaperAiConversation extends StatelessWidget {
                     streaming: sending && index == messages.length - 1,
                     searching: searching && index == messages.length - 1,
                     isLatest: index == messages.length - 1,
-                    onRetry: onRetry,
+                    isLatestUserPrompt: index == latestUserIndex,
+                    onRetry: sending ? null : onRetry,
                     onDelete: () => onDelete?.call(index),
-                    onEdit: () => onEdit?.call(messages[index].content),
+                    onEdit: sending
+                        ? null
+                        : () => onEdit?.call(messages[index].content),
                     onOpenSource: onOpenSource,
                     selectionMode: selectionMode,
                     selected: selectedMessageIndexes.contains(index),

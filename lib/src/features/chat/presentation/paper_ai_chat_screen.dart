@@ -51,6 +51,7 @@ class _PaperAiChatScreenState extends State<PaperAiChatScreen> {
   late String _conversationTitle;
   bool _previewMode = false;
   bool _selectionMode = false;
+  bool _editingLatestPrompt = false;
   final Set<int> _selectedMessageIndexes = <int>{};
 
   String get _conversationSubtitle =>
@@ -163,9 +164,16 @@ class _PaperAiChatScreenState extends State<PaperAiChatScreen> {
   Future<void> _send(String rawText) async {
     final text = rawText.trim();
     if (text.isEmpty || _conversation.sending) return;
+
+    final editingLatestPrompt = _editingLatestPrompt;
+    _editingLatestPrompt = false;
     _composer.clear();
     setState(() {});
-    await _conversation.send(text);
+    if (editingLatestPrompt) {
+      await _conversation.editLatestPromptAndRetry(text);
+    } else {
+      await _conversation.send(text);
+    }
   }
 
   Future<void> _editConversationTitle() async {
@@ -220,10 +228,14 @@ class _PaperAiChatScreenState extends State<PaperAiChatScreen> {
         ],
       ),
     );
-    if (confirmed == true) await _conversation.clear();
+    if (confirmed == true) {
+      _editingLatestPrompt = false;
+      await _conversation.clear();
+    }
   }
 
   void _editMessage(String content) {
+    _editingLatestPrompt = true;
     _composer.value = TextEditingValue(
       text: content,
       selection: TextSelection.collapsed(offset: content.length),

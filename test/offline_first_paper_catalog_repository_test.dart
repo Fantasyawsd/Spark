@@ -6,6 +6,7 @@ import 'package:paperflow/src/features/papers/data/providers/arxiv/arxiv_atom_cl
 import 'package:paperflow/src/features/papers/data/providers/arxiv/arxiv_catalog_source.dart';
 import 'package:paperflow/src/features/papers/data/arxiv_seed_repository.dart';
 import 'package:paperflow/src/features/papers/domain/paper_catalog.dart';
+import 'package:paperflow/src/features/papers/domain/paper_time_range.dart';
 
 void main() {
   late _FakeArxivSource remote;
@@ -36,7 +37,30 @@ void main() {
     expect(page.fetchedAt, DateTime.utc(2024, 3, 1));
     expect(remote.lastCategory, 'cs.AI');
     expect(
-      (await cache.readPage('feed|category=cs.AI|offset=0|limit=10')),
+      (await cache.readPage(
+        'feed|category=cs.AI|time=all|offset=0|limit=10',
+      )),
+      isNotNull,
+    );
+  });
+
+  test('passes time bounds to remote and isolates cache keys', () async {
+    remote.feed = _page('2401.00001');
+
+    await repository.loadFeed(
+      const PaperFeedQuery(
+        category: 'cs.AI',
+        timeRange: PaperTimeRange.last7Days(),
+        limit: 10,
+      ),
+    );
+
+    expect(remote.lastPublishedFrom, DateTime(2024, 2, 24));
+    expect(remote.lastPublishedUntil, DateTime(2024, 3, 1, 23, 59, 59, 999));
+    expect(
+      await cache.readPage(
+        'feed|category=cs.AI|time=last-7-days|offset=0|limit=10',
+      ),
       isNotNull,
     );
   });
@@ -115,15 +139,21 @@ class _FakeArxivSource implements ArxivCatalogSource {
   ArxivAtomPaperDto? detail;
   Object? error;
   String? lastCategory;
+  DateTime? lastPublishedFrom;
+  DateTime? lastPublishedUntil;
   int detailRequests = 0;
 
   @override
   Future<ArxivAtomPageDto> loadLatest({
     String? category,
+    DateTime? publishedFrom,
+    DateTime? publishedUntil,
     required int offset,
     required int limit,
   }) async {
     lastCategory = category;
+    lastPublishedFrom = publishedFrom;
+    lastPublishedUntil = publishedUntil;
     if (error != null) throw error!;
     return feed ?? _page('2401.00001');
   }

@@ -117,7 +117,8 @@ class _PaperShelfListScreenState extends State<PaperShelfListScreen> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.inbox_outlined, color: PaperFlowColors.muted, size: 34),
+          const Icon(Icons.inbox_outlined,
+              color: PaperFlowColors.muted, size: 34),
           const SizedBox(height: 10),
           Text(
             widget._grouped ? '这个分组还是空的' : '还没有内容',

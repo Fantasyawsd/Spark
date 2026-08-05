@@ -36,8 +36,11 @@ class OfflineFirstPaperCatalogRepository implements PaperCatalogRepository {
   Future<PaperPage> loadFeed(PaperFeedQuery query) async {
     final queryKey = _feedKey(query);
     try {
+      final bounds = query.timeRange.bounds(now: _clock());
       final remote = await _remoteSource.loadLatest(
         category: _remoteCategory(query.category),
+        publishedFrom: bounds?.start,
+        publishedUntil: bounds?.end,
         offset: query.offset,
         limit: query.limit,
       );
@@ -153,7 +156,9 @@ class OfflineFirstPaperCatalogRepository implements PaperCatalogRepository {
 
   PaperPage _seedPage(PaperFeedQuery query, Object error) {
     final papers = _seedRepository.getAll();
-    final filtered = _filterSeed(papers, query.category);
+    final filtered = _filterSeed(papers, query.category)
+        .where((paper) => query.timeRange.includes(paper, now: _clock()))
+        .toList(growable: false);
     return _sliceSeed(filtered, query.offset, query.limit, error);
   }
 
@@ -230,7 +235,9 @@ class OfflineFirstPaperCatalogRepository implements PaperCatalogRepository {
   }
 
   static String _feedKey(PaperFeedQuery query) =>
-      'feed|category=${query.category?.trim() ?? ''}|offset=${query.offset}|limit=${query.limit}';
+      'feed|category=${query.category?.trim() ?? ''}'
+      '|time=${query.timeRange.storageKey}'
+      '|offset=${query.offset}|limit=${query.limit}';
 
   static String _searchKey(PaperSearchQuery query) =>
       'search|term=${query.term.trim().toLowerCase()}|offset=${query.offset}|limit=${query.limit}';

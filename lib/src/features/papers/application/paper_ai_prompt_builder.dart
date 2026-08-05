@@ -3,7 +3,11 @@ import '../domain/paper.dart';
 class PaperAiPromptBuilder {
   const PaperAiPromptBuilder._();
 
-  static String systemPrompt(Paper paper, {bool webSearch = false}) {
+  static String systemPrompt(
+    Paper paper, {
+    bool webSearch = false,
+    List<String> generatedKeywords = const [],
+  }) {
     final searchInstructions = webSearch
         ? '''
 
@@ -17,7 +21,7 @@ class PaperAiPromptBuilder {
 作者：${paper.authors.join(', ')}
 第一单位：${paper.firstAffiliation ?? '未知'}
 会议或期刊：${paper.venue ?? paper.journalReference ?? '未知'}
-内容关键词：${paper.contentKeywords.isEmpty ? '未知' : paper.contentKeywords.join(', ')}
+内容关键词：${generatedKeywords.isEmpty ? '未知' : generatedKeywords.join(', ')}
 arXiv 分类：${paper.subjects.isEmpty ? '无' : paper.subjects.join(', ')}
 
 ## 摘要

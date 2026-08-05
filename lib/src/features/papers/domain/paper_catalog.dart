@@ -1,4 +1,5 @@
 import 'paper.dart';
+import 'paper_time_range.dart';
 
 enum PaperPageSource { remote, cache, seed }
 
@@ -19,6 +20,7 @@ class PaperCatalogError {
 class PaperFeedQuery {
   const PaperFeedQuery({
     this.category,
+    this.timeRange = const PaperTimeRange.all(),
     this.offset = 0,
     this.limit = 20,
     this.forceRefresh = false,
@@ -26,6 +28,7 @@ class PaperFeedQuery {
         assert(limit > 0);
 
   final String? category;
+  final PaperTimeRange timeRange;
   final int offset;
   final int limit;
   final bool forceRefresh;
@@ -33,6 +36,7 @@ class PaperFeedQuery {
   PaperFeedQuery nextPage(int nextOffset) {
     return PaperFeedQuery(
       category: category,
+      timeRange: timeRange,
       offset: nextOffset,
       limit: limit,
       forceRefresh: forceRefresh,

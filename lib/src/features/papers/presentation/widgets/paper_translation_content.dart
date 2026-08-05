@@ -30,13 +30,13 @@ class PaperTranslationContent extends StatelessWidget {
     if (loadingCache && markdown.isEmpty) {
       return const _TranslationStatus(
         icon: CircularProgressIndicator(strokeWidth: 2),
-        title: '正在读取中文翻译…',
+        title: '正在读取摘要…',
       );
     }
     if (translating && markdown.isEmpty) {
       return _TranslationStatus(
         icon: const CircularProgressIndicator(strokeWidth: 2),
-        title: 'DeepSeek 正在翻译摘要…',
+        title: '正在生成…',
         actionLabel: '停止',
         onAction: onCancel,
       );
@@ -47,7 +47,7 @@ class PaperTranslationContent extends StatelessWidget {
           Icons.error_outline_rounded,
           color: Color(0xFFB42318),
         ),
-        title: error!,
+        title: '生成失败，点击重试',
         actionLabel: '重试',
         onAction: onRetry,
       );
@@ -58,8 +58,8 @@ class PaperTranslationContent extends StatelessWidget {
           Icons.translate_rounded,
           color: PaperFlowColors.primary,
         ),
-        title: '使用 DeepSeek 生成中文翻译',
-        actionLabel: '开始翻译',
+        title: '生成中文摘要',
+        actionLabel: '生成',
         onAction: onRetry,
       );
     }
@@ -79,20 +79,13 @@ class PaperTranslationContent extends StatelessWidget {
                 ),
                 const SizedBox(width: 7),
                 const Text(
-                  'DeepSeek 正在流式翻译 · 思考模式已关闭',
+                  '正在生成…',
                   style: TextStyle(
                     color: PaperFlowColors.muted,
                     fontSize: 11,
                   ),
                 ),
-              ] else
-                const Text(
-                  'DeepSeek 中文翻译 · 思考模式已关闭',
-                  style: TextStyle(
-                    color: PaperFlowColors.subtle,
-                    fontSize: 11,
-                  ),
-                ),
+              ],
               const Spacer(),
               TextButton(
                 key: const ValueKey('paper-translation-refresh'),

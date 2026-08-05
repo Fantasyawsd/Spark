@@ -21,6 +21,7 @@ import '../features/papers/application/paper_ai_session_repository.dart';
 import '../features/papers/application/paper_comment_controller.dart';
 import '../features/papers/application/paper_controller.dart';
 import '../features/papers/application/paper_chat_context.dart';
+import '../features/papers/application/paper_keyword_service.dart';
 import '../features/papers/application/paper_link_service.dart';
 import '../features/papers/application/paper_reading_controller.dart';
 import '../features/papers/application/paper_share_service.dart';
@@ -382,10 +383,12 @@ class _PaperFlowShellState extends State<PaperFlowShell> {
                   commentController: _commentController,
                   readingController: _readingController,
                   aiService: _paperAiService,
+                  keywordService: _paperAiService,
                   webSearchAiService: _webSearchAiService,
                   aiSessionRepository: _aiSessionRepository,
                   translationServiceFactory: _translationServiceFactory,
                   translationRepository: _dependencies.translationRepository,
+                  keywordRepository: _dependencies.keywordRepository,
                   shareService: _dependencies.shareService,
                   linkService: _linkService,
                   onSearch: _openPaperSearch,
@@ -553,10 +556,18 @@ class _PaperFlowShellState extends State<PaperFlowShell> {
   }
 
   Future<void> _openAiChat(Paper paper) async {
+    final record = await _dependencies.keywordRepository.load(paper.id);
+    final keywords = record != null && isPaperKeywordRecordFresh(record, paper)
+        ? record.keywords
+        : const <String>[];
+    if (!mounted) return;
     await Navigator.of(context).push<void>(
       MaterialPageRoute(
         builder: (context) => PaperAiChatScreen(
-          chatContext: PaperChatContext.fromPaper(paper),
+          chatContext: PaperChatContext.fromPaper(
+            paper,
+            generatedKeywords: keywords,
+          ),
           aiService: _paperAiService,
           webSearchAiService: _webSearchAiService,
           sessionRepository: _aiSessionRepository,
@@ -601,10 +612,12 @@ class _PaperFlowShellState extends State<PaperFlowShell> {
           commentController: _commentController,
           readingController: _readingController,
           aiService: _paperAiService,
+          keywordService: _paperAiService,
           webSearchAiService: _webSearchAiService,
           aiSessionRepository: _aiSessionRepository,
           translationServiceFactory: _translationServiceFactory,
           translationRepository: _dependencies.translationRepository,
+          keywordRepository: _dependencies.keywordRepository,
           shareService: _dependencies.shareService,
           linkService: _linkService,
           onOpenRelatedPaper: (relatedPaperId) =>

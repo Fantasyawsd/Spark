@@ -3,6 +3,8 @@ import 'arxiv_atom_dto.dart';
 abstract interface class ArxivCatalogSource {
   Future<ArxivAtomPageDto> loadLatest({
     String? category,
+    DateTime? publishedFrom,
+    DateTime? publishedUntil,
     required int offset,
     required int limit,
   });

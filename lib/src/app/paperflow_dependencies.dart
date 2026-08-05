@@ -11,6 +11,7 @@ import '../features/local_data/data/json_local_data_repository.dart';
 import '../features/local_data/domain/local_data_repository.dart';
 import '../features/papers/application/paper_ai_service.dart';
 import '../features/papers/application/paper_ai_session_repository.dart';
+import '../features/papers/application/paper_keyword_service.dart';
 import '../features/papers/application/paper_link_service.dart';
 import '../features/papers/application/paper_share_service.dart';
 import '../features/papers/application/paper_translation_service.dart';
@@ -22,6 +23,7 @@ import '../features/papers/data/file_paper_ai_session_repository.dart';
 import '../features/papers/data/file_paper_channel_preference_repository.dart';
 import '../features/papers/data/file_paper_comment_repository.dart';
 import '../features/papers/data/file_paper_interaction_repository.dart';
+import '../features/papers/data/file_paper_keyword_repository.dart';
 import '../features/papers/data/file_paper_preference_repository.dart';
 import '../features/papers/data/file_paper_reading_repository.dart';
 import '../features/papers/data/file_paper_translation_repository.dart';
@@ -30,6 +32,7 @@ import '../features/papers/data/in_memory_paper_ai_session_repository.dart';
 import '../features/papers/data/in_memory_paper_channel_preference_repository.dart';
 import '../features/papers/data/in_memory_paper_comment_repository.dart';
 import '../features/papers/data/in_memory_paper_interaction_repository.dart';
+import '../features/papers/data/in_memory_paper_keyword_repository.dart';
 import '../features/papers/data/in_memory_paper_preference_repository.dart';
 import '../features/papers/data/in_memory_paper_reading_repository.dart';
 import '../features/papers/data/in_memory_paper_translation_repository.dart';
@@ -66,6 +69,7 @@ class PaperFlowDependencies {
     required this.aiSessionRepository,
     required this.translationServiceFactory,
     required this.translationRepository,
+    required this.keywordRepository,
     required this.mainAiService,
     required this.mainWebSearchAiService,
     required this.localDataRepository,
@@ -92,6 +96,7 @@ class PaperFlowDependencies {
     final translationStore = LocalJsonStore(
       fileName: 'paper_translations.json',
     );
+    final keywordStore = LocalJsonStore(fileName: 'paper_keywords.json');
     final themeStore = LocalJsonStore(fileName: 'theme_preferences.json');
     return PaperFlowDependencies(
       paperRepository: seedRepository,
@@ -127,6 +132,7 @@ class PaperFlowDependencies {
       ),
       translationRepository:
           FilePaperTranslationRepository(store: translationStore),
+      keywordRepository: FilePaperKeywordRepository(store: keywordStore),
       mainAiService: DeepSeekPaperAiService(
         credentialRepository: credentialRepository,
       ),
@@ -134,7 +140,7 @@ class PaperFlowDependencies {
         credentialRepository: credentialRepository,
       ),
       localDataRepository: JsonLocalDataRepository(
-        paperCacheStores: [paperCacheStore, translationStore],
+        paperCacheStores: [paperCacheStore, translationStore, keywordStore],
         chatStores: [aiSessionStore],
         businessDataStores: [
           commentStore,
@@ -170,6 +176,7 @@ class PaperFlowDependencies {
     PaperAiSessionRepository? aiSessionRepository,
     PaperTranslationServiceFactory? translationServiceFactory,
     PaperTranslationRepository? translationRepository,
+    PaperKeywordRepository? keywordRepository,
     PaperAiService? mainAiService,
     PaperAiService? mainWebSearchAiService,
     LocalDataRepository? localDataRepository,
@@ -212,6 +219,7 @@ class PaperFlowDependencies {
           ),
       translationRepository:
           translationRepository ?? InMemoryPaperTranslationRepository(),
+      keywordRepository: keywordRepository ?? InMemoryPaperKeywordRepository(),
       mainAiService: mainAiService ?? resolvedAiService,
       mainWebSearchAiService:
           mainWebSearchAiService ?? resolvedWebSearchService,
@@ -238,6 +246,7 @@ class PaperFlowDependencies {
   final PaperAiSessionRepository aiSessionRepository;
   final PaperTranslationServiceFactory translationServiceFactory;
   final PaperTranslationRepository translationRepository;
+  final PaperKeywordRepository keywordRepository;
   final PaperAiService mainAiService;
   final PaperAiService mainWebSearchAiService;
   final LocalDataRepository localDataRepository;

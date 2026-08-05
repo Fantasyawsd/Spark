@@ -79,6 +79,7 @@ export 'src/features/papers/domain/paper_reading_repository.dart';
 export 'src/features/papers/domain/paper_repository.dart';
 export 'src/features/papers/domain/paper_source.dart';
 export 'src/features/papers/domain/paper_sync_ports.dart';
+export 'src/features/papers/domain/paper_time_range.dart';
 export 'src/features/papers/presentation/paper_detail_screen.dart';
 export 'src/features/papers/presentation/paper_shelf_list_screen.dart';
 export 'src/features/papers/presentation/papers_screen.dart';

@@ -94,14 +94,14 @@ void main() {
     final pagesSize = tester.getSize(
       find.byKey(const ValueKey('paper-tab-pages')).first,
     );
-    await tester.tap(find.text('中文解读').first);
+    await tester.tap(find.text('摘要').first);
     await tester.pump(const Duration(milliseconds: 100));
     expect(
       tester.getSize(find.byKey(const ValueKey('paper-tab-pages')).first),
       pagesSize,
     );
     await tester.pumpAndSettle();
-    expect(find.text('DeepSeek 中文翻译'), findsOneWidget);
+    expect(find.text('中文摘要内容'), findsOneWidget);
 
     await tester.tap(find.byIcon(Icons.favorite_border_rounded).first);
     await tester.pumpAndSettle();
@@ -121,6 +121,14 @@ void main() {
     await tester.pump();
 
     final firstReader = find.byType(PaperReaderView).first;
+    final tabs = find
+        .descendant(
+          of: firstReader,
+          matching: find.byType(SingleChildScrollView),
+        )
+        .first;
+    await tester.drag(tabs, const Offset(-520, 0));
+    await tester.pumpAndSettle();
     await tester.tap(
       find.descendant(
         of: firstReader,
@@ -133,7 +141,7 @@ void main() {
         of: firstReader,
         matching: find.byWidgetPredicate(
           (widget) =>
-              widget is PaperFlowSegmentedControl && widget.selectedIndex == 2,
+              widget is PaperFlowSegmentedControl && widget.selectedIndex == 5,
         ),
       ),
       findsOneWidget,
@@ -185,6 +193,15 @@ void main() {
 
     await tester.pumpWidget(const PaperFlowApp(showSplash: false));
     await tester.pump();
+    final firstReader = find.byType(PaperReaderView).first;
+    final tabs = find
+        .descendant(
+          of: firstReader,
+          matching: find.byType(SingleChildScrollView),
+        )
+        .first;
+    await tester.drag(tabs, const Offset(-520, 0));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('相关论文').first);
     await tester.pumpAndSettle();
 
@@ -206,6 +223,15 @@ void main() {
     expect(find.byKey(const ValueKey('papers-header')), findsNothing);
     expect(find.byKey(const ValueKey('bottom-nav-0')), findsNothing);
 
+    final detailReader = find.byType(PaperReaderView).first;
+    final detailTabs = find
+        .descendant(
+          of: detailReader,
+          matching: find.byType(SingleChildScrollView),
+        )
+        .first;
+    await tester.drag(detailTabs, const Offset(-520, 0));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('相关论文').first);
     await tester.pumpAndSettle();
     await tester.tap(
@@ -424,14 +450,14 @@ void main() {
       ),
     );
     await tester.pump();
-    await tester.tap(find.text('中文解读').first);
+    await tester.tap(find.text('摘要').first);
     await tester.pumpAndSettle();
 
     expect(find.text('展开全文'), findsOneWidget);
     await tester.tap(find.text('展开全文'));
     await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey('paper-full-reader')), findsOneWidget);
-    expect(find.text('中文解读'), findsOneWidget);
+    expect(find.text('摘要'), findsOneWidget);
   });
 
   testWidgets('abstract expansion appears only when text exceeds its viewport',
@@ -466,7 +492,7 @@ void main() {
     await tester.tap(find.text('展开全文'));
     await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey('paper-full-reader')), findsOneWidget);
-    expect(find.text('原文摘要'), findsOneWidget);
+    expect(find.text('Abstract'), findsOneWidget);
 
     final shortController = PaperController(
       _TestPaperRepository(_testPaper('A short abstract.')),
@@ -505,7 +531,7 @@ void main() {
     expect(tester.getSize(find.byKey(const ValueKey('paper-feed'))).height,
         greaterThan(700));
     expect(find.textContaining('被引'), findsNothing);
-    expect(find.text('中文解读'), findsWidgets);
+    expect(find.text('摘要'), findsWidgets);
 
     await tester.tap(find.text('论文 ⇄'));
     await tester.pumpAndSettle();
@@ -1212,7 +1238,7 @@ class _FakePaperAiService implements PaperAiService {
 class _FakePaperTranslationServiceFactory
     implements PaperTranslationServiceFactory {
   const _FakePaperTranslationServiceFactory({
-    this.content = '**DeepSeek 中文翻译**',
+    this.content = '**中文摘要内容**',
   });
 
   final String content;

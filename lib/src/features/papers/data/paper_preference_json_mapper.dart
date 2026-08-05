@@ -15,6 +15,7 @@ class PaperPreferenceJsonMapper {
     return PaperPreferences(
       extraTopics: _stringList(json, 'extraTopics'),
       positions: _intMap(json, 'positions'),
+      timeRanges: _stringMap(json, 'timeRanges'),
       primaryCategoryIndex: _optionalInt(json, 'primaryCategoryIndex'),
       topicIndex: _optionalInt(json, 'topicIndex'),
     );
@@ -24,6 +25,7 @@ class PaperPreferenceJsonMapper {
     return {
       'extraTopics': preferences.extraTopics,
       'positions': preferences.positions,
+      'timeRanges': preferences.timeRanges,
       'primaryCategoryIndex': preferences.primaryCategoryIndex,
       'topicIndex': preferences.topicIndex,
     };
@@ -54,6 +56,21 @@ class PaperPreferenceJsonMapper {
       throw FormatException('$key must map strings to integers.');
     }
     return Map<String, int>.from(value);
+  }
+
+  static Map<String, String> _stringMap(
+    Map<String, dynamic> json,
+    String key,
+  ) {
+    final value = json[key];
+    if (value == null) return const {};
+    if (value is! Map ||
+        value.entries.any(
+          (entry) => entry.key is! String || entry.value is! String,
+        )) {
+      throw FormatException('$key must map strings to strings.');
+    }
+    return Map<String, String>.from(value);
   }
 
   static int _optionalInt(Map<String, dynamic> json, String key) {

@@ -7,6 +7,7 @@ import 'package:paperflow/src/features/papers/presentation/widgets/paper_ai_cont
 void main() {
   testWidgets('AI answer exposes a collapsible reasoning chain',
       (tester) async {
+    Uri? openedSource;
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
@@ -34,6 +35,10 @@ void main() {
                 onPrompt: (_) {},
                 onRetry: () {},
                 onCancel: () {},
+                onOpenSource: (uri) async {
+                  openedSource = uri;
+                  return true;
+                },
                 searching: false,
                 requestStatus: PaperAiRequestStatus.completed,
                 canRetryRequestError: false,
@@ -48,6 +53,9 @@ void main() {
     expect(find.text('来源'), findsOneWidget);
     expect(find.text('1 个'), findsOneWidget);
     expect(find.text('先检查方法，再核对实验。'), findsNothing);
+
+    await tester.tap(find.byKey(const ValueKey('paper-ai-source-1')));
+    expect(openedSource, Uri.parse('https://example.test/paper'));
 
     await tester.tap(find.byKey(const ValueKey('paper-ai-reasoning-toggle')));
     await tester.pumpAndSettle();

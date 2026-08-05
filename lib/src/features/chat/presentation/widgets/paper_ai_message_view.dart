@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/theme/paperflow_theme.dart';
 import '../../../../core/widgets/paperflow_markdown.dart';
@@ -19,6 +20,7 @@ class PaperAiMessageView extends StatelessWidget {
     this.onRetry,
     this.onDelete,
     this.onEdit,
+    this.onOpenSource,
     this.assistantLabel = '默认助手',
     this.modelName = 'deepseek-v4-flash',
     this.providerName = 'DeepSeek',
@@ -31,6 +33,7 @@ class PaperAiMessageView extends StatelessWidget {
   final VoidCallback? onRetry;
   final VoidCallback? onDelete;
   final VoidCallback? onEdit;
+  final Future<bool> Function(Uri uri)? onOpenSource;
   final String assistantLabel;
   final String modelName;
   final String providerName;
@@ -56,6 +59,7 @@ class PaperAiMessageView extends StatelessWidget {
       streaming: streaming,
       onRetry: isLatest ? onRetry : null,
       onDelete: onDelete,
+      onOpenSource: onOpenSource,
       assistantLabel: assistantLabel,
       modelName: modelName,
       providerName: providerName,
@@ -115,6 +119,7 @@ class _AssistantMessage extends StatelessWidget {
     required this.streaming,
     required this.onRetry,
     required this.onDelete,
+    this.onOpenSource,
     required this.assistantLabel,
     required this.modelName,
     required this.providerName,
@@ -124,6 +129,7 @@ class _AssistantMessage extends StatelessWidget {
   final bool streaming;
   final VoidCallback? onRetry;
   final VoidCallback? onDelete;
+  final Future<bool> Function(Uri uri)? onOpenSource;
   final String assistantLabel;
   final String modelName;
   final String providerName;
@@ -178,7 +184,10 @@ class _AssistantMessage extends StatelessWidget {
               selectable: false,
             ),
           if (message.sources.isNotEmpty)
-            _SourcesPanel(sources: message.sources),
+            _SourcesPanel(
+              sources: message.sources,
+              onOpenSource: onOpenSource,
+            ),
           const SizedBox(height: 4),
           _MessageActionRow(
             message: message,
@@ -536,9 +545,13 @@ class _ShimmerTextState extends State<_ShimmerText>
 }
 
 class _SourcesPanel extends StatelessWidget {
-  const _SourcesPanel({required this.sources});
+  const _SourcesPanel({
+    required this.sources,
+    this.onOpenSource,
+  });
 
   final List<ChatSource> sources;
+  final Future<bool> Function(Uri uri)? onOpenSource;
 
   @override
   Widget build(BuildContext context) {
@@ -583,7 +596,11 @@ class _SourcesPanel extends StatelessWidget {
           ),
           const SizedBox(height: 9),
           for (var index = 0; index < visibleSources.length; index++)
-            _SourceRow(index: index + 1, source: visibleSources[index]),
+            _SourceRow(
+              index: index + 1,
+              source: visibleSources[index],
+              onOpenSource: onOpenSource,
+            ),
           if (remaining > 0)
             Padding(
               padding: const EdgeInsets.only(left: 28, top: 2),
@@ -602,67 +619,123 @@ class _SourcesPanel extends StatelessWidget {
 }
 
 class _SourceRow extends StatelessWidget {
-  const _SourceRow({required this.index, required this.source});
+  const _SourceRow({
+    required this.index,
+    required this.source,
+    this.onOpenSource,
+  });
 
   final int index;
   final ChatSource source;
+  final Future<bool> Function(Uri uri)? onOpenSource;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 7),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 21,
-            height: 21,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: PaperAiUiTokens.canvas,
-              borderRadius: BorderRadius.circular(7),
-            ),
-            child: Text(
-              '$index',
-              style: const TextStyle(
-                color: PaperFlowColors.muted,
-                fontSize: 10,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Column(
+    final uri = _validUri(source.url);
+    return Semantics(
+      button: uri != null,
+      label: uri == null ? source.title : '打开来源 ${source.title}',
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          key: ValueKey('paper-ai-source-$index'),
+          onTap: uri == null ? null : () => _open(context, uri),
+          borderRadius: BorderRadius.circular(10),
+          child: Padding(
+            padding: const EdgeInsets.only(bottom: 7, top: 2),
+            child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  source.title,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: PaperFlowColors.ink,
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w600,
-                    height: 1.3,
+                Container(
+                  width: 21,
+                  height: 21,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: PaperAiUiTokens.canvas,
+                    borderRadius: BorderRadius.circular(7),
+                  ),
+                  child: Text(
+                    '$index',
+                    style: const TextStyle(
+                      color: PaperFlowColors.muted,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
-                const SizedBox(height: 1),
-                Text(
-                  _host(source.url),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: PaperFlowColors.subtle,
-                    fontSize: 9.8,
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        source.title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: uri == null
+                              ? PaperFlowColors.ink
+                              : PaperFlowColors.blue,
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w600,
+                          height: 1.3,
+                        ),
+                      ),
+                      const SizedBox(height: 1),
+                      Text(
+                        _host(source.url),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: PaperFlowColors.subtle,
+                          fontSize: 9.8,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
+                if (uri != null)
+                  const Padding(
+                    padding: EdgeInsets.only(left: 6, top: 2),
+                    child: Icon(
+                      Icons.open_in_new_rounded,
+                      size: 15,
+                      color: PaperFlowColors.subtle,
+                    ),
+                  ),
               ],
             ),
           ),
-        ],
+        ),
       ),
     );
+  }
+
+  Future<void> _open(BuildContext context, Uri uri) async {
+    try {
+      final opened = await (onOpenSource?.call(uri) ??
+          launchUrl(uri, mode: LaunchMode.externalApplication));
+      if (!opened && context.mounted) {
+        _showOpenFailure(context);
+      }
+    } catch (_) {
+      if (context.mounted) {
+        _showOpenFailure(context);
+      }
+    }
+  }
+
+  void _showOpenFailure(BuildContext context) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('无法打开来源链接')),
+    );
+  }
+
+  static Uri? _validUri(String value) {
+    final uri = Uri.tryParse(value.trim());
+    if (uri == null || uri.host.isEmpty) return null;
+    if (uri.scheme != 'http' && uri.scheme != 'https') return null;
+    return uri;
   }
 
   static String _host(String url) {

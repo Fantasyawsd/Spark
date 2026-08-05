@@ -21,6 +21,7 @@ class PaperAiContent extends StatelessWidget {
     required this.onCancel,
     this.onDelete,
     this.onEdit,
+    this.onOpenSource,
     required this.searching,
     required this.requestStatus,
     required this.canRetryRequestError,
@@ -42,6 +43,7 @@ class PaperAiContent extends StatelessWidget {
   final VoidCallback onCancel;
   final ValueChanged<int>? onDelete;
   final ValueChanged<String>? onEdit;
+  final Future<bool> Function(Uri uri)? onOpenSource;
   final bool searching;
   final ChatRequestStatus requestStatus;
   final bool canRetryRequestError;
@@ -83,6 +85,7 @@ class PaperAiContent extends StatelessWidget {
               onCancel: onCancel,
               onDelete: onDelete,
               onEdit: onEdit,
+              onOpenSource: onOpenSource,
               searching: searching,
               requestStatus: requestStatus,
               canRetryRequestError: canRetryRequestError,
@@ -109,6 +112,7 @@ class _PaperAiConversation extends StatelessWidget {
     required this.onCancel,
     required this.onDelete,
     required this.onEdit,
+    this.onOpenSource,
     required this.searching,
     required this.requestStatus,
     required this.canRetryRequestError,
@@ -129,6 +133,7 @@ class _PaperAiConversation extends StatelessWidget {
   final VoidCallback onCancel;
   final ValueChanged<int>? onDelete;
   final ValueChanged<String>? onEdit;
+  final Future<bool> Function(Uri uri)? onOpenSource;
   final bool searching;
   final ChatRequestStatus requestStatus;
   final bool canRetryRequestError;
@@ -171,6 +176,7 @@ class _PaperAiConversation extends StatelessWidget {
                     onRetry: onRetry,
                     onDelete: () => onDelete?.call(index),
                     onEdit: () => onEdit?.call(messages[index].content),
+                    onOpenSource: onOpenSource,
                     assistantLabel: assistantLabel,
                     modelName: modelName,
                     providerName: providerName,

@@ -8,6 +8,7 @@ class PaperChatContext {
   static ChatContext fromPaper(
     Paper paper, {
     List<String> generatedKeywords = const [],
+    String? pdfContext,
   }) {
     final keywords = generatedKeywords;
     final venue = paper.venue ?? paper.journalReference;
@@ -20,11 +21,13 @@ class PaperChatContext {
       systemPrompt: PaperAiPromptBuilder.systemPrompt(
         paper,
         generatedKeywords: keywords,
+        pdfContext: pdfContext,
       ),
       webSearchSystemPrompt: PaperAiPromptBuilder.systemPrompt(
         paper,
         webSearch: true,
         generatedKeywords: keywords,
+        pdfContext: pdfContext,
       ),
     );
   }

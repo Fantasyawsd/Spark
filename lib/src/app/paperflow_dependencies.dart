@@ -22,11 +22,15 @@ import '../features/papers/data/arxiv_seed_repository.dart';
 import '../features/papers/data/deepseek_paper_ai_service.dart';
 import '../features/papers/data/deepseek_paper_translation_service.dart';
 import '../features/papers/data/deepseek_web_search_ai_service.dart';
+import '../features/papers/data/file_paper_pdf_repository.dart';
 import '../features/papers/data/file_paper_ai_session_repository.dart';
 import '../features/papers/data/file_paper_channel_preference_repository.dart';
 import '../features/papers/data/file_paper_comment_repository.dart';
+import '../features/papers/data/in_memory_paper_pdf_repository.dart';
 import '../features/papers/data/file_paper_interaction_repository.dart';
+import '../features/papers/data/paper_pdf_extraction_service.dart';
 import '../features/papers/data/file_paper_keyword_repository.dart';
+import '../features/papers/domain/paper_pdf_repository.dart';
 import '../features/papers/data/file_paper_preference_repository.dart';
 import '../features/papers/data/file_paper_reading_repository.dart';
 import '../features/papers/data/file_paper_translation_repository.dart';
@@ -74,6 +78,8 @@ class PaperFlowDependencies {
     required this.translationServiceFactory,
     required this.translationRepository,
     required this.keywordRepository,
+    required this.pdfRepository,
+    required this.pdfExtractionService,
     required this.mainAiService,
     required this.mainWebSearchAiService,
     required this.localDataRepository,
@@ -143,6 +149,10 @@ class PaperFlowDependencies {
       translationRepository:
           FilePaperTranslationRepository(store: translationStore),
       keywordRepository: FilePaperKeywordRepository(store: keywordStore),
+      pdfRepository: FilePaperPdfRepository(
+        store: LocalJsonStore(fileName: 'paper_pdf_extracts.json'),
+      ),
+      pdfExtractionService: PaperPdfExtractionService(),
       mainAiService: DeepSeekPaperAiService(
         credentialRepository: credentialRepository,
       ),
@@ -188,6 +198,8 @@ class PaperFlowDependencies {
     PaperTranslationServiceFactory? translationServiceFactory,
     PaperTranslationRepository? translationRepository,
     PaperKeywordRepository? keywordRepository,
+    PaperPdfRepository? pdfRepository,
+    PaperPdfExtractionService? pdfExtractionService,
     PaperAiService? mainAiService,
     PaperAiService? mainWebSearchAiService,
     LocalDataRepository? localDataRepository,
@@ -233,6 +245,8 @@ class PaperFlowDependencies {
       translationRepository:
           translationRepository ?? InMemoryPaperTranslationRepository(),
       keywordRepository: keywordRepository ?? InMemoryPaperKeywordRepository(),
+      pdfRepository: pdfRepository ?? InMemoryPaperPdfRepository(),
+      pdfExtractionService: pdfExtractionService ?? PaperPdfExtractionService(),
       mainAiService: mainAiService ?? resolvedAiService,
       mainWebSearchAiService:
           mainWebSearchAiService ?? resolvedWebSearchService,
@@ -261,6 +275,8 @@ class PaperFlowDependencies {
   final PaperTranslationServiceFactory translationServiceFactory;
   final PaperTranslationRepository translationRepository;
   final PaperKeywordRepository keywordRepository;
+  final PaperPdfRepository pdfRepository;
+  final PaperPdfExtractionService pdfExtractionService;
   final PaperAiService mainAiService;
   final PaperAiService mainWebSearchAiService;
   final LocalDataRepository localDataRepository;

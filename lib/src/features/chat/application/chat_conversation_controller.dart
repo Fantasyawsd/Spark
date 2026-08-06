@@ -22,7 +22,7 @@ class ChatConversationController extends ChangeNotifier {
         _webSearchService = webSearchService,
         _sessionRepository = sessionRepository,
         _settingsRepository = settingsRepository;
-  final ChatContext context;
+  ChatContext context;
   final ChatAiService _service;
   final ChatAiService? _webSearchService;
   final ChatSessionRepository? _sessionRepository;
@@ -73,6 +73,16 @@ class ChatConversationController extends ChangeNotifier {
   bool get webSearchEnabled => _webSearchEnabled;
   bool get searching => _searching;
   ChatReasoningEffort get reasoningEffort => _reasoningEffort;
+
+  /// 在保持会话身份不变的前提下替换上下文（例如注入论文 PDF 全文）。
+  /// 返回 false 表示 id 不匹配，替换被拒绝。
+  bool replaceContext(ChatContext nextContext) {
+    if (nextContext.id != context.id) return false;
+    context = nextContext;
+    _notify();
+    return true;
+  }
+
   ChatRequestStatus get requestStatus => _requestStatus;
 
   void setWebSearchEnabled(bool enabled) {

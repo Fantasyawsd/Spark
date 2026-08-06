@@ -332,6 +332,50 @@ void main() {
     expect(service.context?.systemPrompt, isNot(contains('默认提示词')));
     expect(tester.takeException(), isNull);
   });
+  testWidgets('full text toggle loads and injects the paper PDF context',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(378, 810));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final service = _CapturingUiChatAiService();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: PaperAiChatScreen(
+          chatContext: const ChatContext(
+            id: 'fulltext-ui-test',
+            title: '全文测试',
+            systemPrompt: '默认提示词',
+          ),
+          aiService: service,
+          sessionRepository: _FakeChatSessionRepository(),
+          fullTextAvailable: true,
+          onLoadFullText: () async => const ChatContext(
+            id: 'fulltext-ui-test',
+            title: '全文测试',
+            systemPrompt: '默认提示词 + 论文全文引用',
+          ),
+          screenTitle: '全文测试',
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey('paper-ai-fulltext-toggle')),
+      findsOneWidget,
+    );
+    await tester.tap(find.byKey(const ValueKey('paper-ai-fulltext-toggle')));
+    await tester.pumpAndSettle();
+
+    final input = find.byKey(const ValueKey('paper-ai-input'));
+    await tester.enterText(input, '你好');
+    await tester.pump();
+    await tester.tap(find.byKey(const ValueKey('paper-ai-send')));
+    await tester.pumpAndSettle();
+
+    expect(service.context?.systemPrompt, contains('论文全文引用'));
+    expect(tester.takeException(), isNull);
+  });
 }
 
 class _FakeChatAiService implements ChatAiService {

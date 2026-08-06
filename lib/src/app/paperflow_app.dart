@@ -11,6 +11,7 @@ import '../core/widgets/paperflow_bottom_nav.dart';
 import '../features/ai_settings/application/deepseek_credential_controller.dart';
 import '../features/chat/application/chat_session_controller.dart';
 import '../features/chat/application/main_ai_chat_definition.dart';
+import '../features/chat/domain/chat_context.dart';
 import '../features/chat/presentation/ai_chat_home_screen.dart';
 import '../features/chat/presentation/main_ai_chat_screen.dart';
 import '../features/chat/presentation/paper_ai_chat_screen.dart';
@@ -19,9 +20,11 @@ import '../features/local_data/domain/local_data_repository.dart';
 import '../features/papers/application/paper_ai_service.dart';
 import '../features/papers/application/paper_ai_session_repository.dart';
 import '../features/papers/application/paper_comment_controller.dart';
+import '../features/papers/application/paper_pdf_context_builder.dart';
 import '../features/papers/application/paper_controller.dart';
 import '../features/papers/application/paper_chat_context.dart';
 import '../features/papers/application/paper_keyword_service.dart';
+import '../features/papers/data/paper_pdf_extraction_service.dart';
 import '../features/papers/application/paper_link_service.dart';
 import '../features/papers/application/paper_reading_controller.dart';
 import '../features/papers/application/paper_share_service.dart';
@@ -572,8 +575,38 @@ class _PaperFlowShellState extends State<PaperFlowShell> {
           webSearchAiService: _webSearchAiService,
           sessionRepository: _aiSessionRepository,
           settingsRepository: _dependencies.chatSessionSettingsRepository,
+          fullTextAvailable: paper.pdfUrl != null,
+          onLoadFullText: () => _loadPaperFullTextContext(paper, keywords),
         ),
       ),
+    );
+  }
+
+  Future<ChatContext> _loadPaperFullTextContext(
+    Paper paper,
+    List<String> keywords,
+  ) async {
+    final pdfUrl = validPaperUri(paper.pdfUrl);
+    if (pdfUrl == null) {
+      throw const PaperPdfException('该论文没有可用的 PDF 链接。');
+    }
+    final version = pdfUrl.toString();
+    final repository = _dependencies.pdfRepository;
+    var extract = await repository.load(paper.id, version);
+    if (extract == null) {
+      final bytes = await _dependencies.pdfExtractionService.download(pdfUrl);
+      extract = _dependencies.pdfExtractionService.extract(
+        paperId: paper.id,
+        version: version,
+        bytes: bytes,
+      );
+      await repository.save(extract);
+    }
+    final pdfContext = PaperPdfContextBuilder.buildContextChunk(extract.chunks);
+    return PaperChatContext.fromPaper(
+      paper,
+      generatedKeywords: keywords,
+      pdfContext: pdfContext,
     );
   }
 

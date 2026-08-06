@@ -27,6 +27,8 @@ class PaperAiChatScreen extends StatefulWidget {
     this.welcomeTitle,
     this.welcomeDescription,
     this.clearConfirmation = '这会删除当前论文的全部 AI 对话记录。',
+    this.fullTextAvailable = false,
+    this.onLoadFullText,
   });
 
   final ChatContext chatContext;
@@ -41,6 +43,8 @@ class PaperAiChatScreen extends StatefulWidget {
   final String providerName;
   final String? welcomeTitle;
   final String? welcomeDescription;
+  final bool fullTextAvailable;
+  final Future<ChatContext> Function()? onLoadFullText;
   final String clearConfirmation;
 
   @override
@@ -56,6 +60,8 @@ class _PaperAiChatScreenState extends State<PaperAiChatScreen> {
   bool _previewMode = false;
   bool _selectionMode = false;
   bool _editingLatestPrompt = false;
+  bool _fullTextEnabled = false;
+  bool _fullTextLoading = false;
   final Set<int> _selectedMessageIndexes = <int>{};
 
   String get _conversationSubtitle =>
@@ -180,6 +186,29 @@ class _PaperAiChatScreenState extends State<PaperAiChatScreen> {
       await _conversation.editLatestPromptAndRetry(text);
     } else {
       await _conversation.send(text);
+    }
+  }
+
+  Future<void> _toggleFullText() async {
+    if (_fullTextLoading || _fullTextEnabled) return;
+    final loader = widget.onLoadFullText;
+    if (loader == null) return;
+    setState(() => _fullTextLoading = true);
+    try {
+      final nextContext = await loader();
+      if (!mounted) return;
+      if (_conversation.replaceContext(nextContext)) {
+        setState(() {
+          _fullTextEnabled = true;
+          _fullTextLoading = false;
+        });
+      }
+    } on Exception {
+      if (!mounted) return;
+      setState(() => _fullTextLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('无法读取论文全文，请稍后重试。')),
+      );
     }
   }
 
@@ -395,6 +424,24 @@ class _PaperAiChatScreenState extends State<PaperAiChatScreen> {
         ),
       ),
       actions: [
+        if (widget.fullTextAvailable)
+          IconButton(
+            key: const ValueKey('paper-ai-fulltext-toggle'),
+            tooltip: _fullTextEnabled ? '已读取全文' : '读取论文全文',
+            onPressed: _fullTextLoading ? null : _toggleFullText,
+            icon: _fullTextLoading
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : Icon(
+                    _fullTextEnabled
+                        ? Icons.menu_book_rounded
+                        : Icons.menu_book_outlined,
+                    size: 24,
+                  ),
+          ),
         IconButton(
           key: const ValueKey('paper-ai-session-settings'),
           tooltip: '会话设置',

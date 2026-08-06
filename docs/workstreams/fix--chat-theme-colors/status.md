@@ -10,8 +10,8 @@
 - Worktree：`C:\Users\Fantasy\Desktop\Spark-worktrees\fix--chat-theme-colors`
 - 基线提交：`2dd2b4dc3af81d4ca94f2daf4961c3a66eacdd95`
 - 负责人：Fantasy（编排者）；执行：Codex
-- 状态：开发完成，等待 `/test`
-- 最近更新：2026-08-07 01:13
+- 状态：测试通过，等待 `/review`
+- 最近更新：2026-08-07 01:23
 
 ## 目标
 
@@ -31,7 +31,7 @@ AI 聊天页面的背景、消息气泡、Composer、推理面板和交互状态
 - [x] 第三方品牌色如确需保留，必须与主题语义色分离并有明确用途，不得复用于搜索、推理或选择状态。
 - [x] 新增 Widget 回归测试，能够在修复前失败、修复后通过，并覆盖主题切换后的实际组件颜色。
 - [x] 现有聊天交互、主题控制器和主题面板测试无回归。
-- [ ] 格式、静态分析、全量测试和 development debug APK 构建通过。
+- [x] 格式、静态分析、全量测试和 development debug APK 构建通过。
 
 ## 写入范围
 
@@ -63,9 +63,9 @@ AI 聊天页面的背景、消息气泡、Composer、推理面板和交互状态
 
 ## 当前进度
 
-- 已完成：新增并完成红绿主题切换 Widget 测试；将聊天页面、消息、Composer、推理、来源、选择态、会话滑动操作和模型头像的颜色接入当前 `ThemeData.colorScheme`；完成聊天与主题定向回归、格式检查、静态分析和固定颜色审计；将任务 worktree 迁移到规范要求的 `Spark-worktrees`。
-- 正在进行：无；`/develop` 阶段已完成。
-- 下一步：由编排者触发 `/test`，运行全量测试与 development debug APK 构建门禁。
+- 已完成：新增并完成红绿主题切换 Widget 测试；将聊天页面、消息、Composer、推理、来源、选择态、会话滑动操作和模型头像的颜色接入当前 `ThemeData.colorScheme`；完成聊天与主题定向回归、固定颜色审计和 `/test` 完整验证门禁；将任务 worktree 迁移到规范要求的 `Spark-worktrees`。
+- 正在进行：无；`/test` 阶段已通过。
+- 下一步：由编排者触发 `/review`，只读审查任务差异。
 - 阻塞项：无。
 
 ## 决策记录
@@ -91,6 +91,12 @@ AI 聊天页面的背景、消息气泡、Composer、推理面板和交互状态
 | `flutter analyze` | 通过，无 issue | 2026-08-07 |
 | `rg -n "\\bColor\\(0x|\\bColors\\.(?!transparent)|SparkColors" lib/src/features/chat/presentation --pcre2` | 无命中；聊天 presentation 不再含固定原始颜色、非透明 `Colors.*` 或 `SparkColors` 引用 | 2026-08-07 |
 | `git diff --check` | 通过 | 2026-08-07 |
+| `.\tool\verify_changed_dart_format.ps1` | 默认以 `origin/main` merge-base `9de1612` 检查 119 个 Dart 文件，在 Windows 命令行长度限制处失败；属于工具环境限制，不是格式差异 | 2026-08-07 |
+| `.\tool\verify_changed_dart_format.ps1 -BaseRevision 2dd2b4dc3af81d4ca94f2daf4961c3a66eacdd95` | 通过；按任务台账基线检查 9 个 Dart 文件，0 个需修改 | 2026-08-07 |
+| `flutter analyze`（`/test`） | 通过，无 issue | 2026-08-07 |
+| `flutter test` | 通过，共 295 项 | 2026-08-07 |
+| `flutter build apk --debug --flavor development --dart-define=SPARK_ENV=development` | 通过；生成 `build/app/outputs/flutter-apk/app-development-debug.apk`（163,576,309 bytes） | 2026-08-07 |
+| `git diff --check`（`/test`） | 通过；Flutter 自动触碰的 3 个 Windows 生成文件经确认内容无差异后恢复 | 2026-08-07 |
 
 ## 审查结论
 
@@ -129,7 +135,7 @@ AI 聊天页面的背景、消息气泡、Composer、推理面板和交互状态
 
 ### 已知风险与回滚
 
-- 已知风险：当前开发验证覆盖蓝色与绿色主题，五种主题的完整人工视觉体验不在本阶段验证范围；完整全量测试与 development APK 构建待 `/test`。
+- 已知风险：自动化主题验证覆盖蓝色与绿色；五种主题的完整人工视觉体验未在本阶段逐一操作验收。Windows 格式脚本默认比较旧 `origin/main` 时受命令行长度限制，任务基线上的 9 个变更文件已通过格式检查。
 - 回滚方式：使用 `git revert a0e52a8` 回滚功能提交；不涉及数据回滚。
 
 ### 文档更新建议
@@ -138,7 +144,7 @@ AI 聊天页面的背景、消息气泡、Composer、推理面板和交互状态
 
 ### 未完成与后续工作
 
-- `/develop` 已完成；待 `/test`、`/review` 与 `/finish` 按编排者指令依次执行。
+- `/develop` 与 `/test` 已完成；待 `/review` 与 `/finish` 按编排者指令依次执行。
 
 ## 合并归档（合并后在 main 补齐）
 

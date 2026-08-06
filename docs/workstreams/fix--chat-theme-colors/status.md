@@ -105,7 +105,7 @@ AI 聊天页面的背景、消息气泡、Composer、推理面板和交互状态
 
 | SHA | 提交信息 | 对应阶段 | 验证摘要 |
 | --- | --- | --- | --- |
-| 待提交 | `fix(chat): follow global theme colors` | `/develop` | 定向测试 36 项、格式检查、`flutter analyze` 与固定颜色审计通过 |
+| `a0e52a8` | `fix(chat): follow global theme colors` | `/develop` | 定向测试 36 项、格式检查、`flutter analyze` 与固定颜色审计通过 |
 
 ## 交付准备（合并前收集）
 
@@ -130,7 +130,7 @@ AI 聊天页面的背景、消息气泡、Composer、推理面板和交互状态
 ### 已知风险与回滚
 
 - 已知风险：当前开发验证覆盖蓝色与绿色主题，五种主题的完整人工视觉体验不在本阶段验证范围；完整全量测试与 development APK 构建待 `/test`。
-- 回滚方式：任务提交形成后可使用 `git revert <任务提交 SHA>`；不涉及数据回滚。
+- 回滚方式：使用 `git revert a0e52a8` 回滚功能提交；不涉及数据回滚。
 
 ### 文档更新建议
 

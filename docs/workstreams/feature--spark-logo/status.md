@@ -89,6 +89,7 @@
 
 | SHA | 提交信息 | 对应阶段 | 验证摘要 |
 | --- | --- | --- | --- |
+| `ea4ade9` | feat(core): replace startup logo and fix worktree path regressions | 最小纵向闭环 | flutter analyze 通过；widget_test 4 项通过（含 logo 断言） |
 
 ## 交付准备（合并前收集）
 

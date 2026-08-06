@@ -23,9 +23,9 @@ disable-model-invocation: true
    - 完成标准：工作区干净或改动归属明确；批准基线已确认（默认 `origin/main`）。
 
 4. **创建分支与 worktree**
-   - 执行 `git worktree add ..\PaperFlow-worktrees\<branch-slug> -b <type>/<slug> <approved-base>`。
-   - 分支格式 `<type>/<slug>`（feature/fix/refactor/test/docs）与 worktree 约束见 `AGENTS.md`「分支与 worktree」。
-   - 完成标准：worktree 已创建且当前分支匹配；路径位于仓库外；未使用 `git reset --hard`、`git clean` 或强制 checkout。
+   - 先在控制工作树（仓库根目录）内执行 `git rev-parse --show-toplevel` 确认当前目录为仓库根，再执行 `git worktree add ..\PaperFlow-worktrees\<branch-slug> -b <type>/<slug> <approved-base>`。
+   - 分支格式 `<type>/<slug>`（feature/fix/refactor/test/docs）与 worktree 约束（唯一位置 `<仓库根>\..\PaperFlow-worktrees\<branch-slug>`，禁止仓库内部 `.slim/worktrees/`、`.claude/` 及嵌套/变体路径）见 `AGENTS.md`「分支与 worktree」与 `docs/standards/version-control.md`「Worktree 隔离」。
+   - 完成标准：worktree 已创建且当前分支匹配；路径位于仓库外同级的 `PaperFlow-worktrees` 下；未使用 `git reset --hard`、`git clean` 或强制 checkout。
 
 5. **初始化任务台账**
    - 从 `docs/templates/workstream-status.md` 创建 `docs/workstreams/<slug>/status.md`（slug 为分支名中 `/` 替换为 `--`），填入目标、非目标、验收标准、实施计划与基线 SHA。

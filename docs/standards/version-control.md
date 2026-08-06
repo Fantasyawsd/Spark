@@ -38,7 +38,17 @@ fix/pdf-cache
 
 ## 3. Worktree 隔离
 
-每个独立任务使用独立 worktree；即使当前只有一个 Agent，也不直接把新任务叠加到控制工作树：
+每个独立任务使用独立 worktree；即使当前只有一个 Agent，也不直接把新任务叠加到控制工作树。
+
+**唯一合法位置**：所有 worktree 必须位于与仓库同级的 `PaperFlow-worktrees` 目录下，即 `<仓库根>\..\PaperFlow-worktrees\<branch-slug>`（本仓库即 `C:\Users\Fantasy\Desktop\PaperFlow-worktrees\<branch-slug>`）。
+
+**执行前提**：`git worktree` 命令必须在控制工作树（仓库根目录）内执行；执行前先确认当前目录：
+
+```powershell
+git rev-parse --show-toplevel
+```
+
+确保输出为仓库根路径（本仓库为 `C:\Users\Fantasy\Desktop\PaperFlow-worktrees\PaperFlow`），再执行创建：
 
 ```powershell
 git worktree add ..\PaperFlow-worktrees\feature--paper-channels `
@@ -63,6 +73,8 @@ git worktree list
 - 不通过复制未提交文件、共享暂存区或压缩工作目录协作。
 - 不从脏工作区创建无法追溯的任务基线。
 - worktree 路径不得位于仓库内部。
+- worktree 目录名固定为 `<branch-slug>`（分支名中 `/` 替换为 `--`），不得使用 `PaperFlow-worktree`（单数）、`PaperFlow-worktrees\PaperFlow-worktrees`（嵌套）等变体。
+- 禁止在以下位置创建 worktree：仓库内部（含 `.slim/worktrees/`、`.claude/`、`~/.claude/` 等任何隐藏目录）、仓库的上级目录以外的其他位置。
 
 ## 4. 任务台账
 

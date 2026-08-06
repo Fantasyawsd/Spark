@@ -220,8 +220,8 @@ class _SparkBootstrapState extends State<_SparkBootstrap>
                     scale: _scale,
                     child: Image.asset(
                       'assets/images/spark_logo.png',
-                      width: 112,
-                      height: 112,
+                      width: 240,
+                      height: 240,
                       filterQuality: FilterQuality.high,
                     ),
                   ),

@@ -70,6 +70,9 @@
 | --- | --- | --- | --- |
 | 2026-08-07 | 替换 logo 采用覆盖 `assets/images/spark_logo.png`（路径不变） | 引用点（spark_app.dart、widget_test.dart、pubspec.yaml）无需改动，改动最小 | 无 |
 | 2026-08-07 | worktree 路径修复纳入本任务 | 改名任务的收尾修正，避免遗留破坏 worktree 创建流程的缺陷 | 无 |
+| 2026-08-07 | 同时替换 Android 原生开屏 `launch_image.png`（drawable-nodpi） | 冷启动先显示原生开屏再进 Flutter 闪屏，只换 spark_logo 会导致开屏仍显示旧图 | 新增资源 |
+| 2026-08-07 | 开屏 logo 尺寸 112→240，launch_image 放大至 768 | 用户要求开屏 logo 放大 2-3 号 | 视觉效果 |
+| 2026-08-07 | Windows ICO 与 Android 图标白底 + 主体放大 1.25 | 用户要求 LOGO 白底、图标放大 2-3 号 | 视觉效果 |
 
 ## 验证记录
 

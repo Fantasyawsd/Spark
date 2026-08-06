@@ -5,7 +5,9 @@ import 'package:flutter/foundation.dart';
 import '../domain/chat_context.dart';
 import '../domain/chat_message.dart';
 import '../domain/chat_session_repository.dart';
+import '../domain/chat_session_settings.dart';
 import 'chat_ai_service.dart';
+import 'chat_prompt_assembler.dart';
 
 enum ChatRequestStatus { idle, sending, completed, cancelled, failed }
 
@@ -15,15 +17,18 @@ class ChatConversationController extends ChangeNotifier {
     required ChatAiService service,
     ChatAiService? webSearchService,
     ChatSessionRepository? sessionRepository,
+    ChatSessionSettingsRepository? settingsRepository,
   })  : _service = service,
         _webSearchService = webSearchService,
-        _sessionRepository = sessionRepository;
-
+        _sessionRepository = sessionRepository,
+        _settingsRepository = settingsRepository;
   final ChatContext context;
   final ChatAiService _service;
   final ChatAiService? _webSearchService;
   final ChatSessionRepository? _sessionRepository;
+  final ChatSessionSettingsRepository? _settingsRepository;
   final List<ChatMessage> _messages = [];
+  ChatSessionSettings _settings = ChatSessionSettings.empty;
 
   bool _sending = false;
   bool _loading = false;
@@ -44,6 +49,9 @@ class ChatConversationController extends ChangeNotifier {
   List<ChatMessage> get messages => List.unmodifiable(_messages);
   bool get sending => _sending;
   bool get loading => _loading;
+  ChatSessionSettings get settings => _settings;
+  ChatContext get effectiveContext =>
+      ChatPromptAssembler.applySettings(context, _settings);
   String? get error => _requestError ?? _persistenceError;
   bool get canRetry =>
       !_sending &&
@@ -79,29 +87,50 @@ class ChatConversationController extends ChangeNotifier {
     _notify();
   }
 
+  Future<void> updateSettings(ChatSessionSettings settings) async {
+    _settings = settings;
+    _notify();
+    final repository = _settingsRepository;
+    if (repository == null) return;
+    try {
+      await repository.save(context.id, settings);
+    } on ChatSessionSettingsPersistenceException catch (error) {
+      if (!_disposed) _persistenceError = error.message;
+    }
+  }
+
   Future<void> initialize() async {
-    final repository = _sessionRepository;
-    if (repository == null || _loading || _messages.isNotEmpty) return;
+    if (_loading || _messages.isNotEmpty) return;
     _loading = true;
     _notify();
     try {
-      final stored = await repository.load(context.id);
-      if (_disposed) return;
-      _messages
-        ..clear()
-        ..addAll(stored);
-      if (stored.isEmpty) {
-        _requestStatus = ChatRequestStatus.idle;
-      } else if (stored.last.status == ChatMessageStatus.cancelled) {
-        _requestStatus = ChatRequestStatus.cancelled;
-      } else if (stored.last.status == ChatMessageStatus.failed ||
-          stored.last.fromUser) {
-        _requestStatus = ChatRequestStatus.failed;
-        _requestError = '上次回答未完成，请重新生成。';
-      } else {
-        _requestStatus = ChatRequestStatus.completed;
+      final repository = _sessionRepository;
+      if (repository != null) {
+        final stored = await repository.load(context.id);
+        if (_disposed) return;
+        _messages
+          ..clear()
+          ..addAll(stored);
+        if (stored.isEmpty) {
+          _requestStatus = ChatRequestStatus.idle;
+        } else if (stored.last.status == ChatMessageStatus.cancelled) {
+          _requestStatus = ChatRequestStatus.cancelled;
+        } else if (stored.last.status == ChatMessageStatus.failed ||
+            stored.last.fromUser) {
+          _requestStatus = ChatRequestStatus.failed;
+          _requestError = '上次回答未完成，请重新生成。';
+        } else {
+          _requestStatus = ChatRequestStatus.completed;
+        }
+      }
+
+      final settingsRepository = _settingsRepository;
+      if (settingsRepository != null) {
+        _settings = await settingsRepository.load(context.id);
       }
     } on ChatSessionPersistenceException catch (error) {
+      if (!_disposed) _persistenceError = error.message;
+    } on ChatSessionSettingsPersistenceException catch (error) {
       if (!_disposed) _persistenceError = error.message;
     } finally {
       if (!_disposed) {
@@ -230,7 +259,7 @@ class ChatConversationController extends ChangeNotifier {
         await _consumeStream(streamingService, requestVersion);
       } else {
         final answer = await service.answer(
-          context: context,
+          context: effectiveContext,
           conversation: List.unmodifiable(_messages),
         );
         if (_disposed || requestVersion != _requestVersion) return;
@@ -284,7 +313,7 @@ class ChatConversationController extends ChangeNotifier {
   ) async {
     final conversation = List<ChatMessage>.unmodifiable(_messages);
     await for (final chunk in service.answerStream(
-      context: context,
+      context: effectiveContext,
       conversation: conversation,
     )) {
       if (_disposed || requestVersion != _requestVersion) return;

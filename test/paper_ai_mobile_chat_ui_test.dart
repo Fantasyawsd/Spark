@@ -4,6 +4,7 @@ import 'package:paperflow/src/features/chat/application/chat_ai_service.dart';
 import 'package:paperflow/src/features/chat/domain/chat_context.dart';
 import 'package:paperflow/src/features/chat/domain/chat_message.dart';
 import 'package:paperflow/src/features/chat/domain/chat_session_repository.dart';
+import 'package:paperflow/src/features/chat/data/in_memory_chat_session_settings_repository.dart';
 import 'package:paperflow/src/features/chat/presentation/paper_ai_chat_screen.dart';
 
 void main() {
@@ -273,6 +274,64 @@ void main() {
         reason: '发送后应立即收起键盘，AI 回复期间不重新聚焦');
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('session settings customize the system prompt for the request',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(378, 810));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final service = _CapturingUiChatAiService();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: PaperAiChatScreen(
+          chatContext: const ChatContext(
+            id: 'settings-ui-test',
+            title: '设置 UI 测试',
+            systemPrompt: '默认提示词',
+          ),
+          aiService: service,
+          sessionRepository: _FakeChatSessionRepository(),
+          settingsRepository: InMemoryChatSessionSettingsRepository(),
+          screenTitle: '设置 UI 测试',
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey('paper-ai-session-settings')));
+    await tester.pumpAndSettle();
+    expect(find.text('会话设置'), findsOneWidget);
+
+    await tester.enterText(
+      find.byKey(const ValueKey('paper-ai-settings-prompt')),
+      '始终用中文回答',
+    );
+    await tester.tap(find.byKey(const ValueKey('paper-ai-settings-save')));
+    await tester.pumpAndSettle();
+    expect(find.text('会话设置'), findsNothing);
+
+    final input = find.byKey(const ValueKey('paper-ai-input'));
+    await tester.enterText(input, '你好');
+    await tester.pump();
+    expect(
+      tester.widget<TextField>(input).controller?.text,
+      '你好',
+      reason: '发送前输入框应有内容',
+    );
+
+    await tester.tap(find.byKey(const ValueKey('paper-ai-send')));
+    await tester.pumpAndSettle();
+    expect(
+      tester.widget<TextField>(input).controller?.text,
+      isEmpty,
+      reason: '发送后输入框应被清空',
+    );
+
+    expect(service.context, isNotNull, reason: 'AI 服务应收到请求');
+    expect(service.context?.systemPrompt, contains('始终用中文回答'));
+    expect(service.context?.systemPrompt, isNot(contains('默认提示词')));
+    expect(tester.takeException(), isNull);
+  });
 }
 
 class _FakeChatAiService implements ChatAiService {
@@ -323,5 +382,18 @@ class _QueueUiChatAiService implements ChatAiService {
   }) async {
     conversations.add(List<ChatMessage>.from(conversation));
     return answers.removeAt(0);
+  }
+}
+
+class _CapturingUiChatAiService implements ChatAiService {
+  ChatContext? context;
+
+  @override
+  Future<String> answer({
+    required ChatContext context,
+    required List<ChatMessage> conversation,
+  }) async {
+    this.context = context;
+    return '回答';
   }
 }

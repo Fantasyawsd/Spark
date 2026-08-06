@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 
 import '../../../core/theme/paperflow_theme.dart';
 import '../application/chat_ai_service.dart';
+import '../application/chat_skills.dart';
 import '../application/chat_conversation_controller.dart';
 import '../domain/chat_context.dart';
 import '../domain/chat_session_repository.dart';
+import '../domain/chat_session_settings.dart';
 import 'paper_ai_ui_tokens.dart';
 import 'widgets/paper_ai_composer.dart';
 import 'widgets/paper_ai_content.dart';
@@ -16,6 +18,7 @@ class PaperAiChatScreen extends StatefulWidget {
     required this.aiService,
     this.webSearchAiService,
     required this.sessionRepository,
+    this.settingsRepository,
     this.screenTitle = 'ChatPaper',
     this.screenSubtitle,
     this.assistantLabel = '默认助手',
@@ -30,6 +33,7 @@ class PaperAiChatScreen extends StatefulWidget {
   final ChatAiService aiService;
   final ChatAiService? webSearchAiService;
   final ChatSessionRepository sessionRepository;
+  final ChatSessionSettingsRepository? settingsRepository;
   final String screenTitle;
   final String? screenSubtitle;
   final String assistantLabel;
@@ -66,6 +70,7 @@ class _PaperAiChatScreenState extends State<PaperAiChatScreen> {
       service: widget.aiService,
       webSearchService: widget.webSearchAiService,
       sessionRepository: widget.sessionRepository,
+      settingsRepository: widget.settingsRepository,
     )..addListener(_handleConversationChanged);
     _conversation.initialize();
   }
@@ -176,6 +181,19 @@ class _PaperAiChatScreenState extends State<PaperAiChatScreen> {
     } else {
       await _conversation.send(text);
     }
+  }
+
+  Future<void> _showSessionSettings() async {
+    final current = _conversation.settings;
+    final saved = await showModalBottomSheet<ChatSessionSettings>(
+      context: context,
+      backgroundColor: PaperAiUiTokens.canvas,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (context) => _SessionSettingsSheet(initial: current),
+    );
+    if (saved == null || !mounted) return;
+    await _conversation.updateSettings(saved);
   }
 
   Future<void> _editConversationTitle() async {
@@ -378,6 +396,12 @@ class _PaperAiChatScreenState extends State<PaperAiChatScreen> {
       ),
       actions: [
         IconButton(
+          key: const ValueKey('paper-ai-session-settings'),
+          tooltip: '会话设置',
+          onPressed: _showSessionSettings,
+          icon: const Icon(Icons.tune_rounded, size: 24),
+        ),
+        IconButton(
           key: const ValueKey('paper-ai-outline-toggle'),
           tooltip: _previewMode ? '返回聊天' : '查看对话大纲',
           onPressed: () => setState(() => _previewMode = !_previewMode),
@@ -506,6 +530,173 @@ class _MessageSelectionBar extends StatelessWidget {
                 ),
                 icon: const Icon(Icons.delete_outline_rounded, size: 18),
                 label: const Text('删除'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SessionSettingsSheet extends StatefulWidget {
+  const _SessionSettingsSheet({required this.initial});
+
+  final ChatSessionSettings initial;
+
+  @override
+  State<_SessionSettingsSheet> createState() => _SessionSettingsSheetState();
+}
+
+class _SessionSettingsSheetState extends State<_SessionSettingsSheet> {
+  late final TextEditingController _promptController;
+  late ChatResponseStyle _responseStyle;
+  late final Set<String> _enabledSkills;
+
+  @override
+  void initState() {
+    super.initState();
+    _promptController =
+        TextEditingController(text: widget.initial.customSystemPrompt ?? '');
+    _responseStyle = widget.initial.responseStyle;
+    _enabledSkills = Set<String>.from(widget.initial.enabledSkillIds);
+  }
+
+  @override
+  void dispose() {
+    _promptController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(
+          20,
+          4,
+          20,
+          24 + MediaQuery.viewInsetsOf(context).bottom,
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                '会话设置',
+                style: TextStyle(
+                  color: PaperFlowColors.ink,
+                  fontSize: 22,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 6),
+              const Text(
+                '设置仅作用于当前会话；留空使用默认提示词。',
+                style: TextStyle(color: PaperFlowColors.muted, fontSize: 12.5),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                key: const ValueKey('paper-ai-settings-prompt'),
+                controller: _promptController,
+                minLines: 3,
+                maxLines: 6,
+                textAlignVertical: TextAlignVertical.top,
+                decoration: const InputDecoration(
+                  labelText: '自定义系统提示词',
+                  hintText: '例如：请始终用中文并给出公式推导。',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 18),
+              const Text(
+                '回答风格',
+                style: TextStyle(
+                  color: PaperFlowColors.ink,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                children: [
+                  for (final style in ChatResponseStyle.values)
+                    ChoiceChip(
+                      key: ValueKey('paper-ai-settings-style-${style.name}'),
+                      label: Text(style.label),
+                      selected: _responseStyle == style,
+                      onSelected: (_) => setState(() => _responseStyle = style),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 18),
+              const Text(
+                '技能',
+                style: TextStyle(
+                  color: PaperFlowColors.ink,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 4),
+              for (final skill in ChatSkills.all)
+                SwitchListTile(
+                  key: ValueKey('paper-ai-settings-skill-${skill.id}'),
+                  contentPadding: EdgeInsets.zero,
+                  dense: true,
+                  title: Text(
+                    skill.name,
+                    style: const TextStyle(
+                      color: PaperFlowColors.ink,
+                      fontSize: 14.5,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  subtitle: skill.description == null
+                      ? null
+                      : Text(
+                          skill.description!,
+                          style: const TextStyle(
+                            color: PaperFlowColors.muted,
+                            fontSize: 12,
+                          ),
+                        ),
+                  value: _enabledSkills.contains(skill.id),
+                  onChanged: (value) => setState(() {
+                    if (value) {
+                      _enabledSkills.add(skill.id);
+                    } else {
+                      _enabledSkills.remove(skill.id);
+                    }
+                  }),
+                ),
+              const SizedBox(height: 12),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('取消'),
+                  ),
+                  const SizedBox(width: 8),
+                  FilledButton(
+                    key: const ValueKey('paper-ai-settings-save'),
+                    onPressed: () => Navigator.pop(
+                      context,
+                      ChatSessionSettings(
+                        customSystemPrompt:
+                            _promptController.text.trim().isEmpty
+                                ? null
+                                : _promptController.text.trim(),
+                        enabledSkillIds: _enabledSkills.toList(growable: false),
+                        responseStyle: _responseStyle,
+                      ),
+                    ),
+                    child: const Text('保存'),
+                  ),
+                ],
               ),
             ],
           ),

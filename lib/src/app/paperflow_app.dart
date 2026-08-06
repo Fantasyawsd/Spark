@@ -571,10 +571,10 @@ class _PaperFlowShellState extends State<PaperFlowShell> {
           aiService: _paperAiService,
           webSearchAiService: _webSearchAiService,
           sessionRepository: _aiSessionRepository,
+          settingsRepository: _dependencies.chatSessionSettingsRepository,
         ),
       ),
     );
-    await _chatSessionController.refresh();
   }
 
   Future<void> _openAiChatById(String contextId) async {
@@ -591,6 +591,7 @@ class _PaperFlowShellState extends State<PaperFlowShell> {
           aiService: _mainAiService,
           webSearchAiService: _mainWebSearchAiService,
           sessionRepository: _aiSessionRepository,
+          settingsRepository: _dependencies.chatSessionSettingsRepository,
         ),
       ),
     );

@@ -1,6 +1,9 @@
 import '../features/ai_settings/data/deepseek_api_credential_validator.dart';
 import '../features/ai_settings/data/in_memory_deepseek_credential_repository.dart';
 import '../features/ai_settings/data/secure_deepseek_credential_repository.dart';
+import '../features/chat/data/file_chat_session_settings_repository.dart';
+import '../features/chat/data/in_memory_chat_session_settings_repository.dart';
+import '../features/chat/domain/chat_session_settings.dart';
 import '../features/ai_settings/domain/deepseek_credential_repository.dart';
 import '../core/storage/local_json_store.dart';
 import '../core/theme/file_theme_preference_repository.dart';
@@ -67,6 +70,7 @@ class PaperFlowDependencies {
     required this.aiService,
     required this.webSearchAiService,
     required this.aiSessionRepository,
+    required this.chatSessionSettingsRepository,
     required this.translationServiceFactory,
     required this.translationRepository,
     required this.keywordRepository,
@@ -98,6 +102,9 @@ class PaperFlowDependencies {
     );
     final keywordStore = LocalJsonStore(fileName: 'paper_keywords.json');
     final themeStore = LocalJsonStore(fileName: 'theme_preferences.json');
+    final aiSessionSettingsStore = LocalJsonStore(
+      fileName: 'paper_ai_session_settings.json',
+    );
     return PaperFlowDependencies(
       paperRepository: seedRepository,
       paperCatalogRepository: OfflineFirstPaperCatalogRepository(
@@ -127,6 +134,9 @@ class PaperFlowDependencies {
         credentialRepository: credentialRepository,
       ),
       aiSessionRepository: FilePaperAiSessionRepository(store: aiSessionStore),
+      chatSessionSettingsRepository: FileChatSessionSettingsRepository(
+        store: aiSessionSettingsStore,
+      ),
       translationServiceFactory: DeepSeekPaperTranslationServiceFactory(
         credentialRepository: credentialRepository,
       ),
@@ -141,7 +151,7 @@ class PaperFlowDependencies {
       ),
       localDataRepository: JsonLocalDataRepository(
         paperCacheStores: [paperCacheStore, translationStore, keywordStore],
-        chatStores: [aiSessionStore],
+        chatStores: [aiSessionStore, aiSessionSettingsStore],
         businessDataStores: [
           commentStore,
           interactionStore,
@@ -174,6 +184,7 @@ class PaperFlowDependencies {
     PaperAiService? aiService,
     PaperAiService? webSearchAiService,
     PaperAiSessionRepository? aiSessionRepository,
+    ChatSessionSettingsRepository? chatSessionSettingsRepository,
     PaperTranslationServiceFactory? translationServiceFactory,
     PaperTranslationRepository? translationRepository,
     PaperKeywordRepository? keywordRepository,
@@ -213,6 +224,8 @@ class PaperFlowDependencies {
       webSearchAiService: resolvedWebSearchService,
       aiSessionRepository:
           aiSessionRepository ?? InMemoryPaperAiSessionRepository(),
+      chatSessionSettingsRepository: chatSessionSettingsRepository ??
+          InMemoryChatSessionSettingsRepository(),
       translationServiceFactory: translationServiceFactory ??
           DeepSeekPaperTranslationServiceFactory(
             credentialRepository: resolvedCredentialRepository,
@@ -244,6 +257,7 @@ class PaperFlowDependencies {
   final PaperAiService aiService;
   final PaperAiService webSearchAiService;
   final PaperAiSessionRepository aiSessionRepository;
+  final ChatSessionSettingsRepository chatSessionSettingsRepository;
   final PaperTranslationServiceFactory translationServiceFactory;
   final PaperTranslationRepository translationRepository;
   final PaperKeywordRepository keywordRepository;

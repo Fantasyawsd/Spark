@@ -78,54 +78,63 @@
 
 | 命令或人工检查 | 结果 | 日期 |
 | --- | --- | --- |
+| `flutter analyze` | 通过（No issues） | 2026-08-07 |
+| `flutter test test/widget_test.dart` | 4 项通过（含启动闪屏 logo 断言） | 2026-08-07 |
+| `flutter build apk --debug --flavor development --dart-define=SPARK_ENV=development` | 成功，产出 app-development-debug.apk | 2026-08-07 |
+| APK 内部资源校验（launch_image / ic_launcher / spark_logo 哈希） | 新资源均已打包 | 2026-08-07 |
 
 ## 审查结论
 
 > 由 `/review` 填写摘要（阻断项、缺陷、结论）。
 
-- 审查日期：
-- 阻断项：
-- 缺陷：
-- 结论：可合并 / 需修复 / 需重新审查
+- 审查日期：2026-08-07
+- 阻断项：无
+- 缺陷：无
+- 结论：可合并（由编排者直接指示 `/finish`，未单独执行 `/review`）
 
 ## 检查点与提交
 
 | SHA | 提交信息 | 对应阶段 | 验证摘要 |
 | --- | --- | --- | --- |
 | `ea4ade9` | feat(core): replace startup logo and fix worktree path regressions | 最小纵向闭环 | flutter analyze 通过；widget_test 4 项通过（含 logo 断言） |
+| `3bef37b` | docs(workflow): record spark-logo task checkpoint | 检查点归档 | 台账检查点同步 |
+| `0e466de` | feat(core): enlarge splash logo, white-background icons and native launch image | 用户验收迭代 | analyze 通过；APK 重新构建并校验资源 |
 
 ## 交付准备（合并前收集）
 
 ### 交付摘要
 
-说明用户可以观察到的结果，以及与原计划是否一致。
+按用户提供的新 logo 替换 Spark 品牌视觉：Android 原生冷启动开屏、Flutter 启动闪屏、Windows 窗口图标与 Android 桌面图标统一为新 logo（白底、主体放大）；同时修复改名任务误伤的 worktree 文档路径。
 
 ### 实际变更
 
-- 领域与业务逻辑：
-- 数据与基础设施：
-- 界面与交互：
-- 测试与工具：
-- 文档：
+- 领域与业务逻辑：无
+- 数据与基础设施：无
+- 界面与交互：Flutter 闪屏 logo 尺寸 112→240；Android 原生开屏 `launch_image.png` 替换为新 logo 并放大至 768；Windows `app_icon.ico` 与 Android `mipmap-*` 桌面图标替换为新 logo（白底、主体放大 1.25）
+- 测试与工具：无新增测试（纯资源/文档替换）；既有闪屏测试通过
+- 文档：修复 `AGENTS.md`、`docs/standards/version-control.md` 中被改名误伤的 worktree 路径（`Spark-worktrees` → 真实目录 `PaperFlow-worktrees`）
 
 ### 兼容性与迁移
 
 - 本地数据迁移：无
 - API 或领域契约变化：无
-- 旧版本兼容性：无影响
+- 旧版本兼容性：无影响（`applicationId` 未变，仍为 `app.spark.reader.dev`）
 
 ### 已知风险与回滚
 
 - 已知风险：无
-- 回滚方式：说明需要 revert 的提交及数据影响。
+### 已知风险与回滚
+
+- 已知风险：无
+- 回滚方式：revert `ea4ade9` 或 `0e466de` 可恢复旧 logo 与 worktree 路径；纯资源/文档改动，无数据影响。
 
 ### 文档更新建议
 
-- 需要编排者更新的开发计划；若关联发布，再列出发布资料更新建议。
+- 本任务为品牌资源替换与路径修复，不影响 `docs/development.md` 开发计划（N/A）。
 
 ### 未完成与后续工作
 
-- 无；如有，写明后续方向和依赖。
+- 手机实机开屏/图标效果由编排者确认（已指示 finish，视为接受当前状态）。
 
 ## 合并归档（合并后在 main 补齐）
 

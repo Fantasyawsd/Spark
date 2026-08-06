@@ -25,6 +25,25 @@ void main() {
       const completed = r'**结论**：$E=mc^2$';
       expect(GeneratedMarkdownStabilizer.stabilize(completed), completed);
     });
+
+    test('temporarily closes unfinished italic and strikethrough', () {
+      expect(GeneratedMarkdownStabilizer.stabilize('*重要'), '*重要*');
+      expect(
+        GeneratedMarkdownStabilizer.stabilize('~~删除'),
+        '~~删除~~',
+      );
+    });
+
+    test('keeps completed italic, bold and strikethrough unchanged', () {
+      const completed = '*斜体* 与 **加粗** 与 ~~删除线~~';
+      expect(GeneratedMarkdownStabilizer.stabilize(completed), completed);
+    });
+
+    test('unfinished bold is not confused with a single italic asterisk', () {
+      expect(GeneratedMarkdownStabilizer.stabilize('**加粗'), '**加粗**');
+      expect(GeneratedMarkdownStabilizer.stabilize('*斜体* 与 **加粗'),
+          '*斜体* 与 **加粗**');
+    });
   });
 
   group('PaperMarkdownPreprocessor', () {

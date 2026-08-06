@@ -613,6 +613,8 @@ class GeneratedMarkdownStabilizer {
     _collectSymmetricDelimiter(withoutInlineCode, '`', '`', pendingClosers);
     _collectSymmetricDelimiter(withoutInlineCode, '**', '**', pendingClosers);
     _collectSymmetricDelimiter(withoutInlineCode, '__', '__', pendingClosers);
+    _collectSymmetricDelimiter(withoutInlineCode, '~~', '~~', pendingClosers);
+    _collectLikelyItalic(withoutInlineCode, pendingClosers);
 
     if (pendingClosers.isEmpty) return source;
     pendingClosers.sort((a, b) => b.position.compareTo(a.position));
@@ -661,6 +663,23 @@ class GeneratedMarkdownStabilizer {
     }
     if (positions.length.isOdd) {
       pending.add(_PendingCloser(positions.last, closing));
+    }
+  }
+
+  /// 补全未闭合的斜体 `*`。加粗 `**` 已由 [_collectSymmetricDelimiter]
+  /// 成对处理，这里只处理剩余的单星号：奇数个时补一个收尾星号。
+  static void _collectLikelyItalic(
+    String source,
+    List<_PendingCloser> pending,
+  ) {
+    final positions = <int>[];
+    for (var index = 0; index < source.length; index++) {
+      if (source[index] == '*' && !_isEscaped(source, index)) {
+        positions.add(index);
+      }
+    }
+    if (positions.length.isOdd) {
+      pending.add(_PendingCloser(positions.last, '*'));
     }
   }
 

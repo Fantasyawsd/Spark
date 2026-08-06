@@ -10,8 +10,8 @@
 - Worktree：`C:\Users\Fantasy\Desktop\Spark-worktrees\fix--chat-theme-colors`
 - 基线提交：`2dd2b4dc3af81d4ca94f2daf4961c3a66eacdd95`
 - 负责人：Fantasy（编排者）；执行：Codex
-- 状态：测试通过，等待 `/review`
-- 最近更新：2026-08-07 01:23
+- 状态：待合并
+- 最近更新：2026-08-07 01:33
 
 ## 目标
 
@@ -63,9 +63,9 @@ AI 聊天页面的背景、消息气泡、Composer、推理面板和交互状态
 
 ## 当前进度
 
-- 已完成：新增并完成红绿主题切换 Widget 测试；将聊天页面、消息、Composer、推理、来源、选择态、会话滑动操作和模型头像的颜色接入当前 `ThemeData.colorScheme`；完成聊天与主题定向回归、固定颜色审计和 `/test` 完整验证门禁；将任务 worktree 迁移到规范要求的 `Spark-worktrees`。
-- 正在进行：无；`/test` 阶段已通过。
-- 下一步：由编排者触发 `/review`，只读审查任务差异。
+- 已完成：新增并完成红绿主题切换 Widget 测试；将聊天页面、消息、Composer、推理、来源、选择态、会话滑动操作和模型头像的颜色接入当前 `ThemeData.colorScheme`；完成聊天与主题定向回归、固定颜色审计、`/test` 完整验证门禁和 Windows 桌面人工验收；将任务 worktree 迁移到规范要求的 `Spark-worktrees`。
+- 正在进行：整理 `/finish` 合并前交付信息。
+- 下一步：合入 `main`，执行集成回归并完成合并后台账归档。
 - 阻塞项：无。
 
 ## 决策记录
@@ -97,27 +97,30 @@ AI 聊天页面的背景、消息气泡、Composer、推理面板和交互状态
 | `flutter test` | 通过，共 295 项 | 2026-08-07 |
 | `flutter build apk --debug --flavor development --dart-define=SPARK_ENV=development` | 通过；生成 `build/app/outputs/flutter-apk/app-development-debug.apk`（163,576,309 bytes） | 2026-08-07 |
 | `git diff --check`（`/test`） | 通过；Flutter 自动触碰的 3 个 Windows 生成文件经确认内容无差异后恢复 | 2026-08-07 |
+| `flutter pub get` + `flutter run -d windows` | Windows debug 应用构建并启动成功，`Spark` 窗口响应正常；编排者完成人工验收并确认可以 `/finish` | 2026-08-07 |
 
 ## 审查结论
 
-> 由 `/review` 填写摘要（阻断项、缺陷、结论）。
+> 编排者明确要求人工验收通过后直接 `/finish`，因此豁免独立 `/review` 阶段。
 
-- 审查日期：待 `/review`
-- 阻断项：待 `/review`
-- 缺陷：待 `/review`
-- 结论：待 `/review`
+- 审查日期：2026-08-07（编排者豁免独立审查）
+- 阻断项：无。
+- 缺陷：Windows 桌面人工验收未报告缺陷。
+- 结论：完整门禁与人工验收通过，编排者确认可以 `/finish`，允许合并。
 
 ## 检查点与提交
 
 | SHA | 提交信息 | 对应阶段 | 验证摘要 |
 | --- | --- | --- | --- |
 | `a0e52a8` | `fix(chat): follow global theme colors` | `/develop` | 定向测试 36 项、格式检查、`flutter analyze` 与固定颜色审计通过 |
+| `16ec493` | `docs: record chat theme development checkpoint` | `/develop` | 记录功能提交、验证证据与回滚方式 |
+| `3d9ebca` | `docs: record chat theme test results` | `/test` | 全量测试 295 项、静态分析与 development APK 构建通过 |
 
 ## 交付准备（合并前收集）
 
 ### 交付摘要
 
-待 `/finish` 根据实际实现补充。
+AI 聊天 presentation 的颜色全部接入当前全局 `ColorScheme`：页面底色、消息气泡、Composer、推理和选择/操作状态会随主题切换，固定粉色不再绕过总主题；布局、业务逻辑和数据契约保持不变。
 
 ### 实际变更
 
@@ -135,16 +138,16 @@ AI 聊天页面的背景、消息气泡、Composer、推理面板和交互状态
 
 ### 已知风险与回滚
 
-- 已知风险：自动化主题验证覆盖蓝色与绿色；五种主题的完整人工视觉体验未在本阶段逐一操作验收。Windows 格式脚本默认比较旧 `origin/main` 时受命令行长度限制，任务基线上的 9 个变更文件已通过格式检查。
+- 已知风险：自动化主题验证覆盖蓝色与绿色，Windows 桌面人工验收已通过；五种主题未形成逐项截图证据。Windows 格式脚本默认比较旧 `origin/main` 时受命令行长度限制，任务基线上的 9 个变更文件已通过格式检查。
 - 回滚方式：使用 `git revert a0e52a8` 回滚功能提交；不涉及数据回滚。
 
 ### 文档更新建议
 
-- 本任务修复既有 ChatPaper UI 缺陷，预计不改变 `docs/development.md` 的能力状态；合并时按实际结果确认。
+- 本任务修复既有 ChatPaper UI 缺陷，不新增或改变开发计划中的产品能力，`docs/development.md` 无需修改；合并后在归档区记录这一结论。
 
 ### 未完成与后续工作
 
-- `/develop` 与 `/test` 已完成；待 `/review` 与 `/finish` 按编排者指令依次执行。
+- 无功能、测试或人工验收未完成项；待完成本地合并、main 集成回归和合并后文档归档。
 
 ## 合并归档（合并后在 main 补齐）
 

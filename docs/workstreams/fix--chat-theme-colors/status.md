@@ -10,8 +10,8 @@
 - Worktree：`C:\Users\Fantasy\Desktop\Spark-worktrees\fix--chat-theme-colors`
 - 基线提交：`2dd2b4dc3af81d4ca94f2daf4961c3a66eacdd95`
 - 负责人：Fantasy（编排者）；执行：Codex
-- 状态：待合并
-- 最近更新：2026-08-07 01:33
+- 状态：已合并（归档）
+- 最近更新：2026-08-07 01:40
 
 ## 目标
 
@@ -63,9 +63,9 @@ AI 聊天页面的背景、消息气泡、Composer、推理面板和交互状态
 
 ## 当前进度
 
-- 已完成：新增并完成红绿主题切换 Widget 测试；将聊天页面、消息、Composer、推理、来源、选择态、会话滑动操作和模型头像的颜色接入当前 `ThemeData.colorScheme`；完成聊天与主题定向回归、固定颜色审计、`/test` 完整验证门禁和 Windows 桌面人工验收；将任务 worktree 迁移到规范要求的 `Spark-worktrees`。
-- 正在进行：整理 `/finish` 合并前交付信息。
-- 下一步：合入 `main`，执行集成回归并完成合并后台账归档。
+- 已完成：聊天配色接入全局主题；蓝色/绿色主题 Widget 回归、固定颜色审计、分支与 main 完整验证门禁、Windows 桌面人工验收、本地 fast-forward 合并和合并后归档均已完成。
+- 正在进行：无；任务已归档。
+- 下一步：无；除勘误外不再更新本台账。
 - 阻塞项：无。
 
 ## 决策记录
@@ -115,6 +115,7 @@ AI 聊天页面的背景、消息气泡、Composer、推理面板和交互状态
 | `a0e52a8` | `fix(chat): follow global theme colors` | `/develop` | 定向测试 36 项、格式检查、`flutter analyze` 与固定颜色审计通过 |
 | `16ec493` | `docs: record chat theme development checkpoint` | `/develop` | 记录功能提交、验证证据与回滚方式 |
 | `3d9ebca` | `docs: record chat theme test results` | `/test` | 全量测试 295 项、静态分析与 development APK 构建通过 |
+| `0ea3903` | `docs: prepare chat theme delivery` | `/finish` 合并前 | 完成合并前交付信息；该提交作为 fast-forward 集成提交进入 `main` |
 
 ## 交付准备（合并前收集）
 
@@ -139,7 +140,7 @@ AI 聊天 presentation 的颜色全部接入当前全局 `ColorScheme`：页面�
 ### 已知风险与回滚
 
 - 已知风险：自动化主题验证覆盖蓝色与绿色，Windows 桌面人工验收已通过；五种主题未形成逐项截图证据。Windows 格式脚本默认比较旧 `origin/main` 时受命令行长度限制，任务基线上的 9 个变更文件已通过格式检查。
-- 回滚方式：使用 `git revert a0e52a8` 回滚功能提交；不涉及数据回滚。
+- 回滚方式：回滚 `a0e52a8` 的聊天 presentation 与测试改动，并保留本归档台账；后续三个提交均为过程文档。不涉及数据回滚。
 
 ### 文档更新建议
 
@@ -147,17 +148,17 @@ AI 聊天 presentation 的颜色全部接入当前全局 `ColorScheme`：页面�
 
 ### 未完成与后续工作
 
-- 无功能、测试或人工验收未完成项；待完成本地合并、main 集成回归和合并后文档归档。
+- 无。
 
 ## 合并归档（合并后在 main 补齐）
 
 > 只有任务提交已真实进入 `main` 后才能填写。本节与 `docs/development.md` 的真实状态更新一并提交；完成后台账转为只读归档。
 
-- 最终状态：待合并后填写。
-- 合入分支：待合并后填写。
-- 最终集成提交：待合并后填写。
-- Pull Request：待合并后填写。
-- 合并时间：待合并后填写。
-- main 集成验证：待合并后填写。
-- 开发计划更新：待合并后确认是否适用。
-- 最终后续项：待合并后填写。
+- 最终状态：已合并并完成归档。
+- 合入分支：`main`（本地 fast-forward）。
+- 最终集成提交：`0ea3903`。
+- Pull Request：不适用；本任务为非版本迭代的日常本地合并。
+- 合并时间：2026-08-07 01:35:37 +08:00。
+- main 集成验证：`git merge-base --is-ancestor 0ea3903 main`、任务基线格式检查（9 个 Dart 文件）、`flutter analyze`、`flutter test`（295 项）、development debug APK 构建和 `git diff --check` 均通过。
+- 开发计划更新：无需修改 `docs/development.md`；该文档已记录 ChatPaper 移动端聊天 UI 与全局主题能力，本任务仅修复两者之间的配色接入，不新增或改变能力状态。
+- 最终后续项：无；台账转为只读归档，除勘误外不再更新。

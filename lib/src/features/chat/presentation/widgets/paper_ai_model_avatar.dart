@@ -28,7 +28,7 @@ class PaperAiModelAvatar extends StatelessWidget {
               child: Icon(
                 Icons.auto_awesome_rounded,
                 size: size * 0.5,
-                color: PaperAiUiTokens.modelBlue,
+                color: PaperAiUiTokens.accent(context),
               ),
             ),
             Image.network(

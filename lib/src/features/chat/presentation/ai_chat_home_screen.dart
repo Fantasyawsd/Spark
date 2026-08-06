@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/theme/spark_theme.dart';
 import '../application/chat_session_controller.dart';
 import '../domain/chat_session_repository.dart';
+import 'paper_ai_ui_tokens.dart';
 import 'widgets/chat_session_swipe_action.dart';
 
 class AiChatHomeScreen extends StatefulWidget {
@@ -49,22 +49,22 @@ class _AiChatHomeScreenState extends State<AiChatHomeScreen> {
   @override
   Widget build(BuildContext context) {
     return ColoredBox(
-      color: SparkColors.canvas,
+      color: PaperAiUiTokens.canvas(context),
       child: SafeArea(
         bottom: false,
         child: Column(
           children: [
-            const SizedBox(
+            SizedBox(
               height: 64,
               child: Padding(
-                padding: EdgeInsets.fromLTRB(18, 16, 18, 8),
+                padding: const EdgeInsets.fromLTRB(18, 16, 18, 8),
                 child: Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
                     'ChatPaper',
                     key: ValueKey('ai-chat-home-title'),
                     style: TextStyle(
-                      color: SparkColors.ink,
+                      color: Theme.of(context).colorScheme.onSurface,
                       fontSize: 22,
                       fontWeight: FontWeight.w900,
                     ),
@@ -124,7 +124,8 @@ class _AiChatHomeScreenState extends State<AiChatHomeScreen> {
             key: const ValueKey('confirm-delete-ai-session'),
             onPressed: () => Navigator.pop(context, true),
             style: FilledButton.styleFrom(
-              backgroundColor: Color(0xFFD92D20),
+              backgroundColor: Theme.of(context).colorScheme.error,
+              foregroundColor: Theme.of(context).colorScheme.onError,
             ),
             child: const Text('删除'),
           ),
@@ -194,7 +195,7 @@ class _AiSessionList extends StatelessWidget {
           onTogglePinned: () => onTogglePinned(entry),
           onDelete: () => onDelete(entry),
           child: Material(
-            color: Colors.white,
+            color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(16),
             child: InkWell(
               key: ValueKey('ai-session-$contextId'),
@@ -208,12 +209,12 @@ class _AiSessionList extends StatelessWidget {
                       width: 44,
                       height: 44,
                       decoration: BoxDecoration(
-                        color: SparkColors.primarySoft,
+                        color: Theme.of(context).colorScheme.primaryContainer,
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
                         Icons.auto_awesome_rounded,
-                        color: SparkColors.primary,
+                        color: Theme.of(context).colorScheme.onPrimaryContainer,
                         size: 21,
                       ),
                     ),
@@ -227,7 +228,7 @@ class _AiSessionList extends StatelessWidget {
                               if (session.pinned) ...[
                                 Icon(
                                   Icons.push_pin_rounded,
-                                  color: SparkColors.primary,
+                                  color: Theme.of(context).colorScheme.primary,
                                   size: 14,
                                 ),
                                 const SizedBox(width: 5),
@@ -237,8 +238,9 @@ class _AiSessionList extends StatelessWidget {
                                   entry.context.title,
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    color: SparkColors.ink,
+                                  style: TextStyle(
+                                    color:
+                                        Theme.of(context).colorScheme.onSurface,
                                     fontSize: 14,
                                     fontWeight: FontWeight.w800,
                                   ),
@@ -251,8 +253,10 @@ class _AiSessionList extends StatelessWidget {
                             session.preview.replaceAll('\n', ' '),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: SparkColors.muted,
+                            style: TextStyle(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant,
                               fontSize: 12,
                             ),
                           ),
@@ -265,16 +269,17 @@ class _AiSessionList extends StatelessWidget {
                       children: [
                         Text(
                           _relativeTime(session.updatedAt),
-                          style: const TextStyle(
-                            color: SparkColors.subtle,
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.outline,
                             fontSize: 10.5,
                           ),
                         ),
                         const SizedBox(height: 8),
                         Text(
                           '${session.messageCount} 条',
-                          style: const TextStyle(
-                            color: SparkColors.muted,
+                          style: TextStyle(
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
                             fontSize: 10.5,
                           ),
                         ),
@@ -311,7 +316,7 @@ class _MainAiChatCard extends StatelessWidget {
     final currentSession = session;
     final preview = currentSession?.preview.trim();
     return Material(
-      color: SparkColors.primaryPale,
+      color: Theme.of(context).colorScheme.primaryContainer,
       borderRadius: BorderRadius.circular(18),
       child: InkWell(
         key: const ValueKey('main-ai-chat'),
@@ -325,12 +330,12 @@ class _MainAiChatCard extends StatelessWidget {
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  color: SparkColors.primary,
+                  color: Theme.of(context).colorScheme.primary,
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.auto_awesome_rounded,
-                  color: SparkColors.card,
+                  color: Theme.of(context).colorScheme.onPrimary,
                   size: 23,
                 ),
               ),
@@ -341,13 +346,15 @@ class _MainAiChatCard extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        const Flexible(
+                        Flexible(
                           child: Text(
                             'Spark 主聊天',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
-                              color: SparkColors.ink,
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onPrimaryContainer,
                               fontSize: 14.5,
                               fontWeight: FontWeight.w900,
                             ),
@@ -360,7 +367,9 @@ class _MainAiChatCard extends StatelessWidget {
                             vertical: 2,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.82),
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.surface.withValues(alpha: 0.82),
                             borderRadius: BorderRadius.circular(99),
                           ),
                           child: Row(
@@ -369,13 +378,13 @@ class _MainAiChatCard extends StatelessWidget {
                               Icon(
                                 Icons.push_pin_rounded,
                                 size: 11,
-                                color: SparkColors.primary,
+                                color: Theme.of(context).colorScheme.primary,
                               ),
                               const SizedBox(width: 3),
                               Text(
                                 '置顶',
                                 style: TextStyle(
-                                  color: SparkColors.primary,
+                                  color: Theme.of(context).colorScheme.primary,
                                   fontSize: 9.5,
                                   fontWeight: FontWeight.w700,
                                 ),
@@ -392,8 +401,8 @@ class _MainAiChatCard extends StatelessWidget {
                           : preview.replaceAll('\n', ' '),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: SparkColors.muted,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                         fontSize: 12,
                       ),
                     ),
@@ -402,9 +411,9 @@ class _MainAiChatCard extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               if (currentSession == null)
-                const Icon(
+                Icon(
                   Icons.chevron_right_rounded,
-                  color: SparkColors.muted,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                 )
               else
                 Column(
@@ -412,16 +421,16 @@ class _MainAiChatCard extends StatelessWidget {
                   children: [
                     Text(
                       _AiSessionList._relativeTime(currentSession.updatedAt),
-                      style: const TextStyle(
-                        color: SparkColors.subtle,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.outline,
                         fontSize: 10.5,
                       ),
                     ),
                     const SizedBox(height: 8),
                     Text(
                       '${currentSession.messageCount} 条',
-                      style: const TextStyle(
-                        color: SparkColors.muted,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                         fontSize: 10.5,
                       ),
                     ),

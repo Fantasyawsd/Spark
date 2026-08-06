@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/theme/spark_theme.dart';
 import '../../application/chat_ai_service.dart';
 import '../paper_ai_ui_tokens.dart';
 import 'paper_ai_model_avatar.dart';
@@ -88,17 +87,18 @@ class _PaperAiComposerState extends State<PaperAiComposer> {
             key: const ValueKey('paper-ai-composer-surface'),
             padding: const EdgeInsets.fromLTRB(14, 10, 8, 6),
             decoration: BoxDecoration(
-              color: PaperAiUiTokens.composer,
+              color: PaperAiUiTokens.composer(context),
               borderRadius: BorderRadius.only(
                 topLeft: const Radius.circular(22),
                 topRight: const Radius.circular(22),
                 bottomLeft: Radius.circular(keyboardVisible ? 0 : 22),
                 bottomRight: Radius.circular(keyboardVisible ? 0 : 22),
               ),
-              border: Border.all(color: PaperAiUiTokens.composerBorder),
-              boxShadow: const [
+              border:
+                  Border.all(color: PaperAiUiTokens.composerBorder(context)),
+              boxShadow: [
                 BoxShadow(
-                  color: Color(0x0D182230),
+                  color: PaperAiUiTokens.shadow(context),
                   blurRadius: 12,
                   offset: Offset(0, -2),
                 ),
@@ -122,15 +122,15 @@ class _PaperAiComposerState extends State<PaperAiComposer> {
                     maxLines: 6,
                     textAlignVertical: TextAlignVertical.top,
                     textInputAction: TextInputAction.newline,
-                    style: const TextStyle(
-                      color: SparkColors.ink,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurface,
                       fontSize: 15.5,
                       height: 1.4,
                     ),
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       hintText: '输入消息与AI聊天',
                       hintStyle: TextStyle(
-                        color: SparkColors.muted,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                         fontSize: 15.5,
                       ),
                       filled: false,
@@ -160,8 +160,8 @@ class _PaperAiComposerState extends State<PaperAiComposer> {
                         tooltip: widget.webSearchEnabled ? '关闭联网搜索' : '开启联网搜索',
                         icon: Icons.search_rounded,
                         color: widget.webSearchEnabled
-                            ? PaperAiUiTokens.modelBlue
-                            : SparkColors.muted,
+                            ? PaperAiUiTokens.accent(context)
+                            : Theme.of(context).colorScheme.onSurfaceVariant,
                         onTap: widget.enabled && widget.webSearchAvailable
                             ? () => widget.onWebSearchChanged(
                                   !widget.webSearchEnabled,
@@ -175,8 +175,8 @@ class _PaperAiComposerState extends State<PaperAiComposer> {
                         icon: Icons.lightbulb_outline_rounded,
                         color:
                             widget.reasoningEffort == ChatReasoningEffort.none
-                                ? SparkColors.muted
-                                : PaperAiUiTokens.reasoning,
+                                ? Theme.of(context).colorScheme.onSurfaceVariant
+                                : PaperAiUiTokens.accent(context),
                         onTap: widget.enabled ? _showReasoningSheet : null,
                       ),
                       const SizedBox(width: 8),
@@ -184,7 +184,7 @@ class _PaperAiComposerState extends State<PaperAiComposer> {
                         key: const ValueKey('paper-ai-clear-context'),
                         tooltip: '清除上下文',
                         icon: Icons.add_rounded,
-                        color: SparkColors.ink,
+                        color: Theme.of(context).colorScheme.onSurface,
                         onTap: widget.enabled && widget.hasContext
                             ? widget.onClearContext
                             : null,
@@ -204,11 +204,11 @@ class _PaperAiComposerState extends State<PaperAiComposer> {
                                 : null,
                         style: IconButton.styleFrom(
                           backgroundColor: widget.sending || canSend
-                              ? PaperAiUiTokens.reasoning
-                              : const Color(0xFFEBDDDC),
+                              ? PaperAiUiTokens.accent(context)
+                              : PaperAiUiTokens.disabledControl(context),
                           foregroundColor: widget.sending || canSend
-                              ? Colors.white
-                              : SparkColors.subtle,
+                              ? Theme.of(context).colorScheme.onPrimary
+                              : Theme.of(context).colorScheme.outline,
                           minimumSize: const Size(40, 40),
                           maximumSize: const Size(40, 40),
                           padding: EdgeInsets.zero,
@@ -235,7 +235,7 @@ class _PaperAiComposerState extends State<PaperAiComposer> {
   Future<void> _showModelSheet() async {
     await showModalBottomSheet<void>(
       context: context,
-      backgroundColor: PaperAiUiTokens.canvas,
+      backgroundColor: PaperAiUiTokens.canvas(context),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
       ),
@@ -248,10 +248,10 @@ class _PaperAiComposerState extends State<PaperAiComposer> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              Text(
                 '选择模型',
                 style: TextStyle(
-                  color: SparkColors.ink,
+                  color: Theme.of(context).colorScheme.onSurface,
                   fontSize: 22,
                   fontWeight: FontWeight.w700,
                 ),
@@ -261,7 +261,7 @@ class _PaperAiComposerState extends State<PaperAiComposer> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: PaperAiUiTokens.assistantReasoning,
+                  color: PaperAiUiTokens.assistantReasoning(context),
                   borderRadius: BorderRadius.circular(18),
                 ),
                 child: Row(
@@ -273,26 +273,28 @@ class _PaperAiComposerState extends State<PaperAiComposer> {
                         children: [
                           Text(
                             widget.modelName,
-                            style: const TextStyle(
-                              color: SparkColors.ink,
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.onSurface,
                               fontSize: 15,
                               fontWeight: FontWeight.w700,
                             ),
                           ),
                           const SizedBox(height: 3),
-                          const Text(
+                          Text(
                             'Chat · text → text · DeepSeek',
                             style: TextStyle(
-                              color: SparkColors.muted,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant,
                               fontSize: 11,
                             ),
                           ),
                         ],
                       ),
                     ),
-                    const Icon(
+                    Icon(
                       Icons.check_circle_rounded,
-                      color: PaperAiUiTokens.reasoning,
+                      color: PaperAiUiTokens.accent(context),
                     ),
                   ],
                 ),
@@ -308,7 +310,7 @@ class _PaperAiComposerState extends State<PaperAiComposer> {
     var selected = widget.reasoningEffort;
     await showModalBottomSheet<void>(
       context: context,
-      backgroundColor: PaperAiUiTokens.canvas,
+      backgroundColor: PaperAiUiTokens.canvas(context),
       isScrollControlled: true,
       showDragHandle: true,
       builder: (context) => StatefulBuilder(
@@ -322,36 +324,36 @@ class _PaperAiComposerState extends State<PaperAiComposer> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text(
+                  Text(
                     '调整模型思考深度',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      color: SparkColors.ink,
+                      color: Theme.of(context).colorScheme.onSurface,
                       fontSize: 22,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
                   const SizedBox(height: 8),
-                  const Text(
+                  Text(
                     '并非所有模型都支持深度调整。请参考模型和提供商文档。',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      color: SparkColors.muted,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                       fontSize: 13,
                       height: 1.4,
                     ),
                   ),
                   const SizedBox(height: 24),
-                  const Icon(
+                  Icon(
                     Icons.lightbulb_outline_rounded,
-                    color: PaperAiUiTokens.reasoning,
+                    color: PaperAiUiTokens.accent(context),
                     size: 42,
                   ),
                   const SizedBox(height: 8),
                   Text(
                     _displayLabel(selected),
-                    style: const TextStyle(
-                      color: SparkColors.ink,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurface,
                       fontSize: 17,
                       fontWeight: FontWeight.w700,
                     ),
@@ -362,8 +364,8 @@ class _PaperAiComposerState extends State<PaperAiComposer> {
                     min: 0,
                     max: (values.length - 1).toDouble(),
                     divisions: values.length - 1,
-                    activeColor: PaperAiUiTokens.reasoning,
-                    inactiveColor: PaperAiUiTokens.reasoning.withValues(
+                    activeColor: PaperAiUiTokens.accent(context),
+                    inactiveColor: PaperAiUiTokens.accent(context).withValues(
                       alpha: 0.22,
                     ),
                     onChanged: (value) {
@@ -392,8 +394,10 @@ class _PaperAiComposerState extends State<PaperAiComposer> {
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
                                   color: effort == selected
-                                      ? PaperAiUiTokens.reasoning
-                                      : SparkColors.muted,
+                                      ? PaperAiUiTokens.accent(context)
+                                      : Theme.of(
+                                          context,
+                                        ).colorScheme.onSurfaceVariant,
                                   fontSize: 12,
                                   fontWeight: effort == selected
                                       ? FontWeight.w700
@@ -472,7 +476,8 @@ class _ToolbarIconButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final resolvedColor = onTap == null ? SparkColors.subtle : color;
+    final resolvedColor =
+        onTap == null ? Theme.of(context).colorScheme.outline : color;
     return Tooltip(
       message: tooltip,
       child: IconButton(

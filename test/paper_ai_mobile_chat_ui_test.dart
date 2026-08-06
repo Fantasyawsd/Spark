@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:spark/src/core/theme/paper_theme_color.dart';
+import 'package:spark/src/core/theme/spark_theme.dart';
+import 'package:spark/src/core/theme/theme_controller.dart';
 import 'package:spark/src/features/chat/application/chat_ai_service.dart';
 import 'package:spark/src/features/chat/domain/chat_context.dart';
 import 'package:spark/src/features/chat/domain/chat_message.dart';
@@ -8,6 +11,73 @@ import 'package:spark/src/features/chat/data/in_memory_chat_session_settings_rep
 import 'package:spark/src/features/chat/presentation/paper_ai_chat_screen.dart';
 
 void main() {
+  testWidgets('mobile chat colors follow the active Material theme',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(378, 810));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    addTearDown(
+      () => ThemeController.instance.setColor(PaperThemeColor.pink),
+    );
+
+    const messages = [
+      ChatMessage(fromUser: true, content: '主题问题'),
+      ChatMessage(
+        fromUser: false,
+        content: '主题回答',
+        reasoningContent: '主题推理',
+      ),
+    ];
+    ThemeController.instance.setColor(PaperThemeColor.blue);
+    final blueTheme = SparkTheme.light();
+    ThemeController.instance.setColor(PaperThemeColor.green);
+    final greenTheme = SparkTheme.light();
+
+    Future<_ChatThemeColors> pumpWithTheme(ThemeData theme) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: theme,
+          home: PaperAiChatScreen(
+            chatContext: const ChatContext(
+              id: 'theme-ui-test',
+              title: '主题测试',
+              systemPrompt: '回答问题。',
+            ),
+            aiService: const _FakeChatAiService(),
+            sessionRepository:
+                const _FakeChatSessionRepository(messages: messages),
+            screenTitle: '主题测试',
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byKey(const ValueKey('paper-ai-input')),
+        '启用发送按钮',
+      );
+      await tester.pump();
+      return _readChatThemeColors(tester);
+    }
+
+    final blueColors = await pumpWithTheme(blueTheme);
+    expect(blueColors.canvas, _accentBlend(blueTheme, 0.02));
+    expect(blueColors.userBubble, blueTheme.colorScheme.primaryContainer);
+    expect(blueColors.composer, _accentBlend(blueTheme, 0.06));
+    expect(blueColors.reasoning, _accentBlend(blueTheme, 0.08));
+    expect(blueColors.activeControl, blueTheme.colorScheme.primary);
+
+    final greenColors = await pumpWithTheme(greenTheme);
+    expect(greenColors.canvas, _accentBlend(greenTheme, 0.02));
+    expect(greenColors.userBubble, greenTheme.colorScheme.primaryContainer);
+    expect(greenColors.composer, _accentBlend(greenTheme, 0.06));
+    expect(greenColors.reasoning, _accentBlend(greenTheme, 0.08));
+    expect(greenColors.activeControl, greenTheme.colorScheme.primary);
+    expect(greenColors.canvas, isNot(blueColors.canvas));
+    expect(greenColors.userBubble, isNot(blueColors.userBubble));
+    expect(greenColors.composer, isNot(blueColors.composer));
+    expect(greenColors.reasoning, isNot(blueColors.reasoning));
+    expect(greenColors.activeControl, isNot(blueColors.activeControl));
+  });
+
   testWidgets(
       'mobile chat exposes the RikkaHub-style header and outline toggle',
       (tester) async {
@@ -376,6 +446,53 @@ void main() {
     expect(service.context?.systemPrompt, contains('论文全文引用'));
     expect(tester.takeException(), isNull);
   });
+}
+
+Color _accentBlend(ThemeData theme, double opacity) {
+  return Color.alphaBlend(
+    theme.colorScheme.primary.withValues(alpha: opacity),
+    theme.colorScheme.surface,
+  );
+}
+
+_ChatThemeColors _readChatThemeColors(WidgetTester tester) {
+  Color decorationColor(String key) {
+    final container = tester.widget<Container>(
+      find.byKey(ValueKey(key)),
+    );
+    return (container.decoration! as BoxDecoration).color!;
+  }
+
+  final sendButton = tester.widget<IconButton>(
+    find.byKey(const ValueKey('paper-ai-send')),
+  );
+  return _ChatThemeColors(
+    canvas: tester
+        .widget<Scaffold>(
+          find.byKey(const ValueKey('paper-ai-chat-screen')),
+        )
+        .backgroundColor!,
+    userBubble: decorationColor('paper-ai-user-bubble'),
+    composer: decorationColor('paper-ai-composer-surface'),
+    reasoning: decorationColor('paper-ai-reasoning-surface'),
+    activeControl: sendButton.style!.backgroundColor!.resolve({})!,
+  );
+}
+
+class _ChatThemeColors {
+  const _ChatThemeColors({
+    required this.canvas,
+    required this.userBubble,
+    required this.composer,
+    required this.reasoning,
+    required this.activeControl,
+  });
+
+  final Color canvas;
+  final Color userBubble;
+  final Color composer;
+  final Color reasoning;
+  final Color activeControl;
 }
 
 class _FakeChatAiService implements ChatAiService {

@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../../../../core/theme/spark_theme.dart';
 import '../../../../core/widgets/spark_markdown.dart';
 import '../../domain/chat_message.dart';
 import '../paper_ai_ui_tokens.dart';
@@ -109,15 +108,18 @@ class _UserMessage extends StatelessWidget {
             child: ConstrainedBox(
               constraints: BoxConstraints(maxWidth: maxWidth),
               child: Container(
+                key: const ValueKey('paper-ai-user-bubble'),
                 padding:
                     const EdgeInsets.symmetric(horizontal: 15, vertical: 9),
                 decoration: BoxDecoration(
-                  color: PaperAiUiTokens.userBubble,
+                  color: PaperAiUiTokens.userBubble(context),
                   borderRadius: BorderRadius.circular(18),
                 ),
                 child: PaperMarkdown(
                   data: message.content,
-                  styleSheet: paperAiMarkdownStyle(color: SparkColors.ink),
+                  styleSheet: paperAiMarkdownStyle(
+                    color: Theme.of(context).colorScheme.onPrimaryContainer,
+                  ),
                   selectable: false,
                 ),
               ),
@@ -182,8 +184,8 @@ class _AssistantMessage extends StatelessWidget {
                           modelName,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: SparkColors.ink,
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.onSurface,
                             fontSize: 15.5,
                             fontWeight: FontWeight.w700,
                           ),
@@ -208,7 +210,9 @@ class _AssistantMessage extends StatelessWidget {
           if (message.content.isNotEmpty)
             PaperMarkdown(
               data: message.content,
-              styleSheet: paperAiMarkdownStyle(color: SparkColors.ink),
+              styleSheet: paperAiMarkdownStyle(
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
               stabilizeGeneratedSyntax: true,
               selectable: false,
             ),
@@ -236,8 +240,8 @@ class _AssistantMessage extends StatelessWidget {
                 message.status == ChatMessageStatus.cancelled
                     ? '已停止生成'
                     : '生成失败',
-                style: const TextStyle(
-                  color: SparkColors.muted,
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                   fontSize: 10.5,
                 ),
               ),
@@ -271,10 +275,13 @@ class _SelectableMessage extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(4, 4, 4, 0),
         decoration: BoxDecoration(
           color: selected
-              ? PaperAiUiTokens.assistantReasoning.withValues(alpha: 0.55)
+              ? PaperAiUiTokens.assistantReasoning(
+                  context,
+                ).withValues(alpha: 0.55)
               : Colors.transparent,
           border: Border.all(
-            color: selected ? PaperAiUiTokens.reasoning : Colors.transparent,
+            color:
+                selected ? PaperAiUiTokens.accent(context) : Colors.transparent,
             width: 1.2,
           ),
           borderRadius: BorderRadius.circular(16),
@@ -307,12 +314,14 @@ class _SelectionIndicator extends StatelessWidget {
   Widget build(BuildContext context) {
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: selected ? PaperAiUiTokens.reasoning : Colors.white,
+        color: selected
+            ? PaperAiUiTokens.accent(context)
+            : Theme.of(context).colorScheme.surface,
         shape: BoxShape.circle,
         border: Border.all(
           color: selected
-              ? PaperAiUiTokens.reasoning
-              : PaperAiUiTokens.actionMuted,
+              ? PaperAiUiTokens.accent(context)
+              : PaperAiUiTokens.actionMuted(context),
           width: 1.4,
         ),
       ),
@@ -320,7 +329,11 @@ class _SelectionIndicator extends StatelessWidget {
         width: 22,
         height: 22,
         child: selected
-            ? const Icon(Icons.check_rounded, size: 15, color: Colors.white)
+            ? Icon(
+                Icons.check_rounded,
+                size: 15,
+                color: Theme.of(context).colorScheme.onPrimary,
+              )
             : null,
       ),
     );
@@ -398,7 +411,7 @@ class _MessageActionRow extends StatelessWidget {
   void _showMore(BuildContext context) {
     showModalBottomSheet<void>(
       context: context,
-      backgroundColor: PaperAiUiTokens.canvas,
+      backgroundColor: PaperAiUiTokens.canvas(context),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
       ),
@@ -446,8 +459,8 @@ class _MessageActionButton extends StatelessWidget {
         icon,
         size: 20,
         color: onPressed == null
-            ? PaperAiUiTokens.actionMuted
-            : PaperAiUiTokens.action,
+            ? PaperAiUiTokens.actionMuted(context)
+            : PaperAiUiTokens.action(context),
       ),
       style: IconButton.styleFrom(
         minimumSize: const Size(32, 32),
@@ -513,9 +526,10 @@ class _ReasoningPanelState extends State<_ReasoningPanel> {
             ? '正在思考'
             : '思考过程';
     return Container(
+      key: const ValueKey('paper-ai-reasoning-surface'),
       margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
-        color: PaperAiUiTokens.assistantReasoning,
+        color: PaperAiUiTokens.assistantReasoning(context),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
@@ -532,7 +546,7 @@ class _ReasoningPanelState extends State<_ReasoningPanel> {
                   Icon(
                     Icons.lightbulb_outline_rounded,
                     size: 18,
-                    color: PaperAiUiTokens.reasoning,
+                    color: PaperAiUiTokens.accent(context),
                   ),
                   const SizedBox(width: 10),
                   Expanded(
@@ -540,8 +554,10 @@ class _ReasoningPanelState extends State<_ReasoningPanel> {
                         ? _ShimmerText(text: title)
                         : Text(
                             title,
-                            style: const TextStyle(
-                              color: PaperAiUiTokens.assistantReasoningText,
+                            style: TextStyle(
+                              color: PaperAiUiTokens.assistantReasoningText(
+                                context,
+                              ),
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
                             ),
@@ -551,7 +567,7 @@ class _ReasoningPanelState extends State<_ReasoningPanel> {
                     _expanded
                         ? Icons.keyboard_arrow_up_rounded
                         : Icons.keyboard_arrow_down_rounded,
-                    color: PaperAiUiTokens.assistantReasoningText,
+                    color: PaperAiUiTokens.assistantReasoningText(context),
                     size: 20,
                   ),
                 ],
@@ -566,10 +582,10 @@ class _ReasoningPanelState extends State<_ReasoningPanel> {
                     padding: const EdgeInsets.fromLTRB(14, 0, 14, 13),
                     child: Container(
                       padding: const EdgeInsets.only(left: 16),
-                      decoration: const BoxDecoration(
+                      decoration: BoxDecoration(
                         border: Border(
                           left: BorderSide(
-                            color: Color(0x55A9797C),
+                            color: PaperAiUiTokens.composerBorder(context),
                             width: 2,
                           ),
                         ),
@@ -577,7 +593,9 @@ class _ReasoningPanelState extends State<_ReasoningPanel> {
                       child: PaperMarkdown(
                         data: widget.reasoning,
                         styleSheet: paperAiMarkdownStyle(
-                          color: PaperAiUiTokens.assistantReasoningText,
+                          color: PaperAiUiTokens.assistantReasoningText(
+                            context,
+                          ),
                           reasoning: true,
                         ),
                         stabilizeGeneratedSyntax: true,
@@ -647,8 +665,8 @@ class _ShimmerTextState extends State<_ShimmerText>
       ),
       child: Text(
         widget.text,
-        style: const TextStyle(
-          color: PaperAiUiTokens.assistantReasoningText,
+        style: TextStyle(
+          color: PaperAiUiTokens.assistantReasoningText(context),
           fontSize: 15,
           fontWeight: FontWeight.w600,
         ),
@@ -683,7 +701,9 @@ class _SourcesPanelState extends State<_SourcesPanel> {
       margin: const EdgeInsets.only(top: 14),
       padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
       decoration: BoxDecoration(
-        color: PaperAiUiTokens.assistantReasoning.withValues(alpha: 0.64),
+        color: PaperAiUiTokens.assistantReasoning(
+          context,
+        ).withValues(alpha: 0.64),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
@@ -697,16 +717,16 @@ class _SourcesPanelState extends State<_SourcesPanel> {
               padding: const EdgeInsets.symmetric(vertical: 2),
               child: Row(
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.link_rounded,
                     size: 17,
-                    color: SparkColors.muted,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                   const SizedBox(width: 7),
-                  const Text(
+                  Text(
                     '来源',
                     style: TextStyle(
-                      color: SparkColors.ink,
+                      color: Theme.of(context).colorScheme.onSurface,
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
                     ),
@@ -714,8 +734,8 @@ class _SourcesPanelState extends State<_SourcesPanel> {
                   const SizedBox(width: 6),
                   Text(
                     '${sources.length} 个',
-                    style: const TextStyle(
-                      color: SparkColors.subtle,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.outline,
                       fontSize: 10.5,
                     ),
                   ),
@@ -725,7 +745,7 @@ class _SourcesPanelState extends State<_SourcesPanel> {
                         ? Icons.keyboard_arrow_up_rounded
                         : Icons.keyboard_arrow_down_rounded,
                     size: 19,
-                    color: SparkColors.subtle,
+                    color: Theme.of(context).colorScheme.outline,
                   ),
                 ],
               ),
@@ -753,8 +773,8 @@ class _SourcesPanelState extends State<_SourcesPanel> {
                           padding: const EdgeInsets.only(left: 28, top: 2),
                           child: Text(
                             '另有 $remaining 个来源',
-                            style: const TextStyle(
-                              color: SparkColors.subtle,
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.outline,
                               fontSize: 10.5,
                             ),
                           ),
@@ -802,13 +822,13 @@ class _SourceRow extends StatelessWidget {
                   height: 21,
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
-                    color: PaperAiUiTokens.canvas,
+                    color: PaperAiUiTokens.canvas(context),
                     borderRadius: BorderRadius.circular(7),
                   ),
                   child: Text(
                     '$index',
-                    style: const TextStyle(
-                      color: SparkColors.muted,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                       fontSize: 10,
                       fontWeight: FontWeight.w700,
                     ),
@@ -825,8 +845,8 @@ class _SourceRow extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           color: uri == null
-                              ? SparkColors.ink
-                              : SparkColors.blue,
+                              ? Theme.of(context).colorScheme.onSurface
+                              : Theme.of(context).colorScheme.secondary,
                           fontSize: 11.5,
                           fontWeight: FontWeight.w600,
                           height: 1.3,
@@ -837,8 +857,8 @@ class _SourceRow extends StatelessWidget {
                         _host(source.url),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: SparkColors.subtle,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.outline,
                           fontSize: 9.8,
                         ),
                       ),
@@ -846,12 +866,12 @@ class _SourceRow extends StatelessWidget {
                   ),
                 ),
                 if (uri != null)
-                  const Padding(
-                    padding: EdgeInsets.only(left: 6, top: 2),
+                  Padding(
+                    padding: const EdgeInsets.only(left: 6, top: 2),
                     child: Icon(
                       Icons.open_in_new_rounded,
                       size: 15,
-                      color: SparkColors.subtle,
+                      color: Theme.of(context).colorScheme.outline,
                     ),
                   ),
               ],

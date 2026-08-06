@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/theme/spark_theme.dart';
 import '../../../../core/widgets/spark_entry_animation.dart';
 import '../../application/chat_conversation_controller.dart';
 import '../../domain/chat_context.dart';
@@ -252,10 +251,10 @@ class _PaperAiOutline extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text(
+          Text(
             '对话大纲',
             style: TextStyle(
-              color: SparkColors.ink,
+              color: Theme.of(context).colorScheme.onSurface,
               fontSize: 20,
               fontWeight: FontWeight.w700,
             ),
@@ -263,8 +262,8 @@ class _PaperAiOutline extends StatelessWidget {
           const SizedBox(height: 6),
           Text(
             messages.isEmpty ? '还没有消息' : '$modelName · ${messages.length} 条消息',
-            style: const TextStyle(
-              color: SparkColors.muted,
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
               fontSize: 12,
             ),
           ),
@@ -302,14 +301,14 @@ class _OutlineRow extends StatelessWidget {
             alignment: Alignment.center,
             decoration: BoxDecoration(
               color: message.fromUser
-                  ? PaperAiUiTokens.userBubble
-                  : PaperAiUiTokens.assistantReasoning,
+                  ? PaperAiUiTokens.userBubble(context)
+                  : PaperAiUiTokens.assistantReasoning(context),
               shape: BoxShape.circle,
             ),
             child: Text(
               '$index',
-              style: const TextStyle(
-                color: SparkColors.muted,
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
                 fontSize: 11,
                 fontWeight: FontWeight.w700,
               ),
@@ -322,8 +321,8 @@ class _OutlineRow extends StatelessWidget {
               children: [
                 Text(
                   message.fromUser ? '用户' : 'Assistant',
-                  style: const TextStyle(
-                    color: SparkColors.muted,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
                   ),
@@ -333,8 +332,8 @@ class _OutlineRow extends StatelessWidget {
                   preview.isEmpty ? '多媒体或空消息' : preview,
                   maxLines: 3,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: SparkColors.ink,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface,
                     fontSize: 13,
                     height: 1.35,
                   ),
@@ -356,13 +355,15 @@ class _OutlineEmptyState extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: PaperAiUiTokens.assistantReasoning.withValues(alpha: 0.5),
+        color: PaperAiUiTokens.assistantReasoning(
+          context,
+        ).withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(18),
       ),
-      child: const Text(
+      child: Text(
         '发送第一条消息后，这里会显示会话大纲。',
         style: TextStyle(
-          color: SparkColors.muted,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
           fontSize: 13,
           height: 1.4,
         ),
@@ -383,22 +384,24 @@ class _AiStoppedMessage extends StatelessWidget {
       margin: const EdgeInsets.only(top: 6, bottom: 8),
       padding: const EdgeInsets.fromLTRB(12, 8, 8, 8),
       decoration: BoxDecoration(
-        color: PaperAiUiTokens.assistantReasoning.withValues(alpha: 0.68),
+        color: PaperAiUiTokens.assistantReasoning(
+          context,
+        ).withValues(alpha: 0.68),
         borderRadius: BorderRadius.circular(14),
       ),
       child: Row(
         children: [
-          const Icon(
+          Icon(
             Icons.stop_circle_outlined,
             size: 18,
-            color: SparkColors.muted,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
           const SizedBox(width: 8),
-          const Expanded(
+          Expanded(
             child: Text(
               '已停止生成',
               style: TextStyle(
-                color: SparkColors.muted,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
                 fontSize: 12.5,
               ),
             ),
@@ -438,8 +441,8 @@ class _AiWelcome extends StatelessWidget {
               const SizedBox(width: 10),
               Text(
                 title ?? '与论文对话',
-                style: const TextStyle(
-                  color: SparkColors.ink,
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurface,
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
                 ),
@@ -449,8 +452,8 @@ class _AiWelcome extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             description ?? 'DeepSeek 已读取《${chatContext.title}》的摘要和元数据。',
-            style: const TextStyle(
-              color: SparkColors.muted,
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
               fontSize: 14,
               height: 1.5,
             ),
@@ -474,22 +477,22 @@ class _AiErrorMessage extends StatelessWidget {
       margin: const EdgeInsets.only(top: 6, bottom: 8),
       padding: const EdgeInsets.fromLTRB(12, 10, 8, 10),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFE9E7),
+        color: PaperAiUiTokens.errorSurface(context),
         borderRadius: BorderRadius.circular(14),
       ),
       child: Row(
         children: [
-          const Icon(
+          Icon(
             Icons.error_outline_rounded,
             size: 19,
-            color: SparkColors.danger,
+            color: Theme.of(context).colorScheme.onErrorContainer,
           ),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               message,
-              style: const TextStyle(
-                color: SparkColors.danger,
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onErrorContainer,
                 fontSize: 12.5,
                 height: 1.4,
               ),
@@ -530,8 +533,8 @@ class _TypingIndicator extends StatelessWidget {
           Expanded(
             child: Text(
               searching ? '正在联网检索…' : '正在组织回答…',
-              style: const TextStyle(
-                color: SparkColors.muted,
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
                 fontSize: 12.5,
               ),
             ),
@@ -541,7 +544,7 @@ class _TypingIndicator extends StatelessWidget {
             tooltip: '停止生成',
             onPressed: onCancel,
             icon: const Icon(Icons.stop_circle_outlined, size: 21),
-            color: SparkColors.muted,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
         ],
       ),
@@ -567,7 +570,7 @@ class _AssistantAvatar extends StatelessWidget {
               child: Icon(
                 Icons.auto_awesome_rounded,
                 size: size * 0.5,
-                color: PaperAiUiTokens.modelBlue,
+                color: PaperAiUiTokens.accent(context),
               ),
             ),
             Image.network(

@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/theme/spark_theme.dart';
-
 class ChatSessionSwipeAction extends StatefulWidget {
   const ChatSessionSwipeAction({
     super.key,
@@ -64,8 +62,10 @@ class _ChatSessionSwipeActionState extends State<ChatSessionSwipeAction> {
                           ? Icons.push_pin_outlined
                           : Icons.push_pin_rounded,
                       label: widget.pinned ? '取消置顶' : '置顶',
-                      backgroundColor: SparkColors.primarySoft,
-                      foregroundColor: SparkColors.primary,
+                      backgroundColor:
+                          Theme.of(context).colorScheme.primaryContainer,
+                      foregroundColor:
+                          Theme.of(context).colorScheme.onPrimaryContainer,
                       onTap: () {
                         widget.onClose();
                         widget.onTogglePinned();
@@ -76,8 +76,10 @@ class _ChatSessionSwipeActionState extends State<ChatSessionSwipeAction> {
                       width: _actionWidth,
                       icon: Icons.delete_outline_rounded,
                       label: '删除',
-                      backgroundColor: SparkColors.dangerSoft,
-                      foregroundColor: SparkColors.danger,
+                      backgroundColor:
+                          Theme.of(context).colorScheme.errorContainer,
+                      foregroundColor:
+                          Theme.of(context).colorScheme.onErrorContainer,
                       onTap: () {
                         widget.onClose();
                         widget.onDelete();

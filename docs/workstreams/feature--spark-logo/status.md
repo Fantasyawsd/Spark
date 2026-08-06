@@ -142,9 +142,9 @@
 
 - 最终状态：已合并
 - 合入分支：`main`
-- 最终集成提交：`<merge-sha-or-fast-forward-tip>`
-- Pull Request：无 / `<url-or-number>`
-- 合并时间：`YYYY-MM-DD HH:mm`
-- main 集成验证：`<commands-and-results>`
-- 开发计划更新：`<updated-sections-or-not-applicable-with-reason>`
-- 最终后续项：无 / `<remaining-work>`
+- 最终集成提交：`3a3f92a`（Merge branch 'feature/spark-logo'）
+- Pull Request：无（日常开发直接合入 main）
+- 合并时间：2026-08-07 01:40
+- main 集成验证：`flutter analyze` 通过；`flutter test test/widget_test.dart` 4 项通过；APK 构建成功（分支上验证）
+- 开发计划更新：不适用——本任务为品牌资源替换与 worktree 路径修复，不改变产品能力，`docs/development.md` 无需更新
+- 最终后续项：无

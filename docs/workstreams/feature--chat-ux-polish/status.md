@@ -8,8 +8,8 @@
 - Worktree：`C:\Users\Fantasy\Desktop\PaperFlow-worktrees\feature--chat-ux-polish`
 - 基线提交：`f24923b`
 - 负责人：Fantasy（编排者）；执行：Codex
-- 状态：已完成，待合并
-- 最近更新：2026-08-06
+- 状态：已合并
+- 最近更新：2026-08-07
 
 ## 目标
 
@@ -65,8 +65,8 @@
 ## 当前进度
 
 - 已完成：七条开发计划全部实现并有测试覆盖；全量 `flutter test` 295 项通过；analyze 与格式门禁通过。
-- 正在进行：合并前收尾（APK 构建验证、合并 main、清理）。
-- 下一步：`flutter build apk` 验证；合入 main；清理 worktree 与分支。
+- 正在进行：无
+- 下一步：无；论文聊天“读取全文”错误提示问题另行修复
 - 阻塞项：无。
 
 ## 决策记录
@@ -146,3 +146,14 @@ ChatPaper 七条开发计划全部完成：模型头像透明化并用于二级�
 - 论文模块六问 AI 解读（开发计划论文第 9 条）仍待后端 PDF 分块分析链路。
 - 已知问题（待修复）：论文聊天「读取全文」按钮在下载/解析失败时可能无反馈或停在加载态（`_toggleFullText` 仅捕获 Exception）；成功时无完成提示。已记录于 `docs/development.md` §3.2 已知问题，修复方向：捕获所有异常并复位 loading、成功/失败均 SnackBar 提示。
 - 会话合并（AI 总结多会话）与引用会话功能属后续规划。
+
+## 合并归档
+
+- 最终状态：已合并
+- 合入分支：`main`
+- 最终集成提交：`9de1612`（任务提交已可达 `main`，按历史为 fast-forward 集成）
+- Pull Request：无
+- 合并时间：2026-08-06 23:15（+08:00）
+- main 集成验证：`git merge-base --is-ancestor 9de1612 main` 通过；原台账记录全量 295 项测试、analyze 与格式门禁通过
+- 开发计划更新：已核对并更新 `docs/development.md` §2.2、§3.2、§4.2；PDF 全文能力与六问未完成边界已拆分记录
+- 最终后续项：修复“读取全文”失败时 loading 不复位和缺少 SnackBar 的已知问题；六问 AI 解读仍待实现

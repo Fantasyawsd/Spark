@@ -8,8 +8,8 @@
 - Worktree：`C:\Users\Fantasy\Desktop\PaperFlow-worktrees\fix--inline-math-flow`
 - 基线提交：`63c00491503ad4fdad8c2f213c7d240f18a4bc1f`（`origin/main`）
 - 负责人：Fantasy（编排者）；执行：Codex
-- 状态：待合并
-- 最近更新：2026-08-04 04:02
+- 状态：已合并
+- 最近更新：2026-08-07 00:10
 
 ## 目标
 
@@ -60,8 +60,8 @@
 ## 当前进度
 
 - 已完成：`/start` 全部步骤；失败回归测试；真正的 `InlineSpan` 段落排版实现；邻接标点、块公式、选择能力与 ChatPaper 定向回归；功能提交 `4756631`。
-- 正在进行：`/review` 已完成，进入 `/finish` 合并与清理。
-- 下一步：补齐交付记录，核对完成定义，合入 `main` 并清理 worktree/分支。
+- 正在进行：无
+- 下一步：无
 - 阻塞项：无。
 
 ## 决策记录
@@ -144,3 +144,14 @@
 ### 未完成与后续工作
 
 - 无。
+
+## 合并归档
+
+- 最终状态：已合并
+- 合入分支：`main`
+- 最终集成提交：`bf92428`（`merge: fix inline math flow`）
+- Pull Request：无
+- 合并时间：2026-08-04 04:04（+08:00）
+- main 集成验证：`git merge-base --is-ancestor 2dc1e20 main` 通过；原台账记录格式、analyze、Markdown/ChatPaper 定向测试和全量门禁通过
+- 开发计划更新：已核对 `docs/development.md` §2.1，行内 LaTeX 与文本选择能力已记录，无需新增状态项
+- 最终后续项：无

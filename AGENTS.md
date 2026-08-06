@@ -1,7 +1,7 @@
 # PaperFlow AI Agent 开发规范
 
 > 本文件是 Claude Code 及其他 AI Agent 在本仓库工作的统一入口。
-> 最近更新：2026-08-03
+> 最近更新：2026-08-06
 
 ## 1. 指令优先级与语言
 
@@ -69,7 +69,7 @@
 | `/develop` | `/start` 后，可反复 | 迭代实现、定向验证、原子提交、更新台账 |
 | `/test` | 实现完成后、审查前 | 运行完整验证门禁并记录证据 |
 | `/review` | `/test` 通过后、收尾前 | 只读审查 diff，报告阻断项并写入台账 |
-| `/finish` | `/review` 通过后、合并前 | 完成交付记录、核对完成定义、合入 main（版本迭代才走 PR）、清理 |
+| `/finish` | `/review` 通过后 | 整理合并前交付信息、合入 main、在 main 完成台账与开发计划归档、清理 |
 | `/version` | 需要新版本号时 | 升版本号、更新 CHANGELOG、校验 |
 | `/release` | 正式发布时 | 发布清单、签名构建、真机与 Play 门、annotated Tag |
 
@@ -84,7 +84,7 @@ skill 定义位于 `.claude/skills/<name>/SKILL.md`。
    ▼                    │ 缺陷修复
 /develop ◄──────────────┘
    ▼
-/test ──► /review ──►（通过）──► /finish ──► 合并 / 清理
+/test ──► /review ──►（通过）──► /finish（合并 → 归档 → 清理）
                  （阻断项 → 回 /develop）
 
 需要新版本号时：/version
@@ -160,9 +160,10 @@ docs/workstreams/<branch-slug>/
 - 独占写入路径和共享路径；
 - 实施计划、当前阶段、完成项、下一步和阻塞项；
 - 决策、验证记录和审查结论；
-- 合并前补齐交付摘要、兼容性、风险和回滚。
+- 合并前收集交付摘要、兼容性、风险和回滚；
+- 合并后在 `main` 记录最终状态、集成提交或 PR、合并时间和集成验证。
 
-任务合并后台账归档保留，不删除、不更新。不得只在聊天中保留关键信息。
+任务合并后必须在 `main` 完成一次最终归档更新，不能让台账永久停留在“待合并”“进行中”等旧状态；归档提交完成后才转为只读保留，除勘误外不再更新。不得只在聊天中保留关键信息。
 
 ## 8. Git 与提交约定
 
@@ -185,8 +186,8 @@ docs/workstreams/<branch-slug>/
 | --- | --- | --- | --- |
 | 规范（Skill 事实源） | `AGENTS.md`、`docs/standards/{code-structure,version-control,release-management}.md` | 规则变更由编排者批准；SKILL.md 只引用不复制 | 活跃 |
 | 索引 | `docs/README.md` | 随文档增删同步，索引表含状态列 | 活跃 |
-| 开发计划 | `docs/development.md` | 功能开发时由 `/finish` 同步更新 | 活跃 |
-| 过程记录 | `docs/workstreams/<slug>/status.md` | 任务生命周期内由 `/start`→`/finish` 维护；合并后归档保留 | 活跃→归档 |
+| 开发计划 | `docs/development.md` | 功能合入 `main` 后由 `/finish` 按真实状态同步更新 | 活跃 |
+| 过程记录 | `docs/workstreams/<slug>/status.md` | 任务生命周期内由 `/start`→`/finish` 维护；合并后在 `main` 完成最终归档更新 | 活跃→归档 |
 | 发布归档 | `docs/releases/<version>/` | 发布时由 `/release` 维护；发布后只补勘误 | 归档 |
 | 模板 | `docs/templates/` | 随台账模型调整；skill 引用 | 活跃 |
 | 其他 | `README.md`、`CHANGELOG.md`、根 `CLAUDE.md` | README 产品背景；CHANGELOG 由 `/version` 更新；CLAUDE.md 桥接 | 活跃 |
@@ -194,8 +195,8 @@ docs/workstreams/<branch-slug>/
 ### 9.2 维护规则
 
 1. 规范变更由编排者批准，skill 无需改动（单一事实源）。
-2. 功能开发时文档同步由 skill 步骤触发：`/develop` 维护台账、`/finish` 更新开发计划、`/version` 更新 CHANGELOG、`/release` 更新发布归档。
-3. 台账合并后归档保留，不删除、不更新。
+2. 功能开发时文档同步由 skill 步骤触发：`/develop` 维护台账；`/finish` 在任务分支上收集合并前交付信息，合入 `main` 后再更新台账最终状态和开发计划；`/version` 更新 CHANGELOG；`/release` 更新发布归档。
+3. 台账必须在合并后记录 `已合并`、最终集成 SHA 或 PR、合并时间和集成验证；该归档更新提交到 `main` 后保留，不删除，除勘误外不再更新。
 4. `/review` 报告摘要写入台账，审查结论不单独落盘。
 5. 归档文档不覆盖历史，只补勘误。
 6. 一个文档一个事实源，SKILL.md 不复制规范内容。
@@ -229,7 +230,7 @@ flutter build apk --debug --flavor development --dart-define=PAPERFLOW_ENV=devel
 
 ## 12. 完成定义
 
-一个任务只有同时满足以下条件才可申请合并：
+任务分支只有同时满足以下条件才可申请合并：
 
 - 功能、测试和验收标准达到目标；
 - 改动符合模块边界和数据分层原则；
@@ -239,3 +240,10 @@ flutter build apk --debug --flavor development --dart-define=PAPERFLOW_ENV=devel
 - 已知风险、迁移和未完成项已记录；
 - 与其他任务没有未解决的写入范围冲突；
 - 分支可以被安全合并、回退和交接。
+
+任务只有在合入 `main` 后再满足以下条件，才可宣布完成并清理：
+
+- `main` 已包含任务提交，并已完成要求的集成回归；
+- 对应 `status.md` 已在 `main` 标记为 `已合并`，记录最终集成 SHA 或 PR、合并时间和真实下一步；
+- `docs/development.md` 已依据合并后的真实能力更新，或在台账中明确本任务不影响开发计划；
+- 上述归档文档已形成独立的合并后提交，关联发布资料已按需同步。

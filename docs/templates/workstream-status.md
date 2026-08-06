@@ -1,6 +1,6 @@
 # 任务台账
 
-> 单文件任务台账，由 `/start` 创建、`/develop` 与 `/test` 持续更新，合并前由 `/finish` 补齐交付记录。所有占位内容替换为真实信息。任务合并后归档保留，不删除、不更新。
+> 单文件任务台账，由 `/start` 创建、`/develop` 与 `/test` 持续更新。`/finish` 在任务分支收集合并前交付信息；任务真实合入 `main` 后，再在 `main` 补齐最终合并归档。所有占位内容替换为真实信息。
 
 ## 基本信息
 
@@ -10,7 +10,7 @@
 - Worktree：`<absolute-or-relative-path>`
 - 基线提交：`<sha>`
 - 负责人：`<human>`
-- 状态：规划中 / 开发中 / 阻塞 / 待审查 / 已合并
+- 状态：规划中 / 开发中 / 阻塞 / 待审查 / 待合并 / 已合并（仅在 `main` 已包含任务提交后填写）
 - 最近更新：`YYYY-MM-DD HH:mm`
 
 ## 目标
@@ -76,7 +76,7 @@
 | SHA | 提交信息 | 对应阶段 | 验证摘要 |
 | --- | --- | --- | --- |
 
-## 交付记录（合并前补齐）
+## 交付准备（合并前收集）
 
 ### 交付摘要
 
@@ -108,3 +108,16 @@
 ### 未完成与后续工作
 
 - 无；如有，写明后续方向和依赖。
+
+## 合并归档（合并后在 main 补齐）
+
+> 只有任务提交已真实进入 `main` 后才能填写。本节与 `docs/development.md` 的真实状态更新一并提交；完成后台账转为只读归档。
+
+- 最终状态：已合并
+- 合入分支：`main`
+- 最终集成提交：`<merge-sha-or-fast-forward-tip>`
+- Pull Request：无 / `<url-or-number>`
+- 合并时间：`YYYY-MM-DD HH:mm`
+- main 集成验证：`<commands-and-results>`
+- 开发计划更新：`<updated-sections-or-not-applicable-with-reason>`
+- 最终后续项：无 / `<remaining-work>`

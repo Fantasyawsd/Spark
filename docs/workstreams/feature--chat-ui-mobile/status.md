@@ -8,8 +8,8 @@
 - Worktree：`C:\Users\Fantasy\Desktop\PaperFlow-worktrees\feature--chat-ui-mobile`
 - 基线提交：`e2ac254`
 - 负责人：Codex
-- 状态：已完成，待合并
-- 最近更新：2026-08-05 23:59
+- 状态：已合并
+- 最近更新：2026-08-07 00:10
 
 ## 目标
 
@@ -166,3 +166,14 @@
 - 未来方向：支持一个会话关联多篇论文；合并会话时由 AI 总结多个会话并生成新的上下文。
 - 未来方向：支持引用已有会话，把历史会话作为当前会话的可引用上下文。
 - 未来方向：增加会话级系统提示词、个性化偏好和 Skills，并明确三者的作用域、优先级与安全边界。
+
+## 合并归档
+
+- 最终状态：已合并
+- 合入分支：`main`
+- 最终集成提交：`3af7686`（`merge: complete mobile chat UI`）
+- Pull Request：无
+- 合并时间：2026-08-06 04:57（+08:00）
+- main 集成验证：`git merge-base --is-ancestor 245bfd4 main` 通过；原台账记录的格式、analyze、全量测试和 development APK 构建通过
+- 开发计划更新：已核对 `docs/development.md` §2.2 与 §3.2，移动端 ChatPaper 能力已记录，无需新增状态项
+- 最终后续项：真实 Android 设备截图级验收，以及多论文会话与会话引用规划

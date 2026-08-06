@@ -1,6 +1,6 @@
 # 任务台账
 
-> 单文件任务台账，由 `/start` 创建、`/develop` 与 `/test` 持续更新，合并前由 `/finish` 补齐交付记录。所有占位内容替换为真实信息。任务合并后归档保留，不删除、不更新。
+> 单文件任务台账。任务已合入 `main`，本页已补录最终合并归档，后续仅补充勘误。
 
 ## 基本信息
 
@@ -10,8 +10,8 @@
 - Worktree：`C:\Users\Fantasy\Desktop\PaperFlow-worktrees\docs--standards-revamp`
 - 基线提交：`447f1a8`
 - 负责人：Fantasy（编排者）+ Claude Code Agent
-- 状态：待审查
-- 最近更新：2026-08-03 20:00
+- 状态：已合并
+- 最近更新：2026-08-07 00:10
 
 ## 目标
 
@@ -68,8 +68,8 @@
 ## 当前进度
 
 - 已完成：worktree 与台账创建；code-structure.md 追加 2.13-2.16；design.md 新建；AGENTS.md / version-control.md 提交规范 scope 化；索引与 SKILL 同步；全部验证通过（2026-08-03）
-- 正在进行：待 `/review` 审查
-- 下一步：审查通过后 `/finish` 合并
+- 正在进行：无
+- 下一步：无；后续仅补充勘误或随新规范任务更新
 - 阻塞项：无
 
 ## 决策记录
@@ -151,3 +151,14 @@ review 缺陷 1、2 与建议 3、4 全部修复。
 
 - 编排者 main 上的 Cherry UI/UX 代码落地（`paperflow_design_tokens` / `cherry_motion` / `cherry_primitives` 等）与 `cherry-studio-ui.md` 不在本任务范围，由其自行提交处理。
 - `design.md` 中性层级列表需随 main 新 token 补充。
+
+## 合并归档
+
+- 最终状态：已合并
+- 合入分支：`main`
+- 最终集成提交：`28e156e`（任务提交已可达 `main`，按历史为 fast-forward 集成）
+- Pull Request：无
+- 合并时间：2026-08-03 20:13（+08:00）
+- main 集成验证：`git merge-base --is-ancestor 28e156e main` 通过；原台账记录的 diff、链接与规范审查通过
+- 开发计划更新：不适用，纯规范文档任务
+- 最终后续项：随 main 新主题 token 补充 `design.md`，另行建任务处理

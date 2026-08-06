@@ -657,7 +657,7 @@ class _ShimmerTextState extends State<_ShimmerText>
   }
 }
 
-class _SourcesPanel extends StatelessWidget {
+class _SourcesPanel extends StatefulWidget {
   const _SourcesPanel({
     required this.sources,
     this.onOpenSource,
@@ -667,7 +667,15 @@ class _SourcesPanel extends StatelessWidget {
   final Future<bool> Function(Uri uri)? onOpenSource;
 
   @override
+  State<_SourcesPanel> createState() => _SourcesPanelState();
+}
+
+class _SourcesPanelState extends State<_SourcesPanel> {
+  bool _expanded = false;
+
+  @override
   Widget build(BuildContext context) {
+    final sources = widget.sources;
     final visibleSources = sources.take(4).toList(growable: false);
     final remaining = sources.length - visibleSources.length;
     return Container(
@@ -681,50 +689,80 @@ class _SourcesPanel extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              const Icon(
-                Icons.link_rounded,
-                size: 17,
-                color: PaperFlowColors.muted,
+          InkWell(
+            key: const ValueKey('paper-ai-sources-toggle'),
+            onTap: () => setState(() => _expanded = !_expanded),
+            borderRadius: BorderRadius.circular(10),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 2),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.link_rounded,
+                    size: 17,
+                    color: PaperFlowColors.muted,
+                  ),
+                  const SizedBox(width: 7),
+                  const Text(
+                    '来源',
+                    style: TextStyle(
+                      color: PaperFlowColors.ink,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    '${sources.length} 个',
+                    style: const TextStyle(
+                      color: PaperFlowColors.subtle,
+                      fontSize: 10.5,
+                    ),
+                  ),
+                  const Spacer(),
+                  Icon(
+                    _expanded
+                        ? Icons.keyboard_arrow_up_rounded
+                        : Icons.keyboard_arrow_down_rounded,
+                    size: 19,
+                    color: PaperFlowColors.subtle,
+                  ),
+                ],
               ),
-              const SizedBox(width: 7),
-              const Text(
-                '来源',
-                style: TextStyle(
-                  color: PaperFlowColors.ink,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(width: 6),
-              Text(
-                '${sources.length} 个',
-                style: const TextStyle(
-                  color: PaperFlowColors.subtle,
-                  fontSize: 10.5,
-                ),
-              ),
-            ],
+            ),
           ),
-          const SizedBox(height: 9),
-          for (var index = 0; index < visibleSources.length; index++)
-            _SourceRow(
-              index: index + 1,
-              source: visibleSources[index],
-              onOpenSource: onOpenSource,
-            ),
-          if (remaining > 0)
-            Padding(
-              padding: const EdgeInsets.only(left: 28, top: 2),
-              child: Text(
-                '另有 $remaining 个来源',
-                style: const TextStyle(
-                  color: PaperFlowColors.subtle,
-                  fontSize: 10.5,
-                ),
-              ),
-            ),
+          AnimatedSize(
+            duration: const Duration(milliseconds: 180),
+            curve: Curves.easeOutCubic,
+            alignment: Alignment.topCenter,
+            child: _expanded
+                ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 7),
+                      for (var index = 0;
+                          index < visibleSources.length;
+                          index++)
+                        _SourceRow(
+                          index: index + 1,
+                          source: visibleSources[index],
+                          onOpenSource: widget.onOpenSource,
+                        ),
+                      if (remaining > 0)
+                        Padding(
+                          padding: const EdgeInsets.only(left: 28, top: 2),
+                          child: Text(
+                            '另有 $remaining 个来源',
+                            style: const TextStyle(
+                              color: PaperFlowColors.subtle,
+                              fontSize: 10.5,
+                            ),
+                          ),
+                        ),
+                    ],
+                  )
+                : const SizedBox.shrink(),
+          ),
         ],
       ),
     );

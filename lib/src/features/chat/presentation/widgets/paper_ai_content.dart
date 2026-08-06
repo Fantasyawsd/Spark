@@ -556,35 +556,29 @@ class _AssistantAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return SizedBox(
       width: size,
       height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: const LinearGradient(
-          colors: [Color(0xFF4B83F5), Color(0xFFB9D5FF)],
-          begin: Alignment.bottomLeft,
-          end: Alignment.topRight,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: PaperAiUiTokens.modelBlue.withValues(alpha: 0.18),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
       child: ClipOval(
-        child: Image.network(
-          'https://www.deepseek.com/favicon.ico',
-          width: size,
-          height: size,
-          fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) => Icon(
-            Icons.auto_awesome_rounded,
-            color: Colors.white,
-            size: size * 0.48,
-          ),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            Center(
+              child: Icon(
+                Icons.auto_awesome_rounded,
+                size: size * 0.5,
+                color: PaperAiUiTokens.modelBlue,
+              ),
+            ),
+            Image.network(
+              'https://www.deepseek.com/favicon.ico',
+              fit: BoxFit.cover,
+              loadingBuilder: (context, child, progress) =>
+                  progress == null ? child : const SizedBox.shrink(),
+              errorBuilder: (context, error, stackTrace) =>
+                  const SizedBox.shrink(),
+            ),
+          ],
         ),
       ),
     );

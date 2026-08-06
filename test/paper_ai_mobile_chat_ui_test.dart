@@ -218,6 +218,61 @@ void main() {
     expect(find.text('修改后的标题'), findsOneWidget);
     expect(find.text('论文名称'), findsOneWidget);
   });
+  testWidgets('sending a message dismisses the composer keyboard',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(378, 810));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: PaperAiChatScreen(
+          chatContext: const ChatContext(
+            id: 'keyboard-dismiss-ui-test',
+            title: '键盘收起测试',
+            systemPrompt: '回答问题。',
+          ),
+          aiService: const _FakeChatAiService(),
+          sessionRepository: _FakeChatSessionRepository(),
+          screenTitle: '键盘收起测试',
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final input = find.byKey(const ValueKey('paper-ai-input'));
+    await tester.tap(input);
+    await tester.pump();
+    final editable = tester.widget<EditableText>(
+      find.descendant(
+        of: input,
+        matching: find.byType(EditableText),
+      ),
+    );
+    expect(editable.focusNode.hasFocus, isTrue, reason: '点击输入区后应获得焦点并弹出键盘');
+
+    await tester.enterText(input, '你好');
+    await tester.pump();
+    expect(tester.widget<TextField>(input).controller?.text, '你好',
+        reason: '发送按钮应在有输入时可点击');
+
+    await tester.tap(find.byKey(const ValueKey('paper-ai-send')));
+    await tester.pumpAndSettle();
+
+    // 发送确实发生：输入框被清空。
+    expect(tester.widget<TextField>(input).controller?.text, isEmpty,
+        reason: '发送后应清空输入框');
+
+    // 发送后应立即收起键盘，AI 回复期间不重新聚焦。
+    final editableAfterSend = tester.widget<EditableText>(
+      find.descendant(
+        of: input,
+        matching: find.byType(EditableText),
+      ),
+    );
+    expect(editableAfterSend.focusNode.hasFocus, isFalse,
+        reason: '发送后应立即收起键盘，AI 回复期间不重新聚焦');
+    expect(tester.takeException(), isNull);
+  });
 }
 
 class _FakeChatAiService implements ChatAiService {

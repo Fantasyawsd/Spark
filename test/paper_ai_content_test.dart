@@ -54,6 +54,9 @@ void main() {
     expect(find.text('1 个'), findsOneWidget);
     expect(find.text('先检查方法，再核对实验。'), findsNothing);
 
+    // 来源默认折叠，展开后才能看到并可点击来源行。
+    await tester.tap(find.byKey(const ValueKey('paper-ai-sources-toggle')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('paper-ai-source-1')));
     expect(openedSource, Uri.parse('https://example.test/paper'));
 
@@ -62,6 +65,64 @@ void main() {
 
     expect(find.text('先检查方法，再核对实验。'), findsOneWidget);
     expect(find.text('结论'), findsOneWidget);
+  });
+  testWidgets('sources are collapsed by default and expand on demand',
+      (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ListView(
+            children: [
+              PaperAiContent(
+                chatContext: PaperChatContext.fromPaper(demoPapers.first),
+                messages: const [
+                  PaperAiMessage(
+                    fromUser: false,
+                    content: '**结论**',
+                    sources: [
+                      PaperAiSource(
+                        title: '来源一',
+                        url: 'https://example.test/one',
+                      ),
+                      PaperAiSource(
+                        title: '来源二',
+                        url: 'https://example.test/two',
+                      ),
+                      PaperAiSource(
+                        title: '来源三',
+                        url: 'https://example.test/three',
+                      ),
+                    ],
+                  ),
+                ],
+                loading: false,
+                sending: false,
+                error: null,
+                onPrompt: (_) {},
+                onRetry: () {},
+                onCancel: () {},
+                searching: false,
+                requestStatus: PaperAiRequestStatus.completed,
+                canRetryRequestError: false,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    expect(find.byKey(const ValueKey('paper-ai-sources')), findsOneWidget);
+    expect(find.text('3 个'), findsOneWidget);
+    expect(find.byKey(const ValueKey('paper-ai-source-1')), findsNothing);
+    expect(find.byKey(const ValueKey('paper-ai-source-3')), findsNothing);
+
+    await tester.tap(find.byKey(const ValueKey('paper-ai-sources-toggle')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('paper-ai-source-1')), findsOneWidget);
+    expect(find.byKey(const ValueKey('paper-ai-source-3')), findsOneWidget);
+    expect(find.textContaining('另有'), findsNothing);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('finishing a stream auto-collapses visible reasoning',

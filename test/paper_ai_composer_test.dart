@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:paperflow/paperflow.dart';
+import 'package:paperflow/src/features/chat/presentation/widgets/paper_ai_model_avatar.dart';
 import 'package:paperflow/src/features/papers/presentation/widgets/paper_ai_composer.dart';
 
 void main() {
@@ -213,5 +214,60 @@ void main() {
       find.byKey(const ValueKey('paper-ai-reasoning-option-none')),
     );
     expect(effort, PaperAiReasoningEffort.none);
+  });
+
+  testWidgets('model sheet shows the model avatar instead of a plain icon',
+      (tester) async {
+    final controller = TextEditingController();
+    addTearDown(controller.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Align(
+            alignment: Alignment.bottomCenter,
+            child: PaperAiComposer(
+              controller: controller,
+              enabled: true,
+              sending: false,
+              reasoningEffort: PaperAiReasoningEffort.high,
+              onReasoningEffortChanged: (_) {},
+              webSearchAvailable: true,
+              webSearchEnabled: false,
+              onWebSearchChanged: (_) {},
+              hasContext: false,
+              onClearContext: () {},
+              onChanged: (_) {},
+              onSend: () {},
+              onCancel: () {},
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.byKey(const ValueKey('paper-ai-model-setting')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('选择模型'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byType(BottomSheet),
+        matching: find.byType(PaperAiModelAvatar),
+      ),
+      findsWidgets,
+    );
+    // PaperAiModelAvatar 自带 auto_awesome 图标作为加载失败回退，因此这里只断言
+    // 模型面板以头像组件承载模型入口，而不是直接显示裸图标。
+    final sheetAvatars = find.descendant(
+      of: find.byType(BottomSheet),
+      matching: find.byType(PaperAiModelAvatar),
+    );
+    expect(sheetAvatars, findsWidgets);
+    expect(
+      find.descendant(of: sheetAvatars.first, matching: find.byType(Icon)),
+      findsWidgets,
+    );
+    expect(tester.takeException(), isNull);
   });
 }

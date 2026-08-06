@@ -266,12 +266,7 @@ class _PaperAiComposerState extends State<PaperAiComposer> {
                 ),
                 child: Row(
                   children: [
-                    const Icon(
-                      Icons.auto_awesome_rounded,
-                      color: PaperAiUiTokens.modelBlue,
-                      size: 24,
-                    ),
-                    const SizedBox(width: 12),
+                    const PaperAiModelAvatar(size: 32),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -295,8 +290,10 @@ class _PaperAiComposerState extends State<PaperAiComposer> {
                         ],
                       ),
                     ),
-                    const Icon(Icons.check_circle_rounded,
-                        color: PaperAiUiTokens.reasoning),
+                    const Icon(
+                      Icons.check_circle_rounded,
+                      color: PaperAiUiTokens.reasoning,
+                    ),
                   ],
                 ),
               ),
@@ -366,8 +363,9 @@ class _PaperAiComposerState extends State<PaperAiComposer> {
                     max: (values.length - 1).toDouble(),
                     divisions: values.length - 1,
                     activeColor: PaperAiUiTokens.reasoning,
-                    inactiveColor:
-                        PaperAiUiTokens.reasoning.withValues(alpha: 0.22),
+                    inactiveColor: PaperAiUiTokens.reasoning.withValues(
+                      alpha: 0.22,
+                    ),
                     onChanged: (value) {
                       final next = values[value.round()];
                       setSheetState(() => selected = next);

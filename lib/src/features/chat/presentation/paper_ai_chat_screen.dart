@@ -167,6 +167,8 @@ class _PaperAiChatScreenState extends State<PaperAiChatScreen> {
 
     final editingLatestPrompt = _editingLatestPrompt;
     _editingLatestPrompt = false;
+    // 发送即收起键盘；AI 回复期间与完成后保持收起，用户需要时再点按输入区。
+    _composerFocusNode.unfocus();
     _composer.clear();
     setState(() {});
     if (editingLatestPrompt) {

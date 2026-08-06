@@ -51,7 +51,7 @@ app.*.map.json
 /android/*.keystore
 
 # Repo-level ignores carried over from the previous repo root.
-# Independent reference project; keep it outside PaperFlow history.
+# Independent reference project; keep it outside Spark history.
 /douyin/
 
 .vscode/

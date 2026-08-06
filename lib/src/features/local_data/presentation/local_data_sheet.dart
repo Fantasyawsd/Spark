@@ -2,8 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-import '../../../core/theme/paperflow_theme.dart';
-import '../../../core/widgets/paperflow_sheet.dart';
+import '../../../core/theme/spark_theme.dart';
+import '../../../core/widgets/spark_sheet.dart';
 import '../application/local_data_controller.dart';
 import '../domain/local_data_repository.dart';
 
@@ -12,7 +12,7 @@ Future<void> showLocalDataSheet(
   required LocalDataController controller,
 }) {
   unawaited(controller.refresh());
-  return showPaperFlowSheet<void>(
+  return showSparkSheet<void>(
     context: context,
     isScrollControlled: true,
     useSafeArea: true,
@@ -39,7 +39,7 @@ class LocalDataSheet extends StatelessWidget {
             listenable: controller,
             builder: (context, _) => Column(
               children: [
-                const PaperFlowSheetHandle(height: 18),
+                const SparkSheetHandle(height: 18),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(20, 6, 10, 10),
                   child: Row(
@@ -48,7 +48,7 @@ class LocalDataSheet extends StatelessWidget {
                         child: Text(
                           '本地数据',
                           style: TextStyle(
-                            color: PaperFlowColors.ink,
+                            color: SparkColors.ink,
                             fontSize: 20,
                             fontWeight: FontWeight.w800,
                           ),
@@ -182,21 +182,21 @@ class _UsageSummary extends StatelessWidget {
   Widget build(BuildContext context) {
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: PaperFlowColors.canvas,
+        color: SparkColors.canvas,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: PaperFlowColors.line),
+        border: Border.all(color: SparkColors.line),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Row(
           children: [
-            Icon(Icons.storage_rounded, color: PaperFlowColors.primary),
+            Icon(Icons.storage_rounded, color: SparkColors.primary),
             const SizedBox(width: 12),
             const Expanded(
               child: Text(
                 '已使用空间',
                 style: TextStyle(
-                  color: PaperFlowColors.ink,
+                  color: SparkColors.ink,
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -211,7 +211,7 @@ class _UsageSummary extends StatelessWidget {
                 formatLocalDataBytes(usage.totalBytes),
                 key: const ValueKey('local-data-total-size'),
                 style: const TextStyle(
-                  color: PaperFlowColors.ink,
+                  color: SparkColors.ink,
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -244,7 +244,7 @@ class _DataAction extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 4),
-      leading: Icon(icon, color: PaperFlowColors.ink),
+      leading: Icon(icon, color: SparkColors.ink),
       title: Text(title),
       subtitle: Text(subtitle),
       trailing: Row(
@@ -252,7 +252,7 @@ class _DataAction extends StatelessWidget {
         children: [
           Text(
             formatLocalDataBytes(size),
-            style: const TextStyle(color: PaperFlowColors.muted),
+            style: const TextStyle(color: SparkColors.muted),
           ),
           if (onTap != null) ...[
             const SizedBox(width: 4),

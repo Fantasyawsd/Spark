@@ -1,8 +1,8 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:paperflow/paperflow.dart';
-import 'package:paperflow/src/core/storage/local_json_store.dart';
+import 'package:spark/spark.dart';
+import 'package:spark/src/core/storage/local_json_store.dart';
 
 void main() {
   test('restores reading state after repository recreation', () async {

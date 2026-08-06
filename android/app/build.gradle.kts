@@ -19,7 +19,7 @@ val hasReleaseSigning = listOf(
     "keyPassword",
 ).all { !keystoreProperties.getProperty(it).isNullOrBlank() }
 android {
-    namespace = "app.paperflow.reader"
+    namespace = "app.spark.reader"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -29,14 +29,14 @@ android {
     }
 
     defaultConfig {
-        applicationId = "app.paperflow.reader"
+        applicationId = "app.spark.reader"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
-        manifestPlaceholders["appLabel"] = "PaperFlow"
+        manifestPlaceholders["appLabel"] = "Spark"
     }
 
     flavorDimensions += "environment"
@@ -44,16 +44,16 @@ android {
         create("development") {
             dimension = "environment"
             applicationIdSuffix = ".dev"
-            manifestPlaceholders["appLabel"] = "PaperFlow Dev"
+            manifestPlaceholders["appLabel"] = "Spark Dev"
         }
         create("staging") {
             dimension = "environment"
             applicationIdSuffix = ".staging"
-            manifestPlaceholders["appLabel"] = "PaperFlow Beta"
+            manifestPlaceholders["appLabel"] = "Spark Beta"
         }
         create("production") {
             dimension = "environment"
-            manifestPlaceholders["appLabel"] = "PaperFlow"
+            manifestPlaceholders["appLabel"] = "Spark"
         }
     }
 

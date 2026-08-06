@@ -1,13 +1,13 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:paperflow/src/core/storage/local_json_store.dart';
-import 'package:paperflow/src/features/local_data/data/json_local_data_repository.dart';
+import 'package:spark/src/core/storage/local_json_store.dart';
+import 'package:spark/src/features/local_data/data/json_local_data_repository.dart';
 
 void main() {
   test('inspects and clears local JSON stores by data category', () async {
     final directory = await Directory.systemTemp.createTemp(
-      'paperflow-local-data-',
+      'spark-local-data-',
     );
     addTearDown(() => directory.delete(recursive: true));
     LocalJsonStore store(String name) => LocalJsonStore(

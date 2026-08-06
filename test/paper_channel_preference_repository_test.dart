@@ -2,8 +2,8 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:paperflow/paperflow.dart';
-import 'package:paperflow/src/core/storage/local_json_store.dart';
+import 'package:spark/spark.dart';
+import 'package:spark/src/core/storage/local_json_store.dart';
 
 void main() {
   late Directory directory;
@@ -11,7 +11,7 @@ void main() {
   late FilePaperChannelPreferenceRepository repository;
 
   setUp(() async {
-    directory = await Directory.systemTemp.createTemp('paperflow-channels-');
+    directory = await Directory.systemTemp.createTemp('spark-channels-');
     file = File('${directory.path}${Platform.pathSeparator}channels.json');
     repository = FilePaperChannelPreferenceRepository(
       store: LocalJsonStore(fileName: 'unused.json', file: file),
@@ -76,14 +76,14 @@ void main() {
 
     final envelope =
         jsonDecode(await file.readAsString()) as Map<String, dynamic>;
-    expect(envelope['_format'], 'paperflow.local-json');
+    expect(envelope['_format'], 'spark.local-json');
     expect(envelope['schema'], 'papers.channel-preferences');
     expect(envelope['schemaVersion'], 1);
   });
 
   test('reports persistence errors for unknown channel kinds', () async {
     await file.writeAsString(jsonEncode({
-      '_format': 'paperflow.local-json',
+      '_format': 'spark.local-json',
       'formatVersion': 1,
       'schema': 'papers.channel-preferences',
       'schemaVersion': 1,

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:paperflow/paperflow.dart';
+import 'package:spark/spark.dart';
 
 void main() {
   setUp(() async {
@@ -12,18 +12,18 @@ void main() {
   test('material theme maps the selected accent to semantic colors', () {
     ThemeController.instance.setColor(PaperThemeColor.blue);
 
-    final theme = PaperFlowTheme.light();
+    final theme = SparkTheme.light();
 
     expect(theme.colorScheme.primary, PaperThemeColor.blue.value);
     expect(theme.colorScheme.primaryContainer, PaperThemeColor.blue.soft);
-    expect(theme.colorScheme.surface, PaperFlowColors.card);
-    expect(theme.colorScheme.onSurface, PaperFlowColors.ink);
-    expect(theme.colorScheme.error, PaperFlowColors.danger);
+    expect(theme.colorScheme.surface, SparkColors.card);
+    expect(theme.colorScheme.onSurface, SparkColors.ink);
+    expect(theme.colorScheme.error, SparkColors.danger);
     expect(
       theme.inputDecorationTheme.fillColor,
-      PaperFlowColors.surfaceMuted,
+      SparkColors.surfaceMuted,
     );
-    expect(theme.scaffoldBackgroundColor, PaperFlowColors.canvas);
+    expect(theme.scaffoldBackgroundColor, SparkColors.canvas);
   });
 
   test('theme accents keep readable contrast with white content', () {
@@ -44,7 +44,7 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
-        theme: PaperFlowTheme.light(),
+        theme: SparkTheme.light(),
         home: Builder(
           builder: (context) => Scaffold(
             body: Center(

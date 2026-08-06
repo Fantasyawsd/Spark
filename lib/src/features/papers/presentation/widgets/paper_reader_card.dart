@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../../core/motion/motion_tokens.dart';
-import '../../../../core/theme/paperflow_theme.dart';
-import '../../../../core/widgets/paperflow_segmented_control.dart';
+import '../../../../core/theme/spark_theme.dart';
+import '../../../../core/widgets/spark_segmented_control.dart';
 import '../../application/paper_link_service.dart';
 import '../../application/paper_ai_service.dart';
 import '../../application/paper_keyword_controller.dart';
@@ -191,7 +191,7 @@ class _PaperReaderCardState extends State<PaperReaderCard> {
                       ClipboardData(text: paper.title),
                     ),
                     style: const TextStyle(
-                      color: PaperFlowColors.ink,
+                      color: SparkColors.ink,
                       fontSize: 21,
                       height: 1.16,
                       fontWeight: FontWeight.w900,
@@ -211,7 +211,7 @@ class _PaperReaderCardState extends State<PaperReaderCard> {
                     ),
                   ],
                   const SizedBox(height: 8),
-                  PaperFlowSegmentedControl(
+                  SparkSegmentedControl(
                     key: const ValueKey('paper-tabs'),
                     tabs: _tabs,
                     selectedIndex: _tabIndex,
@@ -519,14 +519,14 @@ class _ReaderEmptyState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, color: PaperFlowColors.muted, size: 28),
+            Icon(icon, color: SparkColors.muted, size: 28),
             const SizedBox(height: 12),
             Text(title, style: const TextStyle(fontWeight: FontWeight.w800)),
             const SizedBox(height: 6),
             Text(
               message,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: PaperFlowColors.muted, height: 1.5),
+              style: const TextStyle(color: SparkColors.muted, height: 1.5),
             ),
             if (actionLabel != null && onAction != null) ...[
               const SizedBox(height: 16),
@@ -550,7 +550,7 @@ class _AiInterpretButton extends StatelessWidget {
       key: const ValueKey('paper-ai-entry'),
       onPressed: onPressed,
       style: FilledButton.styleFrom(
-        backgroundColor: PaperFlowColors.primary,
+        backgroundColor: SparkColors.primary,
         foregroundColor: Colors.white,
         minimumSize: const Size(0, 34),
         padding: const EdgeInsets.symmetric(horizontal: 12),

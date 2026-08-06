@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../../../../core/theme/paperflow_theme.dart';
+import '../../../../core/theme/spark_theme.dart';
 import '../../domain/paper.dart';
 import 'paper_markdown.dart';
 
@@ -58,7 +58,7 @@ class _PaperFullReaderPageState extends State<PaperFullReaderPage> {
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: const TextStyle(
-            color: PaperFlowColors.ink,
+            color: SparkColors.ink,
             fontSize: 16,
             fontWeight: FontWeight.w800,
           ),

@@ -2,16 +2,16 @@ import 'package:flutter/material.dart';
 
 import '../motion/motion_tokens.dart';
 import '../theme/paper_theme_color.dart';
-import '../theme/paperflow_theme.dart';
+import '../theme/spark_theme.dart';
 import '../theme/theme_controller.dart';
-import 'paperflow_sheet.dart';
+import 'spark_sheet.dart';
 
 void showPaperThemeSheet(BuildContext context) {
-  showPaperFlowSheet<void>(
+  showSparkSheet<void>(
     context: context,
     builder: (context) => Container(
       decoration: const BoxDecoration(
-        color: PaperFlowColors.card,
+        color: SparkColors.card,
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: SafeArea(
@@ -22,12 +22,12 @@ void showPaperThemeSheet(BuildContext context) {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const PaperFlowSheetHandle(height: 20),
+              const SparkSheetHandle(height: 20),
               const SizedBox(height: 4),
               const Text(
                 '主题与配色',
                 style: TextStyle(
-                  color: PaperFlowColors.ink,
+                  color: SparkColors.ink,
                   fontSize: 18,
                   fontWeight: FontWeight.w800,
                 ),
@@ -36,7 +36,7 @@ void showPaperThemeSheet(BuildContext context) {
               const Text(
                 '强调色',
                 style: TextStyle(
-                  color: PaperFlowColors.muted,
+                  color: SparkColors.muted,
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
                 ),
@@ -135,7 +135,7 @@ class _ThemeColorOption extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color:
-                        selected ? PaperFlowColors.ink : PaperFlowColors.muted,
+                        selected ? SparkColors.ink : SparkColors.muted,
                     fontSize: 10.5,
                     fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
                   ),

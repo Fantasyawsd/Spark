@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
 import '../motion/motion_tokens.dart';
-import '../theme/paperflow_theme.dart';
+import '../theme/spark_theme.dart';
 
-class PaperFlowTabBar extends StatelessWidget {
-  const PaperFlowTabBar({
+class SparkTabBar extends StatelessWidget {
+  const SparkTabBar({
     super.key,
     required this.tabs,
     required this.selectedIndex,
@@ -92,7 +92,7 @@ class PaperFlowTabBar extends StatelessWidget {
                       ),
                       curve: MotionTokens.enterCurve,
                       decoration: BoxDecoration(
-                        color: indicatorColor ?? PaperFlowColors.primary,
+                        color: indicatorColor ?? SparkColors.primary,
                         borderRadius: BorderRadius.circular(99),
                       ),
                     ),
@@ -126,10 +126,10 @@ class PaperFlowTabBar extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
               color: index == selectedIndex
-                  ? (selectedColor ?? PaperFlowColors.primary)
-                  : PaperFlowColors.muted,
+                  ? (selectedColor ?? SparkColors.primary)
+                  : SparkColors.muted,
               fontSize: textSize,
-              fontFamily: PaperFlowTheme.platformCjkFontFamily(),
+              fontFamily: SparkTheme.platformCjkFontFamily(),
               fontWeight:
                   index == selectedIndex ? FontWeight.w700 : FontWeight.w600,
             ),
@@ -146,7 +146,7 @@ class PaperFlowTabBar extends StatelessWidget {
           text: tab,
           style: TextStyle(
             fontSize: textSize,
-            fontFamily: PaperFlowTheme.platformCjkFontFamily(),
+            fontFamily: SparkTheme.platformCjkFontFamily(),
             fontWeight: FontWeight.w700,
           ),
         ),

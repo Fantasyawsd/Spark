@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/theme/paperflow_theme.dart';
+import '../../../../core/theme/spark_theme.dart';
 
 class PaperEmptyState extends StatelessWidget {
   const PaperEmptyState({
@@ -29,14 +29,14 @@ class PaperEmptyState extends StatelessWidget {
           children: [
             const Icon(
               Icons.library_books_outlined,
-              color: PaperFlowColors.muted,
+              color: SparkColors.muted,
               size: 38,
             ),
             const SizedBox(height: 14),
             Text(
               title,
               style: const TextStyle(
-                color: PaperFlowColors.ink,
+                color: SparkColors.ink,
                 fontSize: 17,
                 fontWeight: FontWeight.w800,
               ),
@@ -46,7 +46,7 @@ class PaperEmptyState extends StatelessWidget {
               message,
               textAlign: TextAlign.center,
               style: const TextStyle(
-                color: PaperFlowColors.muted,
+                color: SparkColors.muted,
                 fontSize: 12,
                 height: 1.45,
               ),

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/theme/paperflow_theme.dart';
+import '../../../../core/theme/spark_theme.dart';
 import '../../../../core/widgets/topic_chip.dart';
 import '../../domain/paper.dart';
 import '../paper_accent.dart';
@@ -38,7 +38,7 @@ class PaperGridCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(17),
-          border: Border.all(color: PaperFlowColors.line),
+          border: Border.all(color: SparkColors.line),
           boxShadow: const [
             BoxShadow(
               color: Color(0x0F15213A),
@@ -61,7 +61,7 @@ class PaperGridCard extends StatelessWidget {
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                      color: PaperFlowColors.muted,
+                      color: SparkColors.muted,
                       fontSize: 10.5,
                       height: 1.35,
                     ),
@@ -79,8 +79,8 @@ class PaperGridCard extends StatelessWidget {
                               ? Icons.favorite_rounded
                               : Icons.favorite_border_rounded,
                           color: liked
-                              ? PaperFlowColors.primary
-                              : PaperFlowColors.muted,
+                              ? SparkColors.primary
+                              : SparkColors.muted,
                           size: 18,
                         ),
                       ),
@@ -91,7 +91,7 @@ class PaperGridCard extends StatelessWidget {
                           delta: liked ? 1 : 0,
                         ),
                         style: const TextStyle(
-                          color: PaperFlowColors.muted,
+                          color: SparkColors.muted,
                           fontSize: 9.5,
                         ),
                       ),
@@ -104,8 +104,8 @@ class PaperGridCard extends StatelessWidget {
                               ? Icons.bookmark_rounded
                               : Icons.bookmark_border_rounded,
                           color: saved
-                              ? PaperFlowColors.primary
-                              : PaperFlowColors.muted,
+                              ? SparkColors.primary
+                              : SparkColors.muted,
                           size: 18,
                         ),
                       ),
@@ -170,7 +170,7 @@ class _PaperGridCover extends StatelessWidget {
             maxLines: index.isEven ? 4 : 5,
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(
-              color: PaperFlowColors.ink,
+              color: SparkColors.ink,
               fontSize: 15,
               height: 1.2,
               fontWeight: FontWeight.w900,
@@ -182,14 +182,14 @@ class _PaperGridCover extends StatelessWidget {
               children: [
                 const Icon(
                   Icons.format_quote_rounded,
-                  color: PaperFlowColors.muted,
+                  color: SparkColors.muted,
                   size: 14,
                 ),
                 const SizedBox(width: 4),
                 Text(
                   citations,
                   style: const TextStyle(
-                    color: PaperFlowColors.muted,
+                    color: SparkColors.muted,
                     fontSize: 9.5,
                     fontWeight: FontWeight.w600,
                   ),

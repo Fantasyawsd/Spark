@@ -17,9 +17,9 @@ enum AppEnvironment {
   }
 
   String get applicationTitle => switch (this) {
-        development => 'PaperFlow Dev',
-        staging => 'PaperFlow Beta',
-        production => 'PaperFlow',
+        development => 'Spark Dev',
+        staging => 'Spark Beta',
+        production => 'Spark',
       };
 
   bool get isProduction => this == production;

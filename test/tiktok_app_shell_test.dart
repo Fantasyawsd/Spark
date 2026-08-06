@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:paperflow/paperflow.dart';
+import 'package:spark/spark.dart';
 
 void main() {
-  testWidgets('PaperFlow shell renders and switches main pages',
+  testWidgets('Spark shell renders and switches main pages',
       (tester) async {
     await tester.binding.setSurfaceSize(const Size(390, 844));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
-    await tester.pumpWidget(const PaperFlowApp(showSplash: false));
+    await tester.pumpWidget(const SparkApp(showSplash: false));
     await tester.pump();
 
     expect(
@@ -26,7 +26,7 @@ void main() {
     await tester.pump();
     expect(find.text('ChatPaper'), findsWidgets);
     expect(find.text('AI 聊天'), findsNothing);
-    expect(find.text('PaperFlow 主聊天'), findsOneWidget);
+    expect(find.text('Spark 主聊天'), findsOneWidget);
 
     await tester.tap(find.byKey(const ValueKey('bottom-nav-2')));
     await tester.pump();

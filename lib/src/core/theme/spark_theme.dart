@@ -1,11 +1,11 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
-import 'paperflow_design_tokens.dart';
+import 'spark_design_tokens.dart';
 import 'paper_theme_color.dart';
 import 'theme_controller.dart';
 
-abstract final class PaperFlowColors {
+abstract final class SparkColors {
   static Color get primary => ThemeController.instance.color.value;
   static Color get primarySoft => ThemeController.instance.color.soft;
   static Color get primaryPale => ThemeController.instance.color.pale;
@@ -31,49 +31,49 @@ abstract final class PaperFlowColors {
   static const dangerSoft = Color(0xFFFEF3F2);
 }
 
-abstract final class PaperFlowTheme {
+abstract final class SparkTheme {
   static ThemeData light() {
     final generatedScheme = ColorScheme.fromSeed(
-      seedColor: PaperFlowColors.primary,
+      seedColor: SparkColors.primary,
       brightness: Brightness.light,
     );
     final scheme = generatedScheme.copyWith(
-      primary: PaperFlowColors.primary,
+      primary: SparkColors.primary,
       onPrimary: Colors.white,
-      primaryContainer: PaperFlowColors.primarySoft,
-      onPrimaryContainer: PaperFlowColors.ink,
+      primaryContainer: SparkColors.primarySoft,
+      onPrimaryContainer: SparkColors.ink,
       secondary: PaperThemeColor.blue.value,
       onSecondary: Colors.white,
       secondaryContainer: PaperThemeColor.blue.soft,
-      onSecondaryContainer: PaperFlowColors.ink,
-      error: PaperFlowColors.danger,
+      onSecondaryContainer: SparkColors.ink,
+      error: SparkColors.danger,
       onError: Colors.white,
-      errorContainer: PaperFlowColors.dangerSoft,
-      onErrorContainer: PaperFlowColors.danger,
-      surface: PaperFlowColors.card,
-      onSurface: PaperFlowColors.ink,
-      onSurfaceVariant: PaperFlowColors.muted,
-      outline: PaperFlowColors.subtle,
-      outlineVariant: PaperFlowColors.line,
-      shadow: PaperFlowColors.ink,
-      scrim: PaperFlowColors.ink,
-      inverseSurface: PaperFlowColors.ink,
-      onInverseSurface: PaperFlowColors.card,
-      inversePrimary: PaperFlowColors.primarySoft,
+      errorContainer: SparkColors.dangerSoft,
+      onErrorContainer: SparkColors.danger,
+      surface: SparkColors.card,
+      onSurface: SparkColors.ink,
+      onSurfaceVariant: SparkColors.muted,
+      outline: SparkColors.subtle,
+      outlineVariant: SparkColors.line,
+      shadow: SparkColors.ink,
+      scrim: SparkColors.ink,
+      inverseSurface: SparkColors.ink,
+      onInverseSurface: SparkColors.card,
+      inversePrimary: SparkColors.primarySoft,
       surfaceTint: Colors.transparent,
-      surfaceContainerLowest: PaperFlowColors.card,
+      surfaceContainerLowest: SparkColors.card,
       surfaceContainerLow: const Color(0xFFFAFBFC),
-      surfaceContainer: PaperFlowColors.surfaceMuted,
+      surfaceContainer: SparkColors.surfaceMuted,
       surfaceContainerHigh: const Color(0xFFEEF0F3),
-      surfaceContainerHighest: PaperFlowColors.surfaceStrong,
+      surfaceContainerHighest: SparkColors.surfaceStrong,
     );
     const textTheme = _textTheme;
 
     return ThemeData(
       useMaterial3: true,
       colorScheme: scheme,
-      scaffoldBackgroundColor: PaperFlowColors.canvas,
-      canvasColor: PaperFlowColors.canvas,
+      scaffoldBackgroundColor: SparkColors.canvas,
+      canvasColor: SparkColors.canvas,
       fontFamilyFallback: const [
         'PingFang SC',
         'Microsoft YaHei',
@@ -82,133 +82,133 @@ abstract final class PaperFlowTheme {
       ],
       textTheme: textTheme,
       primaryTextTheme: textTheme,
-      iconTheme: const IconThemeData(color: PaperFlowColors.ink, size: 22),
+      iconTheme: const IconThemeData(color: SparkColors.ink, size: 22),
       appBarTheme: const AppBarTheme(
-        backgroundColor: PaperFlowColors.card,
-        foregroundColor: PaperFlowColors.ink,
+        backgroundColor: SparkColors.card,
+        foregroundColor: SparkColors.ink,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: false,
       ),
       cardTheme: CardThemeData(
-        color: PaperFlowColors.card,
+        color: SparkColors.card,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(PaperFlowDesignTokens.radiusLg),
-          side: const BorderSide(color: PaperFlowColors.line),
+          borderRadius: BorderRadius.circular(SparkDesignTokens.radiusLg),
+          side: const BorderSide(color: SparkColors.line),
         ),
       ),
       dialogTheme: DialogThemeData(
-        backgroundColor: PaperFlowColors.card,
+        backgroundColor: SparkColors.card,
         surfaceTintColor: Colors.transparent,
         elevation: 12,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(PaperFlowDesignTokens.radius3Xl),
+          borderRadius: BorderRadius.circular(SparkDesignTokens.radius3Xl),
         ),
       ),
       bottomSheetTheme: const BottomSheetThemeData(
-        backgroundColor: PaperFlowColors.card,
+        backgroundColor: SparkColors.card,
         surfaceTintColor: Colors.transparent,
-        modalBackgroundColor: PaperFlowColors.card,
+        modalBackgroundColor: SparkColors.card,
         modalBarrierColor: Color(0x66182230),
         elevation: 0,
         modalElevation: 0,
       ),
       popupMenuTheme: PopupMenuThemeData(
-        color: PaperFlowColors.card,
+        color: SparkColors.card,
         surfaceTintColor: Colors.transparent,
         elevation: 8,
         shadowColor: const Color(0x1A182230),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(PaperFlowDesignTokens.radiusXl),
+          borderRadius: BorderRadius.circular(SparkDesignTokens.radiusXl),
         ),
         textStyle: const TextStyle(
-          color: PaperFlowColors.ink,
+          color: SparkColors.ink,
           fontSize: 13,
           fontWeight: FontWeight.w600,
         ),
       ),
-      dividerColor: PaperFlowColors.line,
+      dividerColor: SparkColors.line,
       dividerTheme: const DividerThemeData(
-        color: PaperFlowColors.line,
+        color: SparkColors.line,
         thickness: 1,
         space: 1,
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: PaperFlowColors.surfaceMuted,
+        fillColor: SparkColors.surfaceMuted,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 14,
           vertical: 13,
         ),
-        hintStyle: const TextStyle(color: PaperFlowColors.subtle, fontSize: 14),
+        hintStyle: const TextStyle(color: SparkColors.subtle, fontSize: 14),
         border: _inputBorder(Colors.transparent),
         enabledBorder: _inputBorder(Colors.transparent),
-        focusedBorder: _inputBorder(PaperFlowColors.primary, width: 1.4),
-        errorBorder: _inputBorder(PaperFlowColors.danger),
-        focusedErrorBorder: _inputBorder(PaperFlowColors.danger, width: 1.4),
+        focusedBorder: _inputBorder(SparkColors.primary, width: 1.4),
+        errorBorder: _inputBorder(SparkColors.danger),
+        focusedErrorBorder: _inputBorder(SparkColors.danger, width: 1.4),
       ),
       textSelectionTheme: TextSelectionThemeData(
-        cursorColor: PaperFlowColors.primary,
-        selectionColor: PaperFlowColors.primary.withValues(alpha: 0.18),
-        selectionHandleColor: PaperFlowColors.primary,
+        cursorColor: SparkColors.primary,
+        selectionColor: SparkColors.primary.withValues(alpha: 0.18),
+        selectionHandleColor: SparkColors.primary,
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          backgroundColor: PaperFlowColors.primary,
+          backgroundColor: SparkColors.primary,
           foregroundColor: Colors.white,
-          disabledBackgroundColor: PaperFlowColors.surfaceStrong,
-          disabledForegroundColor: PaperFlowColors.subtle,
+          disabledBackgroundColor: SparkColors.surfaceStrong,
+          disabledForegroundColor: SparkColors.subtle,
           minimumSize: const Size(44, 44),
           elevation: 0,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(PaperFlowDesignTokens.radiusMd),
+            borderRadius: BorderRadius.circular(SparkDesignTokens.radiusMd),
           ),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          foregroundColor: PaperFlowColors.primary,
+          foregroundColor: SparkColors.primary,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(PaperFlowDesignTokens.radiusMd),
+            borderRadius: BorderRadius.circular(SparkDesignTokens.radiusMd),
           ),
         ),
       ),
       snackBarTheme: SnackBarThemeData(
-        backgroundColor: PaperFlowColors.ink,
+        backgroundColor: SparkColors.ink,
         contentTextStyle: const TextStyle(color: Colors.white, fontSize: 13),
-        actionTextColor: PaperFlowColors.primarySoft,
+        actionTextColor: SparkColors.primarySoft,
         behavior: SnackBarBehavior.floating,
         elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(PaperFlowDesignTokens.radiusLg),
+          borderRadius: BorderRadius.circular(SparkDesignTokens.radiusLg),
         ),
       ),
       chipTheme: ChipThemeData(
-        backgroundColor: PaperFlowColors.surfaceMuted,
-        selectedColor: PaperFlowColors.primarySoft,
-        disabledColor: PaperFlowColors.surfaceMuted,
+        backgroundColor: SparkColors.surfaceMuted,
+        selectedColor: SparkColors.primarySoft,
+        disabledColor: SparkColors.surfaceMuted,
         side: BorderSide.none,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(PaperFlowDesignTokens.radiusSm),
+          borderRadius: BorderRadius.circular(SparkDesignTokens.radiusSm),
         ),
         labelStyle: const TextStyle(
-          color: PaperFlowColors.ink,
+          color: SparkColors.ink,
           fontSize: 12,
           fontWeight: FontWeight.w500,
         ),
         secondaryLabelStyle: TextStyle(
-          color: PaperFlowColors.primary,
+          color: SparkColors.primary,
           fontSize: 12,
           fontWeight: FontWeight.w700,
         ),
       ),
       listTileTheme: const ListTileThemeData(
-        iconColor: PaperFlowColors.muted,
-        textColor: PaperFlowColors.ink,
+        iconColor: SparkColors.muted,
+        textColor: SparkColors.ink,
       ),
       splashFactory: InkRipple.splashFactory,
       highlightColor: Colors.transparent,
@@ -217,35 +217,35 @@ abstract final class PaperFlowTheme {
 
   static const TextTheme _textTheme = TextTheme(
     headlineLarge: TextStyle(
-      color: PaperFlowColors.ink,
+      color: SparkColors.ink,
       fontSize: 30,
       height: 1.15,
       fontWeight: FontWeight.w800,
       letterSpacing: 0,
     ),
     headlineMedium: TextStyle(
-      color: PaperFlowColors.ink,
+      color: SparkColors.ink,
       fontSize: 24,
       height: 1.18,
       fontWeight: FontWeight.w800,
     ),
     titleLarge: TextStyle(
-      color: PaperFlowColors.ink,
+      color: SparkColors.ink,
       fontSize: 20,
       fontWeight: FontWeight.w800,
     ),
     titleMedium: TextStyle(
-      color: PaperFlowColors.ink,
+      color: SparkColors.ink,
       fontSize: 16,
       fontWeight: FontWeight.w700,
     ),
     bodyLarge: TextStyle(
-      color: PaperFlowColors.ink,
+      color: SparkColors.ink,
       fontSize: 15,
       height: 1.55,
     ),
     bodyMedium: TextStyle(
-      color: PaperFlowColors.muted,
+      color: SparkColors.muted,
       fontSize: 13,
       height: 1.45,
     ),
@@ -253,7 +253,7 @@ abstract final class PaperFlowTheme {
 
   static OutlineInputBorder _inputBorder(Color color, {double width = 1}) {
     return OutlineInputBorder(
-      borderRadius: BorderRadius.circular(PaperFlowDesignTokens.radiusMd),
+      borderRadius: BorderRadius.circular(SparkDesignTokens.radiusMd),
       borderSide: BorderSide(color: color, width: width),
     );
   }

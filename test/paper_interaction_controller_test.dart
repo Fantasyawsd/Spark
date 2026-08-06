@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:paperflow/paperflow.dart';
+import 'package:spark/spark.dart';
 
 void main() {
   test('latest failed interaction write rolls optimistic state back', () async {

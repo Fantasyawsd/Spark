@@ -3,9 +3,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:paperflow/paperflow.dart';
-import 'package:paperflow/src/features/chat/domain/chat_context.dart';
-import 'package:paperflow/src/features/papers/presentation/widgets/paper_reader_view.dart';
+import 'package:spark/spark.dart';
+import 'package:spark/src/features/chat/domain/chat_context.dart';
+import 'package:spark/src/features/papers/presentation/widgets/paper_reader_view.dart';
 
 void main() {
   testWidgets('paper title copies on tap while body remains selectable',
@@ -26,7 +26,7 @@ void main() {
           .setMockMethodCallHandler(SystemChannels.platform, null);
     });
 
-    await tester.pumpWidget(const PaperFlowApp(showSplash: false));
+    await tester.pumpWidget(const SparkApp(showSplash: false));
     await tester.pump();
 
     const title =
@@ -46,7 +46,7 @@ void main() {
     final linkService = _FakePaperLinkService();
 
     await tester.pumpWidget(
-      PaperFlowApp(
+      SparkApp(
         showSplash: false,
         linkService: linkService,
       ),
@@ -84,7 +84,7 @@ void main() {
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
     await tester.pumpWidget(
-      const PaperFlowApp(
+      const SparkApp(
         showSplash: false,
         translationServiceFactory: _FakePaperTranslationServiceFactory(),
       ),
@@ -117,7 +117,7 @@ void main() {
     await tester.binding.setSurfaceSize(const Size(378, 810));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
-    await tester.pumpWidget(const PaperFlowApp(showSplash: false));
+    await tester.pumpWidget(const SparkApp(showSplash: false));
     await tester.pump();
 
     final firstReader = find.byType(PaperReaderView).first;
@@ -141,7 +141,7 @@ void main() {
         of: firstReader,
         matching: find.byWidgetPredicate(
           (widget) =>
-              widget is PaperFlowSegmentedControl && widget.selectedIndex == 5,
+              widget is SparkSegmentedControl && widget.selectedIndex == 5,
         ),
       ),
       findsOneWidget,
@@ -161,8 +161,8 @@ void main() {
 
     expect(
       tester
-          .widget<PaperFlowSegmentedControl>(
-            find.byType(PaperFlowSegmentedControl).hitTestable(),
+          .widget<SparkSegmentedControl>(
+            find.byType(SparkSegmentedControl).hitTestable(),
           )
           .selectedIndex,
       0,
@@ -178,8 +178,8 @@ void main() {
     await tester.pumpAndSettle();
     expect(
       tester
-          .widget<PaperFlowSegmentedControl>(
-            find.byType(PaperFlowSegmentedControl).hitTestable(),
+          .widget<SparkSegmentedControl>(
+            find.byType(SparkSegmentedControl).hitTestable(),
           )
           .selectedIndex,
       0,
@@ -191,7 +191,7 @@ void main() {
     await tester.binding.setSurfaceSize(const Size(378, 810));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
-    await tester.pumpWidget(const PaperFlowApp(showSplash: false));
+    await tester.pumpWidget(const SparkApp(showSplash: false));
     await tester.pump();
     final firstReader = find.byType(PaperReaderView).first;
     final tabs = find
@@ -269,7 +269,7 @@ void main() {
     );
 
     await tester.pumpWidget(
-      PaperFlowApp(
+      SparkApp(
         showSplash: false,
         interactionRepository: interactions,
       ),
@@ -318,7 +318,7 @@ void main() {
     final paper = const ArxivSeedRepository().getAll().first;
 
     await tester.pumpWidget(
-      PaperFlowApp(
+      SparkApp(
         showSplash: false,
         interactionRepository: repository,
       ),
@@ -383,7 +383,7 @@ void main() {
     final repository = InMemoryPaperReadingRepository();
 
     await tester.pumpWidget(
-      PaperFlowApp(
+      SparkApp(
         showSplash: false,
         readingRepository: repository,
       ),
@@ -442,7 +442,7 @@ void main() {
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
     await tester.pumpWidget(
-      PaperFlowApp(
+      SparkApp(
         showSplash: false,
         translationServiceFactory: _FakePaperTranslationServiceFactory(
           content: List.filled(160, '这是中文解读正文').join(' '),
@@ -525,7 +525,7 @@ void main() {
     await tester.binding.setSurfaceSize(const Size(378, 810));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
-    await tester.pumpWidget(const PaperFlowApp(showSplash: false));
+    await tester.pumpWidget(const SparkApp(showSplash: false));
     await tester.pump();
 
     expect(tester.getSize(find.byKey(const ValueKey('paper-feed'))).height,
@@ -552,7 +552,7 @@ void main() {
     await tester.binding.setSurfaceSize(const Size(378, 810));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
-    await tester.pumpWidget(const PaperFlowApp(showSplash: false));
+    await tester.pumpWidget(const SparkApp(showSplash: false));
     await tester.pumpAndSettle();
 
     final header = find.byKey(const ValueKey('papers-header'));
@@ -575,7 +575,7 @@ void main() {
     await tester.binding.setSurfaceSize(const Size(378, 810));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
-    await tester.pumpWidget(const PaperFlowApp(showSplash: false));
+    await tester.pumpWidget(const SparkApp(showSplash: false));
     await tester.pump();
 
     await tester.tap(find.byIcon(Icons.chat_bubble_outline_rounded).first);
@@ -592,14 +592,14 @@ void main() {
         tester.getSize(find.byKey(const ValueKey('paper-sheet-pages')));
     expect(halfHeight, inInclusiveRange(350, 450));
 
-    await tester.drag(find.byType(PaperFlowSheetHandle), const Offset(0, -220));
+    await tester.drag(find.byType(SparkSheetHandle), const Offset(0, -220));
     await tester.pumpAndSettle();
     final draggedHeight = tester
         .getSize(find.byKey(const ValueKey('paper-comments-sheet')))
         .height;
     expect(draggedHeight, greaterThan(halfHeight));
 
-    await tester.drag(find.byType(PaperFlowSheetHandle), const Offset(0, 220));
+    await tester.drag(find.byType(SparkSheetHandle), const Offset(0, 220));
     await tester.pumpAndSettle();
     final returnedHeight = tester
         .getSize(find.byKey(const ValueKey('paper-comments-sheet')))
@@ -729,7 +729,7 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
-        home: PaperFlowShell(
+        home: SparkShell(
           interactionRepository: repository,
           aiService: const _FakePaperAiService(),
         ),
@@ -757,7 +757,7 @@ void main() {
     final repository = InMemoryPaperCommentRepository();
 
     await tester.pumpWidget(
-      PaperFlowApp(
+      SparkApp(
         showSplash: false,
         commentRepository: repository,
       ),
@@ -943,7 +943,7 @@ void main() {
     await tester.binding.setSurfaceSize(const Size(378, 810));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
-    await tester.pumpWidget(const PaperFlowApp(showSplash: false));
+    await tester.pumpWidget(const SparkApp(showSplash: false));
     await tester.pump();
 
     expect(find.text('推荐'), findsOneWidget);
@@ -977,7 +977,7 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
-        home: PaperFlowShell(
+        home: SparkShell(
           searchHistoryRepository: historyRepository,
         ),
       ),
@@ -1038,7 +1038,7 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
-        home: PaperFlowShell(
+        home: SparkShell(
           aiService: const _FakePaperAiService(),
           aiSessionRepository: repository,
         ),
@@ -1049,7 +1049,7 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('bottom-nav-1')));
     await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey('ai-chat-home-title')), findsOneWidget);
-    expect(find.text('PaperFlow 主聊天'), findsOneWidget);
+    expect(find.text('Spark 主聊天'), findsOneWidget);
     expect(find.text(paper.title), findsOneWidget);
 
     await tester.tap(
@@ -1065,7 +1065,7 @@ void main() {
 
     await tester.pumpWidget(
       const MaterialApp(
-        home: PaperFlowShell(
+        home: SparkShell(
           aiService: _FakePaperAiService(),
         ),
       ),
@@ -1094,7 +1094,7 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
-        home: PaperFlowShell(
+        home: SparkShell(
           aiService: const _FakePaperAiService(),
           aiSessionRepository: repository,
         ),
@@ -1179,7 +1179,7 @@ Paper _gridPaper(int index) => Paper(
       id: 'grid-paper-$index',
       title: 'Grid paper $index with a sufficiently descriptive title',
       authors: const ['Researcher'],
-      affiliations: const ['PaperFlow Lab'],
+      affiliations: const ['Spark Lab'],
       subjects: const ['cs.AI'],
       abstractText: 'Abstract for grid paper $index.',
       chineseAbstractMarkdown: '',
@@ -1290,7 +1290,7 @@ Paper _testPaper(String abstractText) {
     venue: 'TestConf 2026',
     title: 'A Test Paper for Reading Layout',
     authors: const ['Alex Chen', 'Lin Zhang'],
-    affiliations: const ['PaperFlow Lab'],
+    affiliations: const ['Spark Lab'],
     contentKeywords: const ['Testing'],
     abstractText: abstractText,
     chineseAbstractMarkdown: '**中文摘要**',

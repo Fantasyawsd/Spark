@@ -50,5 +50,5 @@ $appVersion = [regex]::Replace(
 [System.IO.File]::WriteAllText($pubspecPath, $pubspec, $utf8NoBom)
 [System.IO.File]::WriteAllText($appVersionPath, $appVersion, $utf8NoBom)
 
-Write-Output "PaperFlow 版本已更新为 $VersionName+$BuildNumber。"
+Write-Output "Spark 版本已更新为 $VersionName+$BuildNumber。"
 Write-Output "请同步更新 CHANGELOG.md，并运行 tool/verify_version.ps1。"

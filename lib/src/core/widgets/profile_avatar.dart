@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../theme/paperflow_theme.dart';
+import '../theme/spark_theme.dart';
 
 class ProfileAvatar extends StatelessWidget {
   const ProfileAvatar({
@@ -46,7 +46,7 @@ class ProfileAvatar extends StatelessWidget {
                 errorBuilder: (context, error, stackTrace) => const ColoredBox(
                   color: Color(0xFFF0F1F5),
                   child:
-                      Icon(Icons.person_rounded, color: PaperFlowColors.muted),
+                      Icon(Icons.person_rounded, color: SparkColors.muted),
                 ),
               ),
             ),
@@ -59,7 +59,7 @@ class ProfileAvatar extends StatelessWidget {
                 width: radius * 0.48,
                 height: radius * 0.48,
                 decoration: BoxDecoration(
-                  color: statusColor ?? PaperFlowColors.primary,
+                  color: statusColor ?? SparkColors.primary,
                   shape: BoxShape.circle,
                   border: Border.all(color: Colors.white, width: 2),
                 ),

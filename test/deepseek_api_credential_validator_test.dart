@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
-import 'package:paperflow/src/features/ai_settings/data/deepseek_api_credential_validator.dart';
-import 'package:paperflow/src/features/ai_settings/domain/deepseek_credential_repository.dart';
+import 'package:spark/src/features/ai_settings/data/deepseek_api_credential_validator.dart';
+import 'package:spark/src/features/ai_settings/domain/deepseek_credential_repository.dart';
 
 void main() {
   test('validates a key through the DeepSeek balance endpoint', () async {

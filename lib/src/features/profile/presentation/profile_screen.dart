@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/config/app_version.dart';
-import '../../../core/theme/paperflow_theme.dart';
+import '../../../core/theme/spark_theme.dart';
 import '../../../core/theme/theme_controller.dart';
 import '../../../core/widgets/paper_theme_sheet.dart';
-import '../../../core/widgets/paperflow_sheet.dart';
+import '../../../core/widgets/spark_sheet.dart';
 import '../../../core/widgets/surface_card.dart';
 import '../../ai_settings/application/deepseek_credential_controller.dart';
 import '../../local_data/application/local_data_controller.dart';
@@ -46,7 +46,7 @@ class ProfileScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ColoredBox(
-      color: PaperFlowColors.canvas,
+      color: SparkColors.canvas,
       child: SafeArea(
         bottom: false,
         child: ListView(
@@ -195,7 +195,7 @@ class _ProfileHeader extends StatelessWidget {
               child: Text(
                 '我的研究库',
                 style: TextStyle(
-                  color: PaperFlowColors.ink,
+                  color: SparkColors.ink,
                   fontSize: 24,
                   fontWeight: FontWeight.w800,
                 ),
@@ -212,7 +212,7 @@ class _ProfileHeader extends StatelessWidget {
         const SizedBox(height: 4),
         const Text(
           '本地论文、阅读记录与 AI 配置',
-          style: TextStyle(color: PaperFlowColors.muted, fontSize: 12.5),
+          style: TextStyle(color: SparkColors.muted, fontSize: 12.5),
         ),
         const SizedBox(height: 16),
         Row(
@@ -261,15 +261,15 @@ class _DeepSeekSettingsCard extends StatelessWidget {
                 height: 42,
                 decoration: BoxDecoration(
                   color: configured
-                      ? PaperFlowColors.primarySoft
-                      : PaperFlowColors.canvas,
+                      ? SparkColors.primarySoft
+                      : SparkColors.canvas,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
                   Icons.key_rounded,
                   color: configured
-                      ? PaperFlowColors.primary
-                      : PaperFlowColors.muted,
+                      ? SparkColors.primary
+                      : SparkColors.muted,
                 ),
               ),
               const SizedBox(width: 12),
@@ -280,7 +280,7 @@ class _DeepSeekSettingsCard extends StatelessWidget {
                     const Text(
                       'DeepSeek API',
                       style: TextStyle(
-                        color: PaperFlowColors.ink,
+                        color: SparkColors.ink,
                         fontSize: 15,
                         fontWeight: FontWeight.w800,
                       ),
@@ -293,7 +293,7 @@ class _DeepSeekSettingsCard extends StatelessWidget {
                               ? controller.maskedApiKey ?? '已配置'
                               : '未配置',
                       style: const TextStyle(
-                        color: PaperFlowColors.muted,
+                        color: SparkColors.muted,
                         fontSize: 12,
                       ),
                     ),
@@ -320,7 +320,7 @@ Future<void> _showDeepSeekCredentialSheet(
   DeepSeekCredentialController controller,
 ) {
   controller.clearError();
-  return showPaperFlowSheet<void>(
+  return showSparkSheet<void>(
     context: context,
     isScrollControlled: true,
     useSafeArea: true,
@@ -370,11 +370,11 @@ class _DeepSeekCredentialSheetState extends State<_DeepSeekCredentialSheet> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const PaperFlowSheetHandle(height: 22),
+                const SparkSheetHandle(height: 22),
                 const Text(
                   'DeepSeek API 设置',
                   style: TextStyle(
-                    color: PaperFlowColors.ink,
+                    color: SparkColors.ink,
                     fontSize: 18,
                     fontWeight: FontWeight.w800,
                   ),
@@ -514,14 +514,14 @@ class _ProfileStat extends StatelessWidget {
               children: [
                 Text(value,
                     style: const TextStyle(
-                        color: PaperFlowColors.ink,
+                        color: SparkColors.ink,
                         fontSize: 20,
                         fontWeight: FontWeight.w800)),
                 const SizedBox(height: 3),
                 Text(label,
                     maxLines: 1,
                     style: const TextStyle(
-                        color: PaperFlowColors.muted, fontSize: 10.5)),
+                        color: SparkColors.muted, fontSize: 10.5)),
               ],
             ),
           ),
@@ -538,7 +538,7 @@ class _StatDivider extends StatelessWidget {
   Widget build(BuildContext context) {
     return const SizedBox(
         height: 37,
-        child: VerticalDivider(width: 1, color: PaperFlowColors.line));
+        child: VerticalDivider(width: 1, color: SparkColors.line));
   }
 }
 
@@ -559,12 +559,12 @@ class _SectionHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, color: PaperFlowColors.muted, size: 21),
+        Icon(icon, color: SparkColors.muted, size: 21),
         const SizedBox(width: 8),
         Expanded(
           child: Text(title,
               style: const TextStyle(
-                  color: PaperFlowColors.ink,
+                  color: SparkColors.ink,
                   fontSize: 16,
                   fontWeight: FontWeight.w800)),
         ),
@@ -580,13 +580,13 @@ class _SectionHeader extends StatelessWidget {
                   Text(
                     action,
                     style: const TextStyle(
-                      color: PaperFlowColors.muted,
+                      color: SparkColors.muted,
                       fontSize: 11.5,
                     ),
                   ),
                   const Icon(
                     Icons.chevron_right_rounded,
-                    color: PaperFlowColors.muted,
+                    color: SparkColors.muted,
                     size: 19,
                   ),
                 ],
@@ -705,7 +705,7 @@ class _FavoritesCardState extends State<_FavoritesCard> {
                 child: Text(
                   selectedGroup.isDefault ? '还没有收藏论文' : '这个分组还是空的',
                   style: const TextStyle(
-                    color: PaperFlowColors.muted,
+                    color: SparkColors.muted,
                     fontSize: 12.5,
                   ),
                 ),
@@ -732,7 +732,7 @@ class _FavoritesCardState extends State<_FavoritesCard> {
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: PaperFlowColors.line),
+                        border: Border.all(color: SparkColors.line),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -742,7 +742,7 @@ class _FavoritesCardState extends State<_FavoritesCard> {
                             maxLines: 3,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
-                              color: PaperFlowColors.ink,
+                              color: SparkColors.ink,
                               fontSize: 13,
                               height: 1.3,
                               fontWeight: FontWeight.w700,
@@ -758,7 +758,7 @@ class _FavoritesCardState extends State<_FavoritesCard> {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
-                              color: PaperFlowColors.muted,
+                              color: SparkColors.muted,
                               fontSize: 11,
                             ),
                           ),
@@ -918,7 +918,7 @@ class _PaperShelfCard extends StatelessWidget {
                 child: Text(
                   emptyText,
                   style: const TextStyle(
-                    color: PaperFlowColors.muted,
+                    color: SparkColors.muted,
                     fontSize: 12.5,
                   ),
                 ),
@@ -945,7 +945,7 @@ class _PaperShelfCard extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: PaperFlowColors.line),
+                        border: Border.all(color: SparkColors.line),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -955,7 +955,7 @@ class _PaperShelfCard extends StatelessWidget {
                             maxLines: 3,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
-                              color: PaperFlowColors.ink,
+                              color: SparkColors.ink,
                               fontSize: 13,
                               height: 1.3,
                               fontWeight: FontWeight.w700,
@@ -971,7 +971,7 @@ class _PaperShelfCard extends StatelessWidget {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
-                              color: PaperFlowColors.muted,
+                              color: SparkColors.muted,
                               fontSize: 11,
                             ),
                           ),
@@ -1019,7 +1019,7 @@ class _AppSettingsCard extends StatelessWidget {
                 listenable: ThemeController.instance,
                 builder: (context, _) => Text(
                   ThemeController.instance.color.label,
-                  style: const TextStyle(color: PaperFlowColors.muted),
+                  style: const TextStyle(color: SparkColors.muted),
                 ),
               ),
               onTap: () => showPaperThemeSheet(context),
@@ -1037,7 +1037,7 @@ class _AppSettingsCard extends StatelessWidget {
                     color:
                         status.availability == PaperCatalogAvailability.offline
                             ? const Color(0xFFB54708)
-                            : PaperFlowColors.muted,
+                            : SparkColors.muted,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -1085,17 +1085,17 @@ class _AppSettingsCard extends StatelessWidget {
               trailing: const Icon(Icons.chevron_right_rounded),
               onTap: () => showLicensePage(
                 context: context,
-                applicationName: 'PaperFlow',
+                applicationName: 'Spark',
                 applicationVersion: AppVersion.current.display,
               ),
             ),
             const Divider(height: 1),
             ListTile(
               leading: const Icon(Icons.info_outline_rounded),
-              title: const Text('PaperFlow'),
+              title: const Text('Spark'),
               trailing: Text(
                 AppVersion.current.display,
-                style: const TextStyle(color: PaperFlowColors.muted),
+                style: const TextStyle(color: SparkColors.muted),
               ),
             ),
           ],
@@ -1115,7 +1115,7 @@ Future<void> _showPrivacyNotice(BuildContext context) {
           '论文缓存、阅读记录、点赞、收藏、评论、搜索历史、中文解读和 ChatPaper 会话保存在当前设备。你可以在“本地数据”中分类清理。\n\n'
           '使用 ChatPaper 或中文解读时，你输入的内容、当前论文的标题、摘要和必要上下文会发送到 DeepSeek 官方接口生成回答。开启联网搜索后，DeepSeek 还会处理搜索请求并返回来源。\n\n'
           'DeepSeek API Key 由系统安全存储保护，不写入普通业务数据文件，也不会随“重置本地业务数据”一起删除；你可以在 AI 设置中单独删除。\n\n'
-          'PaperFlow ${AppVersion.current.name} 不提供账号、广告或分析统计。打开论文、PDF 或来源链接时，将跳转到系统浏览器并受对应第三方服务的隐私规则约束。',
+          'Spark ${AppVersion.current.name} 不提供账号、广告或分析统计。打开论文、PDF 或来源链接时，将跳转到系统浏览器并受对应第三方服务的隐私规则约束。',
         ),
       ),
       actions: [

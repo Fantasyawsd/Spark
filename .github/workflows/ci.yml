@@ -62,13 +62,13 @@ jobs:
         run: >-
           flutter build apk --debug
           --flavor development
-          --dart-define=PAPERFLOW_ENV=development
+          --dart-define=SPARK_ENV=development
 
       - name: Build production debug APK
         run: >-
           flutter build apk --debug
           --flavor production
-          --dart-define=PAPERFLOW_ENV=production
+          --dart-define=SPARK_ENV=production
 
       - name: Verify unsigned production release is blocked
         shell: pwsh
@@ -87,7 +87,7 @@ jobs:
       - name: Upload development APK
         uses: actions/upload-artifact@v4
         with:
-          name: paperflow-development-${{ github.sha }}
+          name: spark-development-${{ github.sha }}
           path: build/app/outputs/flutter-apk/app-development-debug.apk
           if-no-files-found: error
           retention-days: 7

@@ -3,8 +3,8 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
-import 'package:paperflow/paperflow.dart';
-import 'package:paperflow/src/features/papers/application/paper_chat_context.dart';
+import 'package:spark/spark.dart';
+import 'package:spark/src/features/papers/application/paper_chat_context.dart';
 
 void main() {
   test('DeepSeek web search uses native server tool and parses sources',

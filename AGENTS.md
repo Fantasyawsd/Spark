@@ -1,4 +1,4 @@
-# PaperFlow AI Agent 开发规范
+# Spark AI Agent 开发规范
 
 > 本文件是 Claude Code 及其他 AI Agent 在本仓库工作的统一入口。
 > 最近更新：2026-08-06
@@ -113,10 +113,10 @@ fix/pdf-cache
 worktree 位置：
 
 ```text
-../PaperFlow-worktrees/<branch-slug>
+../Spark-worktrees/<branch-slug>
 ```
 
-即与仓库同级的 `PaperFlow-worktrees` 目录（本仓库为 `C:\Users\Fantasy\Desktop\PaperFlow-worktrees\<branch-slug>`）。所有 `git worktree` 命令必须在控制工作树（仓库根目录）内执行，执行前用 `git rev-parse --show-toplevel` 确认当前目录。禁止在仓库内部（含 `.slim/worktrees/`、`.claude/`）、嵌套的 `PaperFlow-worktrees\PaperFlow-worktrees\` 或其他变体位置创建。
+即与仓库同级的 `Spark-worktrees` 目录（本仓库为 `C:\Users\Fantasy\Desktop\Spark-worktrees\<branch-slug>`）。所有 `git worktree` 命令必须在控制工作树（仓库根目录）内执行，执行前用 `git rev-parse --show-toplevel` 确认当前目录。禁止在仓库内部（含 `.slim/worktrees/`、`.claude/`）、嵌套的 `Spark-worktrees\Spark-worktrees\` 或其他变体位置创建。
 
 创建前必须确认基线分支、任务范围和工作区状态：
 
@@ -132,7 +132,7 @@ git worktree list
 由控制工作树创建：
 
 ```powershell
-git worktree add ..\PaperFlow-worktrees\feature--paper-channels `
+git worktree add ..\Spark-worktrees\feature--paper-channels `
   -b feature/paper-channels <approved-base>
 ```
 
@@ -209,7 +209,7 @@ docs/workstreams/<branch-slug>/
 .\tool\verify_changed_dart_format.ps1
 flutter analyze
 flutter test
-flutter build apk --debug --flavor development --dart-define=PAPERFLOW_ENV=development
+flutter build apk --debug --flavor development --dart-define=SPARK_ENV=development
 ```
 
 纯文档任务至少执行 Markdown 链接检查和 `git diff --check`，不需要无意义地运行 Flutter 构建。

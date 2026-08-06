@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:paperflow/src/features/papers/application/paper_ai_prompt_builder.dart';
-import 'package:paperflow/src/features/papers/application/paper_chat_context.dart';
-import 'package:paperflow/src/features/papers/domain/paper.dart';
+import 'package:spark/src/features/papers/application/paper_ai_prompt_builder.dart';
+import 'package:spark/src/features/papers/application/paper_chat_context.dart';
+import 'package:spark/src/features/papers/domain/paper.dart';
 
 void main() {
   test('ChatPaper includes only explicitly supplied generated keywords', () {

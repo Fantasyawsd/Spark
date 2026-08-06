@@ -2,8 +2,8 @@ import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
-import 'package:paperflow/src/features/papers/data/providers/arxiv/arxiv_atom_client.dart';
-import 'package:paperflow/src/features/papers/data/providers/arxiv/arxiv_atom_mapper.dart';
+import 'package:spark/src/features/papers/data/providers/arxiv/arxiv_atom_client.dart';
+import 'package:spark/src/features/papers/data/providers/arxiv/arxiv_atom_mapper.dart';
 
 void main() {
   group('ArxivAtomClient', () {
@@ -33,7 +33,7 @@ void main() {
       expect(entry.publishedAt, DateTime.utc(2024, 1, 2));
       expect(entry.updatedAt, DateTime.utc(2024, 2, 3, 4, 5, 6));
       expect(entry.authors, ['Alice Smith', 'Bob Jones']);
-      expect(entry.affiliations, ['PaperFlow Lab']);
+      expect(entry.affiliations, ['Spark Lab']);
       expect(entry.categories, ['cs.AI', 'cs.LG']);
       expect(entry.primaryCategory, 'cs.AI');
       expect(entry.doi, '10.1000/test');
@@ -44,7 +44,7 @@ void main() {
       final paper = const ArxivAtomMapper().toDomain(entry);
       expect(paper.id, '2401.00001');
       expect(paper.arxivId, '2401.00001');
-      expect(paper.firstAffiliation, 'PaperFlow Lab');
+      expect(paper.firstAffiliation, 'Spark Lab');
       expect(paper.publishedAt, isNot(paper.updatedAt));
     });
 
@@ -298,7 +298,7 @@ const _atomFeed = '''
     <published>2024-01-02T00:00:00Z</published>
     <title> A paper\n title </title>
     <summary> First line.\n Second line. </summary>
-    <author><name>Alice Smith</name><arxiv:affiliation>PaperFlow Lab</arxiv:affiliation></author>
+    <author><name>Alice Smith</name><arxiv:affiliation>Spark Lab</arxiv:affiliation></author>
     <author><name>Bob Jones</name></author>
     <category term="cs.AI" />
     <category term="cs.LG" />

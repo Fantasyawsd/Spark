@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 
 import '../../../core/motion/motion_tokens.dart';
-import '../../../core/theme/paperflow_theme.dart';
+import '../../../core/theme/spark_theme.dart';
 import '../application/paper_ai_service.dart';
 import '../application/paper_ai_session_repository.dart';
 import '../application/paper_comment_controller.dart';
@@ -136,7 +136,7 @@ class _PapersScreenState extends State<PapersScreen> {
   Widget build(BuildContext context) {
     final papers = _feed.papers;
     return ColoredBox(
-      color: PaperFlowColors.canvas,
+      color: SparkColors.canvas,
       child: Column(
         children: [
           SafeArea(

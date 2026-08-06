@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:paperflow/paperflow.dart';
-import 'package:paperflow/src/features/papers/application/paper_chat_context.dart';
-import 'package:paperflow/src/features/papers/presentation/widgets/paper_ai_content.dart';
+import 'package:spark/spark.dart';
+import 'package:spark/src/features/papers/application/paper_chat_context.dart';
+import 'package:spark/src/features/papers/presentation/widgets/paper_ai_content.dart';
 
 void main() {
   testWidgets('AI answer exposes a collapsible reasoning chain',

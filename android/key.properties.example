@@ -1,6 +1,6 @@
 # Copy to android/key.properties and replace every placeholder locally.
 # android/key.properties and *.jks are ignored by Git.
-storeFile=paperflow-release.jks
+storeFile=spark-release.jks
 storePassword=CHANGE_ME
-keyAlias=paperflow
+keyAlias=spark
 keyPassword=CHANGE_ME

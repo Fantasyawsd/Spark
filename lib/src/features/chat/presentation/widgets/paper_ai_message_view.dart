@@ -4,8 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../../../../core/theme/paperflow_theme.dart';
-import '../../../../core/widgets/paperflow_markdown.dart';
+import '../../../../core/theme/spark_theme.dart';
+import '../../../../core/widgets/spark_markdown.dart';
 import '../../domain/chat_message.dart';
 import '../paper_ai_ui_tokens.dart';
 import 'paper_ai_model_avatar.dart';
@@ -117,7 +117,7 @@ class _UserMessage extends StatelessWidget {
                 ),
                 child: PaperMarkdown(
                   data: message.content,
-                  styleSheet: paperAiMarkdownStyle(color: PaperFlowColors.ink),
+                  styleSheet: paperAiMarkdownStyle(color: SparkColors.ink),
                   selectable: false,
                 ),
               ),
@@ -183,7 +183,7 @@ class _AssistantMessage extends StatelessWidget {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
-                            color: PaperFlowColors.ink,
+                            color: SparkColors.ink,
                             fontSize: 15.5,
                             fontWeight: FontWeight.w700,
                           ),
@@ -208,7 +208,7 @@ class _AssistantMessage extends StatelessWidget {
           if (message.content.isNotEmpty)
             PaperMarkdown(
               data: message.content,
-              styleSheet: paperAiMarkdownStyle(color: PaperFlowColors.ink),
+              styleSheet: paperAiMarkdownStyle(color: SparkColors.ink),
               stabilizeGeneratedSyntax: true,
               selectable: false,
             ),
@@ -237,7 +237,7 @@ class _AssistantMessage extends StatelessWidget {
                     ? '已停止生成'
                     : '生成失败',
                 style: const TextStyle(
-                  color: PaperFlowColors.muted,
+                  color: SparkColors.muted,
                   fontSize: 10.5,
                 ),
               ),
@@ -700,13 +700,13 @@ class _SourcesPanelState extends State<_SourcesPanel> {
                   const Icon(
                     Icons.link_rounded,
                     size: 17,
-                    color: PaperFlowColors.muted,
+                    color: SparkColors.muted,
                   ),
                   const SizedBox(width: 7),
                   const Text(
                     '来源',
                     style: TextStyle(
-                      color: PaperFlowColors.ink,
+                      color: SparkColors.ink,
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
                     ),
@@ -715,7 +715,7 @@ class _SourcesPanelState extends State<_SourcesPanel> {
                   Text(
                     '${sources.length} 个',
                     style: const TextStyle(
-                      color: PaperFlowColors.subtle,
+                      color: SparkColors.subtle,
                       fontSize: 10.5,
                     ),
                   ),
@@ -725,7 +725,7 @@ class _SourcesPanelState extends State<_SourcesPanel> {
                         ? Icons.keyboard_arrow_up_rounded
                         : Icons.keyboard_arrow_down_rounded,
                     size: 19,
-                    color: PaperFlowColors.subtle,
+                    color: SparkColors.subtle,
                   ),
                 ],
               ),
@@ -754,7 +754,7 @@ class _SourcesPanelState extends State<_SourcesPanel> {
                           child: Text(
                             '另有 $remaining 个来源',
                             style: const TextStyle(
-                              color: PaperFlowColors.subtle,
+                              color: SparkColors.subtle,
                               fontSize: 10.5,
                             ),
                           ),
@@ -808,7 +808,7 @@ class _SourceRow extends StatelessWidget {
                   child: Text(
                     '$index',
                     style: const TextStyle(
-                      color: PaperFlowColors.muted,
+                      color: SparkColors.muted,
                       fontSize: 10,
                       fontWeight: FontWeight.w700,
                     ),
@@ -825,8 +825,8 @@ class _SourceRow extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           color: uri == null
-                              ? PaperFlowColors.ink
-                              : PaperFlowColors.blue,
+                              ? SparkColors.ink
+                              : SparkColors.blue,
                           fontSize: 11.5,
                           fontWeight: FontWeight.w600,
                           height: 1.3,
@@ -838,7 +838,7 @@ class _SourceRow extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
-                          color: PaperFlowColors.subtle,
+                          color: SparkColors.subtle,
                           fontSize: 9.8,
                         ),
                       ),
@@ -851,7 +851,7 @@ class _SourceRow extends StatelessWidget {
                     child: Icon(
                       Icons.open_in_new_rounded,
                       size: 15,
-                      color: PaperFlowColors.subtle,
+                      color: SparkColors.subtle,
                     ),
                   ),
               ],

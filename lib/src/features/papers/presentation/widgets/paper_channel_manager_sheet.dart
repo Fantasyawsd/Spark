@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/theme/paperflow_theme.dart';
+import '../../../../core/theme/spark_theme.dart';
 import '../../domain/arxiv_subject_catalog.dart';
 import '../../domain/paper_channel.dart';
 
@@ -12,7 +12,7 @@ Future<void> showPaperChannelManagerSheet(
   return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
-    backgroundColor: PaperFlowColors.card,
+    backgroundColor: SparkColors.card,
     builder: (sheetContext) => PaperChannelManagerSheet(
       userChannels: userChannels,
       onChannelsChanged: onChannelsChanged,
@@ -67,7 +67,7 @@ class _PaperChannelManagerSheetState extends State<PaperChannelManagerSheet> {
                     child: Text(
                       '频道管理',
                       style: TextStyle(
-                        color: PaperFlowColors.ink,
+                        color: SparkColors.ink,
                         fontSize: 16,
                         fontWeight: FontWeight.w800,
                       ),
@@ -89,9 +89,9 @@ class _PaperChannelManagerSheetState extends State<PaperChannelManagerSheet> {
                   children: [
                     TabBar(
                       key: const ValueKey('paper-channel-manager-tabs'),
-                      labelColor: PaperFlowColors.ink,
-                      unselectedLabelColor: PaperFlowColors.muted,
-                      indicatorColor: PaperFlowColors.primary,
+                      labelColor: SparkColors.ink,
+                      unselectedLabelColor: SparkColors.muted,
+                      indicatorColor: SparkColors.primary,
                       labelStyle: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
@@ -132,7 +132,7 @@ class _PaperChannelManagerSheetState extends State<PaperChannelManagerSheet> {
                                 Text(
                                   '会议频道尚未开放，真实会议数据源接入后可编辑。',
                                   style: TextStyle(
-                                    color: PaperFlowColors.muted,
+                                    color: SparkColors.muted,
                                     fontSize: 12,
                                   ),
                                 ),
@@ -205,13 +205,13 @@ class _SubjectRow extends StatelessWidget {
       subtitle: Text(
         subject.code,
         style: const TextStyle(
-          color: PaperFlowColors.muted,
+          color: SparkColors.muted,
           fontSize: 11,
         ),
       ),
       trailing: Icon(
         added ? Icons.check_circle_rounded : Icons.add_circle_outline_rounded,
-        color: added ? PaperFlowColors.primary : PaperFlowColors.muted,
+        color: added ? SparkColors.primary : SparkColors.muted,
         size: 20,
       ),
     );

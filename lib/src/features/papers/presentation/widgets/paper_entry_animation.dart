@@ -1,1 +1,1 @@
-export '../../../../core/widgets/paperflow_entry_animation.dart';
+export '../../../../core/widgets/spark_entry_animation.dart';

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../theme/paperflow_design_tokens.dart';
-import '../theme/paperflow_theme.dart';
+import '../theme/spark_design_tokens.dart';
+import '../theme/spark_theme.dart';
 
 class TopicChip extends StatelessWidget {
   const TopicChip({
@@ -19,7 +19,7 @@ class TopicChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final accent = color ?? PaperFlowColors.primary;
+    final accent = color ?? SparkColors.primary;
     return Container(
       padding: EdgeInsets.symmetric(
         horizontal: compact ? 10 : 13,
@@ -28,8 +28,8 @@ class TopicChip extends StatelessWidget {
       decoration: BoxDecoration(
         color: selected
             ? accent.withValues(alpha: 0.09)
-            : PaperFlowColors.surfaceMuted,
-        borderRadius: BorderRadius.circular(PaperFlowDesignTokens.radiusSm),
+            : SparkColors.surfaceMuted,
+        borderRadius: BorderRadius.circular(SparkDesignTokens.radiusSm),
         border:
             selected ? Border.all(color: accent.withValues(alpha: 0.55)) : null,
       ),
@@ -38,7 +38,7 @@ class TopicChip extends StatelessWidget {
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
         style: TextStyle(
-          color: selected ? accent : PaperFlowColors.ink,
+          color: selected ? accent : SparkColors.ink,
           fontSize: compact ? 11 : 12,
           fontWeight: FontWeight.w500,
         ),

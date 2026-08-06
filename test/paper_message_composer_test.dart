@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:paperflow/src/features/papers/presentation/widgets/paper_message_composer.dart';
+import 'package:spark/src/features/papers/presentation/widgets/paper_message_composer.dart';
 
 void main() {
   testWidgets('comment composer shows fixed sending progress', (tester) async {

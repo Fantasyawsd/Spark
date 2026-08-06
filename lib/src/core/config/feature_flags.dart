@@ -10,12 +10,12 @@ final class FeatureFlags {
   factory FeatureFlags.fromEnvironment(AppEnvironment environment) {
     const requested = FeatureFlags(
       experimentalCommunity: bool.fromEnvironment(
-        'PAPERFLOW_FEATURE_COMMUNITY',
+        'SPARK_FEATURE_COMMUNITY',
       ),
       experimentalConferenceChannels: bool.fromEnvironment(
-        'PAPERFLOW_FEATURE_CONFERENCE_CHANNELS',
+        'SPARK_FEATURE_CONFERENCE_CHANNELS',
       ),
-      experimentalPdfAi: bool.fromEnvironment('PAPERFLOW_FEATURE_PDF_AI'),
+      experimentalPdfAi: bool.fromEnvironment('SPARK_FEATURE_PDF_AI'),
     );
     return requested.allowedFor(environment);
   }

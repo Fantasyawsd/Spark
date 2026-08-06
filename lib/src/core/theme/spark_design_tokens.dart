@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
-/// Cherry Studio-inspired structural tokens for PaperFlow.
+/// Cherry Studio-inspired structural tokens for Spark.
 ///
 /// The reference uses surface layering and hairline borders as the default
 /// depth system. Shadows are intentionally limited to interactive and
 /// floating surfaces so the reading canvas stays quiet.
-abstract final class PaperFlowDesignTokens {
+abstract final class SparkDesignTokens {
   static const space1 = 4.0;
   static const space2 = 8.0;
   static const space3 = 12.0;

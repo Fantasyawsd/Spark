@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/theme/paperflow_theme.dart';
-import '../../../../core/widgets/paperflow_sheet.dart';
+import '../../../../core/theme/spark_theme.dart';
+import '../../../../core/widgets/spark_sheet.dart';
 import '../../application/paper_interaction_controller.dart';
 
 Future<void> showPaperFavoriteGroupSheet(
@@ -9,7 +9,7 @@ Future<void> showPaperFavoriteGroupSheet(
   required String paperId,
   required PaperInteractionController controller,
 }) {
-  return showPaperFlowSheet<void>(
+  return showSparkSheet<void>(
     context: context,
     isScrollControlled: true,
     useSafeArea: true,
@@ -71,7 +71,7 @@ class _PaperFavoriteGroupSheetState extends State<_PaperFavoriteGroupSheet> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const PaperFlowSheetHandle(height: 18),
+              const SparkSheetHandle(height: 18),
               Padding(
                 padding: const EdgeInsets.fromLTRB(18, 6, 10, 8),
                 child: Row(
@@ -80,7 +80,7 @@ class _PaperFavoriteGroupSheetState extends State<_PaperFavoriteGroupSheet> {
                       child: Text(
                         '收藏到分组',
                         style: TextStyle(
-                          color: PaperFlowColors.ink,
+                          color: SparkColors.ink,
                           fontSize: 18,
                           fontWeight: FontWeight.w800,
                         ),
@@ -114,8 +114,8 @@ class _PaperFavoriteGroupSheetState extends State<_PaperFavoriteGroupSheet> {
                             ? Icons.bookmark_rounded
                             : Icons.folder_outlined,
                         color: selected
-                            ? PaperFlowColors.primary
-                            : PaperFlowColors.muted,
+                            ? SparkColors.primary
+                            : SparkColors.muted,
                       ),
                       title: Text(group.name),
                       onChanged: (value) {

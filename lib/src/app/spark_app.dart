@@ -4,10 +4,10 @@ import 'package:flutter/material.dart';
 
 import '../core/config/app_config.dart';
 import '../core/motion/motion_tokens.dart';
-import '../core/navigation/paperflow_route_observer.dart';
-import '../core/theme/paperflow_theme.dart';
+import '../core/navigation/spark_route_observer.dart';
+import '../core/theme/spark_theme.dart';
 import '../core/theme/theme_controller.dart';
-import '../core/widgets/paperflow_bottom_nav.dart';
+import '../core/widgets/spark_bottom_nav.dart';
 import '../features/ai_settings/application/deepseek_credential_controller.dart';
 import '../features/chat/application/chat_session_controller.dart';
 import '../features/chat/application/main_ai_chat_definition.dart';
@@ -41,10 +41,10 @@ import '../features/profile/presentation/profile_screen.dart';
 import '../features/search/application/paper_search_controller.dart';
 import '../features/search/domain/paper_search_history_repository.dart';
 import '../features/search/presentation/paper_search_screen.dart';
-import 'paperflow_dependencies.dart';
+import 'spark_dependencies.dart';
 
-class PaperFlowApp extends StatefulWidget {
-  const PaperFlowApp({
+class SparkApp extends StatefulWidget {
+  const SparkApp({
     super.key,
     this.config = const AppConfig.production(),
     this.showSplash = true,
@@ -65,7 +65,7 @@ class PaperFlowApp extends StatefulWidget {
 
   final AppConfig config;
   final bool showSplash;
-  final PaperFlowDependencies? dependencies;
+  final SparkDependencies? dependencies;
   final PaperCommentRepository? commentRepository;
   final PaperInteractionRepository? interactionRepository;
   final PaperPreferenceRepository? preferenceRepository;
@@ -80,17 +80,17 @@ class PaperFlowApp extends StatefulWidget {
   final PaperAiService? webSearchAiService;
 
   @override
-  State<PaperFlowApp> createState() => _PaperFlowAppState();
+  State<SparkApp> createState() => _SparkAppState();
 }
 
-class _PaperFlowAppState extends State<PaperFlowApp> {
-  late final PaperFlowDependencies _dependencies;
+class _SparkAppState extends State<SparkApp> {
+  late final SparkDependencies _dependencies;
 
   @override
   void initState() {
     super.initState();
     _dependencies = widget.dependencies ??
-        PaperFlowDependencies.preview(
+        SparkDependencies.preview(
           commentRepository: widget.commentRepository,
           interactionRepository: widget.interactionRepository,
           preferenceRepository: widget.preferenceRepository,
@@ -118,9 +118,9 @@ class _PaperFlowAppState extends State<PaperFlowApp> {
       builder: (context, _) => MaterialApp(
         title: widget.config.applicationTitle,
         debugShowCheckedModeBanner: widget.config.showDebugBanner,
-        theme: PaperFlowTheme.light(),
-        navigatorObservers: [PaperFlowRouteObserver.instance],
-        home: _PaperFlowBootstrap(
+        theme: SparkTheme.light(),
+        navigatorObservers: [SparkRouteObserver.instance],
+        home: _SparkBootstrap(
           showSplash: widget.showSplash,
           dependencies: _dependencies,
         ),
@@ -129,20 +129,20 @@ class _PaperFlowAppState extends State<PaperFlowApp> {
   }
 }
 
-class _PaperFlowBootstrap extends StatefulWidget {
-  const _PaperFlowBootstrap({
+class _SparkBootstrap extends StatefulWidget {
+  const _SparkBootstrap({
     required this.showSplash,
     required this.dependencies,
   });
 
   final bool showSplash;
-  final PaperFlowDependencies dependencies;
+  final SparkDependencies dependencies;
 
   @override
-  State<_PaperFlowBootstrap> createState() => _PaperFlowBootstrapState();
+  State<_SparkBootstrap> createState() => _SparkBootstrapState();
 }
 
-class _PaperFlowBootstrapState extends State<_PaperFlowBootstrap>
+class _SparkBootstrapState extends State<_SparkBootstrap>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
   late final Animation<double> _opacity;
@@ -203,7 +203,7 @@ class _PaperFlowBootstrapState extends State<_PaperFlowBootstrap>
 
   @override
   Widget build(BuildContext context) {
-    final shell = PaperFlowShell(dependencies: widget.dependencies);
+    final shell = SparkShell(dependencies: widget.dependencies);
     return Stack(
       fit: StackFit.expand,
       children: [
@@ -213,13 +213,13 @@ class _PaperFlowBootstrapState extends State<_PaperFlowBootstrap>
             child: FadeTransition(
               opacity: _opacity,
               child: ColoredBox(
-                key: const ValueKey('paperflow-splash'),
+                key: const ValueKey('spark-splash'),
                 color: Colors.white,
                 child: Center(
                   child: ScaleTransition(
                     scale: _scale,
                     child: Image.asset(
-                      'assets/images/paperflow_logo.png',
+                      'assets/images/spark_logo.png',
                       width: 112,
                       height: 112,
                       filterQuality: FilterQuality.high,
@@ -240,8 +240,8 @@ class _PaperFlowBootstrapState extends State<_PaperFlowBootstrap>
   }
 }
 
-class PaperFlowShell extends StatefulWidget {
-  const PaperFlowShell({
+class SparkShell extends StatefulWidget {
+  const SparkShell({
     super.key,
     this.dependencies,
     this.commentRepository,
@@ -258,7 +258,7 @@ class PaperFlowShell extends StatefulWidget {
     this.webSearchAiService,
   });
 
-  final PaperFlowDependencies? dependencies;
+  final SparkDependencies? dependencies;
   final PaperCommentRepository? commentRepository;
   final PaperInteractionRepository? interactionRepository;
   final PaperPreferenceRepository? preferenceRepository;
@@ -273,13 +273,13 @@ class PaperFlowShell extends StatefulWidget {
   final PaperAiService? webSearchAiService;
 
   @override
-  State<PaperFlowShell> createState() => _PaperFlowShellState();
+  State<SparkShell> createState() => _SparkShellState();
 }
 
-class _PaperFlowShellState extends State<PaperFlowShell> {
+class _SparkShellState extends State<SparkShell> {
   int _selectedIndex = 0;
   int _coveringRouteDepth = 0;
-  late final PaperFlowDependencies _dependencies;
+  late final SparkDependencies _dependencies;
   late final PaperController _paperController;
   late final PaperCommentController _commentController;
   late final PaperReadingController _readingController;
@@ -299,7 +299,7 @@ class _PaperFlowShellState extends State<PaperFlowShell> {
   void initState() {
     super.initState();
     _dependencies = widget.dependencies ??
-        PaperFlowDependencies.preview(
+        SparkDependencies.preview(
           commentRepository: widget.commentRepository,
           interactionRepository: widget.interactionRepository,
           preferenceRepository: widget.preferenceRepository,
@@ -372,7 +372,7 @@ class _PaperFlowShellState extends State<PaperFlowShell> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: PaperFlowColors.canvas,
+      backgroundColor: SparkColors.canvas,
       body: Stack(
         children: [
           Positioned.fill(
@@ -451,7 +451,7 @@ class _PaperFlowShellState extends State<PaperFlowShell> {
           ),
           Align(
             alignment: Alignment.bottomCenter,
-            child: PaperFlowBottomNav(
+            child: SparkBottomNav(
               selectedIndex: _selectedIndex,
               papersGridMode: _paperController.gridMode,
               onSelected: _handleNavigation,

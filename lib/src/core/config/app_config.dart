@@ -11,7 +11,7 @@ final class AppConfig {
   factory AppConfig.fromEnvironment({String? platformFlavor}) {
     return AppConfig.resolve(
       platformFlavor: platformFlavor,
-      requestedEnvironment: const String.fromEnvironment('PAPERFLOW_ENV'),
+      requestedEnvironment: const String.fromEnvironment('SPARK_ENV'),
     );
   }
 
@@ -34,7 +34,7 @@ final class AppConfig {
       if (requestedValue != environment) {
         throw StateError(
           'Android flavor "$flavor" does not match '
-          'PAPERFLOW_ENV "$requested".',
+          'SPARK_ENV "$requested".',
         );
       }
     }

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/theme/paperflow_theme.dart';
+import '../../../core/theme/spark_theme.dart';
 import '../application/chat_ai_service.dart';
 import '../application/chat_skills.dart';
 import '../application/chat_conversation_controller.dart';
@@ -356,7 +356,7 @@ class _PaperAiChatScreenState extends State<PaperAiChatScreen> {
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
             style: FilledButton.styleFrom(
-              backgroundColor: PaperFlowColors.danger,
+              backgroundColor: SparkColors.danger,
             ),
             child: const Text('删除'),
           ),
@@ -398,7 +398,7 @@ class _PaperAiChatScreenState extends State<PaperAiChatScreen> {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
-                  color: PaperFlowColors.ink,
+                  color: SparkColors.ink,
                   fontSize: 16.5,
                   height: 1.15,
                   fontWeight: FontWeight.w600,
@@ -412,7 +412,7 @@ class _PaperAiChatScreenState extends State<PaperAiChatScreen> {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
-                    color: PaperFlowColors.muted,
+                    color: SparkColors.muted,
                     fontSize: 11,
                     height: 1.15,
                     fontWeight: FontWeight.w500,
@@ -481,7 +481,7 @@ class _PaperAiChatScreenState extends State<PaperAiChatScreen> {
       title: Text(
         '选择消息',
         style: const TextStyle(
-          color: PaperFlowColors.ink,
+          color: SparkColors.ink,
           fontSize: 17,
           fontWeight: FontWeight.w700,
         ),
@@ -493,7 +493,7 @@ class _PaperAiChatScreenState extends State<PaperAiChatScreen> {
             child: Text(
               '${_selectedMessageIndexes.length} 条',
               style: const TextStyle(
-                color: PaperFlowColors.muted,
+                color: SparkColors.muted,
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
               ),
@@ -554,7 +554,7 @@ class _MessageSelectionBar extends StatelessWidget {
                 child: Text(
                   '已选择 $count 条消息',
                   style: const TextStyle(
-                    color: PaperFlowColors.ink,
+                    color: SparkColors.ink,
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                   ),
@@ -570,7 +570,7 @@ class _MessageSelectionBar extends StatelessWidget {
                 key: const ValueKey('paper-ai-selection-delete'),
                 onPressed: count == 0 ? null : onDelete,
                 style: FilledButton.styleFrom(
-                  backgroundColor: PaperFlowColors.danger,
+                  backgroundColor: SparkColors.danger,
                   foregroundColor: Colors.white,
                   minimumSize: const Size(88, 40),
                   padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -633,7 +633,7 @@ class _SessionSettingsSheetState extends State<_SessionSettingsSheet> {
               const Text(
                 '会话设置',
                 style: TextStyle(
-                  color: PaperFlowColors.ink,
+                  color: SparkColors.ink,
                   fontSize: 22,
                   fontWeight: FontWeight.w700,
                 ),
@@ -641,7 +641,7 @@ class _SessionSettingsSheetState extends State<_SessionSettingsSheet> {
               const SizedBox(height: 6),
               const Text(
                 '设置仅作用于当前会话；留空使用默认提示词。',
-                style: TextStyle(color: PaperFlowColors.muted, fontSize: 12.5),
+                style: TextStyle(color: SparkColors.muted, fontSize: 12.5),
               ),
               const SizedBox(height: 16),
               TextField(
@@ -660,7 +660,7 @@ class _SessionSettingsSheetState extends State<_SessionSettingsSheet> {
               const Text(
                 '回答风格',
                 style: TextStyle(
-                  color: PaperFlowColors.ink,
+                  color: SparkColors.ink,
                   fontSize: 15,
                   fontWeight: FontWeight.w700,
                 ),
@@ -682,7 +682,7 @@ class _SessionSettingsSheetState extends State<_SessionSettingsSheet> {
               const Text(
                 '技能',
                 style: TextStyle(
-                  color: PaperFlowColors.ink,
+                  color: SparkColors.ink,
                   fontSize: 15,
                   fontWeight: FontWeight.w700,
                 ),
@@ -696,7 +696,7 @@ class _SessionSettingsSheetState extends State<_SessionSettingsSheet> {
                   title: Text(
                     skill.name,
                     style: const TextStyle(
-                      color: PaperFlowColors.ink,
+                      color: SparkColors.ink,
                       fontSize: 14.5,
                       fontWeight: FontWeight.w600,
                     ),
@@ -706,7 +706,7 @@ class _SessionSettingsSheetState extends State<_SessionSettingsSheet> {
                       : Text(
                           skill.description!,
                           style: const TextStyle(
-                            color: PaperFlowColors.muted,
+                            color: SparkColors.muted,
                             fontSize: 12,
                           ),
                         ),

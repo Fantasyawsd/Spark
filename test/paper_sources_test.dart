@@ -1,7 +1,7 @@
 import 'package:http/http.dart' as http;
-import 'package:paperflow/paperflow.dart';
-import 'package:paperflow/src/features/papers/data/providers/arxiv/arxiv_atom_dto.dart';
-import 'package:paperflow/src/features/papers/data/providers/arxiv/arxiv_atom_mapper.dart';
+import 'package:spark/spark.dart';
+import 'package:spark/src/features/papers/data/providers/arxiv/arxiv_atom_dto.dart';
+import 'package:spark/src/features/papers/data/providers/arxiv/arxiv_atom_mapper.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -107,7 +107,7 @@ void main() {
   test('OpenAlex maps citation and enrichment fields', () async {
     final client = _QueueClient([
       _response('''
-{"results":[{"cited_by_count":42,"authorships":[{"institutions":[{"display_name":"PaperFlow Lab"}]}],"concepts":[{"display_name":"Machine Learning"}],"related_works":["https://openalex.org/W1"]}]}
+{"results":[{"cited_by_count":42,"authorships":[{"institutions":[{"display_name":"Spark Lab"}]}],"concepts":[{"display_name":"Machine Learning"}],"related_works":["https://openalex.org/W1"]}]}
 '''),
     ]);
     final api =
@@ -116,7 +116,7 @@ void main() {
     final result = await api.findByArxivId('arXiv:2401.00001');
 
     expect(result?.citationCount, 42);
-    expect(result?.institutions, ['PaperFlow Lab']);
+    expect(result?.institutions, ['Spark Lab']);
     expect(client.requests.single.queryParameters['filter'],
         'ids.arxiv:2401.00001');
   });

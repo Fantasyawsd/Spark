@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/theme/paperflow_theme.dart';
+import '../../../core/theme/spark_theme.dart';
 import '../domain/favorite_group.dart';
 import '../domain/paper.dart';
 
@@ -55,7 +55,7 @@ class _PaperShelfListScreenState extends State<PaperShelfListScreen> {
         title: Text(
           widget.title,
           style: const TextStyle(
-            color: PaperFlowColors.ink,
+            color: SparkColors.ink,
             fontSize: 17,
             fontWeight: FontWeight.w800,
           ),
@@ -118,12 +118,12 @@ class _PaperShelfListScreenState extends State<PaperShelfListScreen> {
         mainAxisSize: MainAxisSize.min,
         children: [
           const Icon(Icons.inbox_outlined,
-              color: PaperFlowColors.muted, size: 34),
+              color: SparkColors.muted, size: 34),
           const SizedBox(height: 10),
           Text(
             widget._grouped ? '这个分组还是空的' : '还没有内容',
             style: const TextStyle(
-              color: PaperFlowColors.ink,
+              color: SparkColors.ink,
               fontSize: 14,
               fontWeight: FontWeight.w700,
             ),
@@ -153,7 +153,7 @@ class _ShelfPaperRow extends StatelessWidget {
           padding: const EdgeInsets.all(13),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: PaperFlowColors.line),
+            border: Border.all(color: SparkColors.line),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -163,7 +163,7 @@ class _ShelfPaperRow extends StatelessWidget {
                 maxLines: 3,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
-                  color: PaperFlowColors.ink,
+                  color: SparkColors.ink,
                   fontSize: 14,
                   height: 1.35,
                   fontWeight: FontWeight.w700,
@@ -177,7 +177,7 @@ class _ShelfPaperRow extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
-                  color: PaperFlowColors.muted,
+                  color: SparkColors.muted,
                   fontSize: 11,
                 ),
               ),

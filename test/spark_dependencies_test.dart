@@ -1,26 +1,26 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:paperflow/src/app/paperflow_dependencies.dart';
-import 'package:paperflow/src/features/ai_settings/data/secure_deepseek_credential_repository.dart';
-import 'package:paperflow/src/core/theme/file_theme_preference_repository.dart';
-import 'package:paperflow/src/features/chat/domain/chat_context.dart';
-import 'package:paperflow/src/features/papers/application/paper_ai_service.dart';
-import 'package:paperflow/src/features/papers/domain/paper.dart';
-import 'package:paperflow/src/features/papers/domain/paper_repository.dart';
-import 'package:paperflow/src/features/papers/data/arxiv_seed_repository.dart';
-import 'package:paperflow/src/features/papers/data/deepseek_paper_ai_service.dart';
-import 'package:paperflow/src/features/papers/data/deepseek_web_search_ai_service.dart';
-import 'package:paperflow/src/features/papers/data/file_paper_ai_session_repository.dart';
-import 'package:paperflow/src/features/papers/data/file_paper_comment_repository.dart';
-import 'package:paperflow/src/features/papers/data/file_paper_interaction_repository.dart';
-import 'package:paperflow/src/features/papers/data/file_paper_preference_repository.dart';
-import 'package:paperflow/src/features/papers/data/file_paper_reading_repository.dart';
-import 'package:paperflow/src/features/papers/data/file_paper_translation_repository.dart';
-import 'package:paperflow/src/features/papers/data/platform_paper_share_service.dart';
-import 'package:paperflow/src/features/papers/data/offline_first_paper_catalog_repository.dart';
+import 'package:spark/src/app/spark_dependencies.dart';
+import 'package:spark/src/features/ai_settings/data/secure_deepseek_credential_repository.dart';
+import 'package:spark/src/core/theme/file_theme_preference_repository.dart';
+import 'package:spark/src/features/chat/domain/chat_context.dart';
+import 'package:spark/src/features/papers/application/paper_ai_service.dart';
+import 'package:spark/src/features/papers/domain/paper.dart';
+import 'package:spark/src/features/papers/domain/paper_repository.dart';
+import 'package:spark/src/features/papers/data/arxiv_seed_repository.dart';
+import 'package:spark/src/features/papers/data/deepseek_paper_ai_service.dart';
+import 'package:spark/src/features/papers/data/deepseek_web_search_ai_service.dart';
+import 'package:spark/src/features/papers/data/file_paper_ai_session_repository.dart';
+import 'package:spark/src/features/papers/data/file_paper_comment_repository.dart';
+import 'package:spark/src/features/papers/data/file_paper_interaction_repository.dart';
+import 'package:spark/src/features/papers/data/file_paper_preference_repository.dart';
+import 'package:spark/src/features/papers/data/file_paper_reading_repository.dart';
+import 'package:spark/src/features/papers/data/file_paper_translation_repository.dart';
+import 'package:spark/src/features/papers/data/platform_paper_share_service.dart';
+import 'package:spark/src/features/papers/data/offline_first_paper_catalog_repository.dart';
 
 void main() {
   test('production dependencies compose concrete infrastructure once', () {
-    final dependencies = PaperFlowDependencies.production();
+    final dependencies = SparkDependencies.production();
 
     expect(dependencies.paperRepository, isA<ArxivSeedRepository>());
     expect(
@@ -70,7 +70,7 @@ void main() {
     final aiService = _FakeAiService();
     final webSearchAiService = _FakeAiService();
 
-    final dependencies = PaperFlowDependencies.preview(
+    final dependencies = SparkDependencies.preview(
       paperRepository: paperRepository,
       aiService: aiService,
       webSearchAiService: webSearchAiService,
@@ -87,7 +87,7 @@ void main() {
     final paperAiService = _FakeAiService();
     final mainAiService = _FakeAiService();
 
-    final dependencies = PaperFlowDependencies.preview(
+    final dependencies = SparkDependencies.preview(
       aiService: paperAiService,
       mainAiService: mainAiService,
     );

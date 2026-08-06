@@ -27,7 +27,7 @@ class ArxivApiException implements Exception {
 ///
 /// 「全部/最新」流使用这些分类的并集，而不是通配查询 `all:*`：
 /// `all:*` 在 arXiv 服务端长期不稳定（2026-08 实测持续返回 HTTP 500），
-/// 而 PaperFlow 的论文流定位就是 CS/ML 论文（频道计划见 development.md），
+/// 而 Spark 的论文流定位就是 CS/ML 论文（频道计划见 development.md），
 /// 分类并集查询稳定（HTTP 200）且语义一致。
 const defaultArxivCategories = [
   'cs.AI',
@@ -179,7 +179,7 @@ class ArxivAtomClient implements ArxivCatalogSource {
     try {
       response = await _client.get(
         uri,
-        headers: const {'user-agent': 'PaperFlow/1.0'},
+        headers: const {'user-agent': 'Spark/1.0'},
       ).timeout(requestTimeout);
     } on TimeoutException catch (error) {
       throw ArxivApiException(

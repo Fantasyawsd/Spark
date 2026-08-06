@@ -1,10 +1,10 @@
-# PaperFlow 发布与兼容性管理
+# Spark 发布与兼容性管理
 
 > 状态：强制执行
 > 最近更新：2026-08-02
 > 适用范围：客户端发布、构建渠道、本地数据、自有 API 和功能开放
 
-PaperFlow 分开管理代码版本、发布版本、数据版本、接口版本和功能版本。五者具有不同生命周期，不能用 Git 分支或单一版本号替代。
+Spark 分开管理代码版本、发布版本、数据版本、接口版本和功能版本。五者具有不同生命周期，不能用 Git 分支或单一版本号替代。
 
 ## 1. 事实源
 
@@ -67,19 +67,19 @@ Android 使用三个 flavor：
 
 | Flavor | 应用 ID | 名称 | 用途 |
 | --- | --- | --- | --- |
-| `development` | `app.paperflow.reader.dev` | PaperFlow Dev | 开发与 CI |
-| `staging` | `app.paperflow.reader.staging` | PaperFlow Beta | 内测与候选验收 |
-| `production` | `app.paperflow.reader` | PaperFlow | 正式发布 |
+| `development` | `app.spark.reader.dev` | Spark Dev | 开发与 CI |
+| `staging` | `app.spark.reader.staging` | Spark Beta | 内测与候选验收 |
+| `production` | `app.spark.reader` | Spark | 正式发布 |
 
 构建命令：
 
 ```powershell
-flutter build apk --debug --flavor development --dart-define=PAPERFLOW_ENV=development
-flutter build apk --debug --flavor staging --dart-define=PAPERFLOW_ENV=staging
-flutter build appbundle --release --flavor production --dart-define=PAPERFLOW_ENV=production
+flutter build apk --debug --flavor development --dart-define=SPARK_ENV=development
+flutter build apk --debug --flavor staging --dart-define=SPARK_ENV=staging
+flutter build appbundle --release --flavor production --dart-define=SPARK_ENV=production
 ```
 
-Android 会读取 Flutter 提供的真实 `appFlavor` 并与 `PAPERFLOW_ENV` 校验，错配时拒绝启动；Windows 等无 flavor 平台使用 `PAPERFLOW_ENV`。非敏感开关可使用 `dart-define`；API Key、签名密码和 Token 不属于环境常量，必须使用安全存储或 CI Secret。
+Android 会读取 Flutter 提供的真实 `appFlavor` 并与 `SPARK_ENV` 校验，错配时拒绝启动；Windows 等无 flavor 平台使用 `SPARK_ENV`。非敏感开关可使用 `dart-define`；API Key、签名密码和 Token 不属于环境常量，必须使用安全存储或 CI Secret。
 
 当前没有自有服务器和数据库，因此三个环境暂时共享公开的 arXiv/OpenAlex 端点，但应用身份和运行配置已经隔离。接入后端时必须为三个环境配置独立域名、凭据和数据库，测试包不得访问生产数据库。
 
@@ -97,7 +97,7 @@ Android 会读取 Flutter 提供的真实 `appFlavor` 并与 `PAPERFLOW_ENV` 校
 
 ## 6. 接口版本
 
-当前客户端直接调用第三方公开接口，不伪造 PaperFlow API 版本。自有后端建立后：
+当前客户端直接调用第三方公开接口，不伪造 Spark API 版本。自有后端建立后：
 
 - 首个稳定路径为 `/api/v1/...`。
 - 新增可选字段、可选参数和新端点保持在 v1。
@@ -111,12 +111,12 @@ Android 会读取 Flutter 提供的真实 `appFlavor` 并与 `PAPERFLOW_ENV` 校
 实验 Flag 定义在 `lib/src/core/config/feature_flags.dart`：
 
 ```text
-PAPERFLOW_FEATURE_COMMUNITY
-PAPERFLOW_FEATURE_CONFERENCE_CHANNELS
-PAPERFLOW_FEATURE_PDF_AI
+SPARK_FEATURE_COMMUNITY
+SPARK_FEATURE_CONFERENCE_CHANNELS
+SPARK_FEATURE_PDF_AI
 ```
 
-开发或 staging 构建可显式启用，例如 `--dart-define=PAPERFLOW_FEATURE_PDF_AI=true`。当前生产配置会强制清除实验 Flag，避免误发布。
+开发或 staging 构建可显式启用，例如 `--dart-define=SPARK_FEATURE_PDF_AI=true`。当前生产配置会强制清除实验 Flag，避免误发布。
 
 编译期 Flag 只解决渠道隔离，不能实现在线止损或百分比灰度；接入账号和后端后，再增加签名远程配置、缓存、过期回退和按用户稳定分桶。远程配置不可绕过客户端最低安全限制。
 

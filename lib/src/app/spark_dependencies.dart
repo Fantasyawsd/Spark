@@ -57,8 +57,8 @@ import '../features/search/data/file_paper_search_history_repository.dart';
 import '../features/search/data/in_memory_paper_search_history_repository.dart';
 import '../features/search/domain/paper_search_history_repository.dart';
 
-class PaperFlowDependencies {
-  const PaperFlowDependencies({
+class SparkDependencies {
+  const SparkDependencies({
     required this.paperRepository,
     this.paperCatalogRepository,
     required this.deepSeekCredentialRepository,
@@ -86,7 +86,7 @@ class PaperFlowDependencies {
     required this.themePreferenceRepository,
   });
 
-  factory PaperFlowDependencies.production() {
+  factory SparkDependencies.production() {
     const seedRepository = ArxivSeedRepository();
     final credentialRepository = SecureDeepSeekCredentialRepository();
     final paperCacheStore = LocalJsonStore(
@@ -111,7 +111,7 @@ class PaperFlowDependencies {
     final aiSessionSettingsStore = LocalJsonStore(
       fileName: 'paper_ai_session_settings.json',
     );
-    return PaperFlowDependencies(
+    return SparkDependencies(
       paperRepository: seedRepository,
       paperCatalogRepository: OfflineFirstPaperCatalogRepository(
         remoteSource: ArxivAtomClient(),
@@ -178,7 +178,7 @@ class PaperFlowDependencies {
     );
   }
 
-  factory PaperFlowDependencies.preview({
+  factory SparkDependencies.preview({
     PaperRepository? paperRepository,
     PaperCatalogRepository? paperCatalogRepository,
     DeepSeekCredentialRepository? deepSeekCredentialRepository,
@@ -215,7 +215,7 @@ class PaperFlowDependencies {
         DeepSeekWebSearchAiService(
           credentialRepository: resolvedCredentialRepository,
         );
-    return PaperFlowDependencies(
+    return SparkDependencies(
       paperRepository: paperRepository ?? const ArxivSeedRepository(),
       paperCatalogRepository: paperCatalogRepository,
       deepSeekCredentialRepository: resolvedCredentialRepository,

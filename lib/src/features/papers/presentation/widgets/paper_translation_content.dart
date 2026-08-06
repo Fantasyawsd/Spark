@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/theme/paperflow_theme.dart';
+import '../../../../core/theme/spark_theme.dart';
 import 'paper_tab_body.dart';
 
 class PaperTranslationContent extends StatelessWidget {
@@ -56,7 +56,7 @@ class PaperTranslationContent extends StatelessWidget {
       return _TranslationStatus(
         icon: Icon(
           Icons.translate_rounded,
-          color: PaperFlowColors.primary,
+          color: SparkColors.primary,
         ),
         title: '生成中文摘要',
         actionLabel: '生成',
@@ -81,7 +81,7 @@ class PaperTranslationContent extends StatelessWidget {
                 const Text(
                   '正在生成…',
                   style: TextStyle(
-                    color: PaperFlowColors.muted,
+                    color: SparkColors.muted,
                     fontSize: 11,
                   ),
                 ),
@@ -148,7 +148,7 @@ class _TranslationStatus extends StatelessWidget {
               title,
               textAlign: TextAlign.center,
               style: const TextStyle(
-                color: PaperFlowColors.muted,
+                color: SparkColors.muted,
                 fontSize: 13,
                 height: 1.4,
               ),

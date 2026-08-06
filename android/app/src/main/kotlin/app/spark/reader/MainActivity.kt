@@ -1,4 +1,4 @@
-package app.paperflow.reader
+package app.spark.reader
 
 import android.content.Intent
 import io.flutter.embedding.android.FlutterActivity
@@ -8,7 +8,7 @@ import io.flutter.plugin.common.MethodChannel
 class MainActivity : FlutterActivity() {
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
-        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "paperflow/share")
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "spark/share")
             .setMethodCallHandler { call, result ->
                 if (call.method != "shareText") {
                     result.notImplemented()

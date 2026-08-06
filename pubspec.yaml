@@ -1,4 +1,4 @@
-name: paperflow
+name: spark
 description: A paper discovery and research community app with a TikTok-inspired reading flow.
 publish_to: none
 version: 0.0.1+1
@@ -28,4 +28,4 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
-    - assets/images/paperflow_logo.png
+    - assets/images/spark_logo.png

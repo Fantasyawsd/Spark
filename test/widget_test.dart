@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:paperflow/paperflow.dart';
+import 'package:spark/spark.dart';
 
 void main() {
   testWidgets('motion tokens honor the system reduce-motion setting',
@@ -26,28 +26,28 @@ void main() {
     expect(resolvedDuration, Duration.zero);
   });
 
-  testWidgets('startup shows the PaperFlow logo before opening the feed',
+  testWidgets('startup shows the Spark logo before opening the feed',
       (tester) async {
     await tester.binding.setSurfaceSize(const Size(390, 844));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
-    await tester.pumpWidget(const PaperFlowApp());
+    await tester.pumpWidget(const SparkApp());
 
     expect(
-      find.byKey(const ValueKey('paperflow-splash')),
+      find.byKey(const ValueKey('spark-splash')),
       findsOneWidget,
     );
     final logo = tester.widget<Image>(find.byType(Image));
     expect(
       (logo.image as AssetImage).assetName,
-      'assets/images/paperflow_logo.png',
+      'assets/images/spark_logo.png',
     );
 
     await tester.pump(
       MotionTokens.splashDuration + const Duration(milliseconds: 1),
     );
     expect(
-      find.byKey(const ValueKey('paperflow-splash')),
+      find.byKey(const ValueKey('spark-splash')),
       findsNothing,
     );
     expect(find.byKey(const ValueKey('paper-feed')), findsOneWidget);
@@ -61,10 +61,10 @@ void main() {
       tester.platformDispatcher.clearAccessibilityFeaturesTestValue,
     );
 
-    await tester.pumpWidget(const PaperFlowApp());
+    await tester.pumpWidget(const SparkApp());
 
     expect(
-      find.byKey(const ValueKey('paperflow-splash')),
+      find.byKey(const ValueKey('spark-splash')),
       findsNothing,
     );
     expect(find.byKey(const ValueKey('paper-feed')), findsOneWidget);
@@ -75,7 +75,7 @@ void main() {
     await tester.binding.setSurfaceSize(const Size(390, 844));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
-    await tester.pumpWidget(const PaperFlowApp(showSplash: false));
+    await tester.pumpWidget(const SparkApp(showSplash: false));
     await tester.pump();
 
     expect(find.byKey(const ValueKey('bottom-nav-0')), findsOneWidget);

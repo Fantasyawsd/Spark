@@ -1,12 +1,12 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:paperflow/src/features/chat/application/chat_ai_service.dart';
-import 'package:paperflow/src/features/chat/application/chat_conversation_controller.dart';
-import 'package:paperflow/src/features/chat/application/chat_prompt_assembler.dart';
-import 'package:paperflow/src/features/chat/application/chat_skills.dart';
-import 'package:paperflow/src/features/chat/data/in_memory_chat_session_settings_repository.dart';
-import 'package:paperflow/src/features/chat/domain/chat_context.dart';
-import 'package:paperflow/src/features/chat/domain/chat_session_settings.dart';
-import 'package:paperflow/src/features/chat/domain/chat_message.dart';
+import 'package:spark/src/features/chat/application/chat_ai_service.dart';
+import 'package:spark/src/features/chat/application/chat_conversation_controller.dart';
+import 'package:spark/src/features/chat/application/chat_prompt_assembler.dart';
+import 'package:spark/src/features/chat/application/chat_skills.dart';
+import 'package:spark/src/features/chat/data/in_memory_chat_session_settings_repository.dart';
+import 'package:spark/src/features/chat/domain/chat_context.dart';
+import 'package:spark/src/features/chat/domain/chat_session_settings.dart';
+import 'package:spark/src/features/chat/domain/chat_message.dart';
 
 void main() {
   const context = ChatContext(

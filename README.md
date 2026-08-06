@@ -1,6 +1,8 @@
-# PaperFlow
+# Spark（灵光）
 
-PaperFlow 是面向个人研究者的 Flutter 论文发现、阅读和 AI 研究助手。产品希望把论文信息流的快速发现、结构化阅读、中文理解和围绕论文的持续对话整合到一个移动端应用中。
+> Swipe papers, access research knowledge.
+
+Spark 是面向个人研究者的 Flutter 论文发现、阅读和 AI 研究助手。产品希望把论文信息流的快速发现、结构化阅读、中文理解和围绕论文的持续对话整合到一个移动端应用中。
 
 当前为未发布开发版本 `0.0.1+1`，第一验收平台是 Android 手机。
 
@@ -9,8 +11,9 @@ PaperFlow 是面向个人研究者的 Flutter 论文发现、阅读和 AI 研究
 ### 论文
 
 - arXiv 远程论文流、分页、搜索和离线缓存。
+- 推荐 / 关注 / 最新及 arXiv 主题频道，支持频道管理、频道级时间筛选、独立浏览位置和懒加载。
 - 单页刷论文与双栏浏览选择。
-- Markdown、LaTeX、英文 Abstract、中文摘要和相关论文。
+- Markdown、LaTeX、英文 Abstract、中文摘要、内容关键词和六页论文阅读器（Abstract / 摘要 / 关键词 / 作者 / AI 解读 / 相关论文）。
 - 点赞、评论、分享、已读、稍后阅读和收藏分组。
 - 从搜索、收藏、历史和相关论文进入独立全屏阅读页。
 
@@ -19,12 +22,13 @@ PaperFlow 是面向个人研究者的 Flutter 论文发现、阅读和 AI 研究
 - 置顶主聊天和按论文创建的聊天。
 - DeepSeek 流式回答、深度思考、联网搜索、停止和重试。
 - Markdown、公式、代码块和会话本地保存。
+- 会话级系统提示词、回答风格和可组合 Skills；论文聊天可按需读取 PDF 全文并提供页码追溯引用。
 - 左滑置顶或删除论文会话。
 
 ### 我的
 
 - 默认收藏与自定义收藏分组。
-- 阅读历史、稍后阅读、主题设置和本地数据管理。
+- 收藏、稍后阅读和阅读历史可进入完整论文列表；支持主题设置、数据占用统计与分类清理。
 - DeepSeek API Key 验证、保存、替换和删除。
 - 应用版本、隐私说明和开源许可。
 
@@ -98,13 +102,13 @@ presentation -> application -> domain <- data
 
 ```powershell
 flutter pub get
-flutter run -d windows --dart-define=PAPERFLOW_ENV=development
+flutter run -d windows --dart-define=SPARK_ENV=development
 ```
 
 本地调试 DeepSeek 可以使用拒绝 release 的辅助脚本：
 
 ```powershell
-.\tool\flutter_with_deepseek.ps1 -FlutterCommand run -FlutterArguments @('-d', 'windows', '--dart-define=PAPERFLOW_ENV=development')
+.\tool\flutter_with_deepseek.ps1 -FlutterCommand run -FlutterArguments @('-d', 'windows', '--dart-define=SPARK_ENV=development')
 ```
 
 正式 Android 构建只读取用户在设备安全存储中配置的 Key。
@@ -115,7 +119,7 @@ flutter run -d windows --dart-define=PAPERFLOW_ENV=development
 .\tool\verify_changed_dart_format.ps1
 flutter analyze
 flutter test
-flutter build apk --debug --flavor development --dart-define=PAPERFLOW_ENV=development
+flutter build apk --debug --flavor development --dart-define=SPARK_ENV=development
 ```
 
 项目不使用 Android 模拟器作为日常验收方式。Android 正式签名、真机验收和发布门见 [发布与兼容性管理](docs/standards/release-management.md)。

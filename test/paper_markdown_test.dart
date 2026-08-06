@@ -5,7 +5,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:markdown/markdown.dart' as md;
-import 'package:paperflow/src/features/papers/presentation/widgets/paper_markdown.dart';
+import 'package:spark/src/features/papers/presentation/widgets/paper_markdown.dart';
 
 void main() {
   group('GeneratedMarkdownStabilizer', () {

@@ -7,7 +7,7 @@ import '../application/paper_share_service.dart';
 class PlatformPaperShareService implements PaperShareService {
   const PlatformPaperShareService();
 
-  static const _channel = MethodChannel('paperflow/share');
+  static const _channel = MethodChannel('spark/share');
 
   @override
   Future<PaperShareResult> share(PaperSharePayload payload) async {

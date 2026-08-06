@@ -2,15 +2,15 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:paperflow/paperflow.dart';
-import 'package:paperflow/src/core/storage/local_json_store.dart';
+import 'package:spark/spark.dart';
+import 'package:spark/src/core/storage/local_json_store.dart';
 
 void main() {
   late Directory directory;
   late File file;
 
   setUp(() async {
-    directory = await Directory.systemTemp.createTemp('paperflow-comments-');
+    directory = await Directory.systemTemp.createTemp('spark-comments-');
     file = File('${directory.path}${Platform.pathSeparator}comments.json');
   });
 

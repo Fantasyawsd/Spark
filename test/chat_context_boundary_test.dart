@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:paperflow/src/features/chat/application/main_ai_chat_definition.dart';
-import 'package:paperflow/src/features/papers/application/paper_chat_context.dart';
-import 'package:paperflow/src/features/papers/domain/paper.dart';
+import 'package:spark/src/features/chat/application/main_ai_chat_definition.dart';
+import 'package:spark/src/features/papers/application/paper_chat_context.dart';
+import 'package:spark/src/features/papers/domain/paper.dart';
 
 /// 主聊天、论文聊天与论文派生缓存的数据边界：
 /// - 主聊天永不注入论文派生数据；

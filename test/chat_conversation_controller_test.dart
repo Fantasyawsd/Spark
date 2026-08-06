@@ -1,10 +1,10 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:paperflow/src/features/chat/application/chat_ai_service.dart';
-import 'package:paperflow/src/features/chat/application/chat_conversation_controller.dart';
-import 'package:paperflow/src/features/chat/application/main_ai_chat_definition.dart';
-import 'package:paperflow/src/features/chat/domain/chat_context.dart';
-import 'package:paperflow/src/features/chat/domain/chat_message.dart';
-import 'package:paperflow/src/features/chat/domain/chat_session_repository.dart';
+import 'package:spark/src/features/chat/application/chat_ai_service.dart';
+import 'package:spark/src/features/chat/application/chat_conversation_controller.dart';
+import 'package:spark/src/features/chat/application/main_ai_chat_definition.dart';
+import 'package:spark/src/features/chat/domain/chat_context.dart';
+import 'package:spark/src/features/chat/domain/chat_message.dart';
+import 'package:spark/src/features/chat/domain/chat_session_repository.dart';
 
 void main() {
   test('generic conversation sends its chat context to the AI service',
@@ -127,7 +127,7 @@ void main() {
     final context = MainAiChatDefinition.context;
 
     expect(context.id, MainAiChatDefinition.sessionId);
-    expect(context.title, 'PaperFlow 主聊天');
+    expect(context.title, 'Spark 主聊天');
     expect(context.promptFor(webSearch: false), isNotEmpty);
     expect(context.promptFor(webSearch: true), contains('网络搜索'));
   });

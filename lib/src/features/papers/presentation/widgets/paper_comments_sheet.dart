@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/motion/motion_tokens.dart';
-import '../../../../core/theme/paperflow_theme.dart';
-import '../../../../core/widgets/paperflow_sheet.dart';
-import '../../../../core/widgets/paperflow_tab_bar.dart';
+import '../../../../core/theme/spark_theme.dart';
+import '../../../../core/widgets/spark_sheet.dart';
+import '../../../../core/widgets/spark_tab_bar.dart';
 import '../../application/paper_ai_conversation_controller.dart';
 import '../../application/paper_ai_service.dart';
 import '../../application/paper_ai_session_repository.dart';
@@ -28,7 +28,7 @@ Future<void> showPaperCommentsSheet(
   PaperSheetPage initialPage = PaperSheetPage.comments,
   List<String> generatedKeywords = const [],
 }) {
-  return showPaperFlowSheet<void>(
+  return showSparkSheet<void>(
     context: context,
     isScrollControlled: true,
     useSafeArea: true,
@@ -288,7 +288,7 @@ class _PaperCommentsSheetState extends State<_PaperCommentsSheet> {
         body: comment.body,
         likes: comment.likes,
         replies: replies,
-        color: PaperFlowColors.primary,
+        color: SparkColors.primary,
         parentId: comment.parentId,
         canDelete: comment.isLocalUser,
         liked: comment.likedByLocalUser,
@@ -301,7 +301,7 @@ class _PaperCommentsSheetState extends State<_PaperCommentsSheet> {
       behavior: HitTestBehavior.opaque,
       onVerticalDragUpdate: _handleSheetDragUpdate,
       onVerticalDragEnd: _handleSheetDragEnd,
-      child: const PaperFlowSheetHandle(height: 18),
+      child: const SparkSheetHandle(height: 18),
     );
   }
 
@@ -478,7 +478,7 @@ class _CommentSortMenu extends StatelessWidget {
               Text(
                 value == PaperCommentSort.newest ? '最新' : '最热',
                 style: const TextStyle(
-                  color: PaperFlowColors.muted,
+                  color: SparkColors.muted,
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
                 ),
@@ -486,7 +486,7 @@ class _CommentSortMenu extends StatelessWidget {
               const SizedBox(width: 2),
               const Icon(
                 Icons.keyboard_arrow_down_rounded,
-                color: PaperFlowColors.muted,
+                color: SparkColors.muted,
                 size: 18,
               ),
             ],
@@ -527,7 +527,7 @@ class _SheetHeader extends StatelessWidget {
         children: [
           SizedBox(
             width: 170,
-            child: PaperFlowTabBar(
+            child: SparkTabBar(
               tabs: ['评论 $commentCount', 'AI 解析'],
               selectedIndex: pageIndex,
               pageController: pageController,
@@ -549,7 +549,7 @@ class _SheetHeader extends StatelessWidget {
                     fullscreen
                         ? Icons.close_fullscreen_rounded
                         : Icons.open_in_full_rounded,
-                    color: PaperFlowColors.muted,
+                    color: SparkColors.muted,
                     size: 20,
                   ),
                 ),
@@ -558,7 +558,7 @@ class _SheetHeader extends StatelessWidget {
                   onPressed: onClose,
                   icon: const Icon(
                     Icons.close_rounded,
-                    color: PaperFlowColors.ink,
+                    color: SparkColors.ink,
                     size: 23,
                   ),
                 ),

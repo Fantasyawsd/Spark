@@ -1,9 +1,9 @@
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:paperflow/src/features/papers/application/paper_pdf_context_builder.dart';
-import 'package:paperflow/src/features/papers/data/paper_pdf_extraction_service.dart';
-import 'package:paperflow/src/features/papers/domain/paper_pdf.dart';
+import 'package:spark/src/features/papers/application/paper_pdf_context_builder.dart';
+import 'package:spark/src/features/papers/data/paper_pdf_extraction_service.dart';
+import 'package:spark/src/features/papers/domain/paper_pdf.dart';
 import 'package:syncfusion_flutter_pdf/pdf.dart';
 
 void main() {

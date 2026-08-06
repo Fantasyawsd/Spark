@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../motion/motion_tokens.dart';
-import '../theme/paperflow_design_tokens.dart';
-import '../theme/paperflow_theme.dart';
+import '../theme/spark_design_tokens.dart';
+import '../theme/spark_theme.dart';
 
 enum CherryButtonVariant { primary, outline, secondary, ghost, destructive }
 
@@ -50,10 +50,10 @@ class CherryButton extends StatelessWidget {
       enabled: enabled,
       child: Material(
         color: colors.background,
-        borderRadius: BorderRadius.circular(PaperFlowDesignTokens.radiusMd),
+        borderRadius: BorderRadius.circular(SparkDesignTokens.radiusMd),
         child: InkWell(
           onTap: enabled ? onPressed : null,
-          borderRadius: BorderRadius.circular(PaperFlowDesignTokens.radiusMd),
+          borderRadius: BorderRadius.circular(SparkDesignTokens.radiusMd),
           splashFactory: InkRipple.splashFactory,
           child: AnimatedContainer(
             duration: MotionTokens.duration(
@@ -64,15 +64,15 @@ class CherryButton extends StatelessWidget {
             padding: EdgeInsets.symmetric(horizontal: heights.horizontal),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(
-                PaperFlowDesignTokens.radiusMd,
+                SparkDesignTokens.radiusMd,
               ),
               border: Border.all(
                 color: colors.border,
-                width: PaperFlowDesignTokens.borderWidth,
+                width: SparkDesignTokens.borderWidth,
               ),
               boxShadow: variant == CherryButtonVariant.primary ||
                       variant == CherryButtonVariant.destructive
-                  ? PaperFlowDesignTokens.interactiveShadow
+                  ? SparkDesignTokens.interactiveShadow
                   : null,
             ),
             child: DefaultTextStyle(
@@ -120,33 +120,33 @@ class CherryButton extends StatelessWidget {
     switch (variant) {
       case CherryButtonVariant.primary:
         return _CherryButtonColors(
-          background: PaperFlowColors.primary,
+          background: SparkColors.primary,
           foreground: Colors.white,
-          border: PaperFlowColors.primary,
+          border: SparkColors.primary,
         );
       case CherryButtonVariant.outline:
         return const _CherryButtonColors(
           background: Colors.transparent,
-          foreground: PaperFlowColors.ink,
-          border: PaperFlowColors.line,
+          foreground: SparkColors.ink,
+          border: SparkColors.line,
         );
       case CherryButtonVariant.secondary:
         return const _CherryButtonColors(
-          background: PaperFlowColors.surfaceMuted,
-          foreground: PaperFlowColors.ink,
+          background: SparkColors.surfaceMuted,
+          foreground: SparkColors.ink,
           border: Colors.transparent,
         );
       case CherryButtonVariant.ghost:
         return const _CherryButtonColors(
           background: Colors.transparent,
-          foreground: PaperFlowColors.ink,
+          foreground: SparkColors.ink,
           border: Colors.transparent,
         );
       case CherryButtonVariant.destructive:
         return const _CherryButtonColors(
-          background: PaperFlowColors.danger,
+          background: SparkColors.danger,
           foreground: Colors.white,
-          border: PaperFlowColors.danger,
+          border: SparkColors.danger,
         );
     }
   }
@@ -186,9 +186,9 @@ class CherryIconButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final background = selected ? PaperFlowColors.accent : Colors.transparent;
+    final background = selected ? SparkColors.accent : Colors.transparent;
     final foreground =
-        selected ? PaperFlowColors.accentForeground : PaperFlowColors.muted;
+        selected ? SparkColors.accentForeground : SparkColors.muted;
     return Tooltip(
       message: tooltip,
       child: Semantics(
@@ -197,12 +197,12 @@ class CherryIconButton extends StatelessWidget {
         label: tooltip,
         child: Material(
           color: background,
-          borderRadius: BorderRadius.circular(PaperFlowDesignTokens.radiusMd),
+          borderRadius: BorderRadius.circular(SparkDesignTokens.radiusMd),
           child: InkWell(
             onTap: onPressed,
-            borderRadius: BorderRadius.circular(PaperFlowDesignTokens.radiusMd),
-            hoverColor: PaperFlowColors.accent,
-            focusColor: PaperFlowColors.accent,
+            borderRadius: BorderRadius.circular(SparkDesignTokens.radiusMd),
+            hoverColor: SparkColors.accent,
+            focusColor: SparkColors.accent,
             child: SizedBox(
               width: size,
               height: size,
@@ -223,11 +223,11 @@ class CherrySurface extends StatelessWidget {
   const CherrySurface({
     super.key,
     required this.child,
-    this.padding = const EdgeInsets.all(PaperFlowDesignTokens.space4),
+    this.padding = const EdgeInsets.all(SparkDesignTokens.space4),
     this.margin,
-    this.color = PaperFlowColors.card,
+    this.color = SparkColors.card,
     this.level = CherrySurfaceLevel.flat,
-    this.radius = PaperFlowDesignTokens.radiusLg,
+    this.radius = SparkDesignTokens.radiusLg,
     this.border,
   });
 
@@ -243,8 +243,8 @@ class CherrySurface extends StatelessWidget {
   Widget build(BuildContext context) {
     final shadow = switch (level) {
       CherrySurfaceLevel.flat => null,
-      CherrySurfaceLevel.interactive => PaperFlowDesignTokens.interactiveShadow,
-      CherrySurfaceLevel.floating => PaperFlowDesignTokens.floatingShadow,
+      CherrySurfaceLevel.interactive => SparkDesignTokens.interactiveShadow,
+      CherrySurfaceLevel.floating => SparkDesignTokens.floatingShadow,
     };
     return Container(
       margin: margin,
@@ -252,7 +252,7 @@ class CherrySurface extends StatelessWidget {
       decoration: BoxDecoration(
         color: color,
         borderRadius: BorderRadius.circular(radius),
-        border: border ?? Border.all(color: PaperFlowColors.line),
+        border: border ?? Border.all(color: SparkColors.line),
         boxShadow: shadow,
       ),
       child: child,

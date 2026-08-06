@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/theme/paperflow_theme.dart';
+import '../../../../core/theme/spark_theme.dart';
 import '../../../../core/widgets/topic_chip.dart';
 import 'paper_markdown.dart';
 
@@ -135,7 +135,7 @@ class _CollapsedPaperContent extends StatelessWidget {
           child: TextButton.icon(
             onPressed: onExpand,
             style: TextButton.styleFrom(
-              foregroundColor: PaperFlowColors.ink,
+              foregroundColor: SparkColors.ink,
               padding: const EdgeInsets.symmetric(horizontal: 4),
               minimumSize: const Size(0, actionHeight),
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,

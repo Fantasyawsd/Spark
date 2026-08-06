@@ -1,8 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:paperflow/paperflow.dart';
-import 'package:paperflow/src/features/chat/domain/chat_context.dart';
+import 'package:spark/spark.dart';
+import 'package:spark/src/features/chat/domain/chat_context.dart';
 
 void main() {
   test(

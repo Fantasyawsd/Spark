@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:paperflow/paperflow.dart';
+import 'package:spark/spark.dart';
 
 void main() {
   group('PaperSearchController', () {
@@ -144,7 +144,7 @@ void main() {
 
   test('file search history survives repository recreation', () async {
     final directory =
-        await Directory.systemTemp.createTemp('paperflow-search-');
+        await Directory.systemTemp.createTemp('spark-search-');
     addTearDown(() => directory.delete(recursive: true));
     final file = File('${directory.path}${Platform.pathSeparator}history.json');
 

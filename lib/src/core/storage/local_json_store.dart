@@ -58,15 +58,15 @@ class LocalJsonStore {
     if (Platform.isWindows) {
       final appData = Platform.environment['APPDATA'];
       if (appData != null && appData.isNotEmpty) {
-        return '$appData${Platform.pathSeparator}PaperFlow${Platform.pathSeparator}$fileName';
+        return '$appData${Platform.pathSeparator}Spark${Platform.pathSeparator}$fileName';
       }
     }
     if (Platform.isAndroid) {
       final appFile =
-          Directory.systemTemp.parent.uri.resolve('files/PaperFlow/$fileName');
+          Directory.systemTemp.parent.uri.resolve('files/Spark/$fileName');
       return File.fromUri(appFile).path;
     }
-    return '${Directory.systemTemp.path}${Platform.pathSeparator}PaperFlow${Platform.pathSeparator}$fileName';
+    return '${Directory.systemTemp.path}${Platform.pathSeparator}Spark${Platform.pathSeparator}$fileName';
   }
 }
 

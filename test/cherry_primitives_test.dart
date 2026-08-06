@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:paperflow/src/core/theme/paperflow_design_tokens.dart';
-import 'package:paperflow/src/core/widgets/cherry_motion.dart';
-import 'package:paperflow/src/core/widgets/cherry_primitives.dart';
+import 'package:spark/src/core/theme/spark_design_tokens.dart';
+import 'package:spark/src/core/widgets/cherry_motion.dart';
+import 'package:spark/src/core/widgets/cherry_primitives.dart';
 
 void main() {
   test('Cherry Studio token scale keeps the compact component hierarchy', () {
-    expect(PaperFlowDesignTokens.radiusMd, 8);
-    expect(PaperFlowDesignTokens.radiusLg, 10);
-    expect(PaperFlowDesignTokens.radius3Xl, 22);
-    expect(PaperFlowDesignTokens.space1, 4);
+    expect(SparkDesignTokens.radiusMd, 8);
+    expect(SparkDesignTokens.radiusLg, 10);
+    expect(SparkDesignTokens.radius3Xl, 22);
+    expect(SparkDesignTokens.space1, 4);
   });
 
   testWidgets('primary button exposes a compact, tappable action', (

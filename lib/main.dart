@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show appFlavor;
-import 'package:paperflow/paperflow.dart';
+import 'package:spark/spark.dart';
 
 void main() {
   final config = AppConfig.fromEnvironment(platformFlavor: appFlavor);
   runApp(
-    PaperFlowApp(
+    SparkApp(
       config: config,
-      dependencies: PaperFlowDependencies.production(),
+      dependencies: SparkDependencies.production(),
     ),
   );
 }

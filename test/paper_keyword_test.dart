@@ -1,12 +1,12 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:paperflow/src/features/chat/application/chat_ai_service.dart';
-import 'package:paperflow/src/features/chat/domain/chat_context.dart';
-import 'package:paperflow/src/features/chat/domain/chat_message.dart';
-import 'package:paperflow/src/features/papers/application/paper_keyword_controller.dart';
-import 'package:paperflow/src/features/papers/application/paper_keyword_service.dart';
-import 'package:paperflow/src/features/papers/data/in_memory_paper_keyword_repository.dart';
-import 'package:paperflow/src/features/papers/domain/paper.dart';
-import 'package:paperflow/src/features/papers/domain/paper_keyword_record.dart';
+import 'package:spark/src/features/chat/application/chat_ai_service.dart';
+import 'package:spark/src/features/chat/domain/chat_context.dart';
+import 'package:spark/src/features/chat/domain/chat_message.dart';
+import 'package:spark/src/features/papers/application/paper_keyword_controller.dart';
+import 'package:spark/src/features/papers/application/paper_keyword_service.dart';
+import 'package:spark/src/features/papers/data/in_memory_paper_keyword_repository.dart';
+import 'package:spark/src/features/papers/domain/paper.dart';
+import 'package:spark/src/features/papers/domain/paper_keyword_record.dart';
 
 void main() {
   group('PaperKeywordParser', () {

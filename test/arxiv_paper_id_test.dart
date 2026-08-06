@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:paperflow/src/features/search/domain/arxiv_paper_id.dart';
+import 'package:spark/src/features/search/domain/arxiv_paper_id.dart';
 
 void main() {
   group('extractArxivId', () {

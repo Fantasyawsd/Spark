@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/motion/motion_tokens.dart';
-import '../../../../core/theme/paperflow_theme.dart';
+import '../../../../core/theme/spark_theme.dart';
 import '../../../../core/widgets/cherry_primitives.dart';
 
 class PapersHeader extends StatelessWidget {
@@ -30,7 +30,7 @@ class PapersHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: PaperFlowColors.card,
+      color: SparkColors.card,
       elevation: 0,
       shadowColor: Colors.transparent,
       surfaceTintColor: Colors.transparent,
@@ -119,10 +119,10 @@ class _ChannelTab extends StatelessWidget {
             Text(
               label,
               style: TextStyle(
-                color: selected ? PaperFlowColors.ink : PaperFlowColors.muted,
+                color: selected ? SparkColors.ink : SparkColors.muted,
                 fontSize: 14,
                 fontWeight: selected ? FontWeight.w800 : FontWeight.w500,
-                fontFamily: PaperFlowTheme.platformCjkFontFamily(),
+                fontFamily: SparkTheme.platformCjkFontFamily(),
               ),
             ),
             const SizedBox(height: 7),
@@ -135,7 +135,7 @@ class _ChannelTab extends StatelessWidget {
               width: selected ? 24 : 0,
               height: 3,
               decoration: BoxDecoration(
-                color: PaperFlowColors.primary,
+                color: SparkColors.primary,
                 borderRadius: BorderRadius.circular(99),
               ),
             ),

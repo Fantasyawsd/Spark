@@ -1,12 +1,12 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:paperflow/src/core/storage/local_json_store.dart';
-import 'package:paperflow/src/core/storage/versioned_local_json_store.dart';
-import 'package:paperflow/src/features/papers/data/cache/file_paper_cache_store.dart';
-import 'package:paperflow/src/features/papers/data/cache/paper_cache_mapper.dart';
-import 'package:paperflow/src/features/papers/data/cache/paper_cache_record.dart';
-import 'package:paperflow/src/features/papers/domain/paper.dart';
+import 'package:spark/src/core/storage/local_json_store.dart';
+import 'package:spark/src/core/storage/versioned_local_json_store.dart';
+import 'package:spark/src/features/papers/data/cache/file_paper_cache_store.dart';
+import 'package:spark/src/features/papers/data/cache/paper_cache_mapper.dart';
+import 'package:spark/src/features/papers/data/cache/paper_cache_record.dart';
+import 'package:spark/src/features/papers/domain/paper.dart';
 
 void main() {
   late Directory directory;
@@ -14,7 +14,7 @@ void main() {
   late FilePaperCacheStore store;
 
   setUp(() async {
-    directory = await Directory.systemTemp.createTemp('paperflow-cache-');
+    directory = await Directory.systemTemp.createTemp('spark-cache-');
     file = File('${directory.path}${Platform.pathSeparator}papers.json');
     store = FilePaperCacheStore(
       store: LocalJsonStore(fileName: 'unused.json', file: file),
@@ -108,7 +108,7 @@ void main() {
   test('migrates v1 snapshots to the split metadata schema', () async {
     await file.writeAsString('''
 {
-  "_format": "paperflow.local-json",
+  "_format": "spark.local-json",
   "formatVersion": 1,
   "schema": "papers.catalog-cache",
   "schemaVersion": 1,
@@ -188,7 +188,7 @@ Paper _paper() {
     venue: 'ICLR 2024',
     title: 'Cached paper',
     authors: const ['Alice Smith', 'Bob Jones'],
-    affiliations: const ['PaperFlow Lab'],
+    affiliations: const ['Spark Lab'],
     subjects: const ['cs.AI', 'cs.LG'],
     abstractText: r'Equation $x^2$.',
     chineseAbstractMarkdown: '中文摘要。',

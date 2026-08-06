@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/theme/paperflow_theme.dart';
+import '../../../../core/theme/spark_theme.dart';
 import '../../../../core/widgets/topic_chip.dart';
 import '../../domain/paper.dart';
 
@@ -31,13 +31,13 @@ class PaperRelatedPapers extends StatelessWidget {
                   Icon(
                     Icons.article_outlined,
                     size: 28,
-                    color: PaperFlowColors.muted,
+                    color: SparkColors.muted,
                   ),
                   SizedBox(height: 12),
                   Text(
                     '相关论文',
                     style: TextStyle(
-                      color: PaperFlowColors.ink,
+                      color: SparkColors.ink,
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
                     ),
@@ -47,7 +47,7 @@ class PaperRelatedPapers extends StatelessWidget {
                     '相关论文推荐将在后续版本提供。',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      color: PaperFlowColors.muted,
+                      color: SparkColors.muted,
                       fontSize: 13,
                     ),
                   ),
@@ -62,7 +62,7 @@ class PaperRelatedPapers extends StatelessWidget {
               onOpen: onOpen == null ? null : () => onOpen!(papers[index].id),
             ),
             if (index != papers.length - 1)
-              const Divider(height: 1, color: PaperFlowColors.line),
+              const Divider(height: 1, color: SparkColors.line),
           ],
         if (topics.isNotEmpty) ...[
           const SizedBox(height: 18),
@@ -105,7 +105,7 @@ class _RelatedPaperRow extends StatelessWidget {
                     maxLines: 3,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                      color: PaperFlowColors.ink,
+                      color: SparkColors.ink,
                       fontSize: 14,
                       height: 1.35,
                       fontWeight: FontWeight.w700,
@@ -117,7 +117,7 @@ class _RelatedPaperRow extends StatelessWidget {
                         ? paper.relation
                         : '${paper.venue} · ${paper.relation}',
                     style: const TextStyle(
-                      color: PaperFlowColors.muted,
+                      color: SparkColors.muted,
                       fontSize: 11.5,
                       height: 1.3,
                     ),
@@ -131,7 +131,7 @@ class _RelatedPaperRow extends StatelessWidget {
               child: Icon(
                 Icons.arrow_forward_ios_rounded,
                 size: 15,
-                color: PaperFlowColors.subtle,
+                color: SparkColors.subtle,
               ),
             ),
           ],

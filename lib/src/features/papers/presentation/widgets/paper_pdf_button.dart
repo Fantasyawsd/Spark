@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/theme/paperflow_theme.dart';
+import '../../../../core/theme/spark_theme.dart';
 import '../../application/paper_link_service.dart';
 import '../../domain/paper.dart';
 
@@ -25,7 +25,7 @@ class PaperPdfButton extends StatelessWidget {
         key: const ValueKey('paper-open-link'),
         onPressed: () => onOpen(uri),
         style: TextButton.styleFrom(
-          foregroundColor: PaperFlowColors.ink,
+          foregroundColor: SparkColors.ink,
           padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 2),
           minimumSize: const Size(0, 32),
           tapTargetSize: MaterialTapTargetSize.shrinkWrap,

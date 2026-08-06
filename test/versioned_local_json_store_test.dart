@@ -2,8 +2,8 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:paperflow/src/core/storage/local_json_store.dart';
-import 'package:paperflow/src/core/storage/versioned_local_json_store.dart';
+import 'package:spark/src/core/storage/local_json_store.dart';
+import 'package:spark/src/core/storage/versioned_local_json_store.dart';
 
 void main() {
   late Directory directory;
@@ -11,7 +11,7 @@ void main() {
   late VersionedLocalJsonStore store;
 
   setUp(() async {
-    directory = await Directory.systemTemp.createTemp('paperflow-schema-');
+    directory = await Directory.systemTemp.createTemp('spark-schema-');
     file = File('${directory.path}${Platform.pathSeparator}state.json');
     store = VersionedLocalJsonStore(
       LocalJsonStore(fileName: 'unused.json', file: file),
@@ -161,7 +161,7 @@ void main() {
 
   test('rejects an unknown reserved format without rewriting it', () async {
     final original = jsonEncode({
-      '_format': 'paperflow.local-json-v2',
+      '_format': 'spark.local-json-v2',
       'schemaVersion': 99,
       'payload': {},
     });

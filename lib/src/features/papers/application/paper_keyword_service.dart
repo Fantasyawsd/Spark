@@ -6,7 +6,7 @@ import '../domain/paper_keyword_record.dart';
 import 'paper_ai_service.dart';
 
 const paperKeywordPromptVersion = 1;
-const _fingerprintSeparator = '|paperflow-keywords|';
+const _fingerprintSeparator = '|spark-keywords|';
 
 abstract interface class PaperKeywordRepository {
   Future<PaperKeywordRecord?> load(String paperId);

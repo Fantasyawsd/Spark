@@ -3,11 +3,11 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 
 import '../motion/motion_tokens.dart';
-import '../theme/paperflow_design_tokens.dart';
-import '../theme/paperflow_theme.dart';
+import '../theme/spark_design_tokens.dart';
+import '../theme/spark_theme.dart';
 
-class PaperFlowBottomNav extends StatelessWidget {
-  const PaperFlowBottomNav({
+class SparkBottomNav extends StatelessWidget {
+  const SparkBottomNav({
     super.key,
     required this.selectedIndex,
     required this.onSelected,
@@ -23,18 +23,18 @@ class PaperFlowBottomNav extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.fromLTRB(10, 0, 10, 8),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(PaperFlowDesignTokens.radiusXl),
+        borderRadius: BorderRadius.circular(SparkDesignTokens.radiusXl),
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
           child: Container(
             padding: const EdgeInsets.fromLTRB(4, 4, 4, 4),
             decoration: BoxDecoration(
-              color: PaperFlowColors.popover.withValues(alpha: 0.96),
+              color: SparkColors.popover.withValues(alpha: 0.96),
               borderRadius: BorderRadius.circular(
-                PaperFlowDesignTokens.radiusXl,
+                SparkDesignTokens.radiusXl,
               ),
-              border: Border.all(color: PaperFlowColors.line),
-              boxShadow: PaperFlowDesignTokens.floatingShadow,
+              border: Border.all(color: SparkColors.line),
+              boxShadow: SparkDesignTokens.floatingShadow,
             ),
             child: SafeArea(
               top: false,
@@ -102,17 +102,17 @@ class _NavItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final selected = index == selectedIndex;
-    final color = selected ? PaperFlowColors.ink : PaperFlowColors.muted;
+    final color = selected ? SparkColors.ink : SparkColors.muted;
     return Expanded(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 2),
         child: Material(
           color: Colors.transparent,
-          borderRadius: BorderRadius.circular(PaperFlowDesignTokens.radiusMd),
+          borderRadius: BorderRadius.circular(SparkDesignTokens.radiusMd),
           child: InkWell(
             key: ValueKey('bottom-nav-$index'),
             onTap: () => onSelected(index),
-            borderRadius: BorderRadius.circular(PaperFlowDesignTokens.radiusMd),
+            borderRadius: BorderRadius.circular(SparkDesignTokens.radiusMd),
             child: AnimatedContainer(
               duration: MotionTokens.duration(
                 context,
@@ -120,9 +120,9 @@ class _NavItem extends StatelessWidget {
               ),
               curve: MotionTokens.enterCurve,
               decoration: BoxDecoration(
-                color: selected ? PaperFlowColors.accent : Colors.transparent,
+                color: selected ? SparkColors.accent : Colors.transparent,
                 borderRadius: BorderRadius.circular(
-                  PaperFlowDesignTokens.radiusMd,
+                  SparkDesignTokens.radiusMd,
                 ),
               ),
               child: Column(

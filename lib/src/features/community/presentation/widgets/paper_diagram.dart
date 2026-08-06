@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/theme/paperflow_theme.dart';
+import '../../../../core/theme/spark_theme.dart';
 
 class PaperDiagram extends StatelessWidget {
   const PaperDiagram({super.key, this.accent = const Color(0xFF4A7FCA)});
@@ -14,7 +14,7 @@ class PaperDiagram extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: PaperFlowColors.line),
+        border: Border.all(color: SparkColors.line),
       ),
       child: CustomPaint(
         painter: _PaperDiagramPainter(accent),
@@ -32,7 +32,7 @@ class _PaperDiagramPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final line = Paint()
-      ..color = PaperFlowColors.ink.withValues(alpha: 0.8)
+      ..color = SparkColors.ink.withValues(alpha: 0.8)
       ..strokeWidth = 1.5
       ..style = PaintingStyle.stroke;
     final fill = Paint()..color = accent.withValues(alpha: 0.28);
@@ -89,7 +89,7 @@ class _PaperDiagramPainter extends CustomPainter {
       textPainter.text = TextSpan(
         text: text,
         style: TextStyle(
-            color: PaperFlowColors.ink, fontSize: size, fontWeight: weight),
+            color: SparkColors.ink, fontSize: size, fontWeight: weight),
       );
       textPainter.layout();
       textPainter.paint(canvas, offset);

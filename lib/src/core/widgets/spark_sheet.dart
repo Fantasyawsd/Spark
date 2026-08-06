@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../theme/paperflow_theme.dart';
+import '../theme/spark_theme.dart';
 
-Future<T?> showPaperFlowSheet<T>({
+Future<T?> showSparkSheet<T>({
   required BuildContext context,
   required WidgetBuilder builder,
   bool isScrollControlled = false,
@@ -19,8 +19,8 @@ Future<T?> showPaperFlowSheet<T>({
   );
 }
 
-class PaperFlowSheetHandle extends StatelessWidget {
-  const PaperFlowSheetHandle({super.key, this.height = 14});
+class SparkSheetHandle extends StatelessWidget {
+  const SparkSheetHandle({super.key, this.height = 14});
 
   final double height;
 
@@ -33,7 +33,7 @@ class PaperFlowSheetHandle extends StatelessWidget {
           width: 34,
           height: 4,
           decoration: BoxDecoration(
-            color: PaperFlowColors.line,
+            color: SparkColors.line,
             borderRadius: BorderRadius.circular(99),
           ),
         ),

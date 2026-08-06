@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/theme/paperflow_theme.dart';
+import '../../../core/theme/spark_theme.dart';
 import '../application/chat_session_controller.dart';
 import '../domain/chat_session_repository.dart';
 import 'widgets/chat_session_swipe_action.dart';
@@ -49,7 +49,7 @@ class _AiChatHomeScreenState extends State<AiChatHomeScreen> {
   @override
   Widget build(BuildContext context) {
     return ColoredBox(
-      color: PaperFlowColors.canvas,
+      color: SparkColors.canvas,
       child: SafeArea(
         bottom: false,
         child: Column(
@@ -64,7 +64,7 @@ class _AiChatHomeScreenState extends State<AiChatHomeScreen> {
                     'ChatPaper',
                     key: ValueKey('ai-chat-home-title'),
                     style: TextStyle(
-                      color: PaperFlowColors.ink,
+                      color: SparkColors.ink,
                       fontSize: 22,
                       fontWeight: FontWeight.w900,
                     ),
@@ -208,12 +208,12 @@ class _AiSessionList extends StatelessWidget {
                       width: 44,
                       height: 44,
                       decoration: BoxDecoration(
-                        color: PaperFlowColors.primarySoft,
+                        color: SparkColors.primarySoft,
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
                         Icons.auto_awesome_rounded,
-                        color: PaperFlowColors.primary,
+                        color: SparkColors.primary,
                         size: 21,
                       ),
                     ),
@@ -227,7 +227,7 @@ class _AiSessionList extends StatelessWidget {
                               if (session.pinned) ...[
                                 Icon(
                                   Icons.push_pin_rounded,
-                                  color: PaperFlowColors.primary,
+                                  color: SparkColors.primary,
                                   size: 14,
                                 ),
                                 const SizedBox(width: 5),
@@ -238,7 +238,7 @@ class _AiSessionList extends StatelessWidget {
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: const TextStyle(
-                                    color: PaperFlowColors.ink,
+                                    color: SparkColors.ink,
                                     fontSize: 14,
                                     fontWeight: FontWeight.w800,
                                   ),
@@ -252,7 +252,7 @@ class _AiSessionList extends StatelessWidget {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
-                              color: PaperFlowColors.muted,
+                              color: SparkColors.muted,
                               fontSize: 12,
                             ),
                           ),
@@ -266,7 +266,7 @@ class _AiSessionList extends StatelessWidget {
                         Text(
                           _relativeTime(session.updatedAt),
                           style: const TextStyle(
-                            color: PaperFlowColors.subtle,
+                            color: SparkColors.subtle,
                             fontSize: 10.5,
                           ),
                         ),
@@ -274,7 +274,7 @@ class _AiSessionList extends StatelessWidget {
                         Text(
                           '${session.messageCount} 条',
                           style: const TextStyle(
-                            color: PaperFlowColors.muted,
+                            color: SparkColors.muted,
                             fontSize: 10.5,
                           ),
                         ),
@@ -311,7 +311,7 @@ class _MainAiChatCard extends StatelessWidget {
     final currentSession = session;
     final preview = currentSession?.preview.trim();
     return Material(
-      color: PaperFlowColors.primaryPale,
+      color: SparkColors.primaryPale,
       borderRadius: BorderRadius.circular(18),
       child: InkWell(
         key: const ValueKey('main-ai-chat'),
@@ -325,12 +325,12 @@ class _MainAiChatCard extends StatelessWidget {
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  color: PaperFlowColors.primary,
+                  color: SparkColors.primary,
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
                   Icons.auto_awesome_rounded,
-                  color: PaperFlowColors.card,
+                  color: SparkColors.card,
                   size: 23,
                 ),
               ),
@@ -343,11 +343,11 @@ class _MainAiChatCard extends StatelessWidget {
                       children: [
                         const Flexible(
                           child: Text(
-                            'PaperFlow 主聊天',
+                            'Spark 主聊天',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
-                              color: PaperFlowColors.ink,
+                              color: SparkColors.ink,
                               fontSize: 14.5,
                               fontWeight: FontWeight.w900,
                             ),
@@ -369,13 +369,13 @@ class _MainAiChatCard extends StatelessWidget {
                               Icon(
                                 Icons.push_pin_rounded,
                                 size: 11,
-                                color: PaperFlowColors.primary,
+                                color: SparkColors.primary,
                               ),
                               const SizedBox(width: 3),
                               Text(
                                 '置顶',
                                 style: TextStyle(
-                                  color: PaperFlowColors.primary,
+                                  color: SparkColors.primary,
                                   fontSize: 9.5,
                                   fontWeight: FontWeight.w700,
                                 ),
@@ -393,7 +393,7 @@ class _MainAiChatCard extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        color: PaperFlowColors.muted,
+                        color: SparkColors.muted,
                         fontSize: 12,
                       ),
                     ),
@@ -404,7 +404,7 @@ class _MainAiChatCard extends StatelessWidget {
               if (currentSession == null)
                 const Icon(
                   Icons.chevron_right_rounded,
-                  color: PaperFlowColors.muted,
+                  color: SparkColors.muted,
                 )
               else
                 Column(
@@ -413,7 +413,7 @@ class _MainAiChatCard extends StatelessWidget {
                     Text(
                       _AiSessionList._relativeTime(currentSession.updatedAt),
                       style: const TextStyle(
-                        color: PaperFlowColors.subtle,
+                        color: SparkColors.subtle,
                         fontSize: 10.5,
                       ),
                     ),
@@ -421,7 +421,7 @@ class _MainAiChatCard extends StatelessWidget {
                     Text(
                       '${currentSession.messageCount} 条',
                       style: const TextStyle(
-                        color: PaperFlowColors.muted,
+                        color: SparkColors.muted,
                         fontSize: 10.5,
                       ),
                     ),

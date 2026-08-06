@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/navigation/paperflow_route_observer.dart';
-import '../../../core/theme/paperflow_theme.dart';
+import '../../../core/navigation/spark_route_observer.dart';
+import '../../../core/theme/spark_theme.dart';
 import '../application/paper_ai_service.dart';
 import '../application/paper_ai_session_repository.dart';
 import '../application/paper_comment_controller.dart';
@@ -85,16 +85,16 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> with RouteAware {
     if (identical(route, _observedRoute)) return;
     final previousRoute = _observedRoute;
     if (previousRoute != null) {
-      PaperFlowRouteObserver.instance.unsubscribe(this);
+      SparkRouteObserver.instance.unsubscribe(this);
     }
     _observedRoute = route;
-    PaperFlowRouteObserver.instance.subscribe(this, route);
+    SparkRouteObserver.instance.subscribe(this, route);
   }
 
   @override
   void dispose() {
     if (_observedRoute != null) {
-      PaperFlowRouteObserver.instance.unsubscribe(this);
+      SparkRouteObserver.instance.unsubscribe(this);
     }
     _finishVisiblePeriod();
     _interactions.removeListener(_handleStateChanged);
@@ -154,7 +154,7 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> with RouteAware {
                 tooltip: '返回',
                 onPressed: () => Navigator.maybePop(context),
                 icon: const Icon(Icons.arrow_back_rounded),
-                color: PaperFlowColors.ink,
+                color: SparkColors.ink,
               ),
             ),
           ),

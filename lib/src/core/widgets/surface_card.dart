@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
 
 import 'cherry_primitives.dart';
-import '../theme/paperflow_design_tokens.dart';
-import '../theme/paperflow_theme.dart';
+import '../theme/spark_design_tokens.dart';
+import '../theme/spark_theme.dart';
 
 class SurfaceCard extends StatelessWidget {
   const SurfaceCard({
     super.key,
     required this.child,
-    this.padding = const EdgeInsets.all(PaperFlowDesignTokens.space4),
+    this.padding = const EdgeInsets.all(SparkDesignTokens.space4),
     this.margin,
-    this.radius = PaperFlowDesignTokens.radiusLg,
-    this.color = PaperFlowColors.card,
+    this.radius = SparkDesignTokens.radiusLg,
+    this.color = SparkColors.card,
     this.border,
     this.level = CherrySurfaceLevel.flat,
   });

@@ -9,7 +9,7 @@ class SecureDeepSeekCredentialRepository
       : _storage = storage ??
             const FlutterSecureStorage(
               aOptions: AndroidOptions(
-                storageNamespace: 'paperflow.ai',
+                storageNamespace: 'spark.ai',
                 resetOnError: false,
               ),
             );

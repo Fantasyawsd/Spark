@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:paperflow/paperflow.dart';
+import 'package:spark/spark.dart';
 
 void main() {
   test('share payload contains paper metadata, abstract and URL', () {
@@ -11,7 +11,7 @@ void main() {
     expect(payload.text, contains('Edward J. Hu'));
     expect(payload.text, contains(paper.venue));
     expect(payload.text, contains('Low-Rank Adaptation'));
-    expect(payload.text, contains('PaperFlow 本地论文，暂无公开链接'));
+    expect(payload.text, contains('Spark 本地论文，暂无公开链接'));
   });
 
   test('share payload prefers the public paper URL', () {

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/motion/motion_tokens.dart';
-import '../../../../core/theme/paperflow_theme.dart';
+import '../../../../core/theme/spark_theme.dart';
 import '../../domain/paper.dart';
 import 'paper_presenter.dart';
 
@@ -97,7 +97,7 @@ class PaperActionBar extends StatelessWidget {
               child: PopupMenuButton<_PaperMoreAction>(
                 key: const ValueKey('paper-action-more'),
                 tooltip: '更多',
-                color: PaperFlowColors.card,
+                color: SparkColors.card,
                 surfaceTintColor: Colors.transparent,
                 elevation: 8,
                 shadowColor: const Color(0x2410182B),
@@ -108,7 +108,7 @@ class PaperActionBar extends StatelessWidget {
                 ),
                 icon: const Icon(
                   Icons.more_horiz_rounded,
-                  color: PaperFlowColors.ink,
+                  color: SparkColors.ink,
                   size: 23,
                 ),
                 onSelected: (action) {
@@ -168,10 +168,10 @@ class _PaperMoreMenuItem extends StatelessWidget {
           width: 32,
           height: 32,
           decoration: BoxDecoration(
-            color: PaperFlowColors.canvas,
+            color: SparkColors.canvas,
             borderRadius: BorderRadius.circular(9),
           ),
-          child: Icon(icon, size: 18, color: PaperFlowColors.ink),
+          child: Icon(icon, size: 18, color: SparkColors.ink),
         ),
         const SizedBox(width: 10),
         Expanded(
@@ -180,7 +180,7 @@ class _PaperMoreMenuItem extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(
-              color: PaperFlowColors.ink,
+              color: SparkColors.ink,
               fontSize: 13,
               fontWeight: FontWeight.w600,
             ),
@@ -218,7 +218,7 @@ class _PaperActionButtonState extends State<_PaperActionButton> {
 
   @override
   Widget build(BuildContext context) {
-    final color = widget.active ? PaperFlowColors.primary : PaperFlowColors.ink;
+    final color = widget.active ? SparkColors.primary : SparkColors.ink;
     return Expanded(
       child: Tooltip(
         message: widget.tooltip,

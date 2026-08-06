@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:paperflow/src/features/chat/application/chat_ai_service.dart';
-import 'package:paperflow/src/features/chat/domain/chat_context.dart';
-import 'package:paperflow/src/features/chat/domain/chat_message.dart';
-import 'package:paperflow/src/features/chat/domain/chat_session_repository.dart';
-import 'package:paperflow/src/features/chat/data/in_memory_chat_session_settings_repository.dart';
-import 'package:paperflow/src/features/chat/presentation/paper_ai_chat_screen.dart';
+import 'package:spark/src/features/chat/application/chat_ai_service.dart';
+import 'package:spark/src/features/chat/domain/chat_context.dart';
+import 'package:spark/src/features/chat/domain/chat_message.dart';
+import 'package:spark/src/features/chat/domain/chat_session_repository.dart';
+import 'package:spark/src/features/chat/data/in_memory_chat_session_settings_repository.dart';
+import 'package:spark/src/features/chat/presentation/paper_ai_chat_screen.dart';
 
 void main() {
   testWidgets(

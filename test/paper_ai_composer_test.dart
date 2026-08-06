@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:paperflow/paperflow.dart';
-import 'package:paperflow/src/features/chat/presentation/widgets/paper_ai_model_avatar.dart';
-import 'package:paperflow/src/features/papers/presentation/widgets/paper_ai_composer.dart';
+import 'package:spark/spark.dart';
+import 'package:spark/src/features/chat/presentation/widgets/paper_ai_model_avatar.dart';
+import 'package:spark/src/features/papers/presentation/widgets/paper_ai_composer.dart';
 
 void main() {
   testWidgets(

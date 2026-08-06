@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/theme/paperflow_theme.dart';
+import '../../../../core/theme/spark_theme.dart';
 import '../../domain/paper.dart';
 import 'paper_presenter.dart';
 
@@ -32,7 +32,7 @@ class PaperMetadata extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
-                  color: PaperFlowColors.muted,
+                  color: SparkColors.muted,
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
                 ),
@@ -44,11 +44,11 @@ class PaperMetadata extends StatelessWidget {
               onPressed: onFollow,
               style: OutlinedButton.styleFrom(
                 foregroundColor:
-                    followed ? PaperFlowColors.primary : PaperFlowColors.ink,
+                    followed ? SparkColors.primary : SparkColors.ink,
                 side: BorderSide(
                   color: followed
-                      ? PaperFlowColors.primary.withValues(alpha: 0.4)
-                      : PaperFlowColors.line,
+                      ? SparkColors.primary.withValues(alpha: 0.4)
+                      : SparkColors.line,
                 ),
                 minimumSize: const Size(0, 30),
                 padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -80,7 +80,7 @@ class PaperMetadata extends StatelessWidget {
             Text(
               venueLabel(paper),
               style: const TextStyle(
-                color: PaperFlowColors.muted,
+                color: SparkColors.muted,
                 fontSize: 11,
                 fontWeight: FontWeight.w700,
               ),
@@ -89,7 +89,7 @@ class PaperMetadata extends StatelessWidget {
               Text(
                 '$year 年发布',
                 style: const TextStyle(
-                  color: PaperFlowColors.muted,
+                  color: SparkColors.muted,
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
                 ),
@@ -98,7 +98,7 @@ class PaperMetadata extends StatelessWidget {
               Text(
                 citations,
                 style: const TextStyle(
-                  color: PaperFlowColors.muted,
+                  color: SparkColors.muted,
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
                 ),

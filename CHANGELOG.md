@@ -1,6 +1,6 @@
 # Changelog
 
-PaperFlow 的用户可见变更记录在此文件中。格式遵循 Keep a Changelog，发布版本遵循语义化版本。
+Spark 的用户可见变更记录在此文件中。格式遵循 Keep a Changelog，发布版本遵循语义化版本。
 
 ## [Unreleased]
 

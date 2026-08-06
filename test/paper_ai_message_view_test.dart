@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:paperflow/src/core/widgets/paperflow_markdown.dart';
-import 'package:paperflow/src/features/chat/domain/chat_message.dart';
-import 'package:paperflow/src/features/chat/presentation/widgets/paper_ai_message_view.dart';
+import 'package:spark/src/core/widgets/spark_markdown.dart';
+import 'package:spark/src/features/chat/domain/chat_message.dart';
+import 'package:spark/src/features/chat/presentation/widgets/paper_ai_message_view.dart';
 
 void main() {
   Widget wrap(Widget child) {

@@ -19,7 +19,7 @@ class VersionedLocalJsonStore {
     this.validatePayload,
   }) : assert(schemaVersion > 0);
 
-  static const format = 'paperflow.local-json';
+  static const format = 'spark.local-json';
   static const currentFormatVersion = 1;
   static const currentSchemaVersion = 1;
 

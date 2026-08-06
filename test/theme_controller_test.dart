@@ -1,9 +1,9 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:paperflow/paperflow.dart';
-import 'package:paperflow/src/core/storage/local_json_store.dart';
-import 'package:paperflow/src/core/theme/file_theme_preference_repository.dart';
+import 'package:spark/spark.dart';
+import 'package:spark/src/core/storage/local_json_store.dart';
+import 'package:spark/src/core/theme/file_theme_preference_repository.dart';
 
 void main() {
   test('persists and reloads the selected theme color', () async {
@@ -35,7 +35,7 @@ void main() {
 
   test('file repository restores the color from versioned storage', () async {
     final directory = await Directory.systemTemp.createTemp(
-      'paperflow-theme-',
+      'spark-theme-',
     );
     addTearDown(() => directory.delete(recursive: true));
     final file = File(

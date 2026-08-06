@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/theme/paperflow_theme.dart';
+import '../../../../core/theme/spark_theme.dart';
 import 'paper_discussion_models.dart';
 import 'paper_entry_animation.dart';
 
@@ -61,7 +61,7 @@ class PaperCommentsContent extends StatelessWidget {
               padding: EdgeInsets.only(top: 48),
               child: Text(
                 '还没有评论，来发表第一条看法吧',
-                style: TextStyle(color: PaperFlowColors.muted, fontSize: 13),
+                style: TextStyle(color: SparkColors.muted, fontSize: 13),
               ),
             ),
         ],
@@ -117,7 +117,7 @@ class _CommentTile extends StatelessWidget {
                       child: Text(
                         comment.name,
                         style: const TextStyle(
-                          color: PaperFlowColors.muted,
+                          color: SparkColors.muted,
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
                         ),
@@ -141,7 +141,7 @@ class _CommentTile extends StatelessWidget {
                 Text(
                   comment.body,
                   style: const TextStyle(
-                    color: PaperFlowColors.ink,
+                    color: SparkColors.ink,
                     fontSize: 14,
                     height: 1.45,
                   ),
@@ -152,7 +152,7 @@ class _CommentTile extends StatelessWidget {
                     Text(
                       '${comment.time} · ${comment.location}',
                       style: const TextStyle(
-                        color: PaperFlowColors.subtle,
+                        color: SparkColors.subtle,
                         fontSize: 11,
                       ),
                     ),
@@ -162,7 +162,7 @@ class _CommentTile extends StatelessWidget {
                       child: const Text(
                         '回复',
                         style: TextStyle(
-                          color: PaperFlowColors.muted,
+                          color: SparkColors.muted,
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
                         ),
@@ -179,14 +179,14 @@ class _CommentTile extends StatelessWidget {
                                 : Icons.favorite_border_rounded,
                             size: 20,
                             color: comment.liked
-                                ? PaperFlowColors.primary
-                                : PaperFlowColors.muted,
+                                ? SparkColors.primary
+                                : SparkColors.muted,
                           ),
                           const SizedBox(width: 4),
                           Text(
                             '${comment.likes}',
                             style: const TextStyle(
-                              color: PaperFlowColors.muted,
+                              color: SparkColors.muted,
                               fontSize: 11,
                             ),
                           ),
@@ -204,20 +204,20 @@ class _CommentTile extends StatelessWidget {
                         Container(
                           width: 20,
                           height: 1,
-                          color: PaperFlowColors.line,
+                          color: SparkColors.line,
                         ),
                         const SizedBox(width: 8),
                         Text(
                           '展开 ${comment.replies} 条回复',
                           style: const TextStyle(
-                            color: PaperFlowColors.muted,
+                            color: SparkColors.muted,
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
                         const Icon(
                           Icons.keyboard_arrow_down_rounded,
-                          color: PaperFlowColors.muted,
+                          color: SparkColors.muted,
                           size: 17,
                         ),
                       ],

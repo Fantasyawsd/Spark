@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 
 import '../motion/motion_tokens.dart';
-import '../theme/paperflow_theme.dart';
+import '../theme/spark_theme.dart';
 
 /// Flat content tabs for dense reading surfaces.
 ///
 /// The control follows the common mobile reading pattern used by document and
 /// productivity products: text labels, one neutral baseline and a short dark
 /// indicator. There are no selected shadows or elevated capsules.
-class PaperFlowSegmentedControl extends StatelessWidget {
-  const PaperFlowSegmentedControl({
+class SparkSegmentedControl extends StatelessWidget {
+  const SparkSegmentedControl({
     super.key,
     required this.tabs,
     required this.selectedIndex,
@@ -28,7 +28,7 @@ class PaperFlowSegmentedControl extends StatelessWidget {
       alignment: Alignment.centerLeft,
       child: DecoratedBox(
         decoration: const BoxDecoration(
-          border: Border(bottom: BorderSide(color: PaperFlowColors.line)),
+          border: Border(bottom: BorderSide(color: SparkColors.line)),
         ),
         child: SizedBox(
           height: height,
@@ -80,7 +80,7 @@ class _ContentTab extends StatelessWidget {
           decoration: BoxDecoration(
             border: Border(
               bottom: BorderSide(
-                color: selected ? PaperFlowColors.ink : Colors.transparent,
+                color: selected ? SparkColors.ink : Colors.transparent,
                 width: 2.5,
               ),
             ),
@@ -88,9 +88,9 @@ class _ContentTab extends StatelessWidget {
           child: Text(
             label,
             style: TextStyle(
-              color: selected ? PaperFlowColors.ink : PaperFlowColors.muted,
+              color: selected ? SparkColors.ink : SparkColors.muted,
               fontSize: 13,
-              fontFamily: PaperFlowTheme.platformCjkFontFamily(),
+              fontFamily: SparkTheme.platformCjkFontFamily(),
               fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
             ),
           ),

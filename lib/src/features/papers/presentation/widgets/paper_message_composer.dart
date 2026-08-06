@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/theme/paperflow_theme.dart';
+import '../../../../core/theme/spark_theme.dart';
 
 class PaperMessageComposer extends StatelessWidget {
   const PaperMessageComposer({
@@ -33,7 +33,7 @@ class PaperMessageComposer extends StatelessWidget {
         height: 64,
         child: Container(
           padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
-          color: PaperFlowColors.card,
+          color: SparkColors.card,
           child: TextField(
             key: ValueKey(
                 aiMode ? 'paper-ai-message-input' : 'paper-comment-input'),
@@ -50,13 +50,13 @@ class PaperMessageComposer extends StatelessWidget {
             decoration: InputDecoration(
               hintText: aiMode ? '问 AI 或按住说话' : replyTarget ?? '有价值的讨论更容易被看见',
               hintStyle: const TextStyle(
-                color: PaperFlowColors.subtle,
+                color: SparkColors.subtle,
                 fontSize: 13,
               ),
               prefixIcon: aiMode
                   ? const Icon(
                       Icons.auto_awesome_rounded,
-                      color: PaperFlowColors.ink,
+                      color: SparkColors.ink,
                       size: 20,
                     )
                   : null,
@@ -91,11 +91,11 @@ class PaperMessageComposer extends StatelessWidget {
                           aiMode
                               ? Icons.graphic_eq_rounded
                               : Icons.sentiment_satisfied_alt_rounded,
-                          color: PaperFlowColors.muted,
+                          color: SparkColors.muted,
                           size: 22,
                         ),
               filled: true,
-              fillColor: PaperFlowColors.surfaceMuted,
+              fillColor: SparkColors.surfaceMuted,
               isDense: true,
               contentPadding: const EdgeInsets.symmetric(
                 horizontal: 14,

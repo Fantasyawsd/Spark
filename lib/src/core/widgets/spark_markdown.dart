@@ -5,7 +5,7 @@ import 'package:flutter_markdown_plus_latex/flutter_markdown_plus_latex.dart';
 import 'package:flutter_math_fork/flutter_math.dart';
 import 'package:markdown/markdown.dart' as md;
 
-import '../theme/paperflow_theme.dart';
+import '../theme/spark_theme.dart';
 
 /// Inline LaTeX syntax that replaces [LatexInlineSyntax] from
 /// flutter_markdown_plus_latex.
@@ -351,7 +351,7 @@ class _MarkdownCodeBlock extends StatelessWidget {
 }
 
 const paperReaderBodyTextStyle = TextStyle(
-  color: PaperFlowColors.ink,
+  color: SparkColors.ink,
   fontSize: 17,
   height: 1.28,
 );
@@ -382,7 +382,7 @@ MarkdownStyleSheet paperReaderMarkdownStyle() {
 }
 
 MarkdownStyleSheet paperAiMarkdownStyle({
-  Color color = PaperFlowColors.ink,
+  Color color = SparkColors.ink,
   bool reasoning = false,
 }) {
   final body = TextStyle(
@@ -398,7 +398,7 @@ MarkdownStyleSheet paperAiMarkdownStyle({
     listBullet: body,
     strong: TextStyle(color: color, fontWeight: FontWeight.w700),
     code: TextStyle(
-      color: reasoning ? PaperFlowColors.muted : const Color(0xFFE9EDF5),
+      color: reasoning ? SparkColors.muted : const Color(0xFFE9EDF5),
       fontFamily: 'monospace',
       fontSize: reasoning ? 11 : 12.8,
       height: 1.5,
@@ -431,7 +431,7 @@ class PaperMarkdownPreprocessor {
     var normalized = source.replaceAllMapped(
       RegExp(r'```[\s\S]*?```'),
       (match) {
-        final token = '\u0000PAPERFLOW_CODE_${codeBlocks.length}\u0000';
+        final token = '\u0000SPARK_CODE_${codeBlocks.length}\u0000';
         codeBlocks.add(match.group(0)!);
         return token;
       },
@@ -457,7 +457,7 @@ class PaperMarkdownPreprocessor {
     }
     for (var index = 0; index < codeBlocks.length; index++) {
       normalized = normalized.replaceAll(
-        '\u0000PAPERFLOW_CODE_$index\u0000',
+        '\u0000SPARK_CODE_$index\u0000',
         codeBlocks[index],
       );
     }
@@ -508,7 +508,7 @@ class PaperMarkdownPreprocessor {
     var working = source.replaceAllMapped(
       RegExp(r'\$\$(?:\\[\s\S]|[^$\n])*?\$\$|\$(?:\\[\s\S]|[^$\n])*?\$'),
       (match) {
-        final token = '\u0000PAPERFLOW_MATH_${formulas.length}\u0000';
+        final token = '\u0000SPARK_MATH_${formulas.length}\u0000';
         formulas.add(match.group(0)!);
         return token;
       },
@@ -521,7 +521,7 @@ class PaperMarkdownPreprocessor {
     );
     for (var index = 0; index < formulas.length; index++) {
       working = working.replaceAll(
-        '\u0000PAPERFLOW_MATH_$index\u0000',
+        '\u0000SPARK_MATH_$index\u0000',
         formulas[index],
       );
     }

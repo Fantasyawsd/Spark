@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:paperflow/src/core/config/app_config.dart';
-import 'package:paperflow/src/core/config/app_environment.dart';
-import 'package:paperflow/src/core/config/app_version.dart';
-import 'package:paperflow/src/core/config/feature_flags.dart';
+import 'package:spark/src/core/config/app_config.dart';
+import 'package:spark/src/core/config/app_environment.dart';
+import 'package:spark/src/core/config/app_version.dart';
+import 'package:spark/src/core/config/feature_flags.dart';
 
 void main() {
   test('environment aliases resolve to stable channels', () {
@@ -34,7 +34,7 @@ void main() {
     const config = AppConfig.production();
     const version = AppVersion(name: '1.2.3', buildNumber: 42);
 
-    expect(config.applicationTitle, 'PaperFlow');
+    expect(config.applicationTitle, 'Spark');
     expect(config.showDebugBanner, isFalse);
     expect(version.display, '1.2.3 (42)');
   });

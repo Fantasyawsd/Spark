@@ -1,12 +1,12 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:paperflow/src/features/papers/data/cache/in_memory_paper_cache_store.dart';
-import 'package:paperflow/src/features/papers/data/offline_first_paper_catalog_repository.dart';
-import 'package:paperflow/src/features/papers/data/providers/arxiv/arxiv_atom_dto.dart';
-import 'package:paperflow/src/features/papers/data/providers/arxiv/arxiv_atom_client.dart';
-import 'package:paperflow/src/features/papers/data/providers/arxiv/arxiv_catalog_source.dart';
-import 'package:paperflow/src/features/papers/data/arxiv_seed_repository.dart';
-import 'package:paperflow/src/features/papers/domain/paper_catalog.dart';
-import 'package:paperflow/src/features/papers/domain/paper_time_range.dart';
+import 'package:spark/src/features/papers/data/cache/in_memory_paper_cache_store.dart';
+import 'package:spark/src/features/papers/data/offline_first_paper_catalog_repository.dart';
+import 'package:spark/src/features/papers/data/providers/arxiv/arxiv_atom_dto.dart';
+import 'package:spark/src/features/papers/data/providers/arxiv/arxiv_atom_client.dart';
+import 'package:spark/src/features/papers/data/providers/arxiv/arxiv_catalog_source.dart';
+import 'package:spark/src/features/papers/data/arxiv_seed_repository.dart';
+import 'package:spark/src/features/papers/domain/paper_catalog.dart';
+import 'package:spark/src/features/papers/domain/paper_time_range.dart';
 
 void main() {
   late _FakeArxivSource remote;
@@ -192,7 +192,7 @@ ArxivAtomPaperDto _paper(String id) {
     title: 'Remote paper',
     summary: 'A remote abstract.',
     authors: const ['Remote Author'],
-    affiliations: const ['PaperFlow Lab'],
+    affiliations: const ['Spark Lab'],
     categories: const ['cs.AI'],
     primaryCategory: 'cs.AI',
     publishedAt: DateTime.utc(2024, 1, 1),

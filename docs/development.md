@@ -307,8 +307,8 @@ AI 解读生成的六问答案作为论文 ChatPaper 会话的默认背景信息
 
 | 上下文 | 身份 | 内容来源 | 存储 |
 | --- | --- | --- | --- |
-| 主聊天 | `spark-main-ai-chat` 固定 id | 通用 systemPrompt，永不注入论文数据 | `paper_ai_sessions.json` |
-| 论文聊天 | contextId = 论文 id | 论文元数据 + Abstract + 有效缓存关键词；用户开启“读取全文”后追加按预算裁剪的 PDF 分块和页码引用 | `paper_ai_sessions.json`；全文提取缓存为 `papers.pdf-extracts` |
+| 主聊天 | `spark-main-ai-chat` 固定 id | 通用 systemPrompt，永不注入论文数据 | `chat_sessions.json` |
+| 论文聊天 | contextId = 论文 id | 论文元数据 + Abstract + 有效缓存关键词；用户开启“读取全文”后追加按预算裁剪的 PDF 分块和页码引用 | `chat_sessions.json`；全文提取缓存为 `papers.pdf-extracts` |
 | 论文派生缓存 | 论文级独立缓存 | 关键词 / 中文翻译 / 阅读状态；六问 AI 解读仍待实现 | `papers.*` 独立 schema |
 
 边界规则：

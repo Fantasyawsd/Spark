@@ -105,13 +105,7 @@ flutter pub get
 flutter run -d windows --dart-define=SPARK_ENV=development
 ```
 
-本地调试 DeepSeek 可以使用拒绝 release 的辅助脚本：
-
-```powershell
-.\tool\flutter_with_deepseek.ps1 -FlutterCommand run -FlutterArguments @('-d', 'windows', '--dart-define=SPARK_ENV=development')
-```
-
-正式 Android 构建只读取用户在设备安全存储中配置的 Key。
+DeepSeek 调试与正式构建都只读取用户在应用内配置、由设备安全存储保存的 Key；API Key 不通过 `dart-define` 编译进客户端。
 
 ## 验证
 

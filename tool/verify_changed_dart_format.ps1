@@ -16,10 +16,15 @@ function Invoke-GitLines {
 }
 
 if ([string]::IsNullOrWhiteSpace($BaseRevision)) {
-    & git -C $projectRoot rev-parse --verify --quiet 'origin/main^{commit}' *> $null
+    $mainRevision = 'main'
+    & git -C $projectRoot rev-parse --verify --quiet 'main^{commit}' *> $null
+    if ($LASTEXITCODE -ne 0) {
+        $mainRevision = 'origin/main'
+        & git -C $projectRoot rev-parse --verify --quiet 'origin/main^{commit}' *> $null
+    }
     if ($LASTEXITCODE -eq 0) {
         $BaseRevision = (Invoke-GitLines -Arguments @(
-            'merge-base', 'origin/main', 'HEAD'
+            'merge-base', $mainRevision, 'HEAD'
         ) | Select-Object -First 1)
     }
 }
@@ -50,16 +55,27 @@ $dartFiles = @(
     Invoke-GitLines -Arguments @(
         'ls-files', '--others', '--exclude-standard', '--', '*.dart'
     )
-) | Where-Object { $_ } | Sort-Object -Unique
+) | Where-Object {
+    $_ -and (Test-Path -LiteralPath (Join-Path $projectRoot $_) -PathType Leaf)
+} | Sort-Object -Unique
 if ($dartFiles.Count -eq 0) {
     Write-Output '没有需要检查的 Dart 文件。'
     exit 0
 }
 
-$absoluteFiles = @($dartFiles | ForEach-Object { Join-Path $projectRoot $_ })
-& dart format --output=none --set-exit-if-changed @absoluteFiles
-if ($LASTEXITCODE -ne 0) {
-    throw 'Dart 格式检查失败。请对输出中的文件运行 dart format。'
+$batchSize = 40
+Push-Location $projectRoot
+try {
+    for ($index = 0; $index -lt $dartFiles.Count; $index += $batchSize) {
+        $lastIndex = [Math]::Min($index + $batchSize - 1, $dartFiles.Count - 1)
+        $batch = @($dartFiles[$index..$lastIndex])
+        & dart format --output=none --set-exit-if-changed @batch
+        if ($LASTEXITCODE -ne 0) {
+            throw 'Dart 格式检查失败。请对输出中的文件运行 dart format。'
+        }
+    }
+} finally {
+    Pop-Location
 }
 
 Write-Output "Dart 格式检查通过：$($dartFiles.Count) 个文件。"

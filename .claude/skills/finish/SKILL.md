@@ -29,9 +29,10 @@ disable-model-invocation: true
 
 5. **在 main 完成最终归档**
    - 切换或同步控制工作树到已合并的 `main`，用 `git merge-base --is-ancestor <task-tip> main`（或已合并 PR）确认任务提交真实可达，并按风险执行集成回归。
+   - 按 `docs/standards/version-control.md`「验证门禁」完成合并后双目标构建：development APK 与 Windows debug EXE 必须在同一次 `/finish` 流程中均构建成功；记录两个产物的路径、大小和 SHA-256，任一失败不得继续归档或清理。
    - 在 `main` 更新对应 status.md：状态改为“已合并”，记录最终集成 SHA 或 PR、合并时间、集成验证和真实后续项；再依据已合并能力更新 `docs/development.md`。不影响开发计划时，在台账中明确记录原因。
    - 面向发布的任务同步 `docs/releases/<version>/` 资料；将这些更新形成独立的合并后文档归档提交。若 `main` 受保护，按 `docs/standards/version-control.md` 使用仅文档 PR，归档提交合入前不得进入清理。
-   - 完成标准：任务提交和合并后文档归档提交均已进入 `main`；台账不再停留在“待合并”或“进行中”；开发计划反映真实代码状态。
+   - 完成标准：任务提交和合并后文档归档提交均已进入 `main`；APK 与 Windows debug EXE 构建证据完整；台账不再停留在“待合并”或“进行中”；开发计划反映真实代码状态。
 
 6. **清理**
    - 从控制工作树执行 `git worktree remove` 与 `git worktree prune`，合并后删除分支；规则见 `docs/standards/version-control.md`「Worktree 清理」。

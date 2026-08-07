@@ -8,8 +8,8 @@
 - Worktree：`%USERPROFILE%\Desktop\Spark-worktrees\codex--fix-audit-hardening`
 - 基线提交：`e8adb382fff91d1834d9e349e0a080c70bfced62`
 - 负责人：Codex（用户编排）
-- 状态：待合并
-- 最近更新：`2026-08-07 17:58`
+- 状态：已合并
+- 最近更新：`2026-08-07 18:03`
 
 ## 目标
 
@@ -71,7 +71,8 @@
 - 已完成：最终格式、静态分析、394 项全量测试和 development debug APK 已从最新文件状态通过；代码、规范及复审修复形成四个可解释检查点。
 - 已完成：独立 verifier 复核完整固定基线差异与高风险实现，结论 `VERDICT: PASS`。
 - 已完成：Windows debug 应用构建并启动成功，用户完成人工验收并明确确认通过。
-- 下一步：根据用户 `/finish` 指令合入 `main`，完成合并后归档与清理。
+- 已完成：任务分支以 fast-forward 合入 `main@f4b2cb7`，并在 `main` 完成静态分析、394 项全量测试、development debug APK 构建和 Git 清洁度集成回归。
+- 下一步：真实 Android 设备验收与发布签名/商店门禁在进入发布阶段后另行执行。
 - 阻塞项：无。
 
 ## 决策记录
@@ -83,6 +84,7 @@
 | 2026-08-07 | 不启动应用或浏览器自动化 | 用户未授权 Windows 启动，项目规则要求前端只做静态验证 | 以 Widget 测试、analyzer 和 APK 构建作为证据 |
 | 2026-08-07 | 保留恢复后的首轮生产代码与对应测试为单一检查点 | 关机恢复时跨模块契约迁移与全部回归已共存于未提交工作区；不在缺少原始中间状态的情况下伪造事后历史 | 首个检查点范围较大；规范工具及两项复审修复均另行原子提交 |
 | 2026-08-07 | Windows 人工验收通过后执行 `/finish` | 用户检查本地 Windows 构建并明确确认验收通过 | 审查与人工验收均无阻断，允许合入 `main` |
+| 2026-08-07 | 使用本地 fast-forward 合入 `main` | 任务分支基于当前本地 `main` 且无分叉，属于日常开发而非版本迭代 | 不创建 PR；`f4b2cb7` 同时是任务 tip 与合入后的 `main` 集成提交 |
 
 ## 验证记录
 
@@ -103,6 +105,11 @@
 | `git diff --check`、冲突标记、敏感信息、异常大文件与边界扫描 | 通过；仅有 Git CRLF 转换提示；无旧 shim、无 `data -> application`、无 presentation 直接 Clipboard | 2026-08-07 |
 | 独立 `check-work` verifier | `VERDICT: PASS`；独立复核完整差异、高风险代码、测试覆盖、APK 产物与 Git 清洁度；其只读沙箱未重复运行 Flutter 命令 | 2026-08-07 |
 | `flutter pub get` + `flutter run -d windows` | Windows debug 应用构建并启动成功，`spark.exe` 响应正常；用户完成人工验收并确认通过 | 2026-08-07 |
+| `main`: `.\tool\verify_changed_dart_format.ps1` | 通过；合并后没有未合并 Dart 差异，分支合并前 160 个变更 Dart 文件的检查证据保持有效 | 2026-08-07 |
+| `main`: `flutter analyze` | `No issues found` | 2026-08-07 |
+| `main`: `flutter test` | 394/394 通过 | 2026-08-07 |
+| `main`: `flutter build apk --debug --flavor development --dart-define=SPARK_ENV=development` | 构建成功；164,781,345 bytes；SHA-256 `F2B28F524C2CC42098AEC39F82481D6BCD4B4A8E91F18D39E2C3AC4E85F08AAA` | 2026-08-07 |
+| `main`: `git diff --check`、`git status --short`、`git merge-base --is-ancestor f4b2cb7 main` | 通过；归档前 `main` 工作区干净，任务 tip 可从 `main` 到达 | 2026-08-07 |
 
 ## 审查结论
 
@@ -123,6 +130,7 @@
 | `4259b1f` | `refactor(papers): expose cross-feature domain contracts` | 标准轴复审修复 | 架构/Profile/Search 定向回归、跨 feature 扫描与全量回归通过 |
 | `d2830f0` | `docs: record audit hardening verification` | 合并前台账 | 验证、复审、兼容性、风险和回滚信息完整 |
 | `2d93518` | `docs: record independent verification` | 独立复核 | verifier 结论 `PASS`，无新增阻断项 |
+| `f4b2cb7` | `docs: prepare audit hardening delivery` | `/finish` 合并前 | 记录 Windows 人工验收和最终合并准入；作为任务 tip fast-forward 进入 `main` |
 
 ## 交付准备（合并前收集）
 
@@ -159,11 +167,11 @@
 
 ## 合并归档（合并后在 main 补齐）
 
-- 最终状态：待合并
+- 最终状态：已合并
 - 合入分支：`main`
-- 最终集成提交：待合并后填写
-- Pull Request：无
-- 合并时间：待填写
-- main 集成验证：待填写
-- 开发计划更新：待确定
+- 最终集成提交：`f4b2cb74d7750665475132af51e77c982b035e92`（本地 fast-forward，任务 tip）
+- Pull Request：无；按日常开发流程本地合并
+- 合并时间：`2026-08-07 17:59 +08:00`
+- main 集成验证：格式门禁、`flutter analyze`、394 项 `flutter test`、development debug APK 构建、`git diff --check` 和任务提交可达性检查均通过
+- 开发计划更新：任务提交已将 ChatPaper 会话存储文件名修正为 `chat_sessions.json`；本任务属于既有能力质量加固，不新增路线图功能状态，无需进一步调整 `docs/development.md`
 - 最终后续项：真实 Android 设备验收与发布门另行安排；本任务不处理不存在的旧版本迁移

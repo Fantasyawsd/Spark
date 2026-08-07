@@ -1,5 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:spark/spark.dart';
+import 'package:spark/src/features/ai_settings/ai_settings.dart';
+import 'package:spark/src/features/ai_settings/application/deepseek_credential_controller.dart';
+import 'package:spark/src/features/ai_settings/data/in_memory_deepseek_credential_repository.dart';
 
 void main() {
   test('loads, validates, replaces and deletes a stored credential', () async {
@@ -37,6 +39,19 @@ void main() {
     expect(await controller.save('sk-invalid'), isFalse);
     expect(await repository.readApiKey(), 'sk-valid-1234');
     expect(controller.error, 'API Key 无效。');
+  });
+
+  test('masks a one-character stored key without failing initialization',
+      () async {
+    final repository = InMemoryDeepSeekCredentialRepository('x');
+    final controller = DeepSeekCredentialController(repository: repository);
+    addTearDown(controller.dispose);
+
+    await controller.initialize();
+
+    expect(controller.configured, isTrue);
+    expect(controller.maskedApiKey, 'x••••');
+    expect(controller.error, isNull);
   });
 }
 

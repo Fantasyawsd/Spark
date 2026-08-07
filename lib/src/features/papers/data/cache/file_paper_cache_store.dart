@@ -5,8 +5,13 @@ import 'paper_cache_record.dart';
 import 'paper_cache_store.dart';
 
 class FilePaperCacheStore implements PaperCacheStore {
-  FilePaperCacheStore({LocalJsonStore? store})
-      : _store = VersionedLocalJsonStore(
+  FilePaperCacheStore({
+    LocalJsonStore? store,
+    DateTime Function()? clock,
+    PaperCachePolicy policy = const PaperCachePolicy(),
+  })  : _clock = clock ?? DateTime.now,
+        _policy = policy,
+        _store = VersionedLocalJsonStore(
           store ?? LocalJsonStore(fileName: 'paper_catalog_cache.json'),
           schemaId: 'papers.catalog-cache',
           schemaVersion: 2,
@@ -79,6 +84,8 @@ class FilePaperCacheStore implements PaperCacheStore {
   }
 
   final VersionedLocalJsonStore _store;
+  final DateTime Function() _clock;
+  final PaperCachePolicy _policy;
 
   @override
   Future<CachedPaperPageRecord?> readPage(String queryKey) async {
@@ -112,9 +119,11 @@ class FilePaperCacheStore implements PaperCacheStore {
       final updatedPages = Map<String, PaperPageCacheRecord>.of(snapshot.pages)
         ..[page.queryKey] = page;
       return PaperCacheMapper.snapshotToJson(
-        PaperCacheSnapshotRecord(
-          papers: updatedPapers,
-          pages: updatedPages,
+        _bounded(
+          PaperCacheSnapshotRecord(
+            papers: updatedPapers,
+            pages: updatedPages,
+          ),
         ),
       );
     });
@@ -125,10 +134,12 @@ class FilePaperCacheStore implements PaperCacheStore {
     return _store.updateMap((current) {
       final snapshot = _snapshotFromNullableJson(current);
       return PaperCacheMapper.snapshotToJson(
-        PaperCacheSnapshotRecord(
-          papers: Map<String, PaperCacheRecord>.of(snapshot.papers)
-            ..[paper.id] = paper,
-          pages: snapshot.pages,
+        _bounded(
+          PaperCacheSnapshotRecord(
+            papers: Map<String, PaperCacheRecord>.of(snapshot.papers)
+              ..[paper.id] = paper,
+            pages: snapshot.pages,
+          ),
         ),
       );
     });
@@ -144,5 +155,87 @@ class FilePaperCacheStore implements PaperCacheStore {
     return json == null
         ? const PaperCacheSnapshotRecord.empty()
         : PaperCacheMapper.snapshotFromJson(json);
+  }
+
+  PaperCacheSnapshotRecord _bounded(PaperCacheSnapshotRecord snapshot) {
+    if (_policy.retention <= Duration.zero) {
+      throw ArgumentError.value(
+        _policy.retention,
+        'policy.retention',
+        'must be positive',
+      );
+    }
+    final cutoff = _clock().toUtc().subtract(_policy.retention);
+    final eligiblePaperIds = <String>{
+      for (final paper in snapshot.papers.values)
+        if (!_cachedAt(paper).isBefore(cutoff)) paper.id,
+    };
+    final pages = snapshot.pages.values.where((page) {
+      return !_fetchedAt(page).isBefore(cutoff) &&
+          page.paperIds.every(eligiblePaperIds.contains);
+    }).toList(growable: true)
+      ..sort(_comparePagesNewestFirst);
+    if (pages.length > _policy.maxPages) {
+      pages.removeRange(_policy.maxPages, pages.length);
+    }
+
+    var referencedIds = _referencedPaperIds(pages);
+    while (pages.isNotEmpty && referencedIds.length > _policy.maxPapers) {
+      pages.removeLast();
+      referencedIds = _referencedPaperIds(pages);
+    }
+
+    final papers = <String, PaperCacheRecord>{};
+    for (final paperId in referencedIds) {
+      final paper = snapshot.papers[paperId];
+      if (paper != null) papers[paperId] = paper;
+    }
+    final remaining = snapshot.papers.values
+        .where(
+          (paper) =>
+              eligiblePaperIds.contains(paper.id) &&
+              !papers.containsKey(paper.id),
+        )
+        .toList(growable: false)
+      ..sort(_comparePapersNewestFirst);
+    for (final paper in remaining) {
+      if (papers.length >= _policy.maxPapers) break;
+      papers[paper.id] = paper;
+    }
+
+    return PaperCacheSnapshotRecord(
+      papers: papers,
+      pages: {for (final page in pages) page.queryKey: page},
+    );
+  }
+
+  static Set<String> _referencedPaperIds(
+    Iterable<PaperPageCacheRecord> pages,
+  ) {
+    return {for (final page in pages) ...page.paperIds};
+  }
+
+  static int _comparePagesNewestFirst(
+    PaperPageCacheRecord left,
+    PaperPageCacheRecord right,
+  ) {
+    final byDate = _fetchedAt(right).compareTo(_fetchedAt(left));
+    return byDate != 0 ? byDate : left.queryKey.compareTo(right.queryKey);
+  }
+
+  static int _comparePapersNewestFirst(
+    PaperCacheRecord left,
+    PaperCacheRecord right,
+  ) {
+    final byDate = _cachedAt(right).compareTo(_cachedAt(left));
+    return byDate != 0 ? byDate : left.id.compareTo(right.id);
+  }
+
+  static DateTime _fetchedAt(PaperPageCacheRecord page) {
+    return DateTime.parse(page.fetchedAt).toUtc();
+  }
+
+  static DateTime _cachedAt(PaperCacheRecord paper) {
+    return DateTime.parse(paper.cachedAt).toUtc();
   }
 }

@@ -68,6 +68,7 @@ class PaperCommentController extends ChangeNotifier {
   }
 
   Future<void> loadPaper(String paperId) {
+    if (_disposed) return Future.value();
     if (_loadedPaperIds.contains(paperId)) return Future.value();
     final existing = _loadOperations[paperId];
     if (existing != null) return existing;
@@ -89,6 +90,7 @@ class PaperCommentController extends ChangeNotifier {
       final snapshot = repository == null
           ? const PaperCommentSnapshot(comments: [], hasStoredValue: false)
           : await repository.load(paperId);
+      if (_disposed) return;
       _commentsByPaper[paperId] = snapshot.comments
           .where((comment) => !comment.id.startsWith('seed-'))
           .toList(growable: true);
@@ -100,7 +102,11 @@ class PaperCommentController extends ChangeNotifier {
         await repository.save(paperId, _rawCommentsFor(paperId));
       }
     } on PaperCommentPersistenceException catch (error) {
+      if (_disposed) return;
       _persistenceErrorsByPaper[paperId] = error.message;
+    } on Object {
+      if (_disposed) return;
+      _persistenceErrorsByPaper[paperId] = '评论读取失败，请稍后重试。';
     }
     _notifyListeners();
   }
@@ -113,6 +119,7 @@ class PaperCommentController extends ChangeNotifier {
     final text = body.trim();
     if (text.isEmpty || isSending(paperId)) return false;
     await loadPaper(paperId);
+    if (_disposed) return false;
     if (!_loadedPaperIds.contains(paperId) || isSending(paperId)) return false;
     _sendStatusByPaper[paperId] = PaperCommentSendStatus.sending;
     _persistenceErrorsByPaper.remove(paperId);
@@ -134,6 +141,7 @@ class PaperCommentController extends ChangeNotifier {
     );
     _notifyListeners();
     final saved = await _queuePersistence(paperId);
+    if (_disposed) return false;
     _sendStatusByPaper[paperId] =
         saved ? PaperCommentSendStatus.idle : PaperCommentSendStatus.failed;
     _notifyListeners();
@@ -141,7 +149,7 @@ class PaperCommentController extends ChangeNotifier {
   }
 
   void toggleLike(String paperId, String commentId) {
-    if (isSending(paperId)) return;
+    if (_disposed || isSending(paperId)) return;
     final comments = _commentsByPaper[paperId];
     if (comments == null) return;
     final index = comments.indexWhere((comment) => comment.id == commentId);
@@ -165,7 +173,7 @@ class PaperCommentController extends ChangeNotifier {
   }
 
   void deleteComment(String paperId, String commentId) {
-    if (isSending(paperId)) return;
+    if (_disposed || isSending(paperId)) return;
     final comments = _commentsByPaper[paperId];
     if (comments == null) return;
     final canDelete = comments.any(
@@ -186,6 +194,7 @@ class PaperCommentController extends ChangeNotifier {
 
   Future<void> reload(Iterable<String> paperIds) async {
     await flushPendingWrites();
+    if (_disposed) return;
     _commentsByPaper.clear();
     _committedCommentsByPaper.clear();
     _sortByPaper.clear();
@@ -208,17 +217,29 @@ class PaperCommentController extends ChangeNotifier {
     final operation = _writeQueue.then((_) async {
       try {
         await repository.save(paperId, snapshot);
+        if (_disposed) {
+          saved = true;
+          return;
+        }
         _committedCommentsByPaper[paperId] = snapshot;
         if (_revisionByPaper[paperId] == revision) {
           _persistenceErrorsByPaper.remove(paperId);
         }
         saved = true;
       } on PaperCommentPersistenceException catch (error) {
-        if (_revisionByPaper[paperId] == revision) {
+        if (!_disposed && _revisionByPaper[paperId] == revision) {
           _commentsByPaper[paperId] = List.of(
             _committedCommentsByPaper[paperId] ?? const [],
           );
           _persistenceErrorsByPaper[paperId] = error.message;
+        }
+        saved = false;
+      } on Object {
+        if (!_disposed && _revisionByPaper[paperId] == revision) {
+          _commentsByPaper[paperId] = List.of(
+            _committedCommentsByPaper[paperId] ?? const [],
+          );
+          _persistenceErrorsByPaper[paperId] = '评论保存失败，请稍后重试。';
         }
         saved = false;
       }

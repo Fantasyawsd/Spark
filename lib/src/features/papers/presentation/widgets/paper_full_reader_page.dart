@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
+import '../../../../core/platform/spark_clipboard.dart';
 import '../../../../core/theme/spark_theme.dart';
+import '../../../../core/widgets/spark_markdown.dart';
 import '../../domain/paper.dart';
-import 'paper_markdown.dart';
 
 class PaperFullReaderPage extends StatefulWidget {
   const PaperFullReaderPage({
@@ -66,8 +66,8 @@ class _PaperFullReaderPageState extends State<PaperFullReaderPage> {
         actions: [
           IconButton(
             tooltip: '复制标题',
-            onPressed: () => Clipboard.setData(
-              ClipboardData(text: widget.paper.title),
+            onPressed: () => platformSparkClipboard.copyText(
+              widget.paper.title,
             ),
             icon: const Icon(Icons.copy_all_outlined),
           ),
@@ -78,7 +78,7 @@ class _PaperFullReaderPageState extends State<PaperFullReaderPage> {
           child: SingleChildScrollView(
             controller: _scrollController,
             padding: const EdgeInsets.fromLTRB(18, 8, 18, 28),
-            child: PaperMarkdown(
+            child: SparkMarkdown(
               data: widget.markdown,
               styleSheet: paperReaderMarkdownStyle(),
             ),

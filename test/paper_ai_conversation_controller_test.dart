@@ -2,17 +2,20 @@ import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:spark/spark.dart';
-import 'package:spark/src/features/chat/domain/chat_context.dart';
+import 'package:spark/src/features/chat/application/chat_conversation_controller.dart';
+import 'package:spark/src/features/chat/data/in_memory_chat_session_repository.dart';
+import 'package:spark/src/features/papers/application/paper_chat_context.dart';
+import 'package:spark/src/features/papers/data/demo_paper_repository.dart';
 
 void main() {
   test(
       'AI conversation retries the failed request without duplicating user text',
       () async {
     final service = _QueueAiService([
-      const PaperAiException('网络失败'),
+      const ChatAiException('网络失败'),
       '**重试成功**',
     ]);
-    final controller = PaperAiConversationController(
+    final controller = _paperConversationController(
       paper: demoPapers.first,
       service: service,
     );
@@ -20,7 +23,7 @@ void main() {
     await controller.send('解释方法');
     expect(controller.error, '网络失败');
     expect(controller.messages, hasLength(2));
-    expect(controller.messages.last.status, PaperAiMessageStatus.failed);
+    expect(controller.messages.last.status, ChatMessageStatus.failed);
     expect(controller.canRetryRequestError, isTrue);
 
     await controller.retry();
@@ -34,8 +37,8 @@ void main() {
 
   test('AI conversation restores and clears a paper scoped local session',
       () async {
-    final repository = InMemoryPaperAiSessionRepository();
-    final first = PaperAiConversationController(
+    final repository = InMemoryChatSessionRepository();
+    final first = _paperConversationController(
       paper: demoPapers.first,
       service: _QueueAiService(['回答']),
       sessionRepository: repository,
@@ -44,7 +47,7 @@ void main() {
     await Future<void>.delayed(Duration.zero);
     first.dispose();
 
-    final restored = PaperAiConversationController(
+    final restored = _paperConversationController(
       paper: demoPapers.first,
       service: _QueueAiService([]),
       sessionRepository: repository,
@@ -53,7 +56,7 @@ void main() {
     expect(restored.messages.map((message) => message.content), ['问题', '回答']);
     final sessions = await repository.listSessions();
     expect(sessions, hasLength(1));
-    expect(sessions.single.paperId, demoPapers.first.id);
+    expect(sessions.single.contextId, demoPapers.first.id);
     expect(sessions.single.preview, '回答');
     expect(sessions.single.pinned, isFalse);
 
@@ -70,7 +73,7 @@ void main() {
   test('clearing a conversation waits for queued saves before deletion',
       () async {
     final repository = _DelayedSaveAiSessionRepository();
-    final controller = PaperAiConversationController(
+    final controller = _paperConversationController(
       paper: demoPapers.first,
       service: _QueueAiService(['回答']),
       sessionRepository: repository,
@@ -93,7 +96,7 @@ void main() {
 
   test('AI conversation can stop an active request', () async {
     final service = _CancellableAiService();
-    final controller = PaperAiConversationController(
+    final controller = _paperConversationController(
       paper: demoPapers.first,
       service: service,
     );
@@ -107,15 +110,15 @@ void main() {
     expect(controller.sending, isFalse);
     expect(controller.error, isNull);
     expect(controller.messages, hasLength(2));
-    expect(controller.messages.last.status, PaperAiMessageStatus.cancelled);
-    expect(controller.requestStatus, PaperAiRequestStatus.cancelled);
+    expect(controller.messages.last.status, ChatMessageStatus.cancelled);
+    expect(controller.requestStatus, ChatRequestStatus.cancelled);
     expect(controller.canRetry, isTrue);
     controller.dispose();
   });
 
   test('cancel before the first token restores as cancelled', () async {
-    final repository = InMemoryPaperAiSessionRepository();
-    final controller = PaperAiConversationController(
+    final repository = InMemoryChatSessionRepository();
+    final controller = _paperConversationController(
       paper: demoPapers.first,
       service: _CancellableAiService(),
       sessionRepository: repository,
@@ -126,15 +129,15 @@ void main() {
     await request;
     await Future<void>.delayed(Duration.zero);
 
-    final restored = PaperAiConversationController(
+    final restored = _paperConversationController(
       paper: demoPapers.first,
       service: _QueueAiService(['回答']),
       sessionRepository: repository,
     );
     await restored.initialize();
 
-    expect(restored.requestStatus, PaperAiRequestStatus.cancelled);
-    expect(restored.messages.last.status, PaperAiMessageStatus.cancelled);
+    expect(restored.requestStatus, ChatRequestStatus.cancelled);
+    expect(restored.messages.last.status, ChatMessageStatus.cancelled);
     await restored.retry();
     expect(restored.messages.last.content, '回答');
     controller.dispose();
@@ -142,24 +145,24 @@ void main() {
   });
 
   test('failure before the first token restores as failed', () async {
-    final repository = InMemoryPaperAiSessionRepository();
-    final controller = PaperAiConversationController(
+    final repository = InMemoryChatSessionRepository();
+    final controller = _paperConversationController(
       paper: demoPapers.first,
-      service: _QueueAiService([const PaperAiException('网络失败')]),
+      service: _QueueAiService([const ChatAiException('网络失败')]),
       sessionRepository: repository,
     );
 
     await controller.send('问题');
     await Future<void>.delayed(Duration.zero);
 
-    final restored = PaperAiConversationController(
+    final restored = _paperConversationController(
       paper: demoPapers.first,
       service: _QueueAiService(['回答']),
       sessionRepository: repository,
     );
     await restored.initialize();
 
-    expect(restored.requestStatus, PaperAiRequestStatus.failed);
+    expect(restored.requestStatus, ChatRequestStatus.failed);
     expect(restored.error, '上次回答未完成，请重新生成。');
     expect(restored.canRetryRequestError, isTrue);
     await restored.retry();
@@ -170,17 +173,17 @@ void main() {
 
   test('a new question omits an empty terminal marker from AI context',
       () async {
-    final repository = InMemoryPaperAiSessionRepository();
+    final repository = InMemoryChatSessionRepository();
     await repository.save(demoPapers.first.id, const [
-      PaperAiMessage(fromUser: true, content: '旧问题'),
-      PaperAiMessage(
+      ChatMessage(fromUser: true, content: '旧问题'),
+      ChatMessage(
         fromUser: false,
         content: '',
-        status: PaperAiMessageStatus.cancelled,
+        status: ChatMessageStatus.cancelled,
       ),
     ]);
     final service = _QueueAiService(['新回答']);
-    final controller = PaperAiConversationController(
+    final controller = _paperConversationController(
       paper: demoPapers.first,
       service: service,
       sessionRepository: repository,
@@ -205,9 +208,9 @@ void main() {
   });
 
   test('cancelled AI conversation restores its regenerate state', () async {
-    final repository = InMemoryPaperAiSessionRepository();
+    final repository = InMemoryChatSessionRepository();
     final service = _RegeneratingStreamingAiService();
-    final controller = PaperAiConversationController(
+    final controller = _paperConversationController(
       paper: demoPapers.first,
       service: service,
       sessionRepository: repository,
@@ -220,16 +223,16 @@ void main() {
     await request;
     await Future<void>.delayed(Duration.zero);
 
-    final restored = PaperAiConversationController(
+    final restored = _paperConversationController(
       paper: demoPapers.first,
       service: _QueueAiService(['完整回答']),
       sessionRepository: repository,
     );
     await restored.initialize();
 
-    expect(restored.requestStatus, PaperAiRequestStatus.cancelled);
+    expect(restored.requestStatus, ChatRequestStatus.cancelled);
     expect(restored.canRetry, isTrue);
-    expect(restored.messages.last.status, PaperAiMessageStatus.cancelled);
+    expect(restored.messages.last.status, ChatMessageStatus.cancelled);
 
     await restored.retry();
     expect(restored.messages, hasLength(2));
@@ -241,7 +244,7 @@ void main() {
   test('an obsolete persistence failure does not pollute a newer save',
       () async {
     final repository = _ObsoleteFailureAiSessionRepository();
-    final controller = PaperAiConversationController(
+    final controller = _paperConversationController(
       paper: demoPapers.first,
       service: _QueueAiService(['回答']),
       sessionRepository: repository,
@@ -252,7 +255,7 @@ void main() {
     repository.releaseFirstSave.complete();
     await repository.latestSaveCompleted.future;
 
-    expect(controller.requestStatus, PaperAiRequestStatus.completed);
+    expect(controller.requestStatus, ChatRequestStatus.completed);
     expect(controller.error, isNull);
     controller.dispose();
   });
@@ -261,7 +264,7 @@ void main() {
       () async {
     final repository = _CancelSaveFailureAiSessionRepository();
     final service = _CancellableAiService();
-    final controller = PaperAiConversationController(
+    final controller = _paperConversationController(
       paper: demoPapers.first,
       service: service,
       sessionRepository: repository,
@@ -273,7 +276,7 @@ void main() {
     await repository.cancelSaveFailed.future;
     await Future<void>.delayed(Duration.zero);
 
-    expect(controller.requestStatus, PaperAiRequestStatus.cancelled);
+    expect(controller.requestStatus, ChatRequestStatus.cancelled);
     expect(controller.error, '无法保存取消状态');
     expect(controller.canRetry, isTrue);
     expect(controller.canRetryRequestError, isFalse);
@@ -284,9 +287,9 @@ void main() {
     final repository = _ClearFailureAiSessionRepository();
     await repository.save(
       demoPapers.first.id,
-      const [PaperAiMessage(fromUser: true, content: '问题')],
+      const [ChatMessage(fromUser: true, content: '问题')],
     );
-    final controller = PaperAiConversationController(
+    final controller = _paperConversationController(
       paper: demoPapers.first,
       service: _QueueAiService([]),
       sessionRepository: repository,
@@ -295,7 +298,7 @@ void main() {
 
     await controller.clear();
 
-    expect(controller.requestStatus, PaperAiRequestStatus.idle);
+    expect(controller.requestStatus, ChatRequestStatus.idle);
     expect(controller.canRetry, isFalse);
     expect(controller.error, '无法清空 AI 对话记录。');
     controller.dispose();
@@ -305,7 +308,7 @@ void main() {
       'AI conversation preserves a partial stream and replaces it when regenerated',
       () async {
     final service = _RegeneratingStreamingAiService();
-    final controller = PaperAiConversationController(
+    final controller = _paperConversationController(
       paper: demoPapers.first,
       service: service,
     );
@@ -317,27 +320,27 @@ void main() {
     controller.cancel();
     await request;
 
-    expect(controller.requestStatus, PaperAiRequestStatus.cancelled);
+    expect(controller.requestStatus, ChatRequestStatus.cancelled);
     expect(controller.canRetry, isTrue);
     expect(controller.messages, hasLength(2));
     expect(controller.messages.last.content, '部分回答');
 
     await controller.retry();
 
-    expect(controller.requestStatus, PaperAiRequestStatus.completed);
+    expect(controller.requestStatus, ChatRequestStatus.completed);
     expect(controller.canRetry, isFalse);
     expect(controller.messages, hasLength(2));
     expect(controller.messages.last.content, '完整回答');
 
     await controller.clear();
-    expect(controller.requestStatus, PaperAiRequestStatus.idle);
+    expect(controller.requestStatus, ChatRequestStatus.idle);
     expect(controller.messages, isEmpty);
     controller.dispose();
   });
 
   test('AI conversation keeps streamed reasoning separate from final answer',
       () async {
-    final controller = PaperAiConversationController(
+    final controller = _paperConversationController(
       paper: demoPapers.first,
       service: const _StreamingAiService(),
     );
@@ -352,7 +355,7 @@ void main() {
 
   test('AI conversation can switch to web search and retain sources', () async {
     final webService = _WebSearchAiService();
-    final controller = PaperAiConversationController(
+    final controller = _paperConversationController(
       paper: demoPapers.first,
       service: _QueueAiService(['普通回答']),
       webSearchService: webService,
@@ -369,62 +372,80 @@ void main() {
 
   test('AI conversation applies the selected reasoning effort', () async {
     final service = _ConfigurableAiService();
-    final controller = PaperAiConversationController(
+    final controller = _paperConversationController(
       paper: demoPapers.first,
       service: service,
     );
 
-    controller.setReasoningEffort(PaperAiReasoningEffort.max);
+    controller.setReasoningEffort(ChatReasoningEffort.max);
     await controller.send('深入分析');
 
-    expect(service.effort, PaperAiReasoningEffort.max);
+    expect(service.effort, ChatReasoningEffort.max);
     controller.dispose();
   });
 }
 
+ChatConversationController _paperConversationController({
+  required Paper paper,
+  List<String> generatedKeywords = const [],
+  required ChatAiService service,
+  ChatAiService? webSearchService,
+  ChatSessionRepository? sessionRepository,
+}) {
+  return ChatConversationController(
+    context: PaperChatContext.fromPaper(
+      paper,
+      generatedKeywords: generatedKeywords,
+    ),
+    service: service,
+    webSearchService: webSearchService,
+    sessionRepository: sessionRepository,
+  );
+}
+
 class _ConfigurableAiService
-    implements PaperAiService, ConfigurablePaperAiService {
-  PaperAiReasoningEffort? effort;
+    implements ChatAiService, ConfigurableChatAiService {
+  ChatReasoningEffort? effort;
 
   @override
-  void setReasoningEffort(PaperAiReasoningEffort effort) {
+  void setReasoningEffort(ChatReasoningEffort effort) {
     this.effort = effort;
   }
 
   @override
   Future<String> answer({
     required ChatContext context,
-    required List<PaperAiMessage> conversation,
+    required List<ChatMessage> conversation,
   }) async =>
       '回答';
 }
 
-class _QueueAiService implements PaperAiService {
+class _QueueAiService implements ChatAiService {
   _QueueAiService(this.results);
 
   final List<Object> results;
-  final List<List<PaperAiMessage>> conversations = [];
+  final List<List<ChatMessage>> conversations = [];
 
   @override
   Future<String> answer({
     required ChatContext context,
-    required List<PaperAiMessage> conversation,
+    required List<ChatMessage> conversation,
   }) async {
     conversations.add(List.from(conversation));
     final result = results.removeAt(0);
-    if (result is PaperAiException) throw result;
+    if (result is ChatAiException) throw result;
     return result as String;
   }
 }
 
-class _CancellableAiService implements CancellablePaperAiService {
+class _CancellableAiService implements CancellableChatAiService {
   Completer<String>? _completer;
   bool cancelled = false;
 
   @override
   Future<String> answer({
     required ChatContext context,
-    required List<PaperAiMessage> conversation,
+    required List<ChatMessage> conversation,
   }) {
     _completer = Completer<String>();
     return _completer!.future;
@@ -434,35 +455,35 @@ class _CancellableAiService implements CancellablePaperAiService {
   void cancelActiveRequest() {
     cancelled = true;
     if (!(_completer?.isCompleted ?? true)) {
-      _completer!.completeError(const PaperAiCancelledException());
+      _completer!.completeError(const ChatAiCancelledException());
     }
   }
 }
 
-class _DelayedSaveAiSessionRepository extends InMemoryPaperAiSessionRepository {
+class _DelayedSaveAiSessionRepository extends InMemoryChatSessionRepository {
   final Completer<void> firstSaveStarted = Completer<void>();
   final Completer<void> releaseSaves = Completer<void>();
   int clearCalls = 0;
 
   @override
   Future<void> save(
-    String paperId,
-    List<PaperAiMessage> messages,
+    String contextId,
+    List<ChatMessage> messages,
   ) async {
     if (!firstSaveStarted.isCompleted) firstSaveStarted.complete();
     await releaseSaves.future;
-    await super.save(paperId, messages);
+    await super.save(contextId, messages);
   }
 
   @override
-  Future<void> clear(String paperId) async {
+  Future<void> clear(String contextId) async {
     clearCalls++;
-    await super.clear(paperId);
+    await super.clear(contextId);
   }
 }
 
 class _ObsoleteFailureAiSessionRepository
-    extends InMemoryPaperAiSessionRepository {
+    extends InMemoryChatSessionRepository {
   final Completer<void> firstSaveStarted = Completer<void>();
   final Completer<void> releaseFirstSave = Completer<void>();
   final Completer<void> latestSaveCompleted = Completer<void>();
@@ -470,70 +491,69 @@ class _ObsoleteFailureAiSessionRepository
 
   @override
   Future<void> save(
-    String paperId,
-    List<PaperAiMessage> messages,
+    String contextId,
+    List<ChatMessage> messages,
   ) async {
     _saveCalls++;
     if (_saveCalls == 1) {
       firstSaveStarted.complete();
       await releaseFirstSave.future;
-      throw const PaperAiSessionPersistenceException('旧写入失败');
+      throw const ChatSessionPersistenceException('旧写入失败');
     }
-    await super.save(paperId, messages);
+    await super.save(contextId, messages);
     if (!latestSaveCompleted.isCompleted) latestSaveCompleted.complete();
   }
 }
 
-class _ClearFailureAiSessionRepository
-    extends InMemoryPaperAiSessionRepository {
+class _ClearFailureAiSessionRepository extends InMemoryChatSessionRepository {
   @override
-  Future<void> clear(String paperId) async {
-    throw const PaperAiSessionPersistenceException('无法清空 AI 对话记录。');
+  Future<void> clear(String contextId) async {
+    throw const ChatSessionPersistenceException('无法清空 AI 对话记录。');
   }
 }
 
 class _CancelSaveFailureAiSessionRepository
-    extends InMemoryPaperAiSessionRepository {
+    extends InMemoryChatSessionRepository {
   final Completer<void> cancelSaveFailed = Completer<void>();
   var _saveCalls = 0;
 
   @override
   Future<void> save(
-    String paperId,
-    List<PaperAiMessage> messages,
+    String contextId,
+    List<ChatMessage> messages,
   ) async {
     _saveCalls++;
     if (_saveCalls == 2) {
       if (!cancelSaveFailed.isCompleted) cancelSaveFailed.complete();
-      throw const PaperAiSessionPersistenceException('无法保存取消状态');
+      throw const ChatSessionPersistenceException('无法保存取消状态');
     }
-    await super.save(paperId, messages);
+    await super.save(contextId, messages);
   }
 }
 
-class _StreamingAiService implements StreamingPaperAiService {
+class _StreamingAiService implements StreamingChatAiService {
   const _StreamingAiService();
 
   @override
   Future<String> answer({
     required ChatContext context,
-    required List<PaperAiMessage> conversation,
+    required List<ChatMessage> conversation,
   }) async =>
       '**最终回答**';
 
   @override
-  Stream<PaperAiStreamChunk> answerStream({
+  Stream<ChatStreamChunk> answerStream({
     required ChatContext context,
-    required List<PaperAiMessage> conversation,
+    required List<ChatMessage> conversation,
   }) async* {
-    yield const PaperAiStreamChunk(reasoningDelta: '先阅读摘要，');
-    yield const PaperAiStreamChunk(reasoningDelta: '再核对结论。');
-    yield const PaperAiStreamChunk(contentDelta: '**最终回答**');
+    yield const ChatStreamChunk(reasoningDelta: '先阅读摘要，');
+    yield const ChatStreamChunk(reasoningDelta: '再核对结论。');
+    yield const ChatStreamChunk(contentDelta: '**最终回答**');
   }
 }
 
 class _RegeneratingStreamingAiService
-    implements StreamingPaperAiService, CancellablePaperAiService {
+    implements StreamingChatAiService, CancellableChatAiService {
   final Completer<void> firstChunkSent = Completer<void>();
   Completer<void>? _cancelled;
   int _requests = 0;
@@ -541,26 +561,26 @@ class _RegeneratingStreamingAiService
   @override
   Future<String> answer({
     required ChatContext context,
-    required List<PaperAiMessage> conversation,
+    required List<ChatMessage> conversation,
   }) async =>
       '完整回答';
 
   @override
-  Stream<PaperAiStreamChunk> answerStream({
+  Stream<ChatStreamChunk> answerStream({
     required ChatContext context,
-    required List<PaperAiMessage> conversation,
+    required List<ChatMessage> conversation,
   }) async* {
     _requests++;
     if (_requests > 1) {
-      yield const PaperAiStreamChunk(contentDelta: '完整回答');
+      yield const ChatStreamChunk(contentDelta: '完整回答');
       return;
     }
 
     _cancelled = Completer<void>();
-    yield const PaperAiStreamChunk(contentDelta: '部分回答');
+    yield const ChatStreamChunk(contentDelta: '部分回答');
     if (!firstChunkSent.isCompleted) firstChunkSent.complete();
     await _cancelled!.future;
-    throw const PaperAiCancelledException();
+    throw const ChatAiCancelledException();
   }
 
   @override
@@ -569,28 +589,28 @@ class _RegeneratingStreamingAiService
   }
 }
 
-class _WebSearchAiService implements StreamingPaperAiService {
+class _WebSearchAiService implements StreamingChatAiService {
   int requests = 0;
 
   @override
   Future<String> answer({
     required ChatContext context,
-    required List<PaperAiMessage> conversation,
+    required List<ChatMessage> conversation,
   }) async =>
       '联网回答';
 
   @override
-  Stream<PaperAiStreamChunk> answerStream({
+  Stream<ChatStreamChunk> answerStream({
     required ChatContext context,
-    required List<PaperAiMessage> conversation,
+    required List<ChatMessage> conversation,
   }) async* {
     requests++;
-    yield const PaperAiStreamChunk(searchStarted: true);
-    yield const PaperAiStreamChunk(
+    yield const ChatStreamChunk(searchStarted: true);
+    yield const ChatStreamChunk(
       sources: [
-        PaperAiSource(title: '论文主页', url: 'https://example.test/paper'),
+        ChatSource(title: '论文主页', url: 'https://example.test/paper'),
       ],
     );
-    yield const PaperAiStreamChunk(contentDelta: '联网回答');
+    yield const ChatStreamChunk(contentDelta: '联网回答');
   }
 }

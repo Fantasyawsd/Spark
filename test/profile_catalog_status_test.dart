@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:spark/spark.dart';
+import 'package:spark/src/features/profile/presentation/profile_screen.dart';
 
 void main() {
   testWidgets('profile shows paper catalog source and refresh time',

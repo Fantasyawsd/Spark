@@ -6,6 +6,7 @@ import 'package:spark/src/core/storage/versioned_local_json_store.dart';
 import 'package:spark/src/features/papers/data/cache/file_paper_cache_store.dart';
 import 'package:spark/src/features/papers/data/cache/paper_cache_mapper.dart';
 import 'package:spark/src/features/papers/data/cache/paper_cache_record.dart';
+import 'package:spark/src/features/papers/data/cache/paper_cache_store.dart';
 import 'package:spark/src/features/papers/domain/paper.dart';
 
 void main() {
@@ -18,6 +19,7 @@ void main() {
     file = File('${directory.path}${Platform.pathSeparator}papers.json');
     store = FilePaperCacheStore(
       store: LocalJsonStore(fileName: 'unused.json', file: file),
+      clock: () => DateTime.utc(2024, 3, 1, 10),
     );
   });
 
@@ -64,6 +66,50 @@ void main() {
 
     expect((await store.readPaper('2401.00001'))?.title, 'Cached paper');
     expect(await store.readPage('missing'), isNull);
+  });
+
+  test('evicts expired and over-capacity cache records', () async {
+    final now = DateTime.utc(2024, 3, 10);
+    store = FilePaperCacheStore(
+      store: LocalJsonStore(fileName: 'unused.json', file: file),
+      clock: () => now,
+      policy: const PaperCachePolicy(
+        retention: Duration(days: 5),
+        maxPages: 2,
+        maxPapers: 2,
+      ),
+    );
+    final mapper = const PaperCacheMapper();
+
+    Future<void> write(String id, DateTime fetchedAt) {
+      final paper = mapper.toRecord(
+        _paper(id: id),
+        cachedAt: fetchedAt,
+      );
+      return store.writePage(
+        page: PaperPageCacheRecord(
+          queryKey: 'feed-$id',
+          paperIds: [id],
+          fetchedAt: fetchedAt.toIso8601String(),
+          nextOffset: null,
+        ),
+        papers: [paper],
+      );
+    }
+
+    await write('old', DateTime.utc(2024, 3, 1));
+    await write('middle', DateTime.utc(2024, 3, 7));
+    await write('new', DateTime.utc(2024, 3, 8));
+    await write('newest', DateTime.utc(2024, 3, 9));
+
+    expect(await store.readPage('feed-old'), isNull);
+    expect(await store.readPaper('old'), isNull);
+    expect(await store.readPage('feed-middle'), isNull);
+    expect(await store.readPaper('middle'), isNull);
+    expect(await store.readPage('feed-new'), isNotNull);
+    expect(await store.readPage('feed-newest'), isNotNull);
+    expect(await store.readPaper('new'), isNotNull);
+    expect(await store.readPaper('newest'), isNotNull);
   });
 
   test('quarantines malformed cache JSON instead of leaking records', () async {
@@ -182,9 +228,9 @@ void main() {
   });
 }
 
-Paper _paper() {
+Paper _paper({String id = '2401.00001'}) {
   return Paper(
-    id: '2401.00001',
+    id: id,
     venue: 'ICLR 2024',
     title: 'Cached paper',
     authors: const ['Alice Smith', 'Bob Jones'],

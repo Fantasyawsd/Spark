@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../application/chat_ai_service.dart';
 import '../application/main_ai_chat_definition.dart';
+import '../domain/chat_ai_service.dart';
 import '../domain/chat_session_repository.dart';
 import '../domain/chat_session_settings.dart';
 import 'paper_ai_chat_screen.dart';

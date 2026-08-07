@@ -17,12 +17,14 @@ class OfflineFirstPaperCatalogRepository implements PaperCatalogRepository {
     required PaperRepository seedRepository,
     ArxivAtomMapper mapper = const ArxivAtomMapper(),
     PaperCacheMapper cacheMapper = const PaperCacheMapper(),
+    PaperCachePolicy cachePolicy = const PaperCachePolicy(),
     DateTime Function()? clock,
   })  : _remoteSource = remoteSource,
         _cacheStore = cacheStore,
         _seedRepository = seedRepository,
         _mapper = mapper,
         _cacheMapper = cacheMapper,
+        _cachePolicy = cachePolicy,
         _clock = clock ?? DateTime.now;
 
   final ArxivCatalogSource _remoteSource;
@@ -30,6 +32,7 @@ class OfflineFirstPaperCatalogRepository implements PaperCatalogRepository {
   final PaperRepository _seedRepository;
   final ArxivAtomMapper _mapper;
   final PaperCacheMapper _cacheMapper;
+  final PaperCachePolicy _cachePolicy;
   final DateTime Function() _clock;
 
   @override
@@ -47,13 +50,19 @@ class OfflineFirstPaperCatalogRepository implements PaperCatalogRepository {
       final papers =
           remote.entries.map(_mapper.toDomain).toList(growable: false);
       final fetchedAt = _clock().toUtc();
-      await _writePage(queryKey, papers, remote.nextOffset, fetchedAt);
-      return PaperPage(
+      final result = PaperPage(
         papers: papers,
         source: PaperPageSource.remote,
         nextOffset: remote.nextOffset,
         fetchedAt: fetchedAt,
       );
+      await _writePageBestEffort(
+        queryKey,
+        papers,
+        remote.nextOffset,
+        fetchedAt,
+      );
+      return result;
     } on Object catch (error) {
       final cached = await _readCachedPage(queryKey);
       if (cached != null) {
@@ -79,13 +88,19 @@ class OfflineFirstPaperCatalogRepository implements PaperCatalogRepository {
       final papers =
           remote.entries.map(_mapper.toDomain).toList(growable: false);
       final fetchedAt = _clock().toUtc();
-      await _writePage(queryKey, papers, remote.nextOffset, fetchedAt);
-      return PaperPage(
+      final result = PaperPage(
         papers: papers,
         source: PaperPageSource.remote,
         nextOffset: remote.nextOffset,
         fetchedAt: fetchedAt,
       );
+      await _writePageBestEffort(
+        queryKey,
+        papers,
+        remote.nextOffset,
+        fetchedAt,
+      );
+      return result;
     } on Object catch (error) {
       final cached = await _readCachedPage(queryKey);
       if (cached != null) {
@@ -97,18 +112,48 @@ class OfflineFirstPaperCatalogRepository implements PaperCatalogRepository {
 
   @override
   Future<Paper?> findById(String paperId) async {
-    final cached = await _cacheStore.readPaper(paperId);
-    if (cached != null) return _cacheMapper.toDomain(cached);
+    Paper? cachedPaper;
+    try {
+      final cached = await _cacheStore.readPaper(paperId);
+      if (cached != null) {
+        cachedPaper = _cacheMapper.toDomain(cached);
+        if (_cachePolicy.isDetailFresh(
+          _cacheMapper.cachedAt(cached),
+          _clock(),
+        )) {
+          return cachedPaper;
+        }
+      }
+    } on Object catch (_) {
+      cachedPaper = null;
+    }
     try {
       final remote = await _remoteSource.findById(paperId);
       if (remote == null) return _seedById(paperId);
       final paper = _mapper.toDomain(remote);
-      await _cacheStore.writePaper(
-        _cacheMapper.toRecord(paper, cachedAt: _clock().toUtc()),
-      );
+      try {
+        await _cacheStore.writePaper(
+          _cacheMapper.toRecord(paper, cachedAt: _clock().toUtc()),
+        );
+      } on Object catch (_) {
+        // A usable remote result must not depend on optional local caching.
+      }
       return paper;
     } on Object catch (_) {
-      return _seedById(paperId);
+      return cachedPaper ?? _seedById(paperId);
+    }
+  }
+
+  Future<void> _writePageBestEffort(
+    String queryKey,
+    List<Paper> papers,
+    int? nextOffset,
+    DateTime fetchedAt,
+  ) async {
+    try {
+      await _writePage(queryKey, papers, nextOffset, fetchedAt);
+    } on Object catch (_) {
+      // A usable remote result must not depend on optional local caching.
     }
   }
 

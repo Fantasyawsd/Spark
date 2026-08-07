@@ -1,14 +1,18 @@
 import 'package:http/http.dart' as http;
 import 'package:spark/spark.dart';
-import 'package:spark/src/features/papers/data/providers/arxiv/arxiv_atom_dto.dart';
-import 'package:spark/src/features/papers/data/providers/arxiv/arxiv_atom_mapper.dart';
+import 'package:spark/src/features/papers/data/arxiv_jsonl_importer.dart';
+import 'package:spark/src/features/papers/data/arxiv_oai_client.dart';
+import 'package:spark/src/features/papers/data/openalex_client.dart';
+import 'package:spark/src/features/papers/data/providers/arxiv/arxiv_atom_client.dart';
+import 'package:spark/src/features/papers/data/providers/arxiv/arxiv_paper_dto.dart';
+import 'package:spark/src/features/papers/data/providers/arxiv/arxiv_paper_mapper.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  group('ArxivAtomMapper', () {
+  group('ArxivPaperMapper', () {
     test('keeps unknown metadata unknown instead of using placeholders', () {
-      final paper = const ArxivAtomMapper().toDomain(
-        ArxivAtomPaperDto(
+      final paper = const ArxivPaperMapper().toDomain(
+        ArxivPaperDto(
           id: 'arXiv:2401.00001',
           title: 'A paper',
           summary: 'An abstract.',
@@ -37,8 +41,8 @@ void main() {
     });
 
     test('keeps journal reference separate from venue', () {
-      final paper = const ArxivAtomMapper().toDomain(
-        ArxivAtomPaperDto(
+      final paper = const ArxivPaperMapper().toDomain(
+        ArxivPaperDto(
           id: '2401.00002',
           title: 'Published paper',
           summary: 'An abstract.',
@@ -57,6 +61,43 @@ void main() {
       expect(paper.journalReference, 'Nature 615 (2024)');
       expect(paper.affiliations, ['Research Lab']);
     });
+
+    test('maps entries parsed by the Atom client through the shared DTO',
+        () async {
+      final client = _QueueClient([
+        _response('''
+<feed xmlns="http://www.w3.org/2005/Atom" xmlns:opensearch="http://a9.com/-/spec/opensearch/1.1/">
+  <opensearch:totalResults>1</opensearch:totalResults>
+  <opensearch:startIndex>0</opensearch:startIndex>
+  <opensearch:itemsPerPage>1</opensearch:itemsPerPage>
+  <entry>
+    <id>https://arxiv.org/abs/2401.00003v2</id>
+    <updated>2024-01-03T00:00:00Z</updated>
+    <published>2024-01-01T00:00:00Z</published>
+    <title>Atom paper</title>
+    <summary>Atom abstract.</summary>
+    <author><name>Carol Lee</name></author>
+    <category term="cs.AI" />
+    <link rel="alternate" href="https://arxiv.org/abs/2401.00003v2" />
+    <link title="pdf" href="https://arxiv.org/pdf/2401.00003v2" />
+  </entry>
+</feed>
+'''),
+      ]);
+      final api = ArxivAtomClient(
+        endpoint: 'https://example.test/atom',
+        client: client,
+        minimumRequestInterval: Duration.zero,
+      );
+
+      final page = await api.loadLatest(offset: 0, limit: 1);
+      final paper = const ArxivPaperMapper().toDomain(page.entries.single);
+
+      expect(page.entries.single, isA<ArxivPaperDto>());
+      expect(paper.id, '2401.00003');
+      expect(paper.paperUrl, 'https://arxiv.org/abs/2401.00003v2');
+      expect(paper.pdfUrl, 'https://arxiv.org/pdf/2401.00003v2');
+    });
   });
 
   group('ArxivJsonlImporter', () {
@@ -71,10 +112,11 @@ void main() {
           .toList();
 
       expect(papers, hasLength(1));
-      expect(papers.single.normalizedId, '2401.00001');
+      expect(papers.single, isA<Paper>());
+      expect(papers.single.id, '2401.00001');
       expect(papers.single.title, 'A title');
       expect(papers.single.publishedAt, DateTime.utc(2024, 1, 1));
-      expect(papers.single.toPaper().source, 'arxiv');
+      expect(papers.single.source, 'arxiv');
     });
   });
 
@@ -97,8 +139,9 @@ void main() {
 
     final records = await api.listAll(set: 'cs:cs:AI');
 
-    expect(records.map((record) => record.normalizedId),
-        ['2401.00001', '2401.00002']);
+    expect(records, everyElement(isA<Paper>()));
+    expect(records.map((record) => record.id), ['2401.00001', '2401.00002']);
+    expect(records.map((record) => record.source), everyElement('arxiv'));
     expect(client.requests, hasLength(2));
     expect(client.requests[0].queryParameters['metadataPrefix'], 'arXiv');
     expect(client.requests[1].queryParameters['resumptionToken'], 'next-token');
@@ -113,7 +156,9 @@ void main() {
     final api =
         OpenAlexClient(endpoint: 'https://example.test/works', client: client);
 
-    final result = await api.findByArxivId('arXiv:2401.00001');
+    final result = await api.findByArxivId(
+      'https://arxiv.org/abs/2401.00001v2',
+    );
 
     expect(result?.citationCount, 42);
     expect(result?.institutions, ['Spark Lab']);

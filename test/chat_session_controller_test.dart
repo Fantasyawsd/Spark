@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:spark/spark.dart';
+import 'package:spark/src/features/chat/application/chat_session_controller.dart';
+import 'package:spark/src/features/chat/data/in_memory_chat_session_settings_repository.dart';
 
 void main() {
   group('ChatSessionController', () {
@@ -67,6 +69,50 @@ void main() {
       expect(controller.entries.single.context.id, 'paper-2');
     });
 
+    test('deleting a chat also clears its session settings', () async {
+      final repository = _FakeChatSessionRepository([
+        _session('paper-1', minute: 1),
+      ]);
+      final settingsRepository = InMemoryChatSessionSettingsRepository();
+      await settingsRepository.save(
+        'paper-1',
+        const ChatSessionSettings(customSystemPrompt: '仅用于这一会话'),
+      );
+      final controller = _controller(
+        repository,
+        settingsRepository: settingsRepository,
+      );
+      addTearDown(controller.dispose);
+      await controller.refresh();
+
+      await controller.delete('paper-1');
+
+      expect(repository.clearedIds, ['paper-1']);
+      expect(
+        (await settingsRepository.load('paper-1')).hasCustomizations,
+        isFalse,
+      );
+    });
+
+    test('does not delete messages when session settings cleanup fails',
+        () async {
+      final repository = _FakeChatSessionRepository([
+        _session('paper-1', minute: 1),
+      ]);
+      final controller = _controller(
+        repository,
+        settingsRepository: _FailingSettingsRepository(),
+      );
+      addTearDown(controller.dispose);
+      await controller.refresh();
+
+      await controller.delete('paper-1');
+
+      expect(repository.clearedIds, isEmpty);
+      expect(controller.entries.single.context.id, 'paper-1');
+      expect(controller.error, '无法删除会话设置。');
+    });
+
     test('exposes repository failures as controller errors', () async {
       final repository = _FakeChatSessionRepository(
         const [],
@@ -80,6 +126,18 @@ void main() {
       expect(controller.error, '读取失败');
       expect(controller.loading, isFalse);
       expect(controller.entries, isEmpty);
+    });
+
+    test('maps an unexpected refresh failure without leaking the future error',
+        () async {
+      final repository = _UnexpectedListFailureRepository();
+      final controller = _controller(repository);
+      addTearDown(controller.dispose);
+
+      await controller.refresh();
+
+      expect(controller.error, '无法读取 AI 会话列表。');
+      expect(controller.loading, isFalse);
     });
 
     test('does not notify after disposal while refresh is pending', () async {
@@ -97,8 +155,7 @@ void main() {
       expect(notifications, 1);
     });
 
-    test('refreshes automatically when the repository emits changes',
-        () async {
+    test('refreshes automatically when the repository emits changes', () async {
       final repository = _FakeChatSessionRepository([
         _session('paper-1', minute: 1),
       ]);
@@ -117,9 +174,13 @@ void main() {
   });
 }
 
-ChatSessionController _controller(ChatSessionRepository repository) {
+ChatSessionController _controller(
+  ChatSessionRepository repository, {
+  ChatSessionSettingsRepository? settingsRepository,
+}) {
   return ChatSessionController(
     repository: repository,
+    settingsRepository: settingsRepository,
     mainSessionId: 'main',
     contexts: const [
       ChatContextSummary(id: 'paper-1', title: 'Paper 1'),
@@ -229,4 +290,43 @@ class _DeferredChatSessionRepository implements ChatSessionRepository {
 
   @override
   Future<void> setPinned(String contextId, bool pinned) async {}
+}
+
+class _UnexpectedListFailureRepository implements ChatSessionRepository {
+  @override
+  Stream<void> get changes => const Stream<void>.empty();
+
+  @override
+  Future<void> clear(String contextId) async {}
+
+  @override
+  Future<List<ChatMessage>> load(String contextId) async => const [];
+
+  @override
+  Future<List<ChatSessionSummary>> listSessions() async {
+    throw StateError('unexpected list failure');
+  }
+
+  @override
+  Future<void> save(String contextId, List<ChatMessage> messages) async {}
+
+  @override
+  Future<void> setPinned(String contextId, bool pinned) async {}
+}
+
+class _FailingSettingsRepository implements ChatSessionSettingsRepository {
+  @override
+  Future<void> clear(String contextId) async {
+    throw const ChatSessionSettingsPersistenceException('无法删除会话设置。');
+  }
+
+  @override
+  Future<ChatSessionSettings> load(String contextId) async =>
+      ChatSessionSettings.empty;
+
+  @override
+  Future<void> save(
+    String contextId,
+    ChatSessionSettings settings,
+  ) async {}
 }

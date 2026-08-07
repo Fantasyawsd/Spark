@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../application/chat_ai_service.dart';
+import '../../domain/chat_ai_service.dart';
 import '../paper_ai_ui_tokens.dart';
 import 'paper_ai_model_avatar.dart';
 

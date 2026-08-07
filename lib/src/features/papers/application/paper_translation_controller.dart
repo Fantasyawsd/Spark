@@ -10,16 +10,20 @@ class PaperTranslationController extends ChangeNotifier {
     required this.paper,
     required PaperTranslationService service,
     PaperTranslationRepository? repository,
+    DateTime Function()? clock,
   })  : _service = service,
-        _repository = repository;
+        _repository = repository,
+        _clock = clock ?? DateTime.now;
 
   final Paper paper;
   final PaperTranslationService _service;
   final PaperTranslationRepository? _repository;
+  final DateTime Function() _clock;
 
   String _markdown = '';
   String? _error;
   bool _loadingCache = false;
+  bool _cacheInitialized = false;
   bool _translating = false;
   bool _disposed = false;
   int _requestVersion = 0;
@@ -33,13 +37,25 @@ class PaperTranslationController extends ChangeNotifier {
 
   Future<void> initialize() async {
     final repository = _repository;
-    if (repository == null || _loadingCache || hasTranslation) return;
+    if (_disposed ||
+        repository == null ||
+        _cacheInitialized ||
+        _loadingCache ||
+        hasTranslation) {
+      return;
+    }
+    _cacheInitialized = true;
     _loadingCache = true;
     _notify();
     try {
-      _markdown = (await repository.load(paper.id)) ?? '';
+      final record = await repository.load(paper.id);
+      if (record != null && isPaperTranslationRecordFresh(record, paper)) {
+        _markdown = record.markdown;
+      }
     } on PaperTranslationPersistenceException catch (error) {
       _error = error.message;
+    } on Object {
+      _error = '无法读取中文摘要缓存。';
     } finally {
       if (!_disposed) {
         _loadingCache = false;
@@ -108,7 +124,15 @@ class PaperTranslationController extends ChangeNotifier {
     final repository = _repository;
     if (repository == null) return;
     try {
-      await repository.save(paper.id, _markdown);
+      await repository.save(
+        PaperTranslationRecord(
+          paperId: paper.id,
+          markdown: _markdown,
+          inputFingerprint: paperTranslationInputFingerprint(paper),
+          promptVersion: paperTranslationPromptVersion,
+          generatedAt: _clock().toUtc(),
+        ),
+      );
     } on PaperTranslationPersistenceException catch (error) {
       if (!_disposed) {
         _error = error.message;

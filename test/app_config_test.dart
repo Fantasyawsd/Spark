@@ -39,6 +39,21 @@ void main() {
     expect(version.display, '1.2.3 (42)');
   });
 
+  test('public config construction cannot enable production experiments', () {
+    const config = AppConfig(
+      environment: AppEnvironment.production,
+      features: FeatureFlags(
+        experimentalCommunity: true,
+        experimentalConferenceChannels: true,
+        experimentalPdfAi: true,
+      ),
+    );
+
+    expect(config.features.experimentalCommunity, isFalse);
+    expect(config.features.experimentalConferenceChannels, isFalse);
+    expect(config.features.experimentalPdfAi, isFalse);
+  });
+
   test('platform flavor and requested environment must match', () {
     final development = AppConfig.resolve(
       platformFlavor: 'development',

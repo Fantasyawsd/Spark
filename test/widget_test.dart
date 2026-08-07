@@ -70,8 +70,7 @@ void main() {
     expect(find.byKey(const ValueKey('paper-feed')), findsOneWidget);
   });
 
-  testWidgets('shell exposes only papers, AI chat and profile',
-      (tester) async {
+  testWidgets('shell exposes only papers, AI chat and profile', (tester) async {
     await tester.binding.setSurfaceSize(const Size(390, 844));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
@@ -90,5 +89,29 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('bottom-nav-2')));
     await tester.pumpAndSettle();
     expect(find.text(AppVersion.current.display), findsOneWidget);
+  });
+
+  testWidgets('community navigation is available only when its flag is on',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(
+      const SparkApp(
+        showSplash: false,
+        config: AppConfig(
+          environment: AppEnvironment.development,
+          features: FeatureFlags(experimentalCommunity: true),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.byKey(const ValueKey('bottom-nav-3')), findsOneWidget);
+    expect(find.text('社区'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('bottom-nav-2')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('community-feed-1')), findsOneWidget);
   });
 }

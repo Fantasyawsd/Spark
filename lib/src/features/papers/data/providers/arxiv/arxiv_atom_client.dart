@@ -3,9 +3,9 @@ import 'dart:async';
 import 'package:http/http.dart' as http;
 import 'package:xml/xml.dart';
 
-import 'arxiv_atom_dto.dart';
 import 'arxiv_catalog_source.dart';
 import 'arxiv_id.dart';
+import 'arxiv_paper_dto.dart';
 
 typedef ArxivClock = DateTime Function();
 typedef ArxivDelay = Future<void> Function(Duration duration);
@@ -89,7 +89,7 @@ class ArxivAtomClient implements ArxivCatalogSource {
   Future<void> _requestQueue = Future<void>.value();
 
   @override
-  Future<ArxivAtomPageDto> loadLatest({
+  Future<ArxivPaperPageDto> loadLatest({
     String? category,
     DateTime? publishedFrom,
     DateTime? publishedUntil,
@@ -119,7 +119,7 @@ class ArxivAtomClient implements ArxivCatalogSource {
   }
 
   @override
-  Future<ArxivAtomPageDto> search({
+  Future<ArxivPaperPageDto> search({
     required String term,
     required int offset,
     required int limit,
@@ -135,7 +135,7 @@ class ArxivAtomClient implements ArxivCatalogSource {
   }
 
   @override
-  Future<ArxivAtomPaperDto?> findById(String paperId) async {
+  Future<ArxivPaperDto?> findById(String paperId) async {
     final page = await _query({
       'id_list': normalizeArxivId(paperId),
       'start': '0',
@@ -161,14 +161,14 @@ class ArxivAtomClient implements ArxivCatalogSource {
     if (_ownsClient) _client.close();
   }
 
-  Future<ArxivAtomPageDto> _query(Map<String, String> parameters) async {
+  Future<ArxivPaperPageDto> _query(Map<String, String> parameters) async {
     final uri = Uri.parse(endpoint).replace(queryParameters: parameters);
     final operation = _requestQueue.then((_) => _performRequest(uri));
     _requestQueue = operation.then<void>((_) {}, onError: (_, __) {});
     return operation;
   }
 
-  Future<ArxivAtomPageDto> _performRequest(
+  Future<ArxivPaperPageDto> _performRequest(
     Uri uri, {
     int serverRetryCount = 0,
   }) async {
@@ -233,7 +233,7 @@ class ArxivAtomClient implements ArxivCatalogSource {
   static bool _isServerError(int statusCode) =>
       statusCode >= 500 && statusCode < 600;
 
-  ArxivAtomPageDto _parse(String body) {
+  ArxivPaperPageDto _parse(String body) {
     final document = XmlDocument.parse(body);
     final feed = document.rootElement;
     final entries =
@@ -242,7 +242,7 @@ class ArxivAtomClient implements ArxivCatalogSource {
     final itemsPerPage = _intElement(feed, 'itemsPerPage') ?? entries.length;
     final totalResults = _intElement(feed, 'totalResults') ?? entries.length;
     final consumed = startIndex + entries.length;
-    return ArxivAtomPageDto(
+    return ArxivPaperPageDto(
       entries: entries,
       startIndex: startIndex,
       itemsPerPage: itemsPerPage,
@@ -253,7 +253,7 @@ class ArxivAtomClient implements ArxivCatalogSource {
     );
   }
 
-  ArxivAtomPaperDto _parseEntry(XmlElement entry) {
+  ArxivPaperDto _parseEntry(XmlElement entry) {
     final rawId = _requiredText(entry, 'id');
     final id = normalizeArxivId(rawId);
     final links = _childElements(entry, 'link').toList(growable: false);
@@ -264,7 +264,7 @@ class ArxivAtomClient implements ArxivCatalogSource {
         'https://arxiv.org/pdf/$id';
     final authorElements =
         _childElements(entry, 'author').toList(growable: false);
-    return ArxivAtomPaperDto(
+    return ArxivPaperDto(
       id: id,
       title: _normalizeWhitespace(_requiredText(entry, 'title')),
       summary: _normalizeWhitespace(_requiredText(entry, 'summary')),

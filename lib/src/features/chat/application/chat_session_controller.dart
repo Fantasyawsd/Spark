@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 
 import '../domain/chat_session_repository.dart';
+import '../domain/chat_session_settings.dart';
 
 class ChatContextSummary {
   const ChatContextSummary({required this.id, required this.title});
@@ -29,15 +30,18 @@ class ChatSessionEntry {
 class ChatSessionController extends ChangeNotifier {
   ChatSessionController({
     required ChatSessionRepository repository,
+    ChatSessionSettingsRepository? settingsRepository,
     required String mainSessionId,
     Iterable<ChatContextSummary> contexts = const [],
   })  : _repository = repository,
+        _settingsRepository = settingsRepository,
         _mainSessionId = mainSessionId,
         _contexts = {for (final context in contexts) context.id: context} {
     _changesSubscription = _repository.changes.listen((_) => refresh());
   }
 
   final ChatSessionRepository _repository;
+  final ChatSessionSettingsRepository? _settingsRepository;
   late final StreamSubscription<void> _changesSubscription;
   final String _mainSessionId;
   Map<String, ChatContextSummary> _contexts;
@@ -93,6 +97,7 @@ class ChatSessionController extends ChangeNotifier {
 
   Future<void> delete(String contextId) async {
     try {
+      await _settingsRepository?.clear(contextId);
       await _repository.clear(contextId);
       _rawSessions = _rawSessions
           .where((session) => session.contextId != contextId)
@@ -102,6 +107,10 @@ class ChatSessionController extends ChangeNotifier {
       _notify();
     } on ChatSessionPersistenceException catch (error) {
       _setError(error.message);
+    } on ChatSessionSettingsPersistenceException catch (error) {
+      _setError(error.message);
+    } catch (_) {
+      _setError('无法删除 AI 会话。');
     }
   }
 
@@ -116,6 +125,8 @@ class ChatSessionController extends ChangeNotifier {
       _error = null;
     } on ChatSessionPersistenceException catch (error) {
       if (!_disposed) _error = error.message;
+    } catch (_) {
+      if (!_disposed) _error = '无法读取 AI 会话列表。';
     } finally {
       if (!_disposed) {
         _loading = false;

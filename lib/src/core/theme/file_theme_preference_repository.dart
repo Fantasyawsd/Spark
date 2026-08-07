@@ -1,6 +1,6 @@
 import '../storage/local_json_store.dart';
 import '../storage/versioned_local_json_store.dart';
-import 'paper_theme_color.dart';
+import 'spark_theme_color.dart';
 import 'theme_preference_repository.dart';
 
 class FileThemePreferenceRepository implements ThemePreferenceRepository {
@@ -14,12 +14,12 @@ class FileThemePreferenceRepository implements ThemePreferenceRepository {
   final VersionedLocalJsonStore _store;
 
   @override
-  Future<PaperThemeColor?> load() async {
+  Future<SparkThemeColor?> load() async {
     try {
       final json = await _store.readMap();
       final name = json?['color'];
       if (name is! String) return null;
-      return PaperThemeColor.values
+      return SparkThemeColor.values
           .where((color) => color.name == name)
           .firstOrNull;
     } catch (error) {
@@ -28,7 +28,7 @@ class FileThemePreferenceRepository implements ThemePreferenceRepository {
   }
 
   @override
-  Future<void> save(PaperThemeColor color) async {
+  Future<void> save(SparkThemeColor color) async {
     try {
       await _store.writeMap({'color': color.name});
     } catch (error) {
@@ -42,7 +42,7 @@ class FileThemePreferenceRepository implements ThemePreferenceRepository {
     }
     final color = payload['color'];
     if (color is! String ||
-        !PaperThemeColor.values.any((candidate) => candidate.name == color)) {
+        !SparkThemeColor.values.any((candidate) => candidate.name == color)) {
       throw const FormatException('Theme color is invalid.');
     }
   }

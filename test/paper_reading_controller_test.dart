@@ -1,5 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
-import 'package:spark/spark.dart';
+import 'package:spark/src/features/papers/application/paper_reading_controller.dart';
+import 'package:spark/src/features/papers/data/in_memory_paper_reading_repository.dart';
+import 'package:spark/src/features/papers/domain/paper_reading_repository.dart';
 
 void main() {
   test('restores and persists paper reading state', () async {
@@ -68,4 +72,82 @@ void main() {
       hasLength(1),
     );
   });
+
+  test('replays mutations made while persisted state is loading', () async {
+    final repository = _BlockingPaperReadingRepository();
+    final controller = PaperReadingController(repository: repository);
+    addTearDown(controller.dispose);
+
+    final initialization = controller.initialize();
+    controller.recordOpened('paper-new');
+    controller.toggleRead('paper-1');
+    controller.toggleReadLater('paper-2');
+    controller.selectTab('paper-new', 2);
+    controller.saveAbstractScrollOffset('paper-new', 64);
+    controller.addDwellTime('paper-1', const Duration(milliseconds: 300));
+
+    repository.completeLoad(
+      PaperReadingSnapshot(
+        readPaperIds: const ['paper-1'],
+        readLaterPaperIds: const ['paper-2'],
+        historyPaperIds: const ['paper-1'],
+        dwellMilliseconds: const {'paper-1': 700},
+      ),
+    );
+    await initialization;
+    await controller.flushPendingWrites();
+
+    expect(controller.isRead('paper-new'), isTrue);
+    expect(controller.isRead('paper-1'), isFalse);
+    expect(controller.isReadLater('paper-2'), isFalse);
+    expect(controller.historyPaperIds, ['paper-new', 'paper-1']);
+    expect(controller.tabIndex('paper-new'), 2);
+    expect(controller.abstractScrollOffset('paper-new'), 64);
+    expect(controller.dwellTime('paper-1'), const Duration(seconds: 1));
+    expect(repository.savedSnapshots.last.historyPaperIds,
+        ['paper-new', 'paper-1']);
+  });
+
+  test('persists startup mutations after the initial load fails', () async {
+    final repository = _BlockingPaperReadingRepository();
+    final controller = PaperReadingController(repository: repository);
+    addTearDown(controller.dispose);
+
+    final initialization = controller.initialize();
+    controller.recordOpened('paper-new');
+    controller.toggleReadLater('paper-later');
+    repository.failLoad(
+      const PaperReadingPersistenceException('读取失败'),
+    );
+
+    await initialization;
+    await controller.flushPendingWrites();
+
+    expect(controller.initialized, isTrue);
+    expect(controller.isRead('paper-new'), isTrue);
+    expect(controller.isReadLater('paper-later'), isTrue);
+    expect(repository.savedSnapshots, hasLength(1));
+    expect(repository.savedSnapshots.single.readPaperIds, {'paper-new'});
+    expect(
+      repository.savedSnapshots.single.readLaterPaperIds,
+      {'paper-later'},
+    );
+  });
+}
+
+class _BlockingPaperReadingRepository implements PaperReadingRepository {
+  final _load = Completer<PaperReadingSnapshot>();
+  final List<PaperReadingSnapshot> savedSnapshots = [];
+
+  void completeLoad(PaperReadingSnapshot snapshot) => _load.complete(snapshot);
+
+  void failLoad(Object error) => _load.completeError(error);
+
+  @override
+  Future<PaperReadingSnapshot> load() => _load.future;
+
+  @override
+  Future<void> save(PaperReadingSnapshot snapshot) async {
+    savedSnapshots.add(snapshot);
+  }
 }

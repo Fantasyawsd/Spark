@@ -55,4 +55,43 @@ void main() {
     await repository.resetAllBusinessData();
     expect((await repository.inspect()).totalBytes, 0);
   });
+
+  test('counts and clears only managed recovery artifacts', () async {
+    final directory = await Directory.systemTemp.createTemp(
+      'spark-local-data-artifacts-',
+    );
+    addTearDown(() => directory.delete(recursive: true));
+    final file = File(
+      '${directory.path}${Platform.pathSeparator}paper-cache.json',
+    );
+    final store = LocalJsonStore(fileName: 'unused.json', file: file);
+    final recovery = File('${file.path}.previous');
+    final managedFiles = [
+      file,
+      File('${file.path}.corrupt.123'),
+      File('${file.path}.tmp.42.456.0'),
+    ];
+    for (final managedFile in managedFiles) {
+      await managedFile.writeAsString('12345');
+    }
+    final unrelated = File('${file.path}.backup');
+    await unrelated.writeAsString('keep');
+    final repository = JsonLocalDataRepository(
+      paperCacheStores: [store],
+      chatStores: const [],
+      businessDataStores: const [],
+    );
+
+    expect((await repository.inspect()).paperCacheBytes, 15);
+
+    await recovery.writeAsString('12345');
+
+    await repository.clearPaperCache();
+
+    for (final managedFile in [...managedFiles, recovery]) {
+      expect(await managedFile.exists(), isFalse);
+    }
+    expect(await unrelated.readAsString(), 'keep');
+    expect((await repository.inspect()).paperCacheBytes, 0);
+  });
 }

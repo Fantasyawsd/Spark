@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:flutter_markdown_plus_latex/flutter_markdown_plus_latex.dart';
 import 'package:flutter_math_fork/flutter_math.dart';
 import 'package:markdown/markdown.dart' as md;
 
+import '../platform/spark_clipboard.dart';
 import '../theme/spark_theme.dart';
 
 /// Inline LaTeX syntax that replaces [LatexInlineSyntax] from
@@ -21,8 +21,8 @@ import '../theme/spark_theme.dart';
 /// This syntax closes a formula at the nearest unescaped delimiter regardless
 /// of the following character, and never passes a `$` inside the content to
 /// the Math widget.
-class PaperLatexInlineSyntax extends md.InlineSyntax {
-  PaperLatexInlineSyntax() : super(_patternSource);
+class SparkLatexInlineSyntax extends md.InlineSyntax {
+  SparkLatexInlineSyntax() : super(_patternSource);
 
   // `$$...$$` must be tried before `$...$`, otherwise a `$$` block is caught
   // half-open by the single `$` rule.
@@ -70,8 +70,8 @@ class PaperLatexInlineSyntax extends md.InlineSyntax {
 /// so it forces the formula onto its own line and breaks the surrounding text
 /// flow. Returning a [Text] with a [WidgetSpan] lets flutter_markdown_plus merge
 /// the formula with the surrounding [TextSpan]s into one paragraph.
-class PaperLatexElementBuilder extends MarkdownElementBuilder {
-  PaperLatexElementBuilder({
+class SparkLatexElementBuilder extends MarkdownElementBuilder {
+  SparkLatexElementBuilder({
     this.textStyle,
     this.textScaleFactor,
   });
@@ -133,8 +133,8 @@ class PaperLatexElementBuilder extends MarkdownElementBuilder {
 /// LaTeX delimiter. [stabilizeGeneratedSyntax] temporarily closes that
 /// delimiter so the same content does not jump from plain text to rich text
 /// when the final stream chunk arrives.
-class PaperMarkdown extends StatelessWidget {
-  const PaperMarkdown({
+class SparkMarkdown extends StatelessWidget {
+  const SparkMarkdown({
     super.key,
     required this.data,
     required this.styleSheet,
@@ -149,7 +149,7 @@ class PaperMarkdown extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final markdown = PaperMarkdownPreprocessor.prepare(
+    final markdown = SparkMarkdownPreprocessor.prepare(
       data,
       stabilizeGeneratedSyntax: stabilizeGeneratedSyntax,
     );
@@ -166,12 +166,12 @@ class PaperMarkdown extends StatelessWidget {
             ...md.ExtensionSet.gitHubFlavored.blockSyntaxes,
           ],
           <md.InlineSyntax>[
-            PaperLatexInlineSyntax(),
+            SparkLatexInlineSyntax(),
             ...md.ExtensionSet.gitHubFlavored.inlineSyntaxes,
           ],
         ),
         builders: <String, MarkdownElementBuilder>{
-          'latex': PaperLatexElementBuilder(textStyle: bodyStyle),
+          'latex': SparkLatexElementBuilder(textStyle: bodyStyle),
         },
         styleSheet: styleSheet,
       );
@@ -289,7 +289,7 @@ class _MarkdownCodeBlock extends StatelessWidget {
   final TextStyle? textStyle;
 
   Future<void> _copy() {
-    return Clipboard.setData(ClipboardData(text: code));
+    return platformSparkClipboard.copyText(code);
   }
 
   @override
@@ -381,7 +381,7 @@ MarkdownStyleSheet paperReaderMarkdownStyle() {
   );
 }
 
-MarkdownStyleSheet paperAiMarkdownStyle({
+MarkdownStyleSheet sparkMarkdownStyle({
   Color color = SparkColors.ink,
   bool reasoning = false,
 }) {
@@ -419,8 +419,8 @@ MarkdownStyleSheet paperAiMarkdownStyle({
 /// converts `\\(...\\)` / `\\[...\\]` to the single Markdown-LaTeX path,
 /// repairs a likely unfinished trailing formula, and drops delimiters when the
 /// formula is structurally unsafe to render.
-class PaperMarkdownPreprocessor {
-  const PaperMarkdownPreprocessor._();
+class SparkMarkdownPreprocessor {
+  const SparkMarkdownPreprocessor._();
 
   static String prepare(
     String source, {

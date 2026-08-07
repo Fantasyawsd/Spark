@@ -72,6 +72,8 @@ abstract interface class ChatSessionSettingsRepository {
   Future<ChatSessionSettings> load(String contextId);
 
   Future<void> save(String contextId, ChatSessionSettings settings);
+
+  Future<void> clear(String contextId);
 }
 
 class ChatSessionSettingsPersistenceException implements Exception {

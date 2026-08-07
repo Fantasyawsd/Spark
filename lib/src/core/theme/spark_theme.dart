@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import 'spark_design_tokens.dart';
-import 'paper_theme_color.dart';
+import 'spark_theme_color.dart';
 import 'theme_controller.dart';
 
 abstract final class SparkColors {
@@ -42,9 +42,9 @@ abstract final class SparkTheme {
       onPrimary: Colors.white,
       primaryContainer: SparkColors.primarySoft,
       onPrimaryContainer: SparkColors.ink,
-      secondary: PaperThemeColor.blue.value,
+      secondary: SparkThemeColor.blue.value,
       onSecondary: Colors.white,
-      secondaryContainer: PaperThemeColor.blue.soft,
+      secondaryContainer: SparkThemeColor.blue.soft,
       onSecondaryContainer: SparkColors.ink,
       error: SparkColors.danger,
       onError: Colors.white,

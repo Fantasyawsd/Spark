@@ -1,17 +1,19 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import '../../../../core/motion/motion_tokens.dart';
+import '../../../../core/platform/spark_clipboard.dart';
 import '../../../../core/theme/spark_theme.dart';
 import '../../../../core/widgets/spark_segmented_control.dart';
-import '../../application/paper_link_service.dart';
-import '../../application/paper_ai_service.dart';
+import '../../../chat/chat.dart';
 import '../../application/paper_keyword_controller.dart';
-import '../../application/paper_keyword_service.dart';
 import '../../application/paper_translation_controller.dart';
 import '../../application/paper_translation_service.dart';
 import '../../domain/paper.dart';
+import '../../domain/paper_keyword_repository.dart';
+import '../../domain/paper_link_service.dart';
 import 'paper_action_bar.dart';
 import 'paper_full_reader_page.dart';
 import 'paper_metadata.dart';
@@ -73,7 +75,7 @@ class PaperReaderCard extends StatefulWidget {
   final ValueChanged<Uri>? onOpenPaper;
   final ValueChanged<String>? onOpenRelatedPaper;
   final PaperTranslationServiceFactory translationServiceFactory;
-  final PaperAiService keywordService;
+  final ChatAiService keywordService;
   final PaperTranslationRepository? translationRepository;
   final PaperKeywordRepository? keywordRepository;
   final bool active;
@@ -146,6 +148,13 @@ class _PaperReaderCardState extends State<PaperReaderCard> {
     if (paperChanged || (!oldWidget.active && widget.active)) {
       _resetToOriginal();
     }
+    if (widget.active &&
+        (paperChanged ||
+            translationDependencyChanged ||
+            keywordDependencyChanged ||
+            !oldWidget.active)) {
+      unawaited(_initializeCurrentTab());
+    }
   }
 
   @override
@@ -187,9 +196,7 @@ class _PaperReaderCardState extends State<PaperReaderCard> {
                     text: paper.title,
                     maxLines: 3,
                     overflow: TextOverflow.ellipsis,
-                    onTap: () => Clipboard.setData(
-                      ClipboardData(text: paper.title),
-                    ),
+                    onTap: () => platformSparkClipboard.copyText(paper.title),
                     style: const TextStyle(
                       color: SparkColors.ink,
                       fontSize: 21,
@@ -266,7 +273,26 @@ class _PaperReaderCardState extends State<PaperReaderCard> {
 
   void _handleTabChanged(int index) {
     setState(() => _tabIndex = index);
-    if (index == 1) _translationController.ensureTranslated();
+    unawaited(_initializeCurrentTab());
+  }
+
+  Future<void> _initializeCurrentTab() async {
+    if (!mounted || !widget.active) return;
+    if (_tabIndex == 1) {
+      final controller = _translationController;
+      await controller.initialize();
+      if (!mounted ||
+          !widget.active ||
+          _tabIndex != 1 ||
+          !identical(controller, _translationController)) {
+        return;
+      }
+      await controller.ensureTranslated();
+      return;
+    }
+    if (_tabIndex == 2) {
+      await _keywordController.initialize();
+    }
   }
 
   void _resetToOriginal() {
@@ -367,7 +393,6 @@ class _PaperReaderCardState extends State<PaperReaderCard> {
       service: widget.translationServiceFactory.create(),
       repository: widget.translationRepository,
     )..addListener(_handleTranslationChanged);
-    _translationController.initialize();
   }
 
   void _createKeywordController() {
@@ -376,7 +401,6 @@ class _PaperReaderCardState extends State<PaperReaderCard> {
       service: widget.keywordService,
       repository: widget.keywordRepository,
     )..addListener(_handleKeywordChanged);
-    _keywordController.initialize();
   }
 
   void _handleTranslationChanged() {

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/spark_theme.dart';
-import '../../application/paper_link_service.dart';
 import '../../domain/paper.dart';
+import '../../domain/paper_link_service.dart';
 
 class PaperPdfButton extends StatelessWidget {
   const PaperPdfButton({

@@ -5,19 +5,19 @@ import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 
 import '../../../core/motion/motion_tokens.dart';
 import '../../../core/theme/spark_theme.dart';
-import '../application/paper_ai_service.dart';
-import '../application/paper_ai_session_repository.dart';
+import '../../chat/chat.dart';
 import '../application/paper_comment_controller.dart';
 import '../domain/paper.dart';
 import '../domain/paper_catalog.dart';
+import '../domain/paper_keyword_repository.dart';
 import '../domain/paper_time_range.dart';
 import '../application/paper_feed_controller.dart';
 import '../application/paper_interaction_controller.dart';
-import '../application/paper_keyword_service.dart';
-import '../application/paper_link_service.dart';
 import '../application/paper_reading_controller.dart';
-import '../application/paper_share_service.dart';
 import '../application/paper_translation_service.dart';
+import '../domain/paper_link_service.dart';
+import '../domain/paper_share.dart';
+import 'paper_ai_discussion_builder.dart';
 import 'widgets/paper_channel_manager_sheet.dart';
 import 'widgets/paper_empty_state.dart';
 import 'widgets/paper_favorite_group_sheet.dart';
@@ -33,35 +33,33 @@ class PapersScreen extends StatefulWidget {
     required this.commentController,
     required this.readingController,
     this.active = true,
-    required this.aiService,
-    PaperAiService? keywordService,
-    this.webSearchAiService,
+    required this.aiDiscussionBuilder,
+    required this.keywordService,
     required this.translationServiceFactory,
     this.translationRepository,
     this.keywordRepository,
-    this.aiSessionRepository,
     this.shareService,
     this.linkService,
     this.onSearch,
     this.onOpenPaperDetail,
-  }) : keywordService = keywordService ?? aiService;
+    this.showExperimentalConferenceChannels = false,
+  });
 
   final PaperFeedController feedController;
   final PaperInteractionController interactionController;
   final PaperCommentController commentController;
   final PaperReadingController readingController;
   final bool active;
-  final PaperAiService aiService;
-  final PaperAiService keywordService;
-  final PaperAiService? webSearchAiService;
+  final PaperAiDiscussionBuilder aiDiscussionBuilder;
+  final ChatAiService keywordService;
   final PaperTranslationServiceFactory translationServiceFactory;
   final PaperTranslationRepository? translationRepository;
   final PaperKeywordRepository? keywordRepository;
-  final PaperAiSessionRepository? aiSessionRepository;
   final PaperShareService? shareService;
   final PaperLinkService? linkService;
   final VoidCallback? onSearch;
   final ValueChanged<String>? onOpenPaperDetail;
+  final bool showExperimentalConferenceChannels;
 
   @override
   State<PapersScreen> createState() => _PapersScreenState();
@@ -246,10 +244,8 @@ class _PapersScreenState extends State<PapersScreen> {
             interactionController: _interactions,
             commentController: widget.commentController,
             readingController: widget.readingController,
-            aiService: widget.aiService,
+            aiDiscussionBuilder: widget.aiDiscussionBuilder,
             keywordService: widget.keywordService,
-            webSearchAiService: widget.webSearchAiService,
-            aiSessionRepository: widget.aiSessionRepository,
             translationServiceFactory: widget.translationServiceFactory,
             translationRepository: widget.translationRepository,
             keywordRepository: widget.keywordRepository,
@@ -421,6 +417,7 @@ class _PapersScreenState extends State<PapersScreen> {
       context,
       userChannels: _feed.userChannels,
       onChannelsChanged: (channels) => _feed.saveUserChannels(channels),
+      showConferenceChannels: widget.showExperimentalConferenceChannels,
     );
   }
 

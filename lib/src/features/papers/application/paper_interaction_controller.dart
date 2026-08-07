@@ -67,7 +67,7 @@ class PaperInteractionController extends ChangeNotifier {
       isFollowed(paper.authorKey) || isFollowed(paper.id);
 
   Future<void> initialize() {
-    if (_initialized) return Future.value();
+    if (_disposed || _initialized) return Future.value();
     final existing = _initialization;
     if (existing != null) return existing;
     final repository = _repository;
@@ -86,6 +86,7 @@ class PaperInteractionController extends ChangeNotifier {
   Future<void> _initialize(PaperInteractionRepository repository) async {
     try {
       final snapshot = await repository.load();
+      if (_disposed) return;
       _restore(snapshot);
       _committedSnapshot = snapshot;
       final pendingMutations = List.of(_pendingMutations);
@@ -97,7 +98,12 @@ class PaperInteractionController extends ChangeNotifier {
       _persistenceError = null;
       if (pendingMutations.isNotEmpty) _queuePersistence();
     } on PaperInteractionPersistenceException catch (error) {
+      if (_disposed) return;
       _persistenceError = error.message;
+      _errorRevision++;
+    } on Object {
+      if (_disposed) return;
+      _persistenceError = '论文交互状态读取失败，请稍后重试。';
       _errorRevision++;
     }
     _notifyListeners();
@@ -202,6 +208,7 @@ class PaperInteractionController extends ChangeNotifier {
   }
 
   void _mutate(_InteractionMutation mutation) {
+    if (_disposed) return;
     _applyMutation(mutation);
     if (_initialized) {
       _persistenceError = null;
@@ -264,6 +271,7 @@ class PaperInteractionController extends ChangeNotifier {
 
   Future<void> reload() async {
     await flushPendingWrites();
+    if (_disposed) return;
     _pendingMutations.clear();
     _initialized = false;
     final empty = PaperInteractionSnapshot();
@@ -287,12 +295,19 @@ class PaperInteractionController extends ChangeNotifier {
     _writeQueue = _writeQueue.then((_) async {
       try {
         await repository.save(snapshot);
+        if (_disposed) return;
         _committedSnapshot = snapshot;
         if (revision == _revision) _persistenceError = null;
       } on PaperInteractionPersistenceException catch (error) {
-        if (revision == _revision) {
+        if (!_disposed && revision == _revision) {
           _restore(_committedSnapshot);
           _persistenceError = error.message;
+          _errorRevision++;
+        }
+      } on Object {
+        if (!_disposed && revision == _revision) {
+          _restore(_committedSnapshot);
+          _persistenceError = '论文交互状态保存失败，请稍后重试。';
           _errorRevision++;
         }
       }

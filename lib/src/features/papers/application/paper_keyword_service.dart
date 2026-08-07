@@ -1,35 +1,16 @@
 import 'dart:convert';
 
-import '../../chat/domain/chat_context.dart';
+import '../../chat/chat.dart';
 import '../domain/paper.dart';
 import '../domain/paper_keyword_record.dart';
-import 'paper_ai_service.dart';
 
 const paperKeywordPromptVersion = 1;
 const _fingerprintSeparator = '|spark-keywords|';
 
-abstract interface class PaperKeywordRepository {
-  Future<PaperKeywordRecord?> load(String paperId);
-
-  Future<void> save(PaperKeywordRecord record);
-
-  Future<void> clear(String paperId);
-}
-
-class PaperKeywordPersistenceException implements Exception {
-  const PaperKeywordPersistenceException(this.message, [this.cause]);
-
-  final String message;
-  final Object? cause;
-
-  @override
-  String toString() => message;
-}
-
 class PaperKeywordGenerator {
   const PaperKeywordGenerator(this._service);
 
-  final PaperAiService _service;
+  final ChatAiService _service;
 
   Future<List<String>> generate(Paper paper) async {
     final response = await _service.answer(
@@ -39,7 +20,7 @@ class PaperKeywordGenerator {
         systemPrompt: _systemPrompt,
       ),
       conversation: [
-        PaperAiMessage(
+        ChatMessage(
           fromUser: true,
           content: '''标题：${paper.title}
 

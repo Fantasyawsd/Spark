@@ -2,8 +2,9 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
-import '../domain/paper_source.dart';
+import '../domain/paper_enhancement.dart';
 import '../domain/paper_sync_ports.dart';
+import 'providers/arxiv/arxiv_id.dart';
 
 class OpenAlexClient implements PaperEnhancementSource {
   OpenAlexClient({
@@ -18,7 +19,7 @@ class OpenAlexClient implements PaperEnhancementSource {
 
   @override
   Future<PaperEnhancement?> findByArxivId(String arxivId) async {
-    final normalized = arxivId.replaceFirst(RegExp(r'^arXiv:'), '').trim();
+    final normalized = normalizeArxivId(arxivId);
     final uri = Uri.parse(endpoint).replace(
       queryParameters: {'filter': 'ids.arxiv:$normalized', 'per-page': '1'},
     );
@@ -28,32 +29,71 @@ class OpenAlexClient implements PaperEnhancementSource {
       throw OpenAlexSourceException(
           'OpenAlex 请求失败（HTTP ${response.statusCode}）。');
     }
-    final payload = jsonDecode(response.body);
-    if (payload is! Map<String, dynamic>) {
-      throw const FormatException('OpenAlex 返回格式无效。');
-    }
-    final results = payload['results'];
-    if (results is! List || results.isEmpty || results.first is! Map) {
-      return null;
-    }
-    final work = results.first as Map;
-    final institutions = _institutionNames(work['authorships']);
-    final concepts = _conceptNames(work['concepts']);
-    return PaperEnhancement(
-      citationCount: work['cited_by_count'] is num
-          ? (work['cited_by_count'] as num).toInt()
-          : null,
-      institutions: institutions,
-      concepts: concepts,
-      relatedWorkIds: _relatedIds(work['related_works']),
-    );
+    final payload = _OpenAlexResponseDto.fromJson(jsonDecode(response.body));
+    return payload.works.isEmpty ? null : payload.works.first.toDomain();
   }
 
   void close() {
     if (_ownsClient) _client.close();
   }
+}
 
-  static List<String> _institutionNames(dynamic authorships) {
+class _OpenAlexResponseDto {
+  const _OpenAlexResponseDto(this.works);
+
+  factory _OpenAlexResponseDto.fromJson(Object? json) {
+    if (json is! Map<String, dynamic>) {
+      throw const FormatException('OpenAlex 返回格式无效。');
+    }
+    final results = json['results'];
+    if (results is! List || results.isEmpty || results.first is! Map) {
+      return const _OpenAlexResponseDto([]);
+    }
+    return _OpenAlexResponseDto(
+      [
+        _OpenAlexWorkDto.fromJson(
+          Map<String, dynamic>.from(results.first as Map),
+        ),
+      ],
+    );
+  }
+
+  final List<_OpenAlexWorkDto> works;
+}
+
+class _OpenAlexWorkDto {
+  const _OpenAlexWorkDto({
+    required this.citationCount,
+    required this.institutions,
+    required this.concepts,
+    required this.relatedWorkIds,
+  });
+
+  factory _OpenAlexWorkDto.fromJson(Map<String, dynamic> json) {
+    final citationCount = json['cited_by_count'];
+    return _OpenAlexWorkDto(
+      citationCount: citationCount is num ? citationCount.toInt() : null,
+      institutions: _institutionNames(json['authorships']),
+      concepts: _conceptNames(json['concepts']),
+      relatedWorkIds: _relatedIds(json['related_works']),
+    );
+  }
+
+  final int? citationCount;
+  final List<String> institutions;
+  final List<String> concepts;
+  final List<String> relatedWorkIds;
+
+  PaperEnhancement toDomain() {
+    return PaperEnhancement(
+      citationCount: citationCount,
+      institutions: institutions,
+      concepts: concepts,
+      relatedWorkIds: relatedWorkIds,
+    );
+  }
+
+  static List<String> _institutionNames(Object? authorships) {
     if (authorships is! List) return const [];
     return authorships
         .whereType<Map>()
@@ -67,7 +107,7 @@ class OpenAlexClient implements PaperEnhancementSource {
         .toList(growable: false);
   }
 
-  static List<String> _conceptNames(dynamic concepts) {
+  static List<String> _conceptNames(Object? concepts) {
     if (concepts is! List) return const [];
     return concepts
         .whereType<Map>()
@@ -77,7 +117,7 @@ class OpenAlexClient implements PaperEnhancementSource {
         .toList(growable: false);
   }
 
-  static List<String> _relatedIds(dynamic relatedWorks) {
+  static List<String> _relatedIds(Object? relatedWorks) {
     if (relatedWorks is! List) return const [];
     return relatedWorks.whereType<String>().take(12).toList(growable: false);
   }

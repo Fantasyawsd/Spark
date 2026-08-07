@@ -1,7 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
-import 'package:spark/src/features/chat/application/chat_ai_service.dart';
 import 'package:spark/src/features/chat/application/chat_conversation_controller.dart';
 import 'package:spark/src/features/chat/application/main_ai_chat_definition.dart';
+import 'package:spark/src/features/chat/domain/chat_ai_service.dart';
 import 'package:spark/src/features/chat/domain/chat_context.dart';
 import 'package:spark/src/features/chat/domain/chat_message.dart';
 import 'package:spark/src/features/chat/domain/chat_session_repository.dart';
@@ -132,6 +134,126 @@ void main() {
     expect(context.promptFor(webSearch: true), contains('网络搜索'));
   });
 
+  test('a new request omits partial cancelled assistant content from context',
+      () async {
+    const context = ChatContext(
+      id: 'cancelled-context-test',
+      title: '取消上下文测试',
+      systemPrompt: '回答问题。',
+    );
+    final service = _QueueChatAiService(['新回答']);
+    final controller = ChatConversationController(
+      context: context,
+      service: service,
+      sessionRepository: const _FixedChatSessionRepository([
+        ChatMessage(fromUser: true, content: '旧问题'),
+        ChatMessage(
+          fromUser: false,
+          content: '未完成的部分回答',
+          status: ChatMessageStatus.cancelled,
+        ),
+      ]),
+    );
+
+    await controller.initialize();
+    expect(controller.messages.last.content, '未完成的部分回答');
+
+    await controller.send('新问题');
+
+    expect(
+      service.conversations.single.map((message) => message.content),
+      ['旧问题', '新问题'],
+    );
+    expect(
+      controller.messages.map((message) => message.content),
+      contains('未完成的部分回答'),
+    );
+    controller.dispose();
+  });
+
+  test('controller cancels only its request-scoped streaming token', () async {
+    const context = ChatContext(
+      id: 'request-cancellation-test',
+      title: '请求取消测试',
+      systemPrompt: '回答问题。',
+    );
+    final service = _RequestScopedStreamingService();
+    final controller = ChatConversationController(
+      context: context,
+      service: service,
+    );
+
+    final request = controller.send('开始生成');
+    await service.started.future;
+    controller.cancel();
+    await request;
+
+    expect(service.cancellation?.isCancelled, isTrue);
+    expect(controller.requestStatus, ChatRequestStatus.cancelled);
+    controller.dispose();
+  });
+
+  test('an unexpected save failure does not poison later queued writes',
+      () async {
+    const context = ChatContext(
+      id: 'write-queue-recovery-test',
+      title: '写队列恢复测试',
+      systemPrompt: '回答问题。',
+    );
+    final repository = _UnexpectedFirstSaveRepository();
+    final controller = ChatConversationController(
+      context: context,
+      service: _QueueChatAiService(['回答']),
+      sessionRepository: repository,
+    );
+
+    await controller.send('问题');
+    await controller.clear();
+
+    expect(repository.saveCalls, 2);
+    expect(repository.clearCalls, 1);
+    expect(controller.messages, isEmpty);
+    controller.dispose();
+  });
+
+  test('send waits for a pending session load before mutating messages',
+      () async {
+    const context = ChatContext(
+      id: 'pending-load-send-test',
+      title: '加载期间发送测试',
+      systemPrompt: '回答问题。',
+    );
+    final repository = _PendingChatSessionRepository();
+    final service = _QueueChatAiService(['新回答']);
+    final controller = ChatConversationController(
+      context: context,
+      service: service,
+      sessionRepository: repository,
+    );
+    addTearDown(controller.dispose);
+
+    final initialization = controller.initialize();
+    final sending = controller.send('新问题');
+    await Future<void>.delayed(Duration.zero);
+    final requestedBeforeLoad = service.conversations.isNotEmpty;
+
+    repository.completeLoad(const [
+      ChatMessage(fromUser: true, content: '旧问题'),
+      ChatMessage(fromUser: false, content: '旧回答'),
+    ]);
+    await Future.wait([initialization, sending]);
+
+    expect(requestedBeforeLoad, isFalse);
+    expect(
+      controller.messages.map((message) => message.content),
+      ['旧问题', '旧回答', '新问题', '新回答'],
+    );
+    expect(
+      service.conversations.single.map((message) => message.content),
+      ['旧问题', '旧回答', '新问题'],
+    );
+  });
+
   test('deleteMessagesAt removes selected messages in descending index order',
       () async {
     const context = ChatContext(
@@ -211,6 +333,32 @@ class _QueueChatAiService implements ChatAiService {
   }
 }
 
+class _RequestScopedStreamingService
+    implements RequestScopedStreamingChatAiService {
+  final Completer<void> started = Completer<void>();
+  ChatRequestCancellation? cancellation;
+
+  @override
+  Future<String> answer({
+    required ChatContext context,
+    required List<ChatMessage> conversation,
+  }) async =>
+      '回答';
+
+  @override
+  Stream<ChatStreamChunk> answerStream({
+    required ChatContext context,
+    required List<ChatMessage> conversation,
+    ChatRequestCancellation? cancellation,
+  }) async* {
+    this.cancellation = cancellation;
+    if (!started.isCompleted) started.complete();
+    yield const ChatStreamChunk(contentDelta: '部分回答');
+    await cancellation!.whenCancelled;
+    throw const ChatAiCancelledException();
+  }
+}
+
 class _FixedChatSessionRepository implements ChatSessionRepository {
   const _FixedChatSessionRepository(this.messages);
 
@@ -224,6 +372,58 @@ class _FixedChatSessionRepository implements ChatSessionRepository {
 
   @override
   Future<List<ChatMessage>> load(String contextId) async => messages;
+
+  @override
+  Future<List<ChatSessionSummary>> listSessions() async => const [];
+
+  @override
+  Future<void> save(String contextId, List<ChatMessage> messages) async {}
+
+  @override
+  Future<void> setPinned(String contextId, bool pinned) async {}
+}
+
+class _UnexpectedFirstSaveRepository implements ChatSessionRepository {
+  int saveCalls = 0;
+  int clearCalls = 0;
+
+  @override
+  Stream<void> get changes => const Stream<void>.empty();
+
+  @override
+  Future<void> clear(String contextId) async {
+    clearCalls++;
+  }
+
+  @override
+  Future<List<ChatMessage>> load(String contextId) async => const [];
+
+  @override
+  Future<List<ChatSessionSummary>> listSessions() async => const [];
+
+  @override
+  Future<void> save(String contextId, List<ChatMessage> messages) async {
+    saveCalls++;
+    if (saveCalls == 1) throw StateError('unexpected save failure');
+  }
+
+  @override
+  Future<void> setPinned(String contextId, bool pinned) async {}
+}
+
+class _PendingChatSessionRepository implements ChatSessionRepository {
+  final _load = Completer<List<ChatMessage>>();
+
+  void completeLoad(List<ChatMessage> messages) => _load.complete(messages);
+
+  @override
+  Stream<void> get changes => const Stream<void>.empty();
+
+  @override
+  Future<void> clear(String contextId) async {}
+
+  @override
+  Future<List<ChatMessage>> load(String contextId) => _load.future;
 
   @override
   Future<List<ChatSessionSummary>> listSessions() async => const [];

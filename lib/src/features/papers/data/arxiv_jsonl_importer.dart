@@ -1,6 +1,8 @@
 import 'dart:convert';
 
-import '../domain/paper_source.dart';
+import '../domain/paper.dart';
+import 'providers/arxiv/arxiv_paper_dto.dart';
+import 'providers/arxiv/arxiv_paper_mapper.dart';
 
 class ArxivJsonlImporter {
   const ArxivJsonlImporter({this.targetCategories = defaultArxivCategories});
@@ -18,7 +20,7 @@ class ArxivJsonlImporter {
 
   final Set<String> targetCategories;
 
-  Stream<ArxivMetadata> parseLines(Stream<String> lines) async* {
+  Stream<Paper> parseLines(Stream<String> lines) async* {
     await for (final line in lines) {
       final trimmed = line.trim();
       if (trimmed.isEmpty) continue;
@@ -26,23 +28,29 @@ class ArxivJsonlImporter {
       if (decoded is! Map<String, dynamic>) {
         throw const FormatException('arXiv JSONL 行不是对象。');
       }
-      final paper = fromJson(decoded);
-      if (_isTarget(paper)) yield paper;
+      final dto = _dtoFromJson(decoded);
+      if (_isTarget(dto)) {
+        yield const ArxivPaperMapper().toDomain(dto);
+      }
     }
   }
 
-  ArxivMetadata fromJson(Map<String, dynamic> json) {
+  Paper fromJson(Map<String, dynamic> json) {
+    return const ArxivPaperMapper().toDomain(_dtoFromJson(json));
+  }
+
+  ArxivPaperDto _dtoFromJson(Map<String, dynamic> json) {
     final versions = json['versions'];
     final version =
         versions is List && versions.isNotEmpty ? versions.length : 1;
     final firstVersion =
         versions is List && versions.isNotEmpty ? versions.first : null;
     final publishedAt = firstVersion is Map ? firstVersion['created'] : null;
-    return ArxivMetadata(
+    return ArxivPaperDto(
       id: _requiredString(json, 'id'),
       title: _cleanText(_requiredString(json, 'title')),
       authors: _parseAuthors(json['authors']),
-      abstractText: _cleanText(_requiredString(json, 'abstract')),
+      summary: _cleanText(_requiredString(json, 'abstract')),
       categories: _requiredString(json, 'categories').split(RegExp(r'\s+')),
       publishedAt: _parseDate(publishedAt ?? json['update_date']),
       updatedAt: _parseDate(json['update_date']),
@@ -55,8 +63,8 @@ class ArxivJsonlImporter {
     );
   }
 
-  bool _isTarget(ArxivMetadata paper) {
-    return paper.categories.any(targetCategories.contains);
+  bool _isTarget(ArxivPaperDto dto) {
+    return dto.categories.any(targetCategories.contains);
   }
 
   static String _requiredString(Map<String, dynamic> json, String key) {

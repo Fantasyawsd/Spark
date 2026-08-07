@@ -1,7 +1,17 @@
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:spark/spark.dart';
+import 'package:spark/src/features/papers/application/paper_controller.dart';
+import 'package:spark/src/features/papers/application/paper_feed_controller.dart';
+import 'package:spark/src/features/papers/data/arxiv_seed_repository.dart';
+import 'package:spark/src/features/papers/data/in_memory_paper_channel_preference_repository.dart';
+import 'package:spark/src/features/papers/data/in_memory_paper_interaction_repository.dart';
+import 'package:spark/src/features/papers/data/in_memory_paper_preference_repository.dart';
+import 'package:spark/src/features/papers/domain/paper.dart';
+import 'package:spark/src/features/papers/domain/paper_catalog.dart';
+import 'package:spark/src/features/papers/domain/paper_channel.dart';
+import 'package:spark/src/features/papers/domain/paper_preference_repository.dart';
+import 'package:spark/src/features/papers/domain/paper_time_range.dart';
 
 void main() {
   group('PaperController', () {
@@ -302,6 +312,42 @@ void main() {
       expect(barrierCompleted, isTrue);
     });
 
+    test('finishes pending preference initialization safely after dispose',
+        () async {
+      final preferences = _BlockingPaperPreferenceRepository();
+      final feed = PaperFeedController.fromPapers(
+        const [],
+        preferenceRepository: preferences,
+      );
+
+      final initialization = feed.initializePreferences();
+      feed.dispose();
+      preferences.complete(PaperPreferences(
+        timeRanges: const {'fixed:recommended': 'last-7-days'},
+      ));
+
+      await expectLater(initialization, completes);
+    });
+
+    test('preference writes recover after an unexpected save failure',
+        () async {
+      final preferences = _FlakyPaperPreferenceRepository();
+      final feed = PaperFeedController.fromPapers(
+        [_catalogPaper('paper-1')],
+        preferenceRepository: preferences,
+      );
+      addTearDown(feed.dispose);
+
+      feed.selectTimeRange(const PaperTimeRange.last7Days());
+      await expectLater(feed.flushPreferenceWrites(), completes);
+      expect(feed.preferenceError, isNotNull);
+
+      feed.selectTimeRange(const PaperTimeRange.last30Days());
+      await expectLater(feed.flushPreferenceWrites(), completes);
+      expect(preferences.saveCalls, 2);
+      expect(feed.preferenceError, isNull);
+    });
+
     test('sends the selected channel category to the remote catalog', () async {
       final catalog = _RecordingPaperCatalogRepository();
       final controller = PaperController(
@@ -379,6 +425,25 @@ void main() {
       expect(restored.feed.timeRange.storageKey, 'last-30-days');
     });
 
+    test('applies the selected time range to recommended fallback papers', () {
+      final now = DateTime.now();
+      final feed = PaperFeedController.fromPapers([
+        _catalogPaper(
+          'outside-range',
+          publishedAt: now.subtract(const Duration(days: 8)),
+        ),
+        _catalogPaper(
+          'inside-range',
+          publishedAt: now.subtract(const Duration(days: 2)),
+        ),
+      ]);
+      addTearDown(feed.dispose);
+
+      feed.selectTimeRange(const PaperTimeRange.last7Days());
+
+      expect(feed.papers.map((paper) => paper.id), ['inside-range']);
+    });
+
     test('switching back to loaded channels does not refetch', () async {
       final catalog = _RecordingPaperCatalogRepository();
       final controller = PaperController(
@@ -448,6 +513,80 @@ void main() {
       await controller.feed.flushCatalogOperations();
       expect(controller.papers.take(2).map((paper) => paper.id),
           ['union-1', 'union-2']);
+    });
+
+    test('each channel restores its own pagination cursor', () async {
+      final catalog = _PerChannelOffsetCatalogRepository();
+      final controller = PaperController(
+        const ArxivSeedRepository(),
+        catalogRepository: catalog,
+      );
+      addTearDown(controller.dispose);
+
+      await controller.initialize();
+      await controller.saveUserChannels(const [
+        UserPaperChannel(
+          kind: PaperChannelKind.subject,
+          id: 'cs.CL',
+          displayName: '计算与语言',
+        ),
+      ]);
+      controller.selectChannel(3);
+      await controller.feed.flushCatalogOperations();
+      expect(controller.feed.catalogSource, PaperPageSource.cache);
+      expect(controller.feed.catalogOffline, isTrue);
+      expect(controller.feed.catalogStale, isTrue);
+      expect(controller.feed.catalogError?.kind, PaperCatalogErrorKind.network);
+
+      controller.selectChannel(0);
+      expect(controller.feed.catalogSource, PaperPageSource.remote);
+      expect(controller.feed.catalogOffline, isFalse);
+      expect(controller.feed.catalogStale, isFalse);
+      expect(controller.feed.catalogError, isNull);
+
+      await controller.feed.loadMoreCatalog();
+
+      expect(catalog.queries.last.offset, 20);
+    });
+
+    test('a pending pagination page cannot repopulate a refreshed empty feed',
+        () async {
+      final catalog = _ConcurrentRefreshCatalogRepository();
+      final feed = PaperFeedController.fromPapers(
+        const [],
+        catalogRepository: catalog,
+      );
+      addTearDown(feed.dispose);
+      await feed.initializeCatalog();
+
+      final pagination = feed.loadMoreCatalog();
+      expect(feed.catalogLoadingMore, isTrue);
+      final refresh = feed.refreshCatalog();
+      expect(feed.catalogLoadingMore, isFalse);
+      catalog.completeRefresh();
+      await refresh;
+      catalog.completePagination();
+      await pagination;
+
+      expect(feed.papers, isEmpty);
+      expect(feed.catalogHasMore, isFalse);
+    });
+
+    test('reloading preferences restores the current remote catalog', () async {
+      final catalog = _ReloadPaperCatalogRepository();
+      final feed = PaperFeedController.fromPapers(
+        const [],
+        catalogRepository: catalog,
+      );
+      addTearDown(feed.dispose);
+      await feed.initializeCatalog();
+      expect(feed.papers.single.id, 'reload-1');
+
+      await feed.reloadPreferences();
+      await feed.flushCatalogOperations();
+
+      expect(catalog.loadCalls, 2);
+      expect(feed.papers.single.id, 'reload-2');
     });
 
     test(
@@ -530,6 +669,27 @@ void main() {
         hasLength(1),
       );
     });
+
+    test('an empty first page clears papers from the previous refresh',
+        () async {
+      final catalog = _PagedPaperCatalogRepository(
+        firstPage: [_catalogPaper('old-paper')],
+      );
+      final feed = PaperFeedController.fromPapers(
+        const [],
+        catalogRepository: catalog,
+      );
+      addTearDown(feed.dispose);
+
+      await feed.initializeCatalog();
+      expect(feed.papers.map((paper) => paper.id), ['old-paper']);
+
+      catalog.firstPage = const [];
+      await feed.refreshCatalog();
+
+      expect(feed.papers, isEmpty);
+      expect(feed.catalogHasMore, isFalse);
+    });
   });
 }
 
@@ -571,6 +731,103 @@ class _CategoryPaperCatalogRepository implements PaperCatalogRepository {
       PaperPage(papers: const [], source: PaperPageSource.remote);
 }
 
+class _PerChannelOffsetCatalogRepository implements PaperCatalogRepository {
+  final List<PaperFeedQuery> queries = [];
+
+  @override
+  Future<Paper?> findById(String paperId) async => null;
+
+  @override
+  Future<PaperPage> loadFeed(PaperFeedQuery query) async {
+    queries.add(query);
+    if (query.offset > 0) {
+      return PaperPage(papers: const [], source: PaperPageSource.remote);
+    }
+    final subjectChannel = query.category == 'cs.CL';
+    return PaperPage(
+      papers: [_catalogPaper(subjectChannel ? 'subject-page' : 'union-page')],
+      source: subjectChannel ? PaperPageSource.cache : PaperPageSource.remote,
+      nextOffset: subjectChannel ? 40 : 20,
+      isOffline: subjectChannel,
+      isStale: subjectChannel,
+      error: subjectChannel
+          ? const PaperCatalogError(
+              kind: PaperCatalogErrorKind.network,
+              message: 'offline',
+            )
+          : null,
+    );
+  }
+
+  @override
+  Future<PaperPage> search(PaperSearchQuery query) async =>
+      PaperPage(papers: const [], source: PaperPageSource.remote);
+}
+
+class _ConcurrentRefreshCatalogRepository implements PaperCatalogRepository {
+  final _pagination = Completer<PaperPage>();
+  final _refresh = Completer<PaperPage>();
+  var _initialLoaded = false;
+
+  void completeRefresh() {
+    _refresh.complete(
+      PaperPage(papers: const [], source: PaperPageSource.remote),
+    );
+  }
+
+  void completePagination() {
+    _pagination.complete(
+      PaperPage(
+        papers: [_catalogPaper('stale-pagination')],
+        source: PaperPageSource.remote,
+      ),
+    );
+  }
+
+  @override
+  Future<Paper?> findById(String paperId) async => null;
+
+  @override
+  Future<PaperPage> loadFeed(PaperFeedQuery query) {
+    if (!_initialLoaded) {
+      _initialLoaded = true;
+      return Future.value(
+        PaperPage(
+          papers: [_catalogPaper('initial-page')],
+          source: PaperPageSource.remote,
+          nextOffset: 20,
+        ),
+      );
+    }
+    if (query.offset > 0) return _pagination.future;
+    return _refresh.future;
+  }
+
+  @override
+  Future<PaperPage> search(PaperSearchQuery query) async =>
+      PaperPage(papers: const [], source: PaperPageSource.remote);
+}
+
+class _ReloadPaperCatalogRepository implements PaperCatalogRepository {
+  int loadCalls = 0;
+
+  @override
+  Future<Paper?> findById(String paperId) async => null;
+
+  @override
+  Future<PaperPage> loadFeed(PaperFeedQuery query) async {
+    loadCalls++;
+    return PaperPage(
+      papers: [_catalogPaper('reload-$loadCalls')],
+      source: PaperPageSource.remote,
+    );
+  }
+
+  @override
+  Future<PaperPage> search(PaperSearchQuery query) async =>
+      PaperPage(papers: const [], source: PaperPageSource.remote);
+}
+
 class _BlockingPaperCatalogRepository implements PaperCatalogRepository {
   final _feed = Completer<PaperPage>();
 
@@ -589,6 +846,31 @@ class _BlockingPaperCatalogRepository implements PaperCatalogRepository {
   @override
   Future<PaperPage> search(PaperSearchQuery query) async =>
       PaperPage(papers: const [], source: PaperPageSource.remote);
+}
+
+class _BlockingPaperPreferenceRepository implements PaperPreferenceRepository {
+  final _load = Completer<PaperPreferences>();
+
+  void complete(PaperPreferences preferences) => _load.complete(preferences);
+
+  @override
+  Future<PaperPreferences> load() => _load.future;
+
+  @override
+  Future<void> save(PaperPreferences preferences) async {}
+}
+
+class _FlakyPaperPreferenceRepository implements PaperPreferenceRepository {
+  int saveCalls = 0;
+
+  @override
+  Future<PaperPreferences> load() async => PaperPreferences();
+
+  @override
+  Future<void> save(PaperPreferences preferences) async {
+    saveCalls++;
+    if (saveCalls == 1) throw StateError('disk unavailable');
+  }
 }
 
 class _PagedPaperCatalogRepository implements PaperCatalogRepository {
@@ -625,7 +907,12 @@ class _PagedPaperCatalogRepository implements PaperCatalogRepository {
       PaperPage(papers: const [], source: PaperPageSource.remote);
 }
 
-Paper _catalogPaper(String id, {String? title}) => Paper(
+Paper _catalogPaper(
+  String id, {
+  String? title,
+  DateTime? publishedAt,
+}) =>
+    Paper(
       id: id,
       title: title ?? 'Paper $id',
       authors: const ['Researcher'],
@@ -634,6 +921,6 @@ Paper _catalogPaper(String id, {String? title}) => Paper(
       abstractText: 'Abstract for $id.',
       chineseAbstractMarkdown: '',
       readMinutes: 3,
-      publishedAt: DateTime.utc(2026, 1, 1),
+      publishedAt: publishedAt ?? DateTime.utc(2026, 1, 1),
       source: 'arxiv',
     );

@@ -2,14 +2,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:spark/src/app/spark_dependencies.dart';
 import 'package:spark/src/features/ai_settings/data/secure_deepseek_credential_repository.dart';
 import 'package:spark/src/core/theme/file_theme_preference_repository.dart';
-import 'package:spark/src/features/chat/domain/chat_context.dart';
-import 'package:spark/src/features/papers/application/paper_ai_service.dart';
+import 'package:spark/src/features/chat/chat.dart';
+import 'package:spark/src/features/chat/data/deepseek_chat_ai_service.dart';
+import 'package:spark/src/features/chat/data/deepseek_web_search_chat_ai_service.dart';
+import 'package:spark/src/features/chat/data/file_chat_session_repository.dart';
 import 'package:spark/src/features/papers/domain/paper.dart';
 import 'package:spark/src/features/papers/domain/paper_repository.dart';
 import 'package:spark/src/features/papers/data/arxiv_seed_repository.dart';
-import 'package:spark/src/features/papers/data/deepseek_paper_ai_service.dart';
-import 'package:spark/src/features/papers/data/deepseek_web_search_ai_service.dart';
-import 'package:spark/src/features/papers/data/file_paper_ai_session_repository.dart';
 import 'package:spark/src/features/papers/data/file_paper_comment_repository.dart';
 import 'package:spark/src/features/papers/data/file_paper_interaction_repository.dart';
 import 'package:spark/src/features/papers/data/file_paper_preference_repository.dart';
@@ -42,21 +41,20 @@ void main() {
     );
     expect(dependencies.readingRepository, isA<FilePaperReadingRepository>());
     expect(dependencies.shareService, isA<PlatformPaperShareService>());
-    expect(dependencies.aiService, isA<DeepSeekPaperAiService>());
+    expect(dependencies.aiService, isA<DeepSeekChatAiService>());
     expect(
       dependencies.webSearchAiService,
-      isA<DeepSeekWebSearchAiService>(),
+      isA<DeepSeekWebSearchChatAiService>(),
     );
-    expect(
-        dependencies.aiSessionRepository, isA<FilePaperAiSessionRepository>());
+    expect(dependencies.aiSessionRepository, isA<FileChatSessionRepository>());
     expect(
       dependencies.translationRepository,
       isA<FilePaperTranslationRepository>(),
     );
-    expect(dependencies.mainAiService, isA<DeepSeekPaperAiService>());
+    expect(dependencies.mainAiService, isA<DeepSeekChatAiService>());
     expect(
       dependencies.mainWebSearchAiService,
-      isA<DeepSeekWebSearchAiService>(),
+      isA<DeepSeekWebSearchChatAiService>(),
     );
     expect(
       dependencies.themePreferenceRepository,
@@ -102,11 +100,11 @@ class _FakePaperRepository implements PaperRepository {
   List<Paper> getAll() => const [];
 }
 
-class _FakeAiService implements PaperAiService {
+class _FakeAiService implements ChatAiService {
   @override
   Future<String> answer({
     required ChatContext context,
-    required List<PaperAiMessage> conversation,
+    required List<ChatMessage> conversation,
   }) async {
     return '';
   }

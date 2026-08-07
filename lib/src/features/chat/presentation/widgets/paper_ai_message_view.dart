@@ -1,16 +1,16 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../../core/platform/spark_clipboard.dart';
 import '../../../../core/widgets/spark_markdown.dart';
 import '../../domain/chat_message.dart';
 import '../paper_ai_ui_tokens.dart';
 import 'paper_ai_model_avatar.dart';
 
-class PaperAiMessageView extends StatelessWidget {
-  const PaperAiMessageView({
+class ChatMessageView extends StatelessWidget {
+  const ChatMessageView({
     super.key,
     required this.message,
     required this.streaming,
@@ -115,9 +115,9 @@ class _UserMessage extends StatelessWidget {
                   color: PaperAiUiTokens.userBubble(context),
                   borderRadius: BorderRadius.circular(18),
                 ),
-                child: PaperMarkdown(
+                child: SparkMarkdown(
                   data: message.content,
-                  styleSheet: paperAiMarkdownStyle(
+                  styleSheet: sparkMarkdownStyle(
                     color: Theme.of(context).colorScheme.onPrimaryContainer,
                   ),
                   selectable: false,
@@ -208,9 +208,9 @@ class _AssistantMessage extends StatelessWidget {
               ),
             ),
           if (message.content.isNotEmpty)
-            PaperMarkdown(
+            SparkMarkdown(
               data: message.content,
-              styleSheet: paperAiMarkdownStyle(
+              styleSheet: sparkMarkdownStyle(
                 color: Theme.of(context).colorScheme.onSurface,
               ),
               stabilizeGeneratedSyntax: true,
@@ -400,7 +400,7 @@ class _MessageActionRow extends StatelessWidget {
     // COT/reasoning is an internal trace and must never enter the clipboard.
     final text = message.content;
     if (text.trim().isEmpty) return;
-    await Clipboard.setData(ClipboardData(text: text));
+    await platformSparkClipboard.copyText(text);
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('已复制消息')),
@@ -590,9 +590,9 @@ class _ReasoningPanelState extends State<_ReasoningPanel> {
                           ),
                         ),
                       ),
-                      child: PaperMarkdown(
+                      child: SparkMarkdown(
                         data: widget.reasoning,
-                        styleSheet: paperAiMarkdownStyle(
+                        styleSheet: sparkMarkdownStyle(
                           color: PaperAiUiTokens.assistantReasoningText(
                             context,
                           ),

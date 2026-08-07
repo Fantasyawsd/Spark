@@ -119,30 +119,65 @@ class LocalJsonStoreTransaction {
 
   Future<int> sizeInBytes() async {
     await _recoverInterruptedReplacement();
-    final exists = await _storageOperation(
-      _file.exists,
-      message: '无法检查本地数据。',
+    final files = await _managedFiles();
+    final sizes = await Future.wait<int>(
+      files.map(
+        (file) => _storageOperation(
+          file.length,
+          message: '无法统计本地数据占用。',
+        ),
+      ),
     );
-    if (!exists) return 0;
+    return sizes.fold<int>(0, (total, size) => total + size);
+  }
+
+  Future<List<File>> _managedFiles() async {
+    final directoryExists = await _storageOperation(
+      _file.parent.exists,
+      message: '无法检查本地数据目录。',
+    );
+    if (!directoryExists) return const [];
+    final targetName = _fileName(_file.path);
     return _storageOperation(
-      _file.length,
+      () async {
+        final files = <File>[];
+        await for (final entity in _file.parent.list(followLinks: false)) {
+          if (entity is! File) continue;
+          final candidateName = _fileName(entity.path);
+          if (_isManagedFileName(candidateName, targetName)) {
+            files.add(entity);
+          }
+        }
+        return files;
+      },
       message: '无法统计本地数据占用。',
     );
   }
 
   Future<void> clear() async {
-    await _recoverInterruptedReplacement();
-    final exists = await _storageOperation(
-      _file.exists,
-      message: '无法检查本地数据。',
-    );
-    if (exists) {
+    final files = await _managedFiles();
+    for (final file in files) {
       await _storageOperation(
-        _file.delete,
+        file.delete,
         message: '无法清除本地数据。',
       );
     }
-    await _deleteBestEffort(_recoveryFile);
+  }
+
+  static bool _isManagedFileName(String candidate, String target) {
+    if (Platform.isWindows) {
+      candidate = candidate.toLowerCase();
+      target = target.toLowerCase();
+    }
+    return candidate == target ||
+        candidate == '$target.previous' ||
+        candidate.startsWith('$target.corrupt.') ||
+        candidate.startsWith('$target.tmp.');
+  }
+
+  static String _fileName(String path) {
+    final separatorIndex = path.lastIndexOf(Platform.pathSeparator);
+    return separatorIndex < 0 ? path : path.substring(separatorIndex + 1);
   }
 
   Future<String?> quarantineCorruptFile() async {

@@ -1,7 +1,9 @@
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:spark/spark.dart';
+import 'package:spark/src/features/papers/application/paper_interaction_controller.dart';
+import 'package:spark/src/features/papers/domain/favorite_group.dart';
+import 'package:spark/src/features/papers/domain/paper_interaction_repository.dart';
 
 void main() {
   test('latest failed interaction write rolls optimistic state back', () async {
@@ -35,6 +37,26 @@ void main() {
     expect(controller.isSaved('paper-1'), isTrue);
     expect(repository.snapshot.likedPaperIds, contains('paper-1'));
     expect(repository.snapshot.savedPaperIds, contains('paper-1'));
+    expect(controller.persistenceError, isNull);
+  });
+
+  test('interaction writes recover after an unexpected save failure', () async {
+    final repository = _ControlledInteractionRepository()
+      ..throwUnexpectedOnNextSave = true;
+    final controller = PaperInteractionController(repository: repository);
+    addTearDown(controller.dispose);
+    await controller.initialize();
+
+    controller.toggleLike('paper-1');
+    await expectLater(controller.flushPendingWrites(), completes);
+
+    expect(controller.isLiked('paper-1'), isFalse);
+    expect(controller.persistenceError, isNotNull);
+
+    controller.toggleLike('paper-1');
+    await expectLater(controller.flushPendingWrites(), completes);
+    expect(controller.isLiked('paper-1'), isTrue);
+    expect(repository.saveCalls, 2);
     expect(controller.persistenceError, isNull);
   });
 
@@ -132,6 +154,7 @@ class _ControlledInteractionRepository implements PaperInteractionRepository {
   PaperInteractionSnapshot snapshot;
   final Set<int> failSaveCalls = {};
   bool failNextSave = false;
+  bool throwUnexpectedOnNextSave = false;
   bool holdLoad = false;
   int _saveCalls = 0;
   Completer<void>? _loadCompleter;
@@ -151,6 +174,10 @@ class _ControlledInteractionRepository implements PaperInteractionRepository {
   @override
   Future<void> save(PaperInteractionSnapshot snapshot) async {
     _saveCalls++;
+    if (throwUnexpectedOnNextSave) {
+      throwUnexpectedOnNextSave = false;
+      throw StateError('disk unavailable');
+    }
     if (failNextSave || failSaveCalls.contains(_saveCalls)) {
       failNextSave = false;
       throw const PaperInteractionPersistenceException('保存失败');

@@ -2,7 +2,12 @@ import 'app_environment.dart';
 import 'feature_flags.dart';
 
 final class AppConfig {
-  const AppConfig({required this.environment, required this.features});
+  const AppConfig({
+    required this.environment,
+    required FeatureFlags features,
+  }) : features = environment == AppEnvironment.production
+            ? const FeatureFlags()
+            : features;
 
   const AppConfig.production()
       : environment = AppEnvironment.production,

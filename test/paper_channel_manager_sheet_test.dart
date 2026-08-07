@@ -8,6 +8,7 @@ void main() {
     WidgetTester tester, {
     List<UserPaperChannel> initial = const [],
     required ValueChanged<List<UserPaperChannel>> onChannelsChanged,
+    bool showConferenceChannels = false,
   }) async {
     await tester.pumpWidget(
       MaterialApp(
@@ -19,6 +20,7 @@ void main() {
                   context,
                   userChannels: initial,
                   onChannelsChanged: onChannelsChanged,
+                  showConferenceChannels: showConferenceChannels,
                 ),
                 child: const Text('open'),
               ),
@@ -51,7 +53,7 @@ void main() {
     expect(find.byKey(const ValueKey('paper-channel-manager-tabs')),
         findsOneWidget);
     expect(find.text('主题'), findsOneWidget);
-    expect(find.text('会议'), findsOneWidget);
+    expect(find.text('会议'), findsNothing);
     expect(
       find.descendant(
         of: find.byKey(const ValueKey('paper-channel-subject-cs.LG')),
@@ -103,7 +105,11 @@ void main() {
 
   testWidgets('conference tab is reachable by swipe and not addable',
       (tester) async {
-    await openSheet(tester, onChannelsChanged: (_) {});
+    await openSheet(
+      tester,
+      onChannelsChanged: (_) {},
+      showConferenceChannels: true,
+    );
 
     const hint = '会议频道尚未开放，真实会议数据源接入后可编辑。';
     expect(find.text(hint), findsNothing);

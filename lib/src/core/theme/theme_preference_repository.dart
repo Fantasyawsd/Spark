@@ -1,9 +1,9 @@
-import 'paper_theme_color.dart';
+import 'spark_theme_color.dart';
 
 abstract interface class ThemePreferenceRepository {
-  Future<PaperThemeColor?> load();
+  Future<SparkThemeColor?> load();
 
-  Future<void> save(PaperThemeColor color);
+  Future<void> save(SparkThemeColor color);
 }
 
 class ThemePreferencePersistenceException implements Exception {

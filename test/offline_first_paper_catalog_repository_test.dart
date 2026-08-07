@@ -1,5 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:spark/src/features/papers/data/cache/in_memory_paper_cache_store.dart';
+import 'package:spark/src/features/papers/data/cache/paper_cache_record.dart';
+import 'package:spark/src/features/papers/data/cache/paper_cache_store.dart';
 import 'package:spark/src/features/papers/data/offline_first_paper_catalog_repository.dart';
 import 'package:spark/src/features/papers/data/providers/arxiv/arxiv_atom_dto.dart';
 import 'package:spark/src/features/papers/data/providers/arxiv/arxiv_atom_client.dart';
@@ -132,6 +134,127 @@ void main() {
     expect(second?.id, '2401.00001');
     expect(remote.detailRequests, 1);
   });
+
+  test('findById refreshes an expired cached paper', () async {
+    var now = DateTime.utc(2024, 3, 1);
+    repository = OfflineFirstPaperCatalogRepository(
+      remoteSource: remote,
+      cacheStore: cache,
+      seedRepository: const ArxivSeedRepository(),
+      clock: () => now,
+      cachePolicy: const PaperCachePolicy(
+        detailTtl: Duration(hours: 1),
+      ),
+    );
+    remote.detail = _paper('2401.00001', title: 'First title');
+    await repository.findById('2401.00001');
+    now = DateTime.utc(2024, 3, 1, 2);
+    remote.detail = _paper('2401.00001', title: 'Updated title');
+
+    final refreshed = await repository.findById('2401.00001');
+
+    expect(refreshed?.title, 'Updated title');
+    expect(remote.detailRequests, 2);
+  });
+
+  test('findById falls back to an expired cache when remote fails', () async {
+    var now = DateTime.utc(2024, 3, 1);
+    repository = OfflineFirstPaperCatalogRepository(
+      remoteSource: remote,
+      cacheStore: cache,
+      seedRepository: const ArxivSeedRepository(),
+      clock: () => now,
+      cachePolicy: const PaperCachePolicy(
+        detailTtl: Duration(hours: 1),
+      ),
+    );
+    remote.detail = _paper('2401.00001', title: 'Cached title');
+    await repository.findById('2401.00001');
+    now = DateTime.utc(2024, 3, 1, 2);
+    remote.error = StateError('offline');
+
+    final fallback = await repository.findById('2401.00001');
+
+    expect(fallback?.title, 'Cached title');
+    expect(remote.detailRequests, 2);
+  });
+
+  test('cache read failures do not prevent a remote detail result', () async {
+    final failingCache = _FailingPaperCacheStore(failReads: true);
+    repository = OfflineFirstPaperCatalogRepository(
+      remoteSource: remote,
+      cacheStore: failingCache,
+      seedRepository: const ArxivSeedRepository(),
+    );
+    remote.detail = _paper('2401.00001', title: 'Remote title');
+
+    final paper = await repository.findById('2401.00001');
+
+    expect(paper?.title, 'Remote title');
+    expect(remote.detailRequests, 1);
+  });
+
+  test('cache write failures do not discard a remote detail result', () async {
+    final failingCache = _FailingPaperCacheStore(failWrites: true);
+    repository = OfflineFirstPaperCatalogRepository(
+      remoteSource: remote,
+      cacheStore: failingCache,
+      seedRepository: const ArxivSeedRepository(),
+    );
+    remote.detail = _paper('2401.00001', title: 'Remote title');
+
+    final paper = await repository.findById('2401.00001');
+
+    expect(paper?.title, 'Remote title');
+  });
+
+  test('cache write failures do not discard a remote feed result', () async {
+    repository = OfflineFirstPaperCatalogRepository(
+      remoteSource: remote,
+      cacheStore: _FailingPaperCacheStore(failWrites: true),
+      seedRepository: const ArxivSeedRepository(),
+    );
+    remote.feed = _page('2401.00001');
+
+    final page = await repository.loadFeed(
+      const PaperFeedQuery(category: 'cs.AI', limit: 10),
+    );
+
+    expect(page.source, PaperPageSource.remote);
+    expect(page.papers.single.id, '2401.00001');
+  });
+}
+
+class _FailingPaperCacheStore implements PaperCacheStore {
+  _FailingPaperCacheStore({this.failReads = false, this.failWrites = false});
+
+  final bool failReads;
+  final bool failWrites;
+
+  @override
+  Future<CachedPaperPageRecord?> readPage(String queryKey) async {
+    if (failReads) throw StateError('cache read failed');
+    return null;
+  }
+
+  @override
+  Future<PaperCacheRecord?> readPaper(String paperId) async {
+    if (failReads) throw StateError('cache read failed');
+    return null;
+  }
+
+  @override
+  Future<void> writePage({
+    required PaperPageCacheRecord page,
+    required Iterable<PaperCacheRecord> papers,
+  }) async {
+    if (failWrites) throw StateError('cache write failed');
+  }
+
+  @override
+  Future<void> writePaper(PaperCacheRecord paper) async {
+    if (failWrites) throw StateError('cache write failed');
+  }
 }
 
 class _FakeArxivSource implements ArxivCatalogSource {
@@ -186,10 +309,10 @@ ArxivAtomPageDto _page(String id) {
   );
 }
 
-ArxivAtomPaperDto _paper(String id) {
+ArxivAtomPaperDto _paper(String id, {String title = 'Remote paper'}) {
   return ArxivAtomPaperDto(
     id: id,
-    title: 'Remote paper',
+    title: title,
     summary: 'A remote abstract.',
     authors: const ['Remote Author'],
     affiliations: const ['Spark Lab'],

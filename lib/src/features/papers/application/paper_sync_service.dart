@@ -1,16 +1,16 @@
 import '../domain/paper.dart';
+import '../domain/paper_enhancement.dart';
 import '../domain/paper_sync_ports.dart';
-import 'arxiv_paper_mapper.dart';
 
 class ArxivPaperSyncService {
   ArxivPaperSyncService({
-    required this.metadataSource,
+    required this.paperSource,
     required this.stateStore,
     required this.paperStore,
     this.enhancementSource,
   });
 
-  final ArxivMetadataSource metadataSource;
+  final ArxivPaperSource paperSource;
   final PaperEnhancementSource? enhancementSource;
   final PaperSyncStateStore stateStore;
   final PaperStore paperStore;
@@ -22,24 +22,26 @@ class ArxivPaperSyncService {
     DateTime? latest = state.lastDatestamp;
 
     do {
-      final page = await metadataSource.listRecords(
+      final page = await paperSource.listRecords(
         set: set,
         from: token == null ? state.lastDatestamp : null,
         until: token == null ? until : null,
         resumptionToken: token,
       );
       final papers = <Paper>[];
-      for (final metadata in page.records) {
-        var record = metadata.toPaper();
+      for (final paper in page.papers) {
+        var record = paper;
         final enhancement = await enhancementSource?.findByArxivId(
-          metadata.normalizedId,
+          paper.arxivId ?? paper.id,
         );
         if (enhancement != null) {
-          record = record.copyWithEnhancement(enhancement);
+          record = record.applyEnhancement(enhancement);
         }
         papers.add(record);
-        if (latest == null || metadata.updatedAt.isAfter(latest)) {
-          latest = metadata.updatedAt;
+        final updatedAt = paper.updatedAt;
+        if (updatedAt != null &&
+            (latest == null || updatedAt.isAfter(latest))) {
+          latest = updatedAt;
         }
       }
       if (papers.isNotEmpty) await paperStore.upsert(papers);

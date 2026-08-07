@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
 
-import '../../application/paper_ai_service.dart';
-import '../../application/paper_ai_session_repository.dart';
+import '../../../chat/chat.dart';
 import '../../application/paper_comment_controller.dart';
 import '../../application/paper_interaction_controller.dart';
 import '../../application/paper_keyword_service.dart';
-import '../../application/paper_link_service.dart';
 import '../../application/paper_reading_controller.dart';
 import '../../application/paper_share_service.dart';
 import '../../application/paper_translation_service.dart';
 import '../../domain/paper.dart';
+import '../../domain/paper_keyword_repository.dart';
+import '../../domain/paper_link_service.dart';
+import '../../domain/paper_share.dart';
+import '../paper_ai_discussion_builder.dart';
 import 'paper_comments_sheet.dart';
 import 'paper_favorite_group_sheet.dart';
 import 'paper_reader_card.dart';
@@ -22,11 +24,9 @@ class PaperReaderView extends StatelessWidget {
     required this.interactionController,
     required this.commentController,
     required this.readingController,
-    required this.aiService,
+    required this.aiDiscussionBuilder,
     required this.keywordService,
     required this.translationServiceFactory,
-    this.webSearchAiService,
-    this.aiSessionRepository,
     this.translationRepository,
     this.keywordRepository,
     this.shareService,
@@ -41,10 +41,8 @@ class PaperReaderView extends StatelessWidget {
   final PaperInteractionController interactionController;
   final PaperCommentController commentController;
   final PaperReadingController readingController;
-  final PaperAiService aiService;
-  final PaperAiService keywordService;
-  final PaperAiService? webSearchAiService;
-  final PaperAiSessionRepository? aiSessionRepository;
+  final PaperAiDiscussionBuilder aiDiscussionBuilder;
+  final ChatAiService keywordService;
   final PaperTranslationServiceFactory translationServiceFactory;
   final PaperTranslationRepository? translationRepository;
   final PaperKeywordRepository? keywordRepository;
@@ -99,15 +97,20 @@ class PaperReaderView extends StatelessWidget {
     BuildContext context, {
     PaperSheetPage initialPage = PaperSheetPage.comments,
   }) async {
-    final keywords = await _loadGeneratedKeywords();
+    List<String> keywords;
+    try {
+      keywords = await _loadGeneratedKeywords();
+    } on Object {
+      if (!context.mounted) return;
+      _showMessage(context, '无法读取已生成的关键词，已使用空关键词继续');
+      keywords = const [];
+    }
     if (!context.mounted) return;
     showPaperCommentsSheet(
       context,
       paper,
       initialPage: initialPage,
-      aiService: aiService,
-      webSearchAiService: webSearchAiService,
-      aiSessionRepository: aiSessionRepository,
+      aiDiscussionBuilder: aiDiscussionBuilder,
       commentController: commentController,
       generatedKeywords: keywords,
     );

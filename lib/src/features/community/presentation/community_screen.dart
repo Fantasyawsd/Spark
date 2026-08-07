@@ -6,11 +6,12 @@ import '../../../core/theme/spark_theme.dart';
 import '../../../core/widgets/spark_tab_bar.dart';
 import '../../../core/widgets/profile_avatar.dart';
 import '../domain/community_post.dart';
-import '../data/community_post_seed.dart';
 import 'widgets/paper_diagram.dart';
 
 class CommunityScreen extends StatefulWidget {
-  const CommunityScreen({super.key});
+  const CommunityScreen({super.key, required this.posts});
+
+  final List<CommunityPost> posts;
 
   @override
   State<CommunityScreen> createState() => _CommunityScreenState();
@@ -59,9 +60,9 @@ class _CommunityScreenState extends State<CommunityScreen> {
                   mainAxisSpacing: 10,
                   crossAxisSpacing: 10,
                   padding: const EdgeInsets.fromLTRB(12, 8, 12, 92),
-                  itemCount: demoCommunityPosts.length,
+                  itemCount: widget.posts.length,
                   itemBuilder: (context, index) => _DiscoveryCard(
-                    post: demoCommunityPosts[index],
+                    post: widget.posts[index],
                     index: index,
                   ),
                 ),

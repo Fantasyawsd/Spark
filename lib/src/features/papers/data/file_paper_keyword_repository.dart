@@ -1,7 +1,7 @@
 import '../../../core/storage/local_json_store.dart';
 import '../../../core/storage/versioned_local_json_store.dart';
-import '../application/paper_keyword_service.dart';
 import '../domain/paper_keyword_record.dart';
+import '../domain/paper_keyword_repository.dart';
 import 'paper_keyword_json_mapper.dart';
 
 class FilePaperKeywordRepository implements PaperKeywordRepository {

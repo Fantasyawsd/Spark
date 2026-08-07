@@ -1,7 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:spark/src/features/chat/application/chat_ai_service.dart';
-import 'package:spark/src/features/chat/domain/chat_context.dart';
-import 'package:spark/src/features/chat/domain/chat_message.dart';
+import 'package:spark/src/features/chat/chat.dart';
 import 'package:spark/src/features/papers/application/paper_keyword_controller.dart';
 import 'package:spark/src/features/papers/application/paper_keyword_service.dart';
 import 'package:spark/src/features/papers/data/in_memory_paper_keyword_repository.dart';

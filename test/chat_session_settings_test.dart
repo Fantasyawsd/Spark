@@ -1,9 +1,13 @@
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
-import 'package:spark/src/features/chat/application/chat_ai_service.dart';
+import 'package:spark/src/core/storage/local_json_store.dart';
 import 'package:spark/src/features/chat/application/chat_conversation_controller.dart';
 import 'package:spark/src/features/chat/application/chat_prompt_assembler.dart';
 import 'package:spark/src/features/chat/application/chat_skills.dart';
 import 'package:spark/src/features/chat/data/in_memory_chat_session_settings_repository.dart';
+import 'package:spark/src/features/chat/domain/chat_ai_service.dart';
+import 'package:spark/src/features/chat/data/file_chat_session_settings_repository.dart';
 import 'package:spark/src/features/chat/domain/chat_context.dart';
 import 'package:spark/src/features/chat/domain/chat_session_settings.dart';
 import 'package:spark/src/features/chat/domain/chat_message.dart';
@@ -114,6 +118,35 @@ void main() {
       expect(reloaded.responseStyle, ChatResponseStyle.detailed);
       controller.dispose();
     });
+  });
+
+  test('file repository clears only the requested session settings', () async {
+    final directory = await Directory.systemTemp.createTemp(
+      'spark-chat-settings-clear-',
+    );
+    addTearDown(() => directory.delete(recursive: true));
+    final repository = FileChatSessionSettingsRepository(
+      store: LocalJsonStore(
+        fileName: 'settings.json',
+        file: File('${directory.path}${Platform.pathSeparator}settings.json'),
+      ),
+    );
+    await repository.save(
+      'paper-1',
+      const ChatSessionSettings(customSystemPrompt: '删除我'),
+    );
+    await repository.save(
+      'paper-2',
+      const ChatSessionSettings(customSystemPrompt: '保留我'),
+    );
+
+    await repository.clear('paper-1');
+
+    expect((await repository.load('paper-1')).hasCustomizations, isFalse);
+    expect(
+      (await repository.load('paper-2')).customSystemPrompt,
+      '保留我',
+    );
   });
 }
 

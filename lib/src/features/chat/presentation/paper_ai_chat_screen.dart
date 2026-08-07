@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../application/chat_ai_service.dart';
 import '../application/chat_skills.dart';
 import '../application/chat_conversation_controller.dart';
+import '../domain/chat_ai_service.dart';
 import '../domain/chat_context.dart';
 import '../domain/chat_session_repository.dart';
 import '../domain/chat_session_settings.dart';
@@ -193,20 +193,23 @@ class _PaperAiChatScreenState extends State<PaperAiChatScreen> {
     final loader = widget.onLoadFullText;
     if (loader == null) return;
     setState(() => _fullTextLoading = true);
+    String? errorMessage;
     try {
       final nextContext = await loader();
       if (!mounted) return;
       if (_conversation.replaceContext(nextContext)) {
-        setState(() {
-          _fullTextEnabled = true;
-          _fullTextLoading = false;
-        });
+        _fullTextEnabled = true;
+      } else {
+        errorMessage = '全文上下文与当前会话不匹配，请重试。';
       }
-    } on Exception {
-      if (!mounted) return;
-      setState(() => _fullTextLoading = false);
+    } catch (_) {
+      errorMessage = '无法读取论文全文，请稍后重试。';
+    } finally {
+      if (mounted) setState(() => _fullTextLoading = false);
+    }
+    if (mounted && errorMessage != null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('无法读取论文全文，请稍后重试。')),
+        SnackBar(content: Text(errorMessage)),
       );
     }
   }

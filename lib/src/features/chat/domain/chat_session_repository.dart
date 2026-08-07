@@ -13,9 +13,6 @@ class ChatSessionSummary {
 
   final String contextId;
 
-  @Deprecated('Use contextId. This alias remains during the chat migration.')
-  String get paperId => contextId;
-
   final int messageCount;
   final String preview;
   final DateTime updatedAt;

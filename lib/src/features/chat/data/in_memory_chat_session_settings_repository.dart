@@ -13,4 +13,9 @@ class InMemoryChatSessionSettingsRepository
   Future<void> save(String contextId, ChatSessionSettings settings) async {
     _store[contextId] = settings;
   }
+
+  @override
+  Future<void> clear(String contextId) async {
+    _store.remove(contextId);
+  }
 }

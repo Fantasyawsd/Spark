@@ -4,8 +4,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:spark/spark.dart';
-import 'package:spark/src/features/chat/domain/chat_context.dart';
+import 'package:spark/src/features/chat/data/in_memory_chat_session_repository.dart';
+import 'package:spark/src/features/chat/presentation/paper_ai_discussion_view.dart';
+import 'package:spark/src/features/papers/application/paper_chat_context.dart';
+import 'package:spark/src/features/papers/data/arxiv_seed_repository.dart';
+import 'package:spark/src/features/papers/data/demo_paper_repository.dart';
+import 'package:spark/src/features/papers/data/in_memory_paper_comment_repository.dart';
+import 'package:spark/src/features/papers/data/in_memory_paper_interaction_repository.dart';
+import 'package:spark/src/features/papers/data/in_memory_paper_reading_repository.dart';
+import 'package:spark/src/features/papers/presentation/paper_ai_discussion_builder.dart';
+import 'package:spark/src/features/papers/presentation/papers_screen.dart';
+import 'package:spark/src/features/papers/presentation/widgets/paper_action_bar.dart';
+import 'package:spark/src/features/papers/presentation/widgets/paper_comments_sheet.dart';
 import 'package:spark/src/features/papers/presentation/widgets/paper_reader_view.dart';
+import 'package:spark/src/features/search/data/in_memory_paper_search_history_repository.dart';
 
 void main() {
   testWidgets('paper title copies on tap while body remains selectable',
@@ -479,7 +491,10 @@ void main() {
             feedController: longController.feed,
             interactionController: longController.interactions,
             commentController: longComments,
-            aiService: const _FakePaperAiService(),
+            aiDiscussionBuilder: _paperAiDiscussionBuilder(
+              const _FakeChatAiService(),
+            ),
+            keywordService: const _FakeChatAiService(),
             translationServiceFactory:
                 const _FakePaperTranslationServiceFactory(),
           ),
@@ -508,7 +523,10 @@ void main() {
             feedController: shortController.feed,
             interactionController: shortController.interactions,
             commentController: shortComments,
-            aiService: const _FakePaperAiService(),
+            aiDiscussionBuilder: _paperAiDiscussionBuilder(
+              const _FakeChatAiService(),
+            ),
+            keywordService: const _FakeChatAiService(),
             translationServiceFactory:
                 const _FakePaperTranslationServiceFactory(),
           ),
@@ -619,8 +637,9 @@ void main() {
     await tester.tap(find.text('AI 解析'));
     await tester.pumpAndSettle();
 
-    final aiContentSize =
-        tester.getSize(find.byKey(const ValueKey('paper-sheet-pages')));
+    final aiContentSize = tester.getSize(
+      find.byKey(const ValueKey('paper-ai-discussion-scroll')),
+    );
     expect(aiContentSize.height, greaterThan(0));
     expect(aiContentSize.height, lessThanOrEqualTo(contentSize.height));
     expect(find.text('解释核心方法'), findsNothing);
@@ -642,7 +661,9 @@ void main() {
               onPressed: () => showPaperCommentsSheet(
                 context,
                 demoPapers.first,
-                aiService: const _FakePaperAiService(),
+                aiDiscussionBuilder: _paperAiDiscussionBuilder(
+                  const _FakeChatAiService(),
+                ),
                 commentController: comments,
               ),
               child: const Text('打开评论'),
@@ -687,7 +708,9 @@ void main() {
               onPressed: () => showPaperCommentsSheet(
                 context,
                 demoPapers.first,
-                aiService: const _FakePaperAiService(),
+                aiDiscussionBuilder: _paperAiDiscussionBuilder(
+                  const _FakeChatAiService(),
+                ),
                 commentController: comments,
               ),
               child: const Text('打开失败评论'),
@@ -731,7 +754,7 @@ void main() {
       MaterialApp(
         home: SparkShell(
           interactionRepository: repository,
-          aiService: const _FakePaperAiService(),
+          aiService: const _FakeChatAiService(),
         ),
       ),
     );
@@ -798,7 +821,9 @@ void main() {
               onPressed: () => showPaperCommentsSheet(
                 context,
                 demoPapers.first,
-                aiService: const _FakePaperAiService(),
+                aiDiscussionBuilder: _paperAiDiscussionBuilder(
+                  const _FakeChatAiService(),
+                ),
                 commentController: comments,
               ),
               child: const Text('打开持久评论'),
@@ -871,7 +896,10 @@ void main() {
             feedController: feed,
             interactionController: interactions,
             commentController: comments,
-            aiService: const _FakePaperAiService(),
+            aiDiscussionBuilder: _paperAiDiscussionBuilder(
+              const _FakeChatAiService(),
+            ),
+            keywordService: const _FakeChatAiService(),
             translationServiceFactory:
                 const _FakePaperTranslationServiceFactory(),
             shareService: shareService,
@@ -917,7 +945,10 @@ void main() {
             feedController: feed,
             interactionController: interactions,
             commentController: comments,
-            aiService: const _FakePaperAiService(),
+            aiDiscussionBuilder: _paperAiDiscussionBuilder(
+              const _FakeChatAiService(),
+            ),
+            keywordService: const _FakeChatAiService(),
             translationServiceFactory:
                 const _FakePaperTranslationServiceFactory(),
           ),
@@ -1029,17 +1060,17 @@ void main() {
       (tester) async {
     await tester.binding.setSurfaceSize(const Size(378, 810));
     addTearDown(() => tester.binding.setSurfaceSize(null));
-    final repository = InMemoryPaperAiSessionRepository();
+    final repository = InMemoryChatSessionRepository();
     final paper = const ArxivSeedRepository().getAll().first;
     await repository.save(paper.id, const [
-      PaperAiMessage(fromUser: true, content: '解释这篇论文'),
-      PaperAiMessage(fromUser: false, content: '这是论文回答'),
+      ChatMessage(fromUser: true, content: '解释这篇论文'),
+      ChatMessage(fromUser: false, content: '这是论文回答'),
     ]);
 
     await tester.pumpWidget(
       MaterialApp(
         home: SparkShell(
-          aiService: const _FakePaperAiService(),
+          aiService: const _FakeChatAiService(),
           aiSessionRepository: repository,
         ),
       ),
@@ -1066,7 +1097,7 @@ void main() {
     await tester.pumpWidget(
       const MaterialApp(
         home: SparkShell(
-          aiService: _FakePaperAiService(),
+          aiService: _FakeChatAiService(),
         ),
       ),
     );
@@ -1085,17 +1116,17 @@ void main() {
   testWidgets('AI session left swipe can pin and delete', (tester) async {
     await tester.binding.setSurfaceSize(const Size(378, 810));
     addTearDown(() => tester.binding.setSurfaceSize(null));
-    final repository = InMemoryPaperAiSessionRepository();
+    final repository = InMemoryChatSessionRepository();
     final paper = const ArxivSeedRepository().getAll().first;
     await repository.save(paper.id, const [
-      PaperAiMessage(fromUser: true, content: '分析这篇论文'),
-      PaperAiMessage(fromUser: false, content: '会话回答'),
+      ChatMessage(fromUser: true, content: '分析这篇论文'),
+      ChatMessage(fromUser: false, content: '会话回答'),
     ]);
 
     await tester.pumpWidget(
       MaterialApp(
         home: SparkShell(
-          aiService: const _FakePaperAiService(),
+          aiService: const _FakeChatAiService(),
           aiSessionRepository: repository,
         ),
       ),
@@ -1236,13 +1267,31 @@ class _FakePaperShareService implements PaperShareService {
   }
 }
 
-class _FakePaperAiService implements PaperAiService {
-  const _FakePaperAiService();
+PaperAiDiscussionBuilder _paperAiDiscussionBuilder(ChatAiService service) {
+  return (
+    context, {
+    required paper,
+    required generatedKeywords,
+    required scrollController,
+  }) {
+    return PaperAiDiscussionView(
+      chatContext: PaperChatContext.fromPaper(
+        paper,
+        generatedKeywords: generatedKeywords,
+      ),
+      aiService: service,
+      scrollController: scrollController,
+    );
+  };
+}
+
+class _FakeChatAiService implements ChatAiService {
+  const _FakeChatAiService();
 
   @override
   Future<String> answer({
     required ChatContext context,
-    required List<PaperAiMessage> conversation,
+    required List<ChatMessage> conversation,
   }) async {
     await Future<void>.delayed(const Duration(milliseconds: 150));
     return '**DeepSeek Markdown**\n\n- ${context.title}\n- ${conversation.last.content}';

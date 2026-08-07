@@ -1,38 +1,32 @@
+import 'dart:convert';
+
 import '../domain/paper.dart';
+import '../domain/paper_translation.dart';
 
-abstract interface class PaperTranslationService {
-  Stream<String> translateAbstract(Paper paper);
+export '../domain/paper_translation.dart';
 
-  void cancelActiveTranslation();
+const paperTranslationPromptVersion = 1;
+const _fingerprintSeparator = '|spark-translation|';
+
+String paperTranslationInputFingerprint(Paper paper) {
+  final bytes = utf8.encode(
+    '${paper.title.trim()}$_fingerprintSeparator'
+    '${paper.content.originalAbstractMarkdown.trim()}',
+  );
+  var hash = 0xcbf29ce484222325;
+  for (final byte in bytes) {
+    hash ^= byte;
+    hash = (hash * 0x100000001b3) & 0xFFFFFFFFFFFFFFFF;
+  }
+  return hash.toRadixString(16).padLeft(16, '0');
 }
 
-abstract interface class PaperTranslationServiceFactory {
-  PaperTranslationService create();
-}
-
-class PaperTranslationException implements Exception {
-  const PaperTranslationException(this.message);
-
-  final String message;
-
-  @override
-  String toString() => message;
-}
-
-abstract interface class PaperTranslationRepository {
-  Future<String?> load(String paperId);
-
-  Future<void> save(String paperId, String markdown);
-
-  Future<void> clear(String paperId);
-}
-
-class PaperTranslationPersistenceException implements Exception {
-  const PaperTranslationPersistenceException(this.message, [this.cause]);
-
-  final String message;
-  final Object? cause;
-
-  @override
-  String toString() => message;
+bool isPaperTranslationRecordFresh(
+  PaperTranslationRecord record,
+  Paper paper,
+) {
+  return record.paperId == paper.id &&
+      record.promptVersion == paperTranslationPromptVersion &&
+      record.inputFingerprint == paperTranslationInputFingerprint(paper) &&
+      record.markdown.trim().isNotEmpty;
 }

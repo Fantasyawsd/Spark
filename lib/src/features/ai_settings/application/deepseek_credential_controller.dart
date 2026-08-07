@@ -96,7 +96,10 @@ class DeepSeekCredentialController extends ChangeNotifier {
   }
 
   static String _mask(String value) {
-    if (value.length <= 8) return '${value.substring(0, 2)}••••';
+    if (value.length <= 8) {
+      final prefixLength = value.length < 2 ? value.length : 2;
+      return '${value.substring(0, prefixLength)}••••';
+    }
     return '${value.substring(0, 3)}••••${value.substring(value.length - 4)}';
   }
 

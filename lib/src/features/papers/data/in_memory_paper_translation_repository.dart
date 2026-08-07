@@ -1,14 +1,15 @@
-import '../application/paper_translation_service.dart';
+import '../domain/paper_translation.dart';
 
 class InMemoryPaperTranslationRepository implements PaperTranslationRepository {
-  final Map<String, String> _translations = {};
+  final Map<String, PaperTranslationRecord> _translations = {};
 
   @override
-  Future<String?> load(String paperId) async => _translations[paperId];
+  Future<PaperTranslationRecord?> load(String paperId) async =>
+      _translations[paperId];
 
   @override
-  Future<void> save(String paperId, String markdown) async {
-    _translations[paperId] = markdown;
+  Future<void> save(PaperTranslationRecord record) async {
+    _translations[record.paperId] = record;
   }
 
   @override

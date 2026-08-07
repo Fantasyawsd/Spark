@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:spark/src/core/widgets/spark_markdown.dart';
-import 'package:spark/src/features/chat/domain/chat_message.dart';
+import 'package:spark/src/features/chat/chat.dart';
 import 'package:spark/src/features/chat/presentation/widgets/paper_ai_message_view.dart';
 
 void main() {
@@ -16,14 +16,14 @@ void main() {
     );
   }
 
-  PaperMarkdown markdownOf(WidgetTester tester) {
-    return tester.widget<PaperMarkdown>(find.byType(PaperMarkdown).first);
+  SparkMarkdown markdownOf(WidgetTester tester) {
+    return tester.widget<SparkMarkdown>(find.byType(SparkMarkdown).first);
   }
 
   testWidgets('assistant content stays non-selectable while streaming',
       (tester) async {
     await tester.pumpWidget(
-      wrap(PaperAiMessageView(
+      wrap(ChatMessageView(
         message: const ChatMessage(fromUser: false, content: '正在生成…'),
         streaming: true,
         searching: false,
@@ -36,7 +36,7 @@ void main() {
   testWidgets('assistant content stays non-selectable after streaming ends',
       (tester) async {
     await tester.pumpWidget(
-      wrap(PaperAiMessageView(
+      wrap(ChatMessageView(
         message: const ChatMessage(fromUser: false, content: '回答完成'),
         streaming: false,
         searching: false,
@@ -64,7 +64,7 @@ void main() {
 
     await tester.pumpWidget(
       wrap(
-        PaperAiMessageView(
+        ChatMessageView(
           message: const ChatMessage(
             fromUser: false,
             reasoningContent: 'internal chain of thought',
@@ -85,7 +85,7 @@ void main() {
 
   testWidgets('reasoning panel is not selectable', (tester) async {
     await tester.pumpWidget(
-      wrap(PaperAiMessageView(
+      wrap(ChatMessageView(
         message: const ChatMessage(
           fromUser: false,
           content: '',
@@ -104,7 +104,7 @@ void main() {
     var toggled = false;
     await tester.pumpWidget(
       wrap(
-        PaperAiMessageView(
+        ChatMessageView(
           message: const ChatMessage(fromUser: false, content: '回答'),
           streaming: false,
           searching: false,
@@ -127,14 +127,14 @@ void main() {
       wrap(
         Column(
           children: [
-            PaperAiMessageView(
+            ChatMessageView(
               message: const ChatMessage(fromUser: true, content: '用户问题'),
               streaming: false,
               searching: false,
               isLatest: true,
               onEdit: () {},
             ),
-            PaperAiMessageView(
+            ChatMessageView(
               message: const ChatMessage(fromUser: false, content: '旧回答'),
               streaming: false,
               searching: false,
@@ -142,7 +142,7 @@ void main() {
               onRetry: () {},
               onDelete: () {},
             ),
-            PaperAiMessageView(
+            ChatMessageView(
               message: const ChatMessage(fromUser: false, content: '最新回答'),
               streaming: false,
               searching: false,

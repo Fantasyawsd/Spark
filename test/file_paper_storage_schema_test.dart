@@ -2,9 +2,16 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:spark/spark.dart';
 import 'package:spark/src/core/storage/local_json_store.dart';
 import 'package:spark/src/core/storage/versioned_local_json_store.dart';
+import 'package:spark/src/features/papers/application/paper_translation_service.dart';
+import 'package:spark/src/features/papers/data/cache/paper_record_cache_policy.dart';
+import 'package:spark/src/features/papers/data/file_paper_interaction_repository.dart';
+import 'package:spark/src/features/papers/data/file_paper_preference_repository.dart';
+import 'package:spark/src/features/papers/data/file_paper_translation_repository.dart';
+import 'package:spark/src/features/papers/domain/favorite_group.dart';
+import 'package:spark/src/features/papers/domain/paper_interaction_repository.dart';
+import 'package:spark/src/features/papers/domain/paper_preference_repository.dart';
 
 void main() {
   late Directory directory;
@@ -50,7 +57,7 @@ void main() {
     expect(envelope['schemaVersion'], 2);
   });
 
-  test('translation repository rejects non-string cached translations',
+  test('translation repository rejects malformed cached translations',
       () async {
     final file = _file(directory, 'translations.json');
     await file.writeAsString(jsonEncode({'paper-1': 42}));
@@ -63,6 +70,115 @@ void main() {
       throwsA(isA<PaperTranslationPersistenceException>()),
     );
     expect(await file.exists(), isFalse);
+  });
+
+  test('translation repository persists freshness metadata', () async {
+    final file = _file(directory, 'translation-records.json');
+    final generatedAt = DateTime.utc(2026, 8, 7, 12);
+    final repository = FilePaperTranslationRepository(
+      store: LocalJsonStore(fileName: 'unused.json', file: file),
+      clock: () => generatedAt,
+    );
+    final record = PaperTranslationRecord(
+      paperId: 'paper-1',
+      markdown: '中文翻译',
+      inputFingerprint: '0123456789abcdef',
+      promptVersion: paperTranslationPromptVersion,
+      generatedAt: generatedAt,
+    );
+
+    await repository.save(record);
+    final restored = await repository.load(record.paperId);
+
+    expect(restored?.markdown, record.markdown);
+    expect(restored?.inputFingerprint, record.inputFingerprint);
+    expect(restored?.promptVersion, record.promptVersion);
+    expect(restored?.generatedAt, generatedAt);
+    final envelope = jsonDecode(await file.readAsString()) as Map;
+    expect(envelope['schemaVersion'], 2);
+  });
+
+  test('translation load rejects a record after its TTL', () async {
+    final file = _file(directory, 'translation-ttl.json');
+    var now = DateTime.utc(2026, 8, 7, 12);
+    final repository = FilePaperTranslationRepository(
+      store: LocalJsonStore(fileName: 'unused.json', file: file),
+      clock: () => now,
+      policy: const PaperRecordCachePolicy(
+        ttl: Duration(hours: 1),
+        maxEntries: 10,
+      ),
+    );
+    await repository.save(_translationRecord('paper-1', generatedAt: now));
+
+    now = now.add(const Duration(hours: 1, microseconds: 1));
+
+    expect(await repository.load('paper-1'), isNull);
+  });
+
+  test('translation save prunes expired and oldest records', () async {
+    final file = _file(directory, 'translation-bounds.json');
+    final now = DateTime.utc(2026, 8, 7, 12);
+    final repository = FilePaperTranslationRepository(
+      store: LocalJsonStore(fileName: 'unused.json', file: file),
+      clock: () => now,
+      policy: const PaperRecordCachePolicy(
+        ttl: Duration(days: 1),
+        maxEntries: 2,
+      ),
+    );
+
+    await repository.save(
+      _translationRecord(
+        'expired',
+        generatedAt: now.subtract(const Duration(days: 2)),
+      ),
+    );
+    await repository.save(
+      _translationRecord(
+        'oldest',
+        generatedAt: now.subtract(const Duration(hours: 2)),
+      ),
+    );
+    await repository.save(
+      _translationRecord(
+        'middle',
+        generatedAt: now.subtract(const Duration(hours: 1)),
+      ),
+    );
+    await repository.save(_translationRecord('newest', generatedAt: now));
+
+    final envelope = jsonDecode(await file.readAsString()) as Map;
+    final payload = envelope['payload'] as Map;
+    expect(payload.keys, containsAll(<String>['middle', 'newest']));
+    expect(payload, isNot(contains('expired')));
+    expect(payload, isNot(contains('oldest')));
+    expect(payload, hasLength(2));
+  });
+
+  test('concurrent translation saves do not overwrite each other', () async {
+    final file = _file(directory, 'translation-concurrent.json');
+    final now = DateTime.utc(2026, 8, 7, 12);
+    FilePaperTranslationRepository repository() {
+      return FilePaperTranslationRepository(
+        store: LocalJsonStore(fileName: 'unused.json', file: file),
+        clock: () => now,
+        policy: const PaperRecordCachePolicy(
+          ttl: Duration(days: 1),
+          maxEntries: 10,
+        ),
+      );
+    }
+
+    final first = repository();
+    final second = repository();
+    await Future.wait([
+      first.save(_translationRecord('paper-1', generatedAt: now)),
+      second.save(_translationRecord('paper-2', generatedAt: now)),
+    ]);
+
+    expect(await first.load('paper-1'), isNotNull);
+    expect(await first.load('paper-2'), isNotNull);
   });
 
   test('interaction save cannot overwrite a future schema', () async {
@@ -153,4 +269,17 @@ void main() {
 
 File _file(Directory directory, String name) {
   return File('${directory.path}${Platform.pathSeparator}$name');
+}
+
+PaperTranslationRecord _translationRecord(
+  String paperId, {
+  required DateTime generatedAt,
+}) {
+  return PaperTranslationRecord(
+    paperId: paperId,
+    markdown: 'translation for $paperId',
+    inputFingerprint: 'fingerprint-$paperId',
+    promptVersion: paperTranslationPromptVersion,
+    generatedAt: generatedAt,
+  );
 }

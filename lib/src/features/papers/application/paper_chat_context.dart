@@ -1,4 +1,4 @@
-import '../../chat/domain/chat_context.dart';
+import '../../chat/chat.dart';
 import '../domain/paper.dart';
 import 'paper_ai_prompt_builder.dart';
 

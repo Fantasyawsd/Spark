@@ -1,7 +1,14 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:spark/spark.dart';
+import 'package:spark/src/features/papers/data/demo_paper_repository.dart';
+import 'package:spark/src/features/papers/domain/paper.dart';
+import 'package:spark/src/features/papers/domain/paper_catalog.dart';
+import 'package:spark/src/features/search/application/paper_search_controller.dart';
+import 'package:spark/src/features/search/data/file_paper_search_history_repository.dart';
+import 'package:spark/src/features/search/data/in_memory_paper_search_history_repository.dart';
+import 'package:spark/src/features/search/domain/paper_search_history_repository.dart';
 
 void main() {
   group('PaperSearchController', () {
@@ -142,9 +149,212 @@ void main() {
     });
   });
 
+  test('ignores stale pagination from an older same-term search', () async {
+    final papers = const DemoPaperRepository().getAll();
+    final catalog = _SequencedSearchCatalogRepository(
+      firstPaper: papers[0],
+      refreshedPaper: papers[1],
+      staleMorePaper: papers[2],
+    );
+    final controller = PaperSearchController(
+      papers: papers,
+      historyRepository: InMemoryPaperSearchHistoryRepository(),
+      catalogRepository: catalog,
+    );
+    addTearDown(controller.dispose);
+
+    await controller.submitQuery('same term');
+    final stalePagination = controller.loadMoreResults();
+    final refreshedSearch = controller.submitQuery('same term');
+    catalog.completeRefresh();
+    await refreshedSearch;
+
+    catalog.completeStalePagination();
+    await stalePagination;
+
+    expect(controller.results.map((paper) => paper.id), [papers[1].id]);
+    expect(controller.loadingMoreResults, isFalse);
+  });
+
+  test('a new first page immediately invalidates the previous next offset',
+      () async {
+    final papers = const DemoPaperRepository().getAll();
+    final catalog = _SequencedSearchCatalogRepository(
+      firstPaper: papers[0],
+      refreshedPaper: papers[1],
+      staleMorePaper: papers[2],
+    );
+    final controller = PaperSearchController(
+      papers: papers,
+      historyRepository: InMemoryPaperSearchHistoryRepository(),
+      catalogRepository: catalog,
+    );
+    addTearDown(controller.dispose);
+
+    await controller.submitQuery('same term');
+    expect(controller.hasMoreResults, isTrue);
+
+    final refreshedSearch = controller.submitQuery('same term');
+    final invalidatedImmediately = !controller.hasMoreResults;
+    final overlappingPagination = controller.loadMoreResults();
+    await Future<void>.delayed(Duration.zero);
+    catalog.completeRefresh();
+    catalog.completeStalePagination();
+    await Future.wait([refreshedSearch, overlappingPagination]);
+
+    expect(invalidatedImmediately, isTrue);
+    expect(catalog.paginationCalls, 0);
+    expect(controller.results.map((paper) => paper.id), [papers[1].id]);
+    expect(controller.loadingResults, isFalse);
+    expect(controller.loadingMoreResults, isFalse);
+  });
+
+  test('query edits immediately invalidate a pending first page', () async {
+    final papers = const DemoPaperRepository().getAll();
+    final catalog = _PendingFirstPageCatalogRepository();
+    final controller = PaperSearchController(
+      papers: papers,
+      historyRepository: InMemoryPaperSearchHistoryRepository(),
+      catalogRepository: catalog,
+      debounceDuration: const Duration(days: 1),
+    );
+    addTearDown(controller.dispose);
+
+    final staleSearch = controller.submitQuery('old term');
+    controller.updateQuery('new term');
+    catalog.complete(papers.first);
+    await staleSearch;
+
+    expect(controller.query, 'new term');
+    expect(controller.results, isEmpty);
+    expect(controller.loadingResults, isFalse);
+    expect(controller.hasMoreResults, isFalse);
+    expect(controller.history, isEmpty);
+  });
+
+  test('finishes pending history initialization safely after dispose',
+      () async {
+    final historyRepository = _PendingSearchHistoryRepository();
+    final controller = PaperSearchController(
+      papers: const DemoPaperRepository().getAll(),
+      historyRepository: historyRepository,
+    );
+    final initialize = controller.initialize();
+
+    controller.dispose();
+    historyRepository.completeLoad(['LoRA']);
+
+    await expectLater(initialize, completes);
+  });
+
+  test('replays a submitted query after pending history initialization',
+      () async {
+    final historyRepository = _PendingSearchHistoryRepository();
+    final controller = PaperSearchController(
+      papers: const DemoPaperRepository().getAll(),
+      historyRepository: historyRepository,
+    );
+    addTearDown(controller.dispose);
+    final initialize = controller.initialize();
+
+    final submit = controller.submitQuery('LoRA');
+    expect(historyRepository.savedHistories, isEmpty);
+    historyRepository.completeLoad(['Mamba']);
+
+    await Future.wait([initialize, submit]);
+    expect(controller.history, ['LoRA', 'Mamba']);
+    expect(historyRepository.savedHistories, [
+      ['LoRA', 'Mamba'],
+    ]);
+  });
+
+  test('replays pending history mutations in their original order', () async {
+    final historyRepository = _PendingSearchHistoryRepository();
+    final controller = PaperSearchController(
+      papers: const DemoPaperRepository().getAll(),
+      historyRepository: historyRepository,
+    );
+    addTearDown(controller.dispose);
+    final initialize = controller.initialize();
+
+    final remove = controller.removeHistory('Mamba');
+    final clear = controller.clearHistory();
+    final submit = controller.submitQuery('LoRA');
+    historyRepository.completeLoad(['Mamba', 'ICLR']);
+
+    await Future.wait([initialize, remove, clear, submit]);
+    expect(controller.history, ['LoRA']);
+    expect(historyRepository.savedHistories, everyElement(['LoRA']));
+  });
+
+  test('serial history writes ignore an older failure after a newer mutation',
+      () async {
+    final historyRepository = _SequencedSearchHistoryRepository();
+    final controller = PaperSearchController(
+      papers: const DemoPaperRepository().getAll(),
+      historyRepository: historyRepository,
+    );
+    addTearDown(controller.dispose);
+    await controller.initialize();
+
+    final first = controller.submitQuery('LoRA');
+    await historyRepository.firstSaveStarted;
+    final second = controller.submitQuery('Mamba');
+    await Future<void>.delayed(Duration.zero);
+
+    expect(historyRepository.savedHistories, [
+      ['LoRA'],
+    ]);
+    historyRepository.failFirstSave(StateError('disk unavailable'));
+    await historyRepository.secondSaveStarted;
+    historyRepository.completeSecondSave();
+
+    await Future.wait([first, second]);
+    expect(historyRepository.savedHistories, [
+      ['LoRA'],
+      ['Mamba', 'LoRA'],
+    ]);
+    expect(controller.historyError, isNull);
+  });
+
+  test('normalizes an unexpected history save failure', () async {
+    final controller = PaperSearchController(
+      papers: const DemoPaperRepository().getAll(),
+      historyRepository: _UnexpectedFailureSearchHistoryRepository(),
+    );
+    addTearDown(controller.dispose);
+    await controller.initialize();
+
+    await expectLater(controller.submitQuery('LoRA'), completes);
+
+    expect(controller.historyError, '无法保存搜索历史。');
+  });
+
+  test('ignores pending pagination after dispose', () async {
+    final papers = const DemoPaperRepository().getAll();
+    final catalog = _PendingPaginationCatalogRepository(papers.first);
+    final controller = PaperSearchController(
+      papers: papers,
+      historyRepository: InMemoryPaperSearchHistoryRepository(),
+      catalogRepository: catalog,
+    );
+    var notifications = 0;
+    controller.addListener(() => notifications++);
+
+    await controller.submitQuery('pending');
+    final pagination = controller.loadMoreResults();
+    final notificationsBeforeDispose = notifications;
+    final resultsBeforeDispose = controller.results;
+    controller.dispose();
+    catalog.completePagination(papers[1]);
+
+    await expectLater(pagination, completes);
+    expect(controller.results, same(resultsBeforeDispose));
+    expect(notifications, notificationsBeforeDispose);
+  });
+
   test('file search history survives repository recreation', () async {
-    final directory =
-        await Directory.systemTemp.createTemp('spark-search-');
+    final directory = await Directory.systemTemp.createTemp('spark-search-');
     addTearDown(() => directory.delete(recursive: true));
     final file = File('${directory.path}${Platform.pathSeparator}history.json');
 
@@ -181,5 +391,170 @@ class _FakeCatalogRepository implements PaperCatalogRepository {
     findByIdCalls.add(paperId);
     if (throwOnFindById) throw StateError('fetch failed');
     return paperById;
+  }
+}
+
+class _SequencedSearchCatalogRepository implements PaperCatalogRepository {
+  _SequencedSearchCatalogRepository({
+    required this.firstPaper,
+    required this.refreshedPaper,
+    required this.staleMorePaper,
+  });
+
+  final Paper firstPaper;
+  final Paper refreshedPaper;
+  final Paper staleMorePaper;
+  final _refresh = Completer<PaperPage>();
+  final _stalePagination = Completer<PaperPage>();
+  int _firstPageCalls = 0;
+  int paginationCalls = 0;
+
+  void completeRefresh() {
+    _refresh.complete(
+      PaperPage(papers: [refreshedPaper], source: PaperPageSource.remote),
+    );
+  }
+
+  void completeStalePagination() {
+    _stalePagination.complete(
+      PaperPage(papers: [staleMorePaper], source: PaperPageSource.remote),
+    );
+  }
+
+  @override
+  Future<Paper?> findById(String paperId) async => null;
+
+  @override
+  Future<PaperPage> loadFeed(PaperFeedQuery query) async =>
+      PaperPage(papers: const [], source: PaperPageSource.remote);
+
+  @override
+  Future<PaperPage> search(PaperSearchQuery query) {
+    if (query.offset > 0) {
+      paginationCalls++;
+      return _stalePagination.future;
+    }
+    _firstPageCalls++;
+    if (_firstPageCalls == 1) {
+      return Future.value(
+        PaperPage(
+          papers: [firstPaper],
+          source: PaperPageSource.remote,
+          nextOffset: 20,
+        ),
+      );
+    }
+    return _refresh.future;
+  }
+}
+
+class _PendingSearchHistoryRepository implements PaperSearchHistoryRepository {
+  final _load = Completer<List<String>>();
+  final List<List<String>> savedHistories = [];
+
+  void completeLoad(List<String> history) => _load.complete(history);
+
+  @override
+  Future<List<String>> load() => _load.future;
+
+  @override
+  Future<void> save(List<String> queries) async {
+    savedHistories.add(List.of(queries));
+  }
+}
+
+class _SequencedSearchHistoryRepository
+    implements PaperSearchHistoryRepository {
+  final List<List<String>> savedHistories = [];
+  final _firstSaveStarted = Completer<void>();
+  final _secondSaveStarted = Completer<void>();
+  final _firstSave = Completer<void>();
+  final _secondSave = Completer<void>();
+
+  Future<void> get firstSaveStarted => _firstSaveStarted.future;
+  Future<void> get secondSaveStarted => _secondSaveStarted.future;
+
+  void failFirstSave(Object error) => _firstSave.completeError(error);
+  void completeSecondSave() => _secondSave.complete();
+
+  @override
+  Future<List<String>> load() async => const [];
+
+  @override
+  Future<void> save(List<String> queries) {
+    savedHistories.add(List.of(queries));
+    if (savedHistories.length == 1) {
+      _firstSaveStarted.complete();
+      return _firstSave.future;
+    }
+    _secondSaveStarted.complete();
+    return _secondSave.future;
+  }
+}
+
+class _UnexpectedFailureSearchHistoryRepository
+    implements PaperSearchHistoryRepository {
+  @override
+  Future<List<String>> load() async => const [];
+
+  @override
+  Future<void> save(List<String> queries) async {
+    throw StateError('disk unavailable');
+  }
+}
+
+class _PendingFirstPageCatalogRepository implements PaperCatalogRepository {
+  final _page = Completer<PaperPage>();
+
+  void complete(Paper paper) {
+    _page.complete(
+      PaperPage(
+        papers: [paper],
+        source: PaperPageSource.remote,
+        nextOffset: 20,
+      ),
+    );
+  }
+
+  @override
+  Future<Paper?> findById(String paperId) async => null;
+
+  @override
+  Future<PaperPage> loadFeed(PaperFeedQuery query) async =>
+      PaperPage(papers: const [], source: PaperPageSource.remote);
+
+  @override
+  Future<PaperPage> search(PaperSearchQuery query) => _page.future;
+}
+
+class _PendingPaginationCatalogRepository implements PaperCatalogRepository {
+  _PendingPaginationCatalogRepository(this.firstPaper);
+
+  final Paper firstPaper;
+  final _pagination = Completer<PaperPage>();
+
+  void completePagination(Paper paper) {
+    _pagination.complete(
+      PaperPage(papers: [paper], source: PaperPageSource.remote),
+    );
+  }
+
+  @override
+  Future<Paper?> findById(String paperId) async => null;
+
+  @override
+  Future<PaperPage> loadFeed(PaperFeedQuery query) async =>
+      PaperPage(papers: const [], source: PaperPageSource.remote);
+
+  @override
+  Future<PaperPage> search(PaperSearchQuery query) {
+    if (query.offset > 0) return _pagination.future;
+    return Future.value(
+      PaperPage(
+        papers: [firstPaper],
+        source: PaperPageSource.remote,
+        nextOffset: 20,
+      ),
+    );
   }
 }

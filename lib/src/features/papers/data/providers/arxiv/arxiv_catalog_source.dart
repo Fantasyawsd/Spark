@@ -1,7 +1,7 @@
-import 'arxiv_atom_dto.dart';
+import 'arxiv_paper_dto.dart';
 
 abstract interface class ArxivCatalogSource {
-  Future<ArxivAtomPageDto> loadLatest({
+  Future<ArxivPaperPageDto> loadLatest({
     String? category,
     DateTime? publishedFrom,
     DateTime? publishedUntil,
@@ -9,11 +9,11 @@ abstract interface class ArxivCatalogSource {
     required int limit,
   });
 
-  Future<ArxivAtomPageDto> search({
+  Future<ArxivPaperPageDto> search({
     required String term,
     required int offset,
     required int limit,
   });
 
-  Future<ArxivAtomPaperDto?> findById(String paperId);
+  Future<ArxivPaperDto?> findById(String paperId);
 }

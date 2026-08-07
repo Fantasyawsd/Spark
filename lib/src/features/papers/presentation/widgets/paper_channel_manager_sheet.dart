@@ -8,6 +8,7 @@ Future<void> showPaperChannelManagerSheet(
   BuildContext context, {
   required List<UserPaperChannel> userChannels,
   required ValueChanged<List<UserPaperChannel>> onChannelsChanged,
+  bool showConferenceChannels = false,
 }) {
   return showModalBottomSheet<void>(
     context: context,
@@ -16,6 +17,7 @@ Future<void> showPaperChannelManagerSheet(
     builder: (sheetContext) => PaperChannelManagerSheet(
       userChannels: userChannels,
       onChannelsChanged: onChannelsChanged,
+      showConferenceChannels: showConferenceChannels,
       // 底部导航遮挡预留
       bottomPadding: MediaQuery.of(context).padding.bottom,
     ),
@@ -27,11 +29,13 @@ class PaperChannelManagerSheet extends StatefulWidget {
     super.key,
     required this.userChannels,
     required this.onChannelsChanged,
+    this.showConferenceChannels = false,
     this.bottomPadding = 0,
   });
 
   final List<UserPaperChannel> userChannels;
   final ValueChanged<List<UserPaperChannel>> onChannelsChanged;
+  final bool showConferenceChannels;
   final double bottomPadding;
 
   @override
@@ -84,7 +88,7 @@ class _PaperChannelManagerSheetState extends State<PaperChannelManagerSheet> {
             ),
             Flexible(
               child: DefaultTabController(
-                length: 2,
+                length: widget.showConferenceChannels ? 2 : 1,
                 child: Column(
                   children: [
                     TabBar(
@@ -96,9 +100,10 @@ class _PaperChannelManagerSheetState extends State<PaperChannelManagerSheet> {
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
                       ),
-                      tabs: const [
-                        Tab(text: '主题'),
-                        Tab(text: '会议'),
+                      tabs: [
+                        const Tab(text: '主题'),
+                        if (widget.showConferenceChannels)
+                          const Tab(text: '会议'),
                       ],
                     ),
                     Expanded(
@@ -121,24 +126,27 @@ class _PaperChannelManagerSheetState extends State<PaperChannelManagerSheet> {
                               ],
                             ),
                           ),
-                          SingleChildScrollView(
-                            key:
-                                const ValueKey('paper-channel-conference-page'),
-                            padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
-                            child: const Column(
-                              mainAxisSize: MainAxisSize.min,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  '会议频道尚未开放，真实会议数据源接入后可编辑。',
-                                  style: TextStyle(
-                                    color: SparkColors.muted,
-                                    fontSize: 12,
+                          if (widget.showConferenceChannels)
+                            SingleChildScrollView(
+                              key: const ValueKey(
+                                'paper-channel-conference-page',
+                              ),
+                              padding:
+                                  const EdgeInsets.fromLTRB(20, 16, 20, 20),
+                              child: const Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    '会议频道尚未开放，真实会议数据源接入后可编辑。',
+                                    style: TextStyle(
+                                      color: SparkColors.muted,
+                                      fontSize: 12,
+                                    ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
-                          ),
                         ],
                       ),
                     ),

@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 
 import 'cherry_motion.dart';
 
-class PaperEntryAnimation extends StatelessWidget {
-  const PaperEntryAnimation({super.key, required this.child});
+class SparkEntryAnimation extends StatelessWidget {
+  const SparkEntryAnimation({super.key, required this.child});
 
   final Widget child;
 

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:spark/spark.dart';
+import 'package:spark/src/features/chat/chat.dart';
+import 'package:spark/src/features/chat/presentation/widgets/paper_ai_composer.dart';
 import 'package:spark/src/features/chat/presentation/widgets/paper_ai_model_avatar.dart';
-import 'package:spark/src/features/papers/presentation/widgets/paper_ai_composer.dart';
 
 void main() {
   testWidgets(
@@ -22,7 +22,7 @@ void main() {
               controller: controller,
               enabled: true,
               sending: false,
-              reasoningEffort: PaperAiReasoningEffort.high,
+              reasoningEffort: ChatReasoningEffort.high,
               onReasoningEffortChanged: (_) {},
               webSearchAvailable: true,
               webSearchEnabled: false,
@@ -84,7 +84,7 @@ void main() {
               controller: controller,
               enabled: true,
               sending: false,
-              reasoningEffort: PaperAiReasoningEffort.high,
+              reasoningEffort: ChatReasoningEffort.high,
               onReasoningEffortChanged: (_) {},
               webSearchAvailable: true,
               webSearchEnabled: false,
@@ -109,7 +109,7 @@ void main() {
   testWidgets('AI composer opens the reasoning depth picker', (tester) async {
     final controller = TextEditingController();
     addTearDown(controller.dispose);
-    var effort = PaperAiReasoningEffort.high;
+    var effort = ChatReasoningEffort.high;
     var webSearch = false;
     var cleared = false;
 
@@ -155,7 +155,7 @@ void main() {
     await tester.tap(
       find.byKey(const ValueKey('paper-ai-reasoning-option-none')),
     );
-    expect(effort, PaperAiReasoningEffort.none);
+    expect(effort, ChatReasoningEffort.none);
     Navigator.of(tester.element(find.text('调整模型思考深度'))).pop();
     await tester.pumpAndSettle();
 
@@ -164,7 +164,7 @@ void main() {
     await tester.tap(
       find.byKey(const ValueKey('paper-ai-reasoning-option-high')),
     );
-    expect(effort, PaperAiReasoningEffort.high);
+    expect(effort, ChatReasoningEffort.high);
     Navigator.of(tester.element(find.text('调整模型思考深度'))).pop();
   });
 
@@ -172,7 +172,7 @@ void main() {
       (tester) async {
     final controller = TextEditingController();
     addTearDown(controller.dispose);
-    var effort = PaperAiReasoningEffort.none;
+    var effort = ChatReasoningEffort.none;
 
     await tester.pumpWidget(
       MaterialApp(
@@ -204,7 +204,7 @@ void main() {
     await tester.tap(
       find.byKey(const ValueKey('paper-ai-reasoning-option-high')),
     );
-    expect(effort, PaperAiReasoningEffort.high);
+    expect(effort, ChatReasoningEffort.high);
     Navigator.of(tester.element(find.text('调整模型思考深度'))).pop();
     await tester.pumpAndSettle();
 
@@ -213,7 +213,7 @@ void main() {
     await tester.tap(
       find.byKey(const ValueKey('paper-ai-reasoning-option-none')),
     );
-    expect(effort, PaperAiReasoningEffort.none);
+    expect(effort, ChatReasoningEffort.none);
   });
 
   testWidgets('model sheet shows the model avatar instead of a plain icon',
@@ -230,7 +230,7 @@ void main() {
               controller: controller,
               enabled: true,
               sending: false,
-              reasoningEffort: PaperAiReasoningEffort.high,
+              reasoningEffort: ChatReasoningEffort.high,
               onReasoningEffortChanged: (_) {},
               webSearchAvailable: true,
               webSearchEnabled: false,

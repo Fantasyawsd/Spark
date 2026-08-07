@@ -1,19 +1,19 @@
-import '../../chat/domain/chat_context.dart';
-import '../../chat/application/chat_ai_service.dart';
-import '../../chat/domain/chat_message.dart';
-import '../../ai_settings/domain/deepseek_credential_repository.dart';
-import '../application/paper_translation_service.dart';
+import '../../chat/chat.dart';
 import '../domain/paper.dart';
-import 'deepseek_paper_ai_service.dart';
+import '../domain/paper_translation.dart';
 
 class DeepSeekPaperTranslationService implements PaperTranslationService {
-  DeepSeekPaperTranslationService({DeepSeekPaperAiService? client})
-      : _client = client ?? DeepSeekPaperAiService(thinkingEnabled: false);
+  DeepSeekPaperTranslationService({
+    required RequestScopedStreamingChatAiService client,
+  }) : _client = client;
 
-  final DeepSeekPaperAiService _client;
+  final RequestScopedStreamingChatAiService _client;
+  ChatRequestCancellation? _activeCancellation;
 
   @override
   Stream<String> translateAbstract(Paper paper) async* {
+    final cancellation = ChatRequestCancellation();
+    _activeCancellation = cancellation;
     try {
       await for (final chunk in _client.answerStream(
         context: ChatContext(
@@ -38,29 +38,33 @@ ${paper.content.originalAbstractMarkdown}
 ''',
           ),
         ],
+        cancellation: cancellation,
       )) {
         if (chunk.contentDelta.isNotEmpty) yield chunk.contentDelta;
       }
     } on ChatAiException catch (error) {
       throw PaperTranslationException(error.message);
+    } finally {
+      if (identical(_activeCancellation, cancellation)) {
+        _activeCancellation = null;
+      }
     }
   }
 
   @override
-  void cancelActiveTranslation() => _client.cancelActiveRequest();
+  void cancelActiveTranslation() => _activeCancellation?.cancel();
 }
 
 class DeepSeekPaperTranslationServiceFactory
     implements PaperTranslationServiceFactory {
-  const DeepSeekPaperTranslationServiceFactory({this.credentialRepository});
+  const DeepSeekPaperTranslationServiceFactory({
+    required this.chatClientFactory,
+  });
 
-  final DeepSeekCredentialRepository? credentialRepository;
+  final RequestScopedStreamingChatAiService Function() chatClientFactory;
 
   @override
   PaperTranslationService create() => DeepSeekPaperTranslationService(
-        client: DeepSeekPaperAiService(
-          credentialRepository: credentialRepository,
-          thinkingEnabled: false,
-        ),
+        client: chatClientFactory(),
       );
 }

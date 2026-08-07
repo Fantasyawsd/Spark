@@ -1,7 +1,9 @@
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:spark/spark.dart';
+import 'package:spark/src/features/papers/application/paper_comment_controller.dart';
+import 'package:spark/src/features/papers/data/in_memory_paper_comment_repository.dart';
+import 'package:spark/src/features/papers/domain/paper_comment_repository.dart';
 
 void main() {
   test('comments update counts, sorting and persisted state', () async {
@@ -75,6 +77,23 @@ void main() {
     expect(controller.persistenceErrorFor('paper-1'), isNull);
   });
 
+  test('comment writes recover after an unexpected save failure', () async {
+    final repository = _ControlledCommentRepository()
+      ..throwUnexpectedOnNextSave = true;
+    final controller = PaperCommentController(repository: repository);
+    addTearDown(controller.dispose);
+    await controller.loadPaper('paper-1');
+
+    expect(await controller.addComment('paper-1', 'first'), isFalse);
+    expect(controller.commentsFor('paper-1'), isEmpty);
+    expect(controller.persistenceErrorFor('paper-1'), isNotNull);
+
+    expect(await controller.addComment('paper-1', 'second'), isTrue);
+    expect(controller.commentsFor('paper-1').single.body, 'second');
+    expect(repository.saveCalls, 2);
+    expect(controller.persistenceErrorFor('paper-1'), isNull);
+  });
+
   test('a successful write for another paper does not clear its error',
       () async {
     final repository = _ControlledCommentRepository()..failNextSave = true;
@@ -105,6 +124,7 @@ void main() {
 class _ControlledCommentRepository implements PaperCommentRepository {
   final Map<String, List<PaperCommentRecord>> _comments = {};
   bool failNextSave = false;
+  bool throwUnexpectedOnNextSave = false;
   bool failNextLoad = false;
   bool holdSaves = false;
   int saveCalls = 0;
@@ -126,6 +146,10 @@ class _ControlledCommentRepository implements PaperCommentRepository {
   @override
   Future<void> save(String paperId, List<PaperCommentRecord> comments) async {
     saveCalls++;
+    if (throwUnexpectedOnNextSave) {
+      throwUnexpectedOnNextSave = false;
+      throw StateError('disk unavailable');
+    }
     if (failNextSave) {
       failNextSave = false;
       throw const PaperCommentPersistenceException('保存评论失败');

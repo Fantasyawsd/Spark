@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:spark/spark.dart';
+import 'package:spark/src/features/chat/application/chat_conversation_controller.dart';
+import 'package:spark/src/features/chat/chat.dart';
+import 'package:spark/src/features/chat/presentation/widgets/paper_ai_content.dart';
 import 'package:spark/src/features/papers/application/paper_chat_context.dart';
-import 'package:spark/src/features/papers/presentation/widgets/paper_ai_content.dart';
+import 'package:spark/src/features/papers/data/demo_paper_repository.dart';
 
 void main() {
   testWidgets('AI answer exposes a collapsible reasoning chain',
@@ -16,13 +18,13 @@ void main() {
               PaperAiContent(
                 chatContext: PaperChatContext.fromPaper(demoPapers.first),
                 messages: const [
-                  PaperAiMessage(fromUser: true, content: '分析论文'),
-                  PaperAiMessage(
+                  ChatMessage(fromUser: true, content: '分析论文'),
+                  ChatMessage(
                     fromUser: false,
                     reasoningContent: '先检查方法，再核对实验。',
                     content: '**结论**',
                     sources: [
-                      PaperAiSource(
+                      ChatSource(
                         title: '论文主页',
                         url: 'https://example.test/paper',
                       ),
@@ -40,7 +42,7 @@ void main() {
                   return true;
                 },
                 searching: false,
-                requestStatus: PaperAiRequestStatus.completed,
+                requestStatus: ChatRequestStatus.completed,
                 canRetryRequestError: false,
               ),
             ],
@@ -76,19 +78,19 @@ void main() {
               PaperAiContent(
                 chatContext: PaperChatContext.fromPaper(demoPapers.first),
                 messages: const [
-                  PaperAiMessage(
+                  ChatMessage(
                     fromUser: false,
                     content: '**结论**',
                     sources: [
-                      PaperAiSource(
+                      ChatSource(
                         title: '来源一',
                         url: 'https://example.test/one',
                       ),
-                      PaperAiSource(
+                      ChatSource(
                         title: '来源二',
                         url: 'https://example.test/two',
                       ),
-                      PaperAiSource(
+                      ChatSource(
                         title: '来源三',
                         url: 'https://example.test/three',
                       ),
@@ -102,7 +104,7 @@ void main() {
                 onRetry: () {},
                 onCancel: () {},
                 searching: false,
-                requestStatus: PaperAiRequestStatus.completed,
+                requestStatus: ChatRequestStatus.completed,
                 canRetryRequestError: false,
               ),
             ],
@@ -141,7 +143,7 @@ void main() {
                   PaperAiContent(
                     chatContext: PaperChatContext.fromPaper(demoPapers.first),
                     messages: const [
-                      PaperAiMessage(
+                      ChatMessage(
                         fromUser: false,
                         reasoningContent: r'比较目标函数 $L(\theta)$。',
                         content: '',
@@ -155,8 +157,8 @@ void main() {
                     onCancel: () {},
                     searching: false,
                     requestStatus: sending
-                        ? PaperAiRequestStatus.sending
-                        : PaperAiRequestStatus.completed,
+                        ? ChatRequestStatus.sending
+                        : ChatRequestStatus.completed,
                     canRetryRequestError: false,
                   ),
                 ],
@@ -195,8 +197,8 @@ void main() {
                   PaperAiContent(
                     chatContext: PaperChatContext.fromPaper(demoPapers.first),
                     messages: const [
-                      PaperAiMessage(fromUser: true, content: '查找最新资料'),
-                      PaperAiMessage(fromUser: false, content: '正在整理'),
+                      ChatMessage(fromUser: true, content: '查找最新资料'),
+                      ChatMessage(fromUser: false, content: '正在整理'),
                     ],
                     loading: false,
                     sending: true,
@@ -205,7 +207,7 @@ void main() {
                     onRetry: () {},
                     onCancel: () {},
                     searching: searching,
-                    requestStatus: PaperAiRequestStatus.sending,
+                    requestStatus: ChatRequestStatus.sending,
                     canRetryRequestError: false,
                   ),
                 ],
@@ -237,8 +239,8 @@ void main() {
               PaperAiContent(
                 chatContext: PaperChatContext.fromPaper(demoPapers.first),
                 messages: const [
-                  PaperAiMessage(fromUser: true, content: '分析论文'),
-                  PaperAiMessage(fromUser: false, content: '部分回答'),
+                  ChatMessage(fromUser: true, content: '分析论文'),
+                  ChatMessage(fromUser: false, content: '部分回答'),
                 ],
                 loading: false,
                 sending: false,
@@ -247,7 +249,7 @@ void main() {
                 onRetry: () => retries++,
                 onCancel: () {},
                 searching: false,
-                requestStatus: PaperAiRequestStatus.cancelled,
+                requestStatus: ChatRequestStatus.cancelled,
                 canRetryRequestError: false,
               ),
             ],
@@ -282,7 +284,7 @@ void main() {
                 onRetry: () {},
                 onCancel: () {},
                 searching: false,
-                requestStatus: PaperAiRequestStatus.cancelled,
+                requestStatus: ChatRequestStatus.cancelled,
                 canRetryRequestError: false,
               ),
             ],
@@ -306,7 +308,7 @@ void main() {
               PaperAiContent(
                 chatContext: PaperChatContext.fromPaper(demoPapers.first),
                 messages: const [
-                  PaperAiMessage(fromUser: true, content: '问题'),
+                  ChatMessage(fromUser: true, content: '问题'),
                 ],
                 loading: false,
                 sending: false,
@@ -315,7 +317,7 @@ void main() {
                 onRetry: () => retries++,
                 onCancel: () {},
                 searching: false,
-                requestStatus: PaperAiRequestStatus.failed,
+                requestStatus: ChatRequestStatus.failed,
                 canRetryRequestError: true,
               ),
             ],

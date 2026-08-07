@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/spark_theme.dart';
+import '../../../../core/widgets/spark_markdown.dart';
 import '../../../../core/widgets/topic_chip.dart';
-import 'paper_markdown.dart';
 
 class PaperTabBody extends StatelessWidget {
   const PaperTabBody({
@@ -102,7 +102,7 @@ class _CollapsedPaperContent extends StatelessWidget {
                 child: ClipRect(
                   child: SingleChildScrollView(
                     physics: const NeverScrollableScrollPhysics(),
-                    child: PaperMarkdown(
+                    child: SparkMarkdown(
                       data: text,
                       styleSheet: paperReaderMarkdownStyle(),
                       stabilizeGeneratedSyntax: stabilizeGeneratedSyntax,
@@ -166,7 +166,7 @@ class _StaticPaperContent extends StatelessWidget {
   Widget build(BuildContext context) {
     return Align(
       alignment: Alignment.topLeft,
-      child: PaperMarkdown(
+      child: SparkMarkdown(
         data: markdown,
         styleSheet: paperReaderMarkdownStyle(),
         stabilizeGeneratedSyntax: stabilizeGeneratedSyntax,
@@ -195,7 +195,7 @@ class _ScrollablePaperContent extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          PaperMarkdown(
+          SparkMarkdown(
             data: markdown,
             styleSheet: paperReaderMarkdownStyle(),
             stabilizeGeneratedSyntax: stabilizeGeneratedSyntax,

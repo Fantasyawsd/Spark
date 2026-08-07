@@ -4,14 +4,9 @@ import '../../../../core/motion/motion_tokens.dart';
 import '../../../../core/theme/spark_theme.dart';
 import '../../../../core/widgets/spark_sheet.dart';
 import '../../../../core/widgets/spark_tab_bar.dart';
-import '../../application/paper_ai_conversation_controller.dart';
-import '../../application/paper_ai_service.dart';
-import '../../application/paper_ai_session_repository.dart';
-import '../../application/paper_chat_context.dart';
 import '../../application/paper_comment_controller.dart';
 import '../../domain/paper.dart';
-import 'paper_ai_content.dart';
-import 'paper_ai_composer.dart';
+import '../paper_ai_discussion_builder.dart';
 import 'paper_comments_content.dart';
 import 'paper_discussion_models.dart';
 import 'paper_message_composer.dart';
@@ -21,9 +16,7 @@ enum PaperSheetPage { comments, ai }
 Future<void> showPaperCommentsSheet(
   BuildContext context,
   Paper paper, {
-  required PaperAiService aiService,
-  PaperAiService? webSearchAiService,
-  PaperAiSessionRepository? aiSessionRepository,
+  required PaperAiDiscussionBuilder aiDiscussionBuilder,
   required PaperCommentController commentController,
   PaperSheetPage initialPage = PaperSheetPage.comments,
   List<String> generatedKeywords = const [],
@@ -36,9 +29,7 @@ Future<void> showPaperCommentsSheet(
     builder: (context) => _PaperCommentsSheet(
       paper: paper,
       initialPage: initialPage,
-      aiService: aiService,
-      webSearchAiService: webSearchAiService,
-      aiSessionRepository: aiSessionRepository,
+      aiDiscussionBuilder: aiDiscussionBuilder,
       commentController: commentController,
       generatedKeywords: generatedKeywords,
     ),
@@ -49,18 +40,14 @@ class _PaperCommentsSheet extends StatefulWidget {
   const _PaperCommentsSheet({
     required this.paper,
     required this.initialPage,
-    required this.aiService,
-    required this.webSearchAiService,
-    required this.aiSessionRepository,
+    required this.aiDiscussionBuilder,
     required this.commentController,
     required this.generatedKeywords,
   });
 
   final Paper paper;
   final PaperSheetPage initialPage;
-  final PaperAiService aiService;
-  final PaperAiService? webSearchAiService;
-  final PaperAiSessionRepository? aiSessionRepository;
+  final PaperAiDiscussionBuilder aiDiscussionBuilder;
   final PaperCommentController commentController;
   final List<String> generatedKeywords;
 
@@ -71,12 +58,9 @@ class _PaperCommentsSheet extends StatefulWidget {
 class _PaperCommentsSheetState extends State<_PaperCommentsSheet> {
   final TextEditingController _commentComposerController =
       TextEditingController();
-  final TextEditingController _aiComposerController = TextEditingController();
   final DraggableScrollableController _sheetController =
       DraggableScrollableController();
   late final PageController _pageController;
-  late final PaperAiConversationController _aiController;
-  ScrollController? _contentScrollController;
 
   late int _pageIndex;
   bool _fullscreen = false;
@@ -88,28 +72,16 @@ class _PaperCommentsSheetState extends State<_PaperCommentsSheet> {
     super.initState();
     _pageIndex = widget.initialPage.index;
     _pageController = PageController(initialPage: _pageIndex);
-    _aiController = PaperAiConversationController(
-      paper: widget.paper,
-      generatedKeywords: widget.generatedKeywords,
-      service: widget.aiService,
-      webSearchService: widget.webSearchAiService,
-      sessionRepository: widget.aiSessionRepository,
-    )..addListener(_handleAiChanged);
     widget.commentController.addListener(_handleCommentsChanged);
-    _aiController.initialize();
     widget.commentController.loadPaper(widget.paper.id);
   }
 
   @override
   void dispose() {
     _commentComposerController.dispose();
-    _aiComposerController.dispose();
     _sheetController.dispose();
     _pageController.dispose();
     widget.commentController.removeListener(_handleCommentsChanged);
-    _aiController
-      ..removeListener(_handleAiChanged)
-      ..dispose();
     super.dispose();
   }
 
@@ -141,7 +113,6 @@ class _PaperCommentsSheetState extends State<_PaperCommentsSheet> {
     BuildContext context,
     ScrollController scrollController,
   ) {
-    _contentScrollController = scrollController;
     return Container(
       key: const ValueKey('paper-comments-sheet'),
       clipBehavior: Clip.antiAlias,
@@ -205,28 +176,11 @@ class _PaperCommentsSheetState extends State<_PaperCommentsSheet> {
                       ),
                   ],
                 ),
-                ListView(
-                  key: const PageStorageKey('paper-ai-page'),
-                  controller: _pageIndex == 1 ? scrollController : null,
-                  padding: EdgeInsets.zero,
-                  children: [
-                    PaperAiContent(
-                      chatContext: PaperChatContext.fromPaper(
-                        widget.paper,
-                        generatedKeywords: widget.generatedKeywords,
-                      ),
-                      messages: _aiController.messages,
-                      loading: _aiController.loading,
-                      sending: _aiController.sending,
-                      error: _aiController.error,
-                      onPrompt: _sendAiText,
-                      onRetry: _aiController.retry,
-                      onCancel: _aiController.cancel,
-                      searching: _aiController.searching,
-                      requestStatus: _aiController.requestStatus,
-                      canRetryRequestError: _aiController.canRetryRequestError,
-                    ),
-                  ],
+                widget.aiDiscussionBuilder(
+                  context,
+                  paper: widget.paper,
+                  generatedKeywords: widget.generatedKeywords,
+                  scrollController: _pageIndex == 1 ? scrollController : null,
                 ),
               ],
             ),
@@ -235,21 +189,7 @@ class _PaperCommentsSheetState extends State<_PaperCommentsSheet> {
             duration: const Duration(milliseconds: 160),
             alignment: Alignment.bottomCenter,
             child: _pageIndex == 1
-                ? PaperAiComposer(
-                    controller: _aiComposerController,
-                    enabled: !_aiController.sending,
-                    sending: _aiController.sending,
-                    reasoningEffort: _aiController.reasoningEffort,
-                    onReasoningEffortChanged: _aiController.setReasoningEffort,
-                    webSearchAvailable: _aiController.webSearchAvailable,
-                    webSearchEnabled: _aiController.webSearchEnabled,
-                    onWebSearchChanged: _aiController.setWebSearchEnabled,
-                    hasContext: _aiController.messages.isNotEmpty,
-                    onClearContext: _confirmClearAiContext,
-                    onChanged: (_) => setState(() {}),
-                    onSend: () => _sendAiText(_aiComposerController.text),
-                    onCancel: _aiController.cancel,
-                  )
+                ? const SizedBox.shrink()
                 : Align(
                     alignment: Alignment.bottomCenter,
                     child: PaperMessageComposer(
@@ -377,34 +317,6 @@ class _PaperCommentsSheetState extends State<_PaperCommentsSheet> {
     }
   }
 
-  Future<void> _sendAiText(String rawText) async {
-    final text = rawText.trim();
-    if (text.isEmpty || _aiController.sending) return;
-    _aiComposerController.clear();
-    await _aiController.send(text);
-  }
-
-  Future<void> _confirmClearAiContext() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('清除对话上下文？'),
-        content: const Text('当前论文的全部 AI 对话记录将被删除，之后的回答不会继续参考这些消息。'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('取消'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('清除'),
-          ),
-        ],
-      ),
-    );
-    if (confirmed == true) await _aiController.clear();
-  }
-
   void _toggleCommentLike(String id) {
     widget.commentController.toggleLike(widget.paper.id, id);
   }
@@ -419,25 +331,6 @@ class _PaperCommentsSheetState extends State<_PaperCommentsSheet> {
 
   void _deleteComment(String id) {
     widget.commentController.deleteComment(widget.paper.id, id);
-  }
-
-  void _handleAiChanged() {
-    if (!mounted) return;
-    final controller = _contentScrollController;
-    final shouldFollow = _pageIndex == 1 &&
-        controller != null &&
-        controller.hasClients &&
-        controller.position.maxScrollExtent - controller.position.pixels < 140;
-    setState(() {});
-    if (!shouldFollow) return;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || !controller.hasClients) return;
-      controller.animateTo(
-        controller.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 90),
-        curve: Curves.easeOut,
-      );
-    });
   }
 
   void _handleCommentsChanged() {

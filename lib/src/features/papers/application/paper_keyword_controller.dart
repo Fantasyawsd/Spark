@@ -1,27 +1,29 @@
 import 'package:flutter/foundation.dart';
 
 import '../domain/paper.dart';
+import '../domain/paper_keyword_repository.dart';
 import '../domain/paper_keyword_record.dart';
-import 'paper_ai_service.dart';
+import '../../chat/chat.dart';
 import 'paper_keyword_service.dart';
 
 class PaperKeywordController extends ChangeNotifier {
   PaperKeywordController({
     required this.paper,
-    required PaperAiService service,
+    required ChatAiService service,
     PaperKeywordRepository? repository,
   })  : _service = service,
         _generator = PaperKeywordGenerator(service),
         _repository = repository;
 
   final Paper paper;
-  final PaperAiService _service;
+  final ChatAiService _service;
   final PaperKeywordGenerator _generator;
   final PaperKeywordRepository? _repository;
 
   List<String> _keywords = const [];
   String? _error;
   bool _loadingCache = false;
+  bool _cacheInitialized = false;
   bool _generating = false;
   bool _disposed = false;
   int _requestVersion = 0;
@@ -34,7 +36,14 @@ class PaperKeywordController extends ChangeNotifier {
 
   Future<void> initialize() async {
     final repository = _repository;
-    if (repository == null || _loadingCache || hasKeywords) return;
+    if (_disposed ||
+        repository == null ||
+        _cacheInitialized ||
+        _loadingCache ||
+        hasKeywords) {
+      return;
+    }
+    _cacheInitialized = true;
     _loadingCache = true;
     _notify();
     try {
@@ -44,6 +53,8 @@ class PaperKeywordController extends ChangeNotifier {
       }
     } on PaperKeywordPersistenceException catch (error) {
       _error = error.message;
+    } on Object {
+      _error = '无法读取关键词缓存。';
     } finally {
       if (!_disposed) {
         _loadingCache = false;
@@ -68,9 +79,9 @@ class PaperKeywordController extends ChangeNotifier {
       await _save();
     } on PaperKeywordGenerationException catch (error) {
       _handleError(requestVersion, error.message, previous);
-    } on PaperAiCancelledException {
+    } on ChatAiCancelledException {
       _handleError(requestVersion, null, previous);
-    } on PaperAiException {
+    } on ChatAiException {
       _handleError(requestVersion, '关键词生成失败，请稍后重试。', previous);
     } on Exception {
       _handleError(requestVersion, '关键词生成失败，请稍后重试。', previous);
@@ -80,8 +91,8 @@ class PaperKeywordController extends ChangeNotifier {
   void cancel() {
     if (!_generating) return;
     _requestVersion++;
-    if (_service is CancellablePaperAiService) {
-      (_service as CancellablePaperAiService).cancelActiveRequest();
+    if (_service is CancellableChatAiService) {
+      (_service as CancellableChatAiService).cancelActiveRequest();
     }
     _generating = false;
     _notify();

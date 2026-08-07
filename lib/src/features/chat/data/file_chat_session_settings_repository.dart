@@ -7,8 +7,8 @@ class FileChatSessionSettingsRepository
     implements ChatSessionSettingsRepository {
   FileChatSessionSettingsRepository({LocalJsonStore? store})
       : _store = VersionedLocalJsonStore(
-          store ?? LocalJsonStore(fileName: 'paper_ai_session_settings.json'),
-          schemaId: 'papers.ai-session-settings',
+          store ?? LocalJsonStore(fileName: 'chat_session_settings.json'),
+          schemaId: 'chat.session-settings',
         );
 
   final VersionedLocalJsonStore _store;
@@ -42,6 +42,22 @@ class FileChatSessionSettingsRepository
     } catch (error) {
       throw ChatSessionSettingsPersistenceException(
         '无法保存会话设置。',
+        error,
+      );
+    }
+  }
+
+  @override
+  Future<void> clear(String contextId) async {
+    try {
+      await _store.updateMap((json) {
+        if (json == null) return null;
+        json.remove(contextId);
+        return json;
+      });
+    } catch (error) {
+      throw ChatSessionSettingsPersistenceException(
+        '无法删除会话设置。',
         error,
       );
     }

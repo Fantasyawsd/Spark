@@ -1,8 +1,9 @@
 import 'paper.dart';
+import 'paper_enhancement.dart';
 import 'paper_source.dart';
 
-abstract interface class ArxivMetadataSource {
-  Future<ArxivMetadataPage> listRecords({
+abstract interface class ArxivPaperSource {
+  Future<PaperSyncPage> listRecords({
     String? set,
     DateTime? from,
     DateTime? until,

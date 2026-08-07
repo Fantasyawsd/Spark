@@ -182,11 +182,11 @@ class _PaperAiConversation extends StatelessWidget {
           if (messages.isNotEmpty) ...[
             for (var index = 0; index < messages.length; index++)
               if (!_isEmptyAssistant(messages[index]))
-                PaperEntryAnimation(
+                SparkEntryAnimation(
                   key: ValueKey(
                     'ai-message-$index-${messages[index].fromUser}',
                   ),
-                  child: PaperAiMessageView(
+                  child: ChatMessageView(
                     message: messages[index],
                     streaming: sending && index == messages.length - 1,
                     searching: searching && index == messages.length - 1,

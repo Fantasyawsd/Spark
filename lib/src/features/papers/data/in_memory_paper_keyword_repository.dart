@@ -1,5 +1,5 @@
-import '../application/paper_keyword_service.dart';
 import '../domain/paper_keyword_record.dart';
+import '../domain/paper_keyword_repository.dart';
 
 class InMemoryPaperKeywordRepository implements PaperKeywordRepository {
   final Map<String, PaperKeywordRecord> _records = {};

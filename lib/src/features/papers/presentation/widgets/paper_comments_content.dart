@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/spark_theme.dart';
+import '../../../../core/widgets/spark_entry_animation.dart';
 import 'paper_discussion_models.dart';
-import 'paper_entry_animation.dart';
 
 class PaperCommentsContent extends StatelessWidget {
   const PaperCommentsContent({
@@ -30,7 +30,7 @@ class PaperCommentsContent extends StatelessWidget {
       child: Column(
         children: [
           for (final comment in roots) ...[
-            PaperEntryAnimation(
+            SparkEntryAnimation(
               key: ValueKey(comment.id),
               child: _CommentTile(
                 comment: comment,

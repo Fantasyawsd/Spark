@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:spark/spark.dart';
+import 'package:spark/src/features/local_data/data/in_memory_local_data_repository.dart';
+import 'package:spark/src/features/local_data/presentation/local_data_sheet.dart';
+import 'package:spark/src/features/profile/presentation/profile_screen.dart';
 
 void main() {
   testWidgets('profile opens local data management and clears chats',
@@ -22,7 +25,17 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
-          body: ProfileScreen(localDataController: controller),
+          body: Builder(
+            builder: (context) => ProfileScreen(
+              localDataListenable: controller,
+              localDataDescriptionBuilder: () =>
+                  '占用 ${formatLocalDataBytes(controller.usage.totalBytes)}',
+              onOpenLocalData: () => showLocalDataSheet(
+                context,
+                controller: controller,
+              ),
+            ),
+          ),
         ),
       ),
     );

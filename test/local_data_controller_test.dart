@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:spark/spark.dart';
+import 'package:spark/src/features/local_data/data/in_memory_local_data_repository.dart';
 
 void main() {
   test('coordinates clear callbacks and refreshes usage', () async {

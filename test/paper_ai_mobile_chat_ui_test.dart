@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:spark/src/core/theme/paper_theme_color.dart';
+import 'package:spark/src/core/theme/spark_theme_color.dart';
 import 'package:spark/src/core/theme/spark_theme.dart';
 import 'package:spark/src/core/theme/theme_controller.dart';
-import 'package:spark/src/features/chat/application/chat_ai_service.dart';
+import 'package:spark/src/features/chat/domain/chat_ai_service.dart';
 import 'package:spark/src/features/chat/domain/chat_context.dart';
 import 'package:spark/src/features/chat/domain/chat_message.dart';
 import 'package:spark/src/features/chat/domain/chat_session_repository.dart';
@@ -16,7 +16,7 @@ void main() {
     await tester.binding.setSurfaceSize(const Size(378, 810));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     addTearDown(
-      () => ThemeController.instance.setColor(PaperThemeColor.pink),
+      () => ThemeController.instance.setColor(SparkThemeColor.pink),
     );
 
     const messages = [
@@ -27,9 +27,9 @@ void main() {
         reasoningContent: '主题推理',
       ),
     ];
-    ThemeController.instance.setColor(PaperThemeColor.blue);
+    ThemeController.instance.setColor(SparkThemeColor.blue);
     final blueTheme = SparkTheme.light();
-    ThemeController.instance.setColor(PaperThemeColor.green);
+    ThemeController.instance.setColor(SparkThemeColor.green);
     final greenTheme = SparkTheme.light();
 
     Future<_ChatThemeColors> pumpWithTheme(ThemeData theme) async {
@@ -445,6 +445,83 @@ void main() {
 
     expect(service.context?.systemPrompt, contains('论文全文引用'));
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('full text context mismatch leaves the action retryable',
+      (tester) async {
+    var loadCalls = 0;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: PaperAiChatScreen(
+          chatContext: const ChatContext(
+            id: 'current-paper',
+            title: '当前论文',
+            systemPrompt: '默认提示词',
+          ),
+          aiService: const _FakeChatAiService(),
+          sessionRepository: const _FakeChatSessionRepository(),
+          fullTextAvailable: true,
+          onLoadFullText: () async {
+            loadCalls++;
+            return const ChatContext(
+              id: 'another-paper',
+              title: '其他论文',
+              systemPrompt: '不应注入的全文',
+            );
+          },
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final toggle = find.byKey(const ValueKey('paper-ai-fulltext-toggle'));
+    await tester.tap(toggle);
+    await tester.pumpAndSettle();
+
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+    expect(tester.widget<IconButton>(toggle).onPressed, isNotNull);
+    expect(find.text('全文上下文与当前会话不匹配，请重试。'), findsOneWidget);
+
+    await tester.tap(toggle);
+    await tester.pumpAndSettle();
+    expect(loadCalls, 2);
+  });
+
+  testWidgets('full text loader errors reset the action and show feedback',
+      (tester) async {
+    var loadCalls = 0;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: PaperAiChatScreen(
+          chatContext: const ChatContext(
+            id: 'error-paper',
+            title: '错误论文',
+            systemPrompt: '默认提示词',
+          ),
+          aiService: const _FakeChatAiService(),
+          sessionRepository: const _FakeChatSessionRepository(),
+          fullTextAvailable: true,
+          onLoadFullText: () async {
+            loadCalls++;
+            throw ArgumentError('simulated parser failure');
+          },
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final toggle = find.byKey(const ValueKey('paper-ai-fulltext-toggle'));
+    await tester.tap(toggle);
+    await tester.pumpAndSettle();
+
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+    expect(tester.widget<IconButton>(toggle).onPressed, isNotNull);
+    expect(find.text('无法读取论文全文，请稍后重试。'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+
+    await tester.tap(toggle);
+    await tester.pumpAndSettle();
+    expect(loadCalls, 2);
   });
 }
 

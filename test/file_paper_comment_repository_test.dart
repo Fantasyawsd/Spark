@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:spark/spark.dart';
 import 'package:spark/src/core/storage/local_json_store.dart';
+import 'package:spark/src/features/papers/data/file_paper_comment_repository.dart';
 
 void main() {
   late Directory directory;

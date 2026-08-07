@@ -3,10 +3,10 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 
 import '../domain/chat_context.dart';
+import '../domain/chat_ai_service.dart';
 import '../domain/chat_message.dart';
 import '../domain/chat_session_repository.dart';
 import '../domain/chat_session_settings.dart';
-import 'chat_ai_service.dart';
 import 'chat_prompt_assembler.dart';
 
 enum ChatRequestStatus { idle, sending, completed, cancelled, failed }
@@ -43,6 +43,8 @@ class ChatConversationController extends ChangeNotifier {
   int _writeVersion = 0;
   int? _activeAssistantIndex;
   ChatAiService? _activeService;
+  ChatRequestCancellation? _activeCancellation;
+  Future<void>? _initialization;
   Future<void> _writeQueue = Future.value();
   Timer? _streamNotifyTimer;
 
@@ -109,8 +111,20 @@ class ChatConversationController extends ChangeNotifier {
     }
   }
 
-  Future<void> initialize() async {
-    if (_loading || _messages.isNotEmpty) return;
+  Future<void> initialize() {
+    if (_disposed) return Future.value();
+    final existing = _initialization;
+    if (existing != null) return existing;
+    if (_messages.isNotEmpty) return Future.value();
+    late final Future<void> operation;
+    operation = _initialize().whenComplete(() {
+      if (identical(_initialization, operation)) _initialization = null;
+    });
+    _initialization = operation;
+    return operation;
+  }
+
+  Future<void> _initialize() async {
     _loading = true;
     _notify();
     try {
@@ -152,7 +166,10 @@ class ChatConversationController extends ChangeNotifier {
 
   Future<void> send(String rawText) async {
     final text = rawText.trim();
-    if (text.isEmpty || _sending) return;
+    if (text.isEmpty) return;
+    final initialization = _initialization;
+    if (initialization != null) await initialization;
+    if (_disposed || _sending) return;
     _removeTrailingEmptyTerminalMessage();
     _messages.add(ChatMessage(fromUser: true, content: text));
     await _requestAnswer();
@@ -211,12 +228,18 @@ class ChatConversationController extends ChangeNotifier {
   void cancel() {
     if (!_sending) return;
     _requestVersion++;
-    if (_activeService case final CancellableChatAiService cancellable) {
-      cancellable.cancelActiveRequest();
+    final cancellation = _activeCancellation;
+    cancellation?.cancel();
+    if (cancellation == null) {
+      final activeService = _activeService;
+      if (activeService is CancellableChatAiService) {
+        activeService.cancelActiveRequest();
+      }
     }
     _markActiveAssistant(ChatMessageStatus.cancelled);
     _activeAssistantIndex = null;
     _activeService = null;
+    _activeCancellation = null;
     _searching = false;
     _streamNotifyTimer?.cancel();
     _sending = false;
@@ -236,7 +259,7 @@ class ChatConversationController extends ChangeNotifier {
     final repository = _sessionRepository;
     if (repository == null) return;
     final writeVersion = ++_writeVersion;
-    _writeQueue = _writeQueue.then((_) async {
+    final operation = _enqueueWrite(() async {
       try {
         await repository.clear(context.id);
       } on ChatSessionPersistenceException catch (error) {
@@ -244,9 +267,14 @@ class ChatConversationController extends ChangeNotifier {
           _persistenceError = error.message;
           _notify();
         }
+      } catch (_) {
+        if (!_disposed && writeVersion == _writeVersion) {
+          _persistenceError = '无法清空 AI 对话记录。';
+          _notify();
+        }
       }
     });
-    await _writeQueue;
+    await operation;
   }
 
   Future<void> _requestAnswer() async {
@@ -265,12 +293,30 @@ class ChatConversationController extends ChangeNotifier {
         configurable.setReasoningEffort(_reasoningEffort);
       }
       _activeService = service;
-      if (service case final StreamingChatAiService streamingService) {
-        await _consumeStream(streamingService, requestVersion);
+      if (service
+          case final RequestScopedStreamingChatAiService scopedService) {
+        final cancellation = ChatRequestCancellation();
+        _activeCancellation = cancellation;
+        await _consumeStream(
+          scopedService.answerStream(
+            context: effectiveContext,
+            conversation: _conversationForRequest(),
+            cancellation: cancellation,
+          ),
+          requestVersion,
+        );
+      } else if (service case final StreamingChatAiService streamingService) {
+        await _consumeStream(
+          streamingService.answerStream(
+            context: effectiveContext,
+            conversation: _conversationForRequest(),
+          ),
+          requestVersion,
+        );
       } else {
         final answer = await service.answer(
           context: effectiveContext,
-          conversation: List.unmodifiable(_messages),
+          conversation: _conversationForRequest(),
         );
         if (_disposed || requestVersion != _requestVersion) return;
         _messages.add(ChatMessage(fromUser: false, content: answer));
@@ -278,6 +324,7 @@ class ChatConversationController extends ChangeNotifier {
       if (_disposed || requestVersion != _requestVersion) return;
       _activeAssistantIndex = null;
       _activeService = null;
+      _activeCancellation = null;
       _searching = false;
       _streamNotifyTimer?.cancel();
       _sending = false;
@@ -289,6 +336,7 @@ class ChatConversationController extends ChangeNotifier {
       _markActiveAssistant(ChatMessageStatus.cancelled);
       _activeAssistantIndex = null;
       _activeService = null;
+      _activeCancellation = null;
       _searching = false;
       _streamNotifyTimer?.cancel();
       _sending = false;
@@ -308,6 +356,7 @@ class ChatConversationController extends ChangeNotifier {
     _markActiveAssistant(ChatMessageStatus.failed);
     _activeAssistantIndex = null;
     _activeService = null;
+    _activeCancellation = null;
     _searching = false;
     _streamNotifyTimer?.cancel();
     _sending = false;
@@ -318,14 +367,10 @@ class ChatConversationController extends ChangeNotifier {
   }
 
   Future<void> _consumeStream(
-    StreamingChatAiService service,
+    Stream<ChatStreamChunk> stream,
     int requestVersion,
   ) async {
-    final conversation = List<ChatMessage>.unmodifiable(_messages);
-    await for (final chunk in service.answerStream(
-      context: effectiveContext,
-      conversation: conversation,
-    )) {
+    await for (final chunk in stream) {
       if (_disposed || requestVersion != _requestVersion) return;
       var assistantIndex = _activeAssistantIndex;
       if (assistantIndex == null) {
@@ -363,7 +408,7 @@ class ChatConversationController extends ChangeNotifier {
     final writeVersion = ++_writeVersion;
     _persistenceError = null;
     final snapshot = List<ChatMessage>.from(_messages);
-    _writeQueue = _writeQueue.then((_) async {
+    _enqueueWrite(() async {
       try {
         await repository.save(context.id, snapshot);
       } on ChatSessionPersistenceException catch (error) {
@@ -371,8 +416,22 @@ class ChatConversationController extends ChangeNotifier {
           _persistenceError = error.message;
           _notify();
         }
+      } catch (_) {
+        if (!_disposed && writeVersion == _writeVersion) {
+          _persistenceError = '无法保存 AI 对话记录。';
+          _notify();
+        }
       }
     });
+  }
+
+  Future<void> _enqueueWrite(Future<void> Function() operation) {
+    final queued = _writeQueue.then((_) => operation());
+    _writeQueue = queued.then<void>(
+      (_) {},
+      onError: (Object _, StackTrace __) {},
+    );
+    return queued;
   }
 
   void _notify() {
@@ -411,13 +470,25 @@ class ChatConversationController extends ChangeNotifier {
     _messages.removeLast();
   }
 
+  List<ChatMessage> _conversationForRequest() => List.unmodifiable(
+        _messages.where(
+          (message) =>
+              message.fromUser || message.status == ChatMessageStatus.complete,
+        ),
+      );
+
   @override
   void dispose() {
     _disposed = true;
     _requestVersion++;
     _streamNotifyTimer?.cancel();
-    if (_activeService case final CancellableChatAiService cancellable) {
-      cancellable.cancelActiveRequest();
+    final cancellation = _activeCancellation;
+    cancellation?.cancel();
+    if (cancellation == null) {
+      final activeService = _activeService;
+      if (activeService is CancellableChatAiService) {
+        activeService.cancelActiveRequest();
+      }
     }
     super.dispose();
   }

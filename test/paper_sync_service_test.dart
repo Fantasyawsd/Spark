@@ -7,7 +7,7 @@ void main() {
     final store = _MemoryPaperStore();
     final stateStore = _MemorySyncStateStore();
     final service = ArxivPaperSyncService(
-      metadataSource: _FakeMetadataSource(),
+      paperSource: _FakePaperSource(),
       enhancementSource: _FakeEnhancementSource(),
       stateStore: stateStore,
       paperStore: store,
@@ -22,25 +22,29 @@ void main() {
   });
 }
 
-class _FakeMetadataSource implements ArxivMetadataSource {
+class _FakePaperSource implements ArxivPaperSource {
   @override
-  Future<ArxivMetadataPage> listRecords({
+  Future<PaperSyncPage> listRecords({
     String? set,
     DateTime? from,
     DateTime? until,
     String? resumptionToken,
   }) async {
-    return ArxivMetadataPage(
-      records: [
-        ArxivMetadata(
+    return PaperSyncPage(
+      papers: [
+        Paper(
           id: '2401.00001',
           title: 'Imported paper',
           authors: const ['Alice Smith'],
+          subjects: const ['cs.AI'],
+          primarySubject: 'cs.AI',
           abstractText: 'An imported abstract.',
-          categories: const ['cs.AI'],
+          chineseAbstractMarkdown: '中文摘要尚未生成。',
+          readMinutes: 1,
+          arxivId: '2401.00001',
           publishedAt: DateTime.utc(2024, 1, 1),
           updatedAt: DateTime.utc(2024, 1, 2),
-          primaryCategory: 'cs.AI',
+          source: 'arxiv',
         ),
       ],
     );

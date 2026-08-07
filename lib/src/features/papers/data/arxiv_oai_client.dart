@@ -1,10 +1,13 @@
 import 'package:http/http.dart' as http;
 import 'package:xml/xml.dart';
 
+import '../domain/paper.dart';
 import '../domain/paper_source.dart';
 import '../domain/paper_sync_ports.dart';
+import 'providers/arxiv/arxiv_paper_dto.dart';
+import 'providers/arxiv/arxiv_paper_mapper.dart';
 
-class ArxivOaiClient implements ArxivMetadataSource {
+class ArxivOaiClient implements ArxivPaperSource {
   ArxivOaiClient({
     this.endpoint = 'https://oaipmh.arxiv.org/oai',
     http.Client? client,
@@ -16,7 +19,7 @@ class ArxivOaiClient implements ArxivMetadataSource {
   final bool _ownsClient;
 
   @override
-  Future<ArxivMetadataPage> listRecords({
+  Future<PaperSyncPage> listRecords({
     String? set,
     DateTime? from,
     DateTime? until,
@@ -41,18 +44,18 @@ class ArxivOaiClient implements ArxivMetadataSource {
     return _parse(response.body);
   }
 
-  Future<List<ArxivMetadata>> listAll({
+  Future<List<Paper>> listAll({
     String? set,
     DateTime? from,
     DateTime? until,
     void Function(String token)? onToken,
   }) async {
-    final records = <ArxivMetadata>[];
+    final records = <Paper>[];
     String? token;
     do {
       final page = await listRecords(
           set: set, from: from, until: until, resumptionToken: token);
-      records.addAll(page.records);
+      records.addAll(page.papers);
       token = page.resumptionToken;
       if (token != null) onToken?.call(token);
     } while (token != null);
@@ -63,7 +66,7 @@ class ArxivOaiClient implements ArxivMetadataSource {
     if (_ownsClient) _client.close();
   }
 
-  ArxivMetadataPage _parse(String body) {
+  PaperSyncPage _parse(String body) {
     final document = XmlDocument.parse(body);
     final error = document.findAllElements('error').firstOrNull;
     if (error != null) {
@@ -72,25 +75,27 @@ class ArxivOaiClient implements ArxivMetadataSource {
     final records = document
         .findAllElements('record')
         .map(_parseRecord)
+        .map(const ArxivPaperMapper().toDomain)
         .toList(growable: false);
     final token = document
         .findAllElements('resumptionToken')
         .firstOrNull
         ?.innerText
         .trim();
-    return ArxivMetadataPage(
-      records: records,
+    return PaperSyncPage(
+      papers: records,
       resumptionToken: token == null || token.isEmpty ? null : token,
     );
   }
 
-  ArxivMetadata _parseRecord(XmlElement record) {
+  ArxivPaperDto _parseRecord(XmlElement record) {
     final metadata = record.findAllElements('metadata').firstOrNull;
     final arxiv = metadata?.findAllElements('arXiv').firstOrNull;
     if (arxiv == null) throw const FormatException('arXiv OAI 记录缺少 arXiv 元数据。');
     final id = _text(arxiv, 'id');
-    final authors = arxiv
-        .findAllElements('author')
+    final authorElements =
+        arxiv.findAllElements('author').toList(growable: false);
+    final authors = authorElements
         .map((author) {
           final keyName =
               author.findAllElements('keyname').firstOrNull?.innerText.trim();
@@ -103,12 +108,20 @@ class ArxivOaiClient implements ArxivMetadataSource {
         })
         .where((author) => author.isNotEmpty)
         .toList(growable: false);
+    final affiliations = authorElements
+        .expand((author) => author.findAllElements('affiliation'))
+        .map((affiliation) => affiliation.innerText.trim())
+        .where((affiliation) => affiliation.isNotEmpty)
+        .toSet()
+        .toList(growable: false);
     final categories = _text(arxiv, 'categories').split(RegExp(r'\s+'));
-    return ArxivMetadata(
+    final datestamp = _date(record, 'datestamp');
+    return ArxivPaperDto(
       id: id,
       title: _text(arxiv, 'title'),
       authors: authors,
-      abstractText: _text(arxiv, 'abstract'),
+      affiliations: affiliations,
+      summary: _text(arxiv, 'abstract'),
       categories: categories,
       primaryCategory: _textOrNull(arxiv, 'primary_category'),
       doi: _textOrNull(arxiv, 'doi'),
@@ -116,8 +129,8 @@ class ArxivOaiClient implements ArxivMetadataSource {
       comment: _textOrNull(arxiv, 'comments'),
       license:
           arxiv.findAllElements('license').firstOrNull?.getAttribute('uri'),
-      publishedAt: _date(record, 'datestamp'),
-      updatedAt: _date(record, 'datestamp'),
+      publishedAt: _dateOrNull(arxiv, 'created') ?? datestamp,
+      updatedAt: _dateOrNull(arxiv, 'updated') ?? datestamp,
     );
   }
 
@@ -139,6 +152,14 @@ class ArxivOaiClient implements ArxivMetadataSource {
   static DateTime _date(XmlElement parent, String name) {
     final value = parent.findAllElements(name).firstOrNull?.innerText.trim();
     final date = value == null ? null : DateTime.tryParse(value);
+    if (date == null) throw FormatException('arXiv OAI 日期格式无效：$name');
+    return date.toUtc();
+  }
+
+  static DateTime? _dateOrNull(XmlElement parent, String name) {
+    final value = parent.findAllElements(name).firstOrNull?.innerText.trim();
+    if (value == null || value.isEmpty) return null;
+    final date = DateTime.tryParse(value);
     if (date == null) throw FormatException('arXiv OAI 日期格式无效：$name');
     return date.toUtc();
   }

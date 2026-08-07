@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:spark/spark.dart';
+import 'package:spark/src/features/papers/data/demo_paper_repository.dart';
+import 'package:spark/src/features/papers/domain/favorite_group.dart';
+import 'package:spark/src/features/papers/domain/paper.dart';
+import 'package:spark/src/features/profile/presentation/paper_shelf_list_screen.dart';
 
 void main() {
   final papers = const DemoPaperRepository().getAll();
@@ -64,15 +67,15 @@ void main() {
 
     expect(find.byKey(ValueKey('paper-shelf-row-${papers[0].id}')),
         findsOneWidget);
-    expect(find.byKey(ValueKey('paper-shelf-row-${papers[2].id}')),
-        findsNothing);
+    expect(
+        find.byKey(ValueKey('paper-shelf-row-${papers[2].id}')), findsNothing);
 
     await tester.tap(find.byKey(const ValueKey('paper-shelf-group-g2')));
     await tester.pump();
 
     expect(find.byKey(ValueKey('paper-shelf-row-${papers[2].id}')),
         findsOneWidget);
-    expect(find.byKey(ValueKey('paper-shelf-row-${papers[0].id}')),
-        findsNothing);
+    expect(
+        find.byKey(ValueKey('paper-shelf-row-${papers[0].id}')), findsNothing);
   });
 }

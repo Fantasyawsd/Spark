@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:spark/spark.dart';
+import 'package:spark/src/features/ai_settings/ai_settings.dart';
+import 'package:spark/src/features/ai_settings/application/deepseek_credential_controller.dart';
+import 'package:spark/src/features/ai_settings/data/in_memory_deepseek_credential_repository.dart';
+import 'package:spark/src/features/ai_settings/presentation/deepseek_settings_section.dart';
+import 'package:spark/src/features/profile/presentation/profile_screen.dart';
 
 void main() {
   testWidgets('profile configures and deletes a DeepSeek API key',
@@ -16,7 +20,10 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
-          body: ProfileScreen(credentialController: controller),
+          body: ProfileScreen(
+            aiSettingsBuilder: (_) =>
+                DeepSeekSettingsSection(controller: controller),
+          ),
         ),
       ),
     );

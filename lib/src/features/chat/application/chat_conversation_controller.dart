@@ -40,6 +40,7 @@ class ChatConversationController extends ChangeNotifier {
   String? _requestError;
   String? _persistenceError;
   int _requestVersion = 0;
+  int _settingsRevision = 0;
   int _writeVersion = 0;
   int? _activeAssistantIndex;
   ChatAiService? _activeService;
@@ -100,6 +101,7 @@ class ChatConversationController extends ChangeNotifier {
   }
 
   Future<void> updateSettings(ChatSessionSettings settings) async {
+    _settingsRevision++;
     _settings = settings;
     _notify();
     final repository = _settingsRepository;
@@ -125,6 +127,7 @@ class ChatConversationController extends ChangeNotifier {
   }
 
   Future<void> _initialize() async {
+    final settingsRevision = _settingsRevision;
     _loading = true;
     _notify();
     try {
@@ -150,7 +153,11 @@ class ChatConversationController extends ChangeNotifier {
 
       final settingsRepository = _settingsRepository;
       if (settingsRepository != null) {
-        _settings = await settingsRepository.load(context.id);
+        final storedSettings = await settingsRepository.load(context.id);
+        if (_disposed) return;
+        if (settingsRevision == _settingsRevision) {
+          _settings = storedSettings;
+        }
       }
     } on ChatSessionPersistenceException catch (error) {
       if (!_disposed) _persistenceError = error.message;

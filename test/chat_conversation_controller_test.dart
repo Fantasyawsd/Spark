@@ -7,6 +7,7 @@ import 'package:spark/src/features/chat/domain/chat_ai_service.dart';
 import 'package:spark/src/features/chat/domain/chat_context.dart';
 import 'package:spark/src/features/chat/domain/chat_message.dart';
 import 'package:spark/src/features/chat/domain/chat_session_repository.dart';
+import 'package:spark/src/features/chat/domain/chat_session_settings.dart';
 
 void main() {
   test('generic conversation sends its chat context to the AI service',
@@ -254,6 +255,40 @@ void main() {
     );
   });
 
+  test('a pending settings load cannot overwrite a newer settings update',
+      () async {
+    const context = ChatContext(
+      id: 'pending-settings-load-test',
+      title: '设置加载竞态测试',
+      systemPrompt: '回答问题。',
+    );
+    final repository = _PendingChatSessionSettingsRepository();
+    final controller = ChatConversationController(
+      context: context,
+      service: _CapturingChatAiService(),
+      settingsRepository: repository,
+    );
+    addTearDown(controller.dispose);
+
+    final initialization = controller.initialize();
+    await controller.updateSettings(
+      const ChatSessionSettings(
+        customSystemPrompt: '使用用户的新设置。',
+        responseStyle: ChatResponseStyle.detailed,
+      ),
+    );
+    repository.completeLoad(
+      const ChatSessionSettings(
+        customSystemPrompt: '这是迟到的旧设置。',
+        responseStyle: ChatResponseStyle.concise,
+      ),
+    );
+    await initialization;
+
+    expect(controller.settings.customSystemPrompt, '使用用户的新设置。');
+    expect(controller.settings.responseStyle, ChatResponseStyle.detailed);
+  });
+
   test('deleteMessagesAt removes selected messages in descending index order',
       () async {
     const context = ChatContext(
@@ -433,4 +468,23 @@ class _PendingChatSessionRepository implements ChatSessionRepository {
 
   @override
   Future<void> setPinned(String contextId, bool pinned) async {}
+}
+
+class _PendingChatSessionSettingsRepository
+    implements ChatSessionSettingsRepository {
+  final _load = Completer<ChatSessionSettings>();
+
+  void completeLoad(ChatSessionSettings settings) => _load.complete(settings);
+
+  @override
+  Future<void> clear(String contextId) async {}
+
+  @override
+  Future<ChatSessionSettings> load(String contextId) => _load.future;
+
+  @override
+  Future<void> save(
+    String contextId,
+    ChatSessionSettings settings,
+  ) async {}
 }

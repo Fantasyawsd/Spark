@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/spark_theme.dart';
-import '../../papers/domain/paper.dart';
+import '../../papers/papers.dart';
 import '../application/paper_search_controller.dart';
 
 class PaperSearchScreen extends StatefulWidget {

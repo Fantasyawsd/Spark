@@ -56,10 +56,10 @@ void main() {
     expect(violations, isEmpty, reason: violations.join('\n'));
   });
 
-  test('features do not deep import sibling implementation layers', () {
+  test('features import sibling contracts through public entries', () {
     final violations = _siblingLayerImports(
       sourceFiles,
-      forbiddenLayers: const {'application', 'data'},
+      forbiddenLayers: const {'application', 'data', 'domain'},
     );
 
     expect(violations, isEmpty, reason: violations.join('\n'));
@@ -71,6 +71,7 @@ void main() {
     for (final entry in [
       File('lib/src/features/ai_settings/ai_settings.dart'),
       File('lib/src/features/chat/chat.dart'),
+      File('lib/src/features/papers/papers.dart'),
     ]) {
       for (final exported in _exportClosure(entry).skip(1)) {
         final layer = _featureLayer(exported);
@@ -107,6 +108,14 @@ List<String> _siblingLayerImports(
     final sourceFeature = _featureName(file);
     if (sourceFeature == null) continue;
     for (final directive in _directives(file)) {
+      final directImport = _resolve(file, directive);
+      final directTargetFeature =
+          directImport == null ? null : _featureName(directImport);
+      if (directTargetFeature != null &&
+          directTargetFeature != sourceFeature &&
+          _isFeaturePublicEntry(directImport!, directTargetFeature)) {
+        continue;
+      }
       for (final imported in _directiveClosure(file, directive)) {
         final targetFeature = _featureName(imported);
         if (targetFeature == null || targetFeature == sourceFeature) continue;
@@ -118,6 +127,15 @@ List<String> _siblingLayerImports(
     }
   }
   return violations;
+}
+
+bool _isFeaturePublicEntry(File file, String feature) {
+  final segments = _segments(file);
+  final featuresIndex = segments.lastIndexOf('features');
+  return featuresIndex >= 0 &&
+      featuresIndex + 2 == segments.length - 1 &&
+      segments[featuresIndex + 1] == feature &&
+      segments.last == '$feature.dart';
 }
 
 final _directivePattern = RegExp(

@@ -1,4 +1,4 @@
-import '../../papers/domain/paper.dart';
+import '../../papers/papers.dart';
 
 class PaperSearchMatcher {
   const PaperSearchMatcher._();

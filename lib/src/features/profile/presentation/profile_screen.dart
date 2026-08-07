@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/spark_theme.dart';
-import '../../papers/domain/favorite_group.dart';
-import '../../papers/domain/paper.dart';
+import '../../papers/papers.dart';
 import 'favorite_collection_section.dart';
 import 'paper_shelf_list_screen.dart';
 import 'paper_shelf_section.dart';

@@ -2,8 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
-import '../../papers/domain/paper.dart';
-import '../../papers/domain/paper_catalog.dart';
+import '../../papers/papers.dart';
 import '../domain/arxiv_paper_id.dart';
 import '../domain/paper_search_history_repository.dart';
 import '../domain/paper_search_matcher.dart';

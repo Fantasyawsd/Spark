@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/spark_theme.dart';
-import '../../papers/domain/favorite_group.dart';
-import '../../papers/domain/paper.dart';
+import '../../papers/papers.dart';
 
 /// Full list page for favorites, read-later papers, and reading history.
 class PaperShelfListScreen extends StatefulWidget {

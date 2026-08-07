@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/theme/spark_theme.dart';
 import '../../../core/widgets/surface_card.dart';
-import '../../papers/domain/paper.dart';
+import '../../papers/papers.dart';
 import 'profile_section_header.dart';
 
 class PaperShelfSection extends StatelessWidget {

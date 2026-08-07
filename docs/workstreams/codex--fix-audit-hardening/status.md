@@ -9,7 +9,7 @@
 - 基线提交：`e8adb382fff91d1834d9e349e0a080c70bfced62`
 - 负责人：Codex（用户编排）
 - 状态：待合并
-- 最近更新：`2026-08-07 17:34`
+- 最近更新：`2026-08-07 17:58`
 
 ## 目标
 
@@ -19,7 +19,7 @@
 
 - 不迁移 PaperFlow 旧目录、旧 JSON format、旧安全存储 namespace 或旧 Android application ID；产品尚未发布，不存在需要兼容的旧版本。
 - 不新增账号、云同步、服务端代理或在线 Feature Flag。
-- 不启动 Windows 应用、Android 模拟器或浏览器自动化；本轮使用测试、静态分析和构建验证。
+- 不启动 Android 模拟器或浏览器自动化；Windows 应用仅按用户要求用于最终人工验收。
 
 ## 验收标准
 
@@ -70,7 +70,8 @@
 - 已完成：提交后双轴复审发现 Chat 设置迟到加载和 Papers 跨 feature 深导入两项遗漏；分别以 settings revision、Papers 领域公共入口及递归架构门禁修复。
 - 已完成：最终格式、静态分析、394 项全量测试和 development debug APK 已从最新文件状态通过；代码、规范及复审修复形成四个可解释检查点。
 - 已完成：独立 verifier 复核完整固定基线差异与高风险实现，结论 `VERDICT: PASS`。
-- 下一步：交由用户决定合并时机。
+- 已完成：Windows debug 应用构建并启动成功，用户完成人工验收并明确确认通过。
+- 下一步：根据用户 `/finish` 指令合入 `main`，完成合并后归档与清理。
 - 阻塞项：无。
 
 ## 决策记录
@@ -81,6 +82,7 @@
 | 2026-08-07 | 使用本地 `main@e8adb38` 为基线 | 控制工作树干净，且最新功能提交均在本地 main | 不以落后 14 个提交的 `origin/main` 为实现基线 |
 | 2026-08-07 | 不启动应用或浏览器自动化 | 用户未授权 Windows 启动，项目规则要求前端只做静态验证 | 以 Widget 测试、analyzer 和 APK 构建作为证据 |
 | 2026-08-07 | 保留恢复后的首轮生产代码与对应测试为单一检查点 | 关机恢复时跨模块契约迁移与全部回归已共存于未提交工作区；不在缺少原始中间状态的情况下伪造事后历史 | 首个检查点范围较大；规范工具及两项复审修复均另行原子提交 |
+| 2026-08-07 | Windows 人工验收通过后执行 `/finish` | 用户检查本地 Windows 构建并明确确认验收通过 | 审查与人工验收均无阻断，允许合入 `main` |
 
 ## 验证记录
 
@@ -100,6 +102,7 @@
 | `flutter build apk --debug --flavor development --dart-define=SPARK_ENV=development` | 最新代码 APK 构建成功：`build/app/outputs/flutter-apk/app-development-debug.apk`，164,790,693 bytes，SHA-256 `C4A2EE91165332E82B2971381AE831719800FDCDBE61EFB0809A79FE3FF46C4A` | 2026-08-07 |
 | `git diff --check`、冲突标记、敏感信息、异常大文件与边界扫描 | 通过；仅有 Git CRLF 转换提示；无旧 shim、无 `data -> application`、无 presentation 直接 Clipboard | 2026-08-07 |
 | 独立 `check-work` verifier | `VERDICT: PASS`；独立复核完整差异、高风险代码、测试覆盖、APK 产物与 Git 清洁度；其只读沙箱未重复运行 Flutter 命令 | 2026-08-07 |
+| `flutter pub get` + `flutter run -d windows` | Windows debug 应用构建并启动成功，`spark.exe` 响应正常；用户完成人工验收并确认通过 | 2026-08-07 |
 
 ## 审查结论
 
@@ -108,7 +111,7 @@
 - 修复状态：上述首轮阻断项均已修复并通过定向及全量回归。
 - 提交后阻断项：Chat 设置加载期间的用户更新可能被迟到结果覆盖；Profile/Search 直接深导入 Papers 领域实现，架构门禁存在 domain 假阴性。
 - 提交后修复：`37babea` 以设置 revision 保留新 mutation；`4259b1f` 新增 Papers 领域公共入口并收紧跨 feature 门禁；定向 48 项及全量 394 项回归通过。
-- 结论：标准轴与需求轴已无未修复阻断项，独立 verifier 为 `PASS`，当前分支可进入合并决策。
+- 结论：标准轴与需求轴已无未修复阻断项，独立 verifier 为 `PASS`，Windows 人工验收通过，当前分支可合并。
 
 ## 检查点与提交
 
@@ -119,6 +122,7 @@
 | `37babea` | `fix(chat): preserve settings changed during load` | 需求轴复审修复 | Chat/设置定向 19 项、analyze 与全量回归通过 |
 | `4259b1f` | `refactor(papers): expose cross-feature domain contracts` | 标准轴复审修复 | 架构/Profile/Search 定向回归、跨 feature 扫描与全量回归通过 |
 | `d2830f0` | `docs: record audit hardening verification` | 合并前台账 | 验证、复审、兼容性、风险和回滚信息完整 |
+| `2d93518` | `docs: record independent verification` | 独立复核 | verifier 结论 `PASS`，无新增阻断项 |
 
 ## 交付准备（合并前收集）
 
@@ -142,12 +146,12 @@
 
 ### 已知风险与回滚
 
-- 已知风险：未进行真实设备/Windows 应用人工验收；第三方 arXiv/DeepSeek 运行时行为仍依赖网络和用户 BYOK。当前构建与测试均使用本地 fake 或静态门禁。
+- 已知风险：尚未进行真实 Android 设备与发布签名验收；第三方 arXiv/DeepSeek 运行时行为仍依赖网络和用户 BYOK。Windows debug 应用已完成人工验收，自动化测试中的外部服务使用本地 fake。
 - 回滚方式：按依赖逆序 `git revert 4259b1f 37babea 93924cf 6db94c7`；涉及当前开发数据 schema 时以损坏隔离和重建缓存恢复。
 
 ### 文档更新建议
 
-- 修正规范中的旧 worktree 根路径；功能状态不变，预计无需修改产品路线图。
+- 任务分支已修正规范中的旧 worktree 根路径及开发计划中的 Chat 会话存储文件名；本任务不新增路线图能力，合并后无需进一步调整功能完成状态。
 
 ### 未完成与后续工作
 

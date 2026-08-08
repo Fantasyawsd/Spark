@@ -1,7 +1,7 @@
 # Spark AI Agent 开发规范
 
 > 本文件是 Claude Code 及其他 AI Agent 在本仓库工作的统一入口。
-> 最近更新：2026-08-06
+> 最近更新：2026-08-07
 
 ## 1. 指令优先级与语言
 
@@ -210,11 +210,13 @@ docs/workstreams/<branch-slug>/
 flutter analyze
 flutter test
 flutter build apk --debug --flavor development --dart-define=SPARK_ENV=development
+flutter build windows --debug --dart-define=SPARK_ENV=development
 ```
 
 纯文档任务至少执行 Markdown 链接检查和 `git diff --check`，不需要无意义地运行 Flutter 构建。
 
 - 不启动 Android 模拟器。
+- `/finish` 合入 `main` 后必须在同一次收尾流程中完成 development APK 和 Windows debug EXE 两个目标构建，并在 `status.md` 记录产物路径、大小和 SHA-256；任一构建失败不得完成归档或清理。
 - 开发验收（用户要求检验时）：执行 `flutter pub get` + `flutter run -d windows` 启动 Windows 桌面应用，等待用户操作检验；不自行替代为 APK、模拟器或其他平台。运行前先与用户确认。
 - Windows release 只在任务涉及 Windows 发布或回归时执行。
 - UI 修改使用 Widget 测试、静态检查和构建验证；不使用浏览器自动化验证 Flutter 应用。

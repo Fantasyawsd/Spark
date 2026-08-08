@@ -45,6 +45,13 @@ class PaperAiComposer extends StatefulWidget {
 }
 
 class _PaperAiComposerState extends State<PaperAiComposer> {
+  static const _reasoningOptions = [
+    ChatReasoningEffort.none,
+    ChatReasoningEffort.medium,
+    ChatReasoningEffort.high,
+    ChatReasoningEffort.max,
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -83,68 +90,13 @@ class _PaperAiComposerState extends State<PaperAiComposer> {
           duration: const Duration(milliseconds: 160),
           curve: Curves.easeOutCubic,
           alignment: Alignment.bottomCenter,
-          child: Container(
-            key: const ValueKey('paper-ai-composer-surface'),
-            padding: const EdgeInsets.fromLTRB(14, 10, 8, 6),
-            decoration: BoxDecoration(
-              color: PaperAiUiTokens.composer(context),
-              borderRadius: BorderRadius.only(
-                topLeft: const Radius.circular(22),
-                topRight: const Radius.circular(22),
-                bottomLeft: Radius.circular(keyboardVisible ? 0 : 22),
-                bottomRight: Radius.circular(keyboardVisible ? 0 : 22),
-              ),
-              border:
-                  Border.all(color: PaperAiUiTokens.composerBorder(context)),
-              boxShadow: [
-                BoxShadow(
-                  color: PaperAiUiTokens.shadow(context),
-                  blurRadius: 12,
-                  offset: Offset(0, -2),
-                ),
-              ],
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ConstrainedBox(
-                  constraints: const BoxConstraints(
-                    minHeight: 40,
-                    maxHeight: 132,
-                  ),
-                  child: TextField(
-                    key: const ValueKey('paper-ai-input'),
-                    controller: widget.controller,
-                    focusNode: widget.focusNode,
-                    readOnly: !widget.enabled,
-                    onChanged: widget.onChanged,
-                    minLines: 1,
-                    maxLines: 6,
-                    textAlignVertical: TextAlignVertical.top,
-                    textInputAction: TextInputAction.newline,
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.onSurface,
-                      fontSize: 15.5,
-                      height: 1.4,
-                    ),
-                    decoration: InputDecoration(
-                      hintText: '输入消息与AI聊天',
-                      hintStyle: TextStyle(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        fontSize: 15.5,
-                      ),
-                      filled: false,
-                      border: InputBorder.none,
-                      enabledBorder: InputBorder.none,
-                      focusedBorder: InputBorder.none,
-                      disabledBorder: InputBorder.none,
-                      isDense: true,
-                      contentPadding: EdgeInsets.fromLTRB(2, 4, 2, 4),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 6),
-                SizedBox(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: SizedBox(
                   key: const ValueKey('paper-ai-composer-toolbar'),
                   height: 38,
                   child: Row(
@@ -171,7 +123,7 @@ class _PaperAiComposerState extends State<PaperAiComposer> {
                       const SizedBox(width: 8),
                       _ToolbarIconButton(
                         key: const ValueKey('paper-ai-reasoning-setting'),
-                        tooltip: '调整思考深度',
+                        tooltip: '模型思考强度',
                         icon: Icons.lightbulb_outline_rounded,
                         color:
                             widget.reasoningEffort == ChatReasoningEffort.none
@@ -189,43 +141,117 @@ class _PaperAiComposerState extends State<PaperAiComposer> {
                             ? widget.onClearContext
                             : null,
                       ),
-                      const Spacer(),
-                      IconButton(
-                        key: ValueKey(
-                          widget.sending
-                              ? 'paper-ai-composer-stop'
-                              : 'paper-ai-send',
-                        ),
-                        tooltip: widget.sending ? '停止生成' : '发送',
-                        onPressed: widget.sending
-                            ? widget.onCancel
-                            : canSend
-                                ? widget.onSend
-                                : null,
-                        style: IconButton.styleFrom(
-                          backgroundColor: widget.sending || canSend
-                              ? PaperAiUiTokens.accent(context)
-                              : PaperAiUiTokens.disabledControl(context),
-                          foregroundColor: widget.sending || canSend
-                              ? Theme.of(context).colorScheme.onPrimary
-                              : Theme.of(context).colorScheme.outline,
-                          minimumSize: const Size(40, 40),
-                          maximumSize: const Size(40, 40),
-                          padding: EdgeInsets.zero,
-                          shape: const CircleBorder(),
-                        ),
-                        icon: Icon(
-                          widget.sending
-                              ? Icons.stop_rounded
-                              : Icons.arrow_upward_rounded,
-                          size: 20,
-                        ),
-                      ),
                     ],
                   ),
                 ),
-              ],
-            ),
+              ),
+              const SizedBox(height: 2),
+              Container(
+                key: const ValueKey('paper-ai-composer-surface'),
+                padding: const EdgeInsets.fromLTRB(14, 10, 8, 6),
+                decoration: BoxDecoration(
+                  color: PaperAiUiTokens.composer(context),
+                  borderRadius: BorderRadius.only(
+                    topLeft: const Radius.circular(22),
+                    topRight: const Radius.circular(22),
+                    bottomLeft: Radius.circular(keyboardVisible ? 0 : 22),
+                    bottomRight: Radius.circular(keyboardVisible ? 0 : 22),
+                  ),
+                  border: Border.all(
+                    color: PaperAiUiTokens.composerBorder(context),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: PaperAiUiTokens.shadow(context),
+                      blurRadius: 12,
+                      offset: Offset(0, -2),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Expanded(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(
+                          minHeight: 40,
+                          maxHeight: 132,
+                        ),
+                        child: TextField(
+                          key: const ValueKey('paper-ai-input'),
+                          controller: widget.controller,
+                          focusNode: widget.focusNode,
+                          readOnly: !widget.enabled,
+                          onChanged: widget.onChanged,
+                          minLines: 1,
+                          maxLines: 6,
+                          textAlignVertical: TextAlignVertical.top,
+                          textInputAction: TextInputAction.newline,
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.onSurface,
+                            fontSize: 15.5,
+                            height: 1.4,
+                          ),
+                          decoration: InputDecoration(
+                            hintText: '输入消息与AI聊天',
+                            hintStyle: TextStyle(
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurfaceVariant,
+                              fontSize: 15.5,
+                            ),
+                            filled: false,
+                            border: InputBorder.none,
+                            enabledBorder: InputBorder.none,
+                            focusedBorder: InputBorder.none,
+                            disabledBorder: InputBorder.none,
+                            isDense: true,
+                            contentPadding: const EdgeInsets.fromLTRB(
+                              2,
+                              4,
+                              2,
+                              4,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    IconButton(
+                      key: ValueKey(
+                        widget.sending
+                            ? 'paper-ai-composer-stop'
+                            : 'paper-ai-send',
+                      ),
+                      tooltip: widget.sending ? '停止生成' : '发送',
+                      onPressed: widget.sending
+                          ? widget.onCancel
+                          : canSend
+                              ? widget.onSend
+                              : null,
+                      style: IconButton.styleFrom(
+                        backgroundColor: widget.sending || canSend
+                            ? PaperAiUiTokens.accent(context)
+                            : PaperAiUiTokens.disabledControl(context),
+                        foregroundColor: widget.sending || canSend
+                            ? Theme.of(context).colorScheme.onPrimary
+                            : Theme.of(context).colorScheme.outline,
+                        minimumSize: const Size(40, 40),
+                        maximumSize: const Size(40, 40),
+                        padding: EdgeInsets.zero,
+                        shape: const CircleBorder(),
+                      ),
+                      icon: Icon(
+                        widget.sending
+                            ? Icons.stop_rounded
+                            : Icons.arrow_upward_rounded,
+                        size: 20,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -244,62 +270,41 @@ class _PaperAiComposerState extends State<PaperAiComposer> {
       builder: (context) => SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(18, 4, 18, 22),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                '选择模型',
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurface,
-                  fontSize: 22,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: 14),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: PaperAiUiTokens.assistantReasoning(context),
-                  borderRadius: BorderRadius.circular(18),
-                ),
-                child: Row(
-                  children: [
-                    const PaperAiModelAvatar(size: 32),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            widget.modelName,
-                            style: TextStyle(
-                              color: Theme.of(context).colorScheme.onSurface,
-                              fontSize: 15,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          const SizedBox(height: 3),
-                          Text(
-                            'Chat · text → text · DeepSeek',
-                            style: TextStyle(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSurfaceVariant,
-                              fontSize: 11,
-                            ),
-                          ),
-                        ],
-                      ),
+          child: Container(
+            key: const ValueKey('paper-ai-model-option'),
+            width: double.infinity,
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: PaperAiUiTokens.assistantReasoning(context),
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: Row(
+              children: [
+                const PaperAiModelAvatar(size: 32),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    widget.modelName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurface,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
                     ),
-                    Icon(
-                      Icons.check_circle_rounded,
-                      color: PaperAiUiTokens.accent(context),
-                    ),
-                  ],
+                  ),
                 ),
-              ),
-            ],
+                const SizedBox(width: 8),
+                SizedBox(
+                  width: 32,
+                  child: Icon(
+                    Icons.check_circle_rounded,
+                    color: PaperAiUiTokens.accent(context),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -307,7 +312,12 @@ class _PaperAiComposerState extends State<PaperAiComposer> {
   }
 
   Future<void> _showReasoningSheet() async {
-    var selected = widget.reasoningEffort;
+    var selected = _reasoningOptions.contains(widget.reasoningEffort)
+        ? widget.reasoningEffort
+        : ChatReasoningEffort.medium;
+    if (selected != widget.reasoningEffort) {
+      widget.onReasoningEffortChanged(selected);
+    }
     await showModalBottomSheet<void>(
       context: context,
       backgroundColor: PaperAiUiTokens.canvas(context),
@@ -315,64 +325,80 @@ class _PaperAiComposerState extends State<PaperAiComposer> {
       showDragHandle: true,
       builder: (context) => StatefulBuilder(
         builder: (context, setSheetState) {
-          final values = ChatReasoningEffort.values;
+          final values = _reasoningOptions;
           final selectedIndex =
               values.indexOf(selected).clamp(0, values.length - 1);
+          final scheme = Theme.of(context).colorScheme;
           return SafeArea(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(22, 0, 22, 26),
+              padding: const EdgeInsets.fromLTRB(22, 0, 22, 20),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    '调整模型思考深度',
+                    '模型思考强度',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      color: Theme.of(context).colorScheme.onSurface,
+                      color: scheme.onSurface,
                       fontSize: 22,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    '并非所有模型都支持深度调整。请参考模型和提供商文档。',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      fontSize: 13,
-                      height: 1.4,
-                    ),
-                  ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 18),
                   Icon(
                     Icons.lightbulb_outline_rounded,
                     color: PaperAiUiTokens.accent(context),
                     size: 42,
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 6),
                   Text(
                     _displayLabel(selected),
                     style: TextStyle(
-                      color: Theme.of(context).colorScheme.onSurface,
+                      color: scheme.onSurface,
                       fontSize: 17,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
-                  const SizedBox(height: 12),
-                  Slider(
-                    value: selectedIndex.toDouble(),
-                    min: 0,
-                    max: (values.length - 1).toDouble(),
-                    divisions: values.length - 1,
-                    activeColor: PaperAiUiTokens.accent(context),
-                    inactiveColor: PaperAiUiTokens.accent(context).withValues(
-                      alpha: 0.22,
+                  const SizedBox(height: 14),
+                  SizedBox(
+                    height: 56,
+                    child: SliderTheme(
+                      data: SliderTheme.of(context).copyWith(
+                        trackHeight: 18,
+                        trackShape: const _ReasoningSliderTrackShape(),
+                        activeTrackColor: PaperAiUiTokens.accent(context),
+                        inactiveTrackColor: Color.alphaBlend(
+                          scheme.onSurface.withValues(alpha: 0.08),
+                          scheme.surface,
+                        ),
+                        thumbColor: scheme.surface,
+                        disabledThumbColor: scheme.surface,
+                        thumbShape: const RoundSliderThumbShape(
+                          enabledThumbRadius: 22,
+                          elevation: 2,
+                          pressedElevation: 4,
+                        ),
+                        overlayColor: PaperAiUiTokens.accent(
+                          context,
+                        ).withValues(alpha: 0.08),
+                        overlayShape: const RoundSliderOverlayShape(
+                          overlayRadius: 27,
+                        ),
+                        tickMarkShape: SliderTickMarkShape.noTickMark,
+                      ),
+                      child: Slider(
+                        key: const ValueKey('paper-ai-reasoning-slider'),
+                        value: selectedIndex.toDouble(),
+                        min: 0,
+                        max: (values.length - 1).toDouble(),
+                        divisions: values.length - 1,
+                        onChanged: (value) {
+                          final next = values[value.round()];
+                          setSheetState(() => selected = next);
+                          widget.onReasoningEffortChanged(next);
+                        },
+                      ),
                     ),
-                    onChanged: (value) {
-                      final next = values[value.round()];
-                      setSheetState(() => selected = next);
-                      widget.onReasoningEffortChanged(next);
-                    },
                   ),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -395,9 +421,7 @@ class _PaperAiComposerState extends State<PaperAiComposer> {
                                 style: TextStyle(
                                   color: effort == selected
                                       ? PaperAiUiTokens.accent(context)
-                                      : Theme.of(
-                                          context,
-                                        ).colorScheme.onSurfaceVariant,
+                                      : scheme.onSurfaceVariant,
                                   fontSize: 12,
                                   fontWeight: effort == selected
                                       ? FontWeight.w700
@@ -421,11 +445,72 @@ class _PaperAiComposerState extends State<PaperAiComposer> {
   static String _displayLabel(ChatReasoningEffort effort) {
     return switch (effort) {
       ChatReasoningEffort.none => '关闭',
-      ChatReasoningEffort.low => '低',
-      ChatReasoningEffort.medium => '中等',
+      ChatReasoningEffort.low || ChatReasoningEffort.medium => '自动',
       ChatReasoningEffort.high => '高',
-      ChatReasoningEffort.max => '超高',
+      ChatReasoningEffort.max => '极致',
     };
+  }
+}
+
+class _ReasoningSliderTrackShape extends RoundedRectSliderTrackShape {
+  const _ReasoningSliderTrackShape();
+
+  @override
+  void paint(
+    PaintingContext context,
+    Offset offset, {
+    required RenderBox parentBox,
+    required SliderThemeData sliderTheme,
+    required Animation<double> enableAnimation,
+    required TextDirection textDirection,
+    required Offset thumbCenter,
+    Offset? secondaryOffset,
+    bool isDiscrete = false,
+    bool isEnabled = false,
+    double additionalActiveTrackHeight = 2,
+  }) {
+    super.paint(
+      context,
+      offset,
+      parentBox: parentBox,
+      sliderTheme: sliderTheme,
+      enableAnimation: enableAnimation,
+      textDirection: textDirection,
+      thumbCenter: thumbCenter,
+      secondaryOffset: secondaryOffset,
+      isDiscrete: isDiscrete,
+      isEnabled: isEnabled,
+      additionalActiveTrackHeight: 0,
+    );
+
+    final trackRect = getPreferredRect(
+      parentBox: parentBox,
+      offset: offset,
+      sliderTheme: sliderTheme,
+      isEnabled: isEnabled,
+      isDiscrete: isDiscrete,
+    );
+    final dotRadius = trackRect.height * 0.16;
+    final leftDot = Offset(
+      trackRect.left + trackRect.height / 2,
+      trackRect.center.dy,
+    );
+    final rightDot = Offset(
+      trackRect.right - trackRect.height / 2,
+      trackRect.center.dy,
+    );
+    context.canvas
+      ..drawCircle(
+        leftDot,
+        dotRadius,
+        Paint()..color = sliderTheme.activeTrackColor!.withValues(alpha: 0.45),
+      )
+      ..drawCircle(
+        rightDot,
+        dotRadius,
+        Paint()
+          ..color = sliderTheme.inactiveTrackColor!.withValues(alpha: 0.75),
+      );
   }
 }
 

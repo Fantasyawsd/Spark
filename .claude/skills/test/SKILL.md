@@ -1,6 +1,6 @@
 ---
 name: test
-description: 运行验证门禁（格式、analyze、全量测试、development APK 构建）并记录证据到台账；用户要求验收时启动 Windows 桌面应用。
+description: 运行验证门禁并记录证据到台账；用户要求验收时启动 Windows 桌面应用，合并收尾时由 `/finish` 确认 APK 与 Windows EXE 双目标产物。
 disable-model-invocation: true
 ---
 
@@ -15,7 +15,7 @@ disable-model-invocation: true
    - 完成标准：明确本次要跑的验证与不跑的项及原因。
 
 2. **运行门禁**
-   - 按顺序运行格式检查、`flutter analyze`、`flutter test`、development APK 构建；命令清单见 `docs/standards/version-control.md`「验证门禁」。
+   - 按顺序运行格式检查、`flutter analyze`、`flutter test` 和目标构建；命令清单见 `docs/standards/version-control.md`「验证门禁」。合并后的双目标构建由 `/finish` 按同一门禁确认。
    - 完成标准：每个命令有明确成功/失败输出；失败时区分本次引入 / 基线已有 / 环境缺失 / 外部服务不可用。
 
 3. **验收运行（用户要求检验时）**

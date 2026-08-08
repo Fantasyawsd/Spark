@@ -315,6 +315,9 @@ class _PaperAiComposerState extends State<PaperAiComposer> {
     var selected = _reasoningOptions.contains(widget.reasoningEffort)
         ? widget.reasoningEffort
         : ChatReasoningEffort.medium;
+    if (selected != widget.reasoningEffort) {
+      widget.onReasoningEffortChanged(selected);
+    }
     await showModalBottomSheet<void>(
       context: context,
       backgroundColor: PaperAiUiTokens.canvas(context),

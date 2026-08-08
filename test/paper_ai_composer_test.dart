@@ -283,6 +283,50 @@ void main() {
     expect(effort, ChatReasoningEffort.none);
   });
 
+  testWidgets('reasoning sheet normalizes unsupported effort on open', (
+    tester,
+  ) async {
+    final controller = TextEditingController();
+    addTearDown(controller.dispose);
+    var effort = ChatReasoningEffort.low;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: StatefulBuilder(
+            builder: (context, setState) => PaperAiComposer(
+              controller: controller,
+              enabled: true,
+              sending: false,
+              reasoningEffort: effort,
+              onReasoningEffortChanged: (value) =>
+                  setState(() => effort = value),
+              webSearchAvailable: false,
+              webSearchEnabled: false,
+              onWebSearchChanged: (_) {},
+              hasContext: false,
+              onClearContext: () {},
+              onChanged: (_) {},
+              onSend: () {},
+              onCancel: () {},
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.byKey(const ValueKey('paper-ai-reasoning-setting')));
+    await tester.pumpAndSettle();
+
+    expect(effort, ChatReasoningEffort.medium);
+    expect(
+      find.byKey(const ValueKey('paper-ai-reasoning-option-medium')),
+      findsOneWidget,
+    );
+    Navigator.of(tester.element(find.text('模型思考强度'))).pop();
+    await tester.pumpAndSettle();
+  });
+
   testWidgets('model sheet keeps only the centered model name and avatar', (
     tester,
   ) async {

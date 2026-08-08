@@ -8,7 +8,7 @@
 - Worktree：`C:\Users\Fantasy\Desktop\Spark-worktrees\chatpaper-composer-toolbar`
 - 基线提交：`13d7119`
 - 负责人：Fantasy（编排者）；执行：Codex
-- 状态：待合并
+- 状态：已合并
 - 最近更新：2026-08-09
 
 ## 目标
@@ -55,9 +55,9 @@
 
 ## 当前进度
 
-- 已完成：必读文档、基线与共用组件调用范围确认；Composer、模型面板和思考强度面板调整；结构、多行、窄屏和聊天流程测试；格式与静态分析门禁；Windows 实机视觉验收。
+- 已完成：必读文档、基线与共用组件调用范围确认；Composer、模型面板和思考强度面板调整；结构、多行、窄屏和聊天流程测试；格式与静态分析门禁；Windows 实机视觉验收；合入 `main`；合并后全量回归与双目标构建。
 - 正在进行：无。
-- 下一步：合并到 `main`，执行双目标构建并完成合并后归档。
+- 下一步：无；本次归档提交后清理任务 worktree 与分支。
 - 阻塞项：无。
 
 ## 决策记录
@@ -81,6 +81,13 @@
 | `flutter run -d windows --no-resident --dart-define=SPARK_ENV=development` | 通过；更新后的 Windows debug 构建完成，Spark 窗口已启动并保持响应 | 2026-08-08 |
 | `git diff --check` | 通过 | 2026-08-08 |
 | Windows 人工视觉验收 | 通过；编排者逐轮确认工具栏、模型面板与思考强度面板，并明确批准 `/finish` | 2026-08-09 |
+| `git merge-base --is-ancestor 1feb87b main` | 通过；任务提交已真实进入 `main` | 2026-08-09 |
+| `dart format --output=none --set-exit-if-changed ...`（main） | 通过；2 个变更 Dart 文件无格式差异 | 2026-08-09 |
+| `flutter analyze`（main） | 通过；No issues found | 2026-08-09 |
+| `flutter test`（main） | 通过；394 项全量测试 | 2026-08-09 |
+| `flutter build apk --debug --flavor development --dart-define=SPARK_ENV=development` | 通过；`build/app/outputs/flutter-apk/app-development-debug.apk`，193,258,407 字节（184.31 MiB），SHA-256 `9DB06E4BC1C07B5DB48C1BBA5ECAA003F8EDBD7F9096E3E77A47466E87660DC7` | 2026-08-09 |
+| `flutter build windows --debug --dart-define=SPARK_ENV=development` | 通过；`build/windows/x64/runner/Debug/spark.exe`，1,278,976 字节（1.22 MiB），SHA-256 `AE6FF77E8BB96BBB6BAC49BCB8EB8DAD34DA05CD8957CBF37AB6D168DB9772E8` | 2026-08-09 |
+| 合并后归档文档检查 | 通过；台账无 Markdown 链接目标，`git diff --check` 无错误 | 2026-08-09 |
 
 ## 审查结论
 
@@ -93,6 +100,8 @@
 
 | SHA | 提交信息 | 对应阶段 | 验证摘要 |
 | --- | --- | --- | --- |
+| `1feb87b` | `fix(chat): refine composer controls and panels` | 实现、测试与合并前台账 | 定向 16 项、全量 394 项、analyze、格式与 Windows 人工验收通过 |
+| `93e8a5c` | `merge: refine chat composer controls` | 合并到 `main` | ancestry、main 全量回归、development APK 与 Windows debug EXE 构建通过 |
 
 ## 交付准备（合并前收集）
 
@@ -117,7 +126,7 @@ ChatPaper 主聊天、论文聊天和 AI 解读的功能按钮已统一移至输
 ### 已知风险与回滚
 
 - 已知风险：无；Windows 桌面视觉已由编排者逐轮验收，自动化覆盖窄屏、多行和面板布局。
-- 回滚方式：revert 本任务提交；无数据影响。
+- 回滚方式：在 `main` revert 合并提交 `93e8a5c`；无数据迁移或持久化影响。
 
 ### 文档更新建议
 
@@ -129,11 +138,11 @@ ChatPaper 主聊天、论文聊天和 AI 解读的功能按钮已统一移至输
 
 ## 合并归档（合并后在 main 补齐）
 
-- 最终状态：待合并
+- 最终状态：已合并
 - 合入分支：`main`
-- 最终集成提交：待合并
-- Pull Request：无
-- 合并时间：待合并
-- main 集成验证：待合并后补充
-- 开发计划更新：不适用，纯展示调整
+- 最终集成提交：`93e8a5c9bac5a27c833815631cb60a5229b514d9`
+- Pull Request：无；日常开发由编排者批准本地直接合并
+- 合并时间：2026-08-09 00:02:39（+08:00）
+- main 集成验证：`git merge-base --is-ancestor 1feb87b main`、显式 Dart 格式检查、`flutter analyze`、394 项 `flutter test`、development debug APK 和 Windows debug EXE 均通过；两个构建产物的路径、大小与 SHA-256 已记录在验证表
+- 开发计划更新：不适用；本任务只调整既有 ChatPaper Composer 与底部面板的展示和交互形态，不新增或改变 `docs/development.md` 中的产品能力状态
 - 最终后续项：无

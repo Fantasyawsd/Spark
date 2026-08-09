@@ -4,6 +4,8 @@ Spark 的用户可见变更记录在此文件中。格式遵循 Keep a Changelog
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-08-10
+
 ### Added
 
 - Android development、staging、production 构建渠道。
@@ -28,3 +30,6 @@ Spark 的用户可见变更记录在此文件中。格式遵循 Keep a Changelog
 
 - DeepSeek API Key 使用设备安全存储，公开构建不包含共享 Key。
 - Android release 缺少正式签名配置时拒绝构建。
+
+[Unreleased]: https://github.com/Fantasyawsd/PaperFlowDev/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/Fantasyawsd/PaperFlowDev/releases/tag/v0.1.0

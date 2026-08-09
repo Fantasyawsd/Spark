@@ -1,65 +1,67 @@
-# Spark 0.1.0 发布说明
+# Spark 0.1.0 Release Notes
 
-> 状态：已发布（GitHub Release 里程碑）
-> 发布日期：2026-08-10
-> 版本：`0.1.0+2`
+> Status: Released (GitHub Release milestone)
+> Release date: 2026-08-10
+> Version: `0.1.0+2`
 
-## 概述
+[English](README.md) | [简体中文](README.zh-CN.md)
 
-Spark 是面向个人研究者的 Flutter 论文发现、阅读和 AI 研究助手。0.1.0 是首个正式发布版本，基于公开仓库 `Fantasyawsd/PaperFlowDev`，以 GitHub Release 里程碑形式发布（本版本未进入应用商店签名发布流程）。
+## Overview
 
-## 功能清单
+Spark is a Flutter app for personal researchers to discover, read, and get AI assistance on academic papers. 0.1.0 is the first formal release, published from the public repository `Fantasyawsd/PaperFlowDev` as a GitHub Release milestone (this version does not go through the app-store signed release process).
 
-### 论文
+## Features
 
-- arXiv 远程论文流、分页、搜索和离线缓存。
-- 推荐 / 关注 / 最新及 arXiv 主题频道，支持频道管理、频道级时间筛选、独立浏览位置和懒加载。
-- 单页刷论文与双栏浏览选择。
-- Markdown、LaTeX、英文 Abstract、中文摘要、内容关键词和六页论文阅读器（Abstract / 摘要 / 关键词 / 作者 / AI 解读 / 相关论文）。
-- 点赞、评论、分享、已读、稍后阅读和收藏分组。
-- 从搜索、收藏、历史和相关论文进入独立全屏阅读页。
+### Papers
+
+- arXiv remote paper feed, pagination, search, and offline caching.
+- Recommended / Following / Latest and arXiv topic channels, with channel management, per-channel time filtering, independent scroll positions, and lazy loading.
+- Single-column swipe browsing and a two-column layout option.
+- Markdown, LaTeX, English abstract, Chinese summary, content keywords, and a six-page paper reader (Abstract / Summary / Keywords / Authors / AI Insights / Related Papers).
+- Like, comment, share, mark-as-read, read-later, and favorites groups.
+- Dedicated fullscreen reading pages reachable from search, favorites, history, and related papers.
 
 ### ChatPaper
 
-- 置顶主聊天和按论文创建的聊天。
-- DeepSeek 流式回答、深度思考、联网搜索、停止和重试。
-- Markdown、公式、代码块和会话本地保存。
-- 会话级系统提示词、回答风格和可组合 Skills；论文聊天可按需读取 PDF 全文并提供页码追溯引用。
-- 左滑置顶或删除论文会话。
+- A pinned main chat and per-paper chats.
+- DeepSeek streaming responses, deep thinking, web search, stop, and retry.
+- Markdown, math, code blocks, and local conversation persistence.
+- Per-conversation system prompts, answer styles, and composable Skills; paper chats can read the full PDF on demand with page-referenced citations.
+- Swipe left to pin or delete a paper conversation.
 
-### 我的
+### Profile
 
-- 默认收藏与自定义收藏分组。
-- 收藏、稍后阅读和阅读历史可进入完整论文列表；支持主题设置、数据占用统计与分类清理。
-- DeepSeek API Key 验证、保存、替换和删除。
-- 应用版本、隐私说明和开源许可。
+- Default favorites and custom favorites groups.
+- Favorites, read-later, and reading history open full paper lists; theme settings, storage usage statistics, and categorized cleanup.
+- DeepSeek API key validation, save, replace, and delete.
+- App version, privacy statement, and open-source licenses.
 
-## 构建与渠道
+## Builds & Channels
 
-- Android 三个 flavor：`development` / `staging` / `production`，应用 ID 与名称彼此隔离。
-- 本版本为 GitHub Release 里程碑，未执行 production 签名构建、真机验收与商店门；相关门禁见 `docs/standards/release-management.md`「发布门」。
+- Android flavors: `development` / `staging` / `production`, with isolated app IDs and names.
+- This release is a GitHub Release milestone; production signed builds, on-device acceptance, and store gates were not performed. See "Release gates" in `docs/standards/release-management.md`.
 
-## 数据与迁移
+## Data & Migration
 
-- 本地数据使用版本化本地 JSON 存储（schemaId + schemaVersion + 逐版本 Migration）。
-- 0.1.0 无破坏性数据迁移；阅读状态、互动、评论、搜索历史、中文摘要和聊天会话保存在当前设备。
-- 论文目录使用 arXiv Atom API，失败时依次回退到设备缓存和内置种子论文。
+- Local data uses versioned local JSON storage (schemaId + schemaVersion + per-version migrations).
+- 0.1.0 has no breaking data migrations; reading state, interactions, comments, search history, Chinese summaries, and chat sessions are stored on the device.
+- Paper catalogs use the arXiv Atom API, falling back to the on-device cache and then built-in seed papers on failure.
 
-## AI 与隐私
+## AI & Privacy
 
-- DeepSeek BYOK：用户 Key 存入设备安全存储，公开构建不包含共享 Key。
-- ChatPaper 和中文摘要请求会把必要的论文内容发送到 DeepSeek 官方接口。
-- 正式应用商店发布前按商店要求提供隐私政策。
+- DeepSeek BYOK: the user's key is stored in the device's secure storage; public builds do not embed a shared key.
+- ChatPaper and Chinese-summary requests send the necessary paper content to DeepSeek's official API.
+- A privacy policy will be provided as required by app stores before a store release.
 
-## 已知限制
+## Known Limitations
 
-- 社区、私信、通知、账号、云同步和内容发布不属于当前生产范围。
-- 生产 arXiv 链路不产生引用数，展示入口保留。
-- Windows 桌面为开发验证平台，第一验收平台为 Android 手机。
+- Community, direct messages, notifications, accounts, cloud sync, and content publishing are outside the current production scope.
+- The production arXiv pipeline does not produce citation counts; the UI entry remains.
+- Windows desktop is the development verification platform; the primary acceptance platform is Android phones.
 
-## 发布信息
+## Release Information
 
-- 仓库：https://github.com/Fantasyawsd/PaperFlowDev
-- Tag：`v0.1.0`（annotated）
-- 发布基线：origin/main（归档 SHA 见提交记录）
-- 回滚方案：本版本为里程碑标记，不涉及商店分发；如需回滚代码版本，使用新 patch 版本与递增构建号重新发布。
+- Repository: https://github.com/Fantasyawsd/PaperFlowDev
+- Tag: `v0.1.0` (annotated)
+- Release baseline: origin/main (the archived SHA is in the commit history)
+- Rollback: this release is a milestone marker and involves no store distribution; to roll back the code version, release a new patch version with an incremented build number.

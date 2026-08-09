@@ -8,7 +8,7 @@
 
 ## Overview
 
-Spark is a Flutter app for personal researchers to discover, read, and get AI assistance on academic papers. 0.1.0 is the first formal release, published from the public repository `Fantasyawsd/PaperFlowDev` as a GitHub Release milestone (this version does not go through the app-store signed release process).
+Spark is a Flutter app for personal researchers to discover, read, and get AI assistance on academic papers. 0.1.0 is the first formal release, published from the public repository `Fantasyawsd/Spark` as a GitHub Release milestone (this version does not go through the app-store signed release process).
 
 ## Features
 
@@ -61,7 +61,7 @@ Spark is a Flutter app for personal researchers to discover, read, and get AI as
 
 ## Release Information
 
-- Repository: https://github.com/Fantasyawsd/PaperFlowDev
+- Repository: https://github.com/Fantasyawsd/Spark
 - Tag: `v0.1.0` (annotated)
 - Release baseline: origin/main (the archived SHA is in the commit history)
 - Rollback: this release is a milestone marker and involves no store distribution; to roll back the code version, release a new patch version with an incremented build number.

@@ -8,7 +8,7 @@
 
 ## 概述
 
-Spark 是面向个人研究者的 Flutter 论文发现、阅读和 AI 研究助手。0.1.0 是首个正式发布版本，基于公开仓库 `Fantasyawsd/PaperFlowDev`，以 GitHub Release 里程碑形式发布（本版本未进入应用商店签名发布流程）。
+Spark 是面向个人研究者的 Flutter 论文发现、阅读和 AI 研究助手。0.1.0 是首个正式发布版本，基于公开仓库 `Fantasyawsd/Spark`，以 GitHub Release 里程碑形式发布（本版本未进入应用商店签名发布流程）。
 
 ## 功能清单
 
@@ -61,7 +61,7 @@ Spark 是面向个人研究者的 Flutter 论文发现、阅读和 AI 研究助�
 
 ## 发布信息
 
-- 仓库：https://github.com/Fantasyawsd/PaperFlowDev
+- 仓库：https://github.com/Fantasyawsd/Spark
 - Tag：`v0.1.0`（annotated）
 - 发布基线：origin/main（归档 SHA 见提交记录）
 - 回滚方案：本版本为里程碑标记，不涉及商店分发；如需回滚代码版本，使用新 patch 版本与递增构建号重新发布。

@@ -45,9 +45,9 @@ class _PaperShelfListScreenState extends State<PaperShelfListScreen> {
         ? (widget.papersByGroup[_selectedGroupId] ?? const <Paper>[])
         : widget.papers;
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: SparkColors.of(context).card,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: SparkColors.of(context).card,
         surfaceTintColor: Colors.transparent,
         title: Text(
           widget.title,
@@ -143,7 +143,7 @@ class _ShelfPaperRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: Colors.white,
+      color: SparkColors.of(context).card,
       borderRadius: BorderRadius.circular(SparkDesignTokens.radiusLg),
       child: InkWell(
         key: ValueKey('paper-shelf-row-${paper.id}'),

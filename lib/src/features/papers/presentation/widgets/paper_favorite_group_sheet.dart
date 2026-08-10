@@ -59,7 +59,7 @@ class _PaperFavoriteGroupSheetState extends State<_PaperFavoriteGroupSheet> {
   Widget build(BuildContext context) {
     final groups = widget.controller.favoriteGroups;
     return Material(
-      color: Colors.white,
+      color: SparkColors.of(context).card,
       borderRadius: const BorderRadius.vertical(
         top: Radius.circular(SparkDesignTokens.radius3Xl),
       ),

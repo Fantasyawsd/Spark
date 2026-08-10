@@ -115,9 +115,9 @@ class _PaperCommentsSheetState extends State<_PaperCommentsSheet> {
     return Container(
       key: const ValueKey('paper-comments-sheet'),
       clipBehavior: Clip.antiAlias,
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(
+      decoration: BoxDecoration(
+        color: SparkColors.of(context).card,
+        borderRadius: const BorderRadius.vertical(
           top: Radius.circular(SparkDesignTokens.radius3Xl),
         ),
       ),
@@ -411,7 +411,7 @@ class _SheetHeader extends StatelessWidget {
     return Container(
       height: 50,
       padding: const EdgeInsets.symmetric(horizontal: 6),
-      color: Colors.white,
+      color: SparkColors.of(context).card,
       child: Stack(
         alignment: Alignment.center,
         children: [

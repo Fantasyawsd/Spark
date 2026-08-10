@@ -32,20 +32,22 @@ class PaperGridCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = SparkColors.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: onOpen,
       child: Container(
         clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: palette.card,
           borderRadius: BorderRadius.circular(SparkDesignTokens.radius2Xl),
-          border: Border.all(color: SparkColors.of(context).line),
-          boxShadow: const [
+          border: Border.all(color: palette.line),
+          boxShadow: [
             BoxShadow(
-              color: Color(0x0F15213A),
+              color: isDark ? const Color(0x3D000000) : const Color(0x0F15213A),
               blurRadius: 16,
-              offset: Offset(0, 7),
+              offset: const Offset(0, 7),
             ),
           ],
         ),
@@ -132,6 +134,12 @@ class _PaperGridCover extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final accent = paper.accent.color;
+    final palette = SparkColors.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    // 渐变基色按卡片表面色混合派生（暗色下 overlay alpha 上调），
+    // 亮色呈现与透明渐变叠白底等价。
+    final overlayTop = isDark ? 0.30 : 0.22;
+    final overlayBottom = isDark ? 0.10 : 0.06;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(12, 12, 12, 14),
@@ -140,8 +148,12 @@ class _PaperGridCover extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            accent.withValues(alpha: 0.22),
-            accent.withValues(alpha: 0.06),
+            Color.alphaBlend(
+                accent.withValues(alpha: overlayTop), palette.card),
+            Color.alphaBlend(
+              accent.withValues(alpha: overlayBottom),
+              palette.card,
+            ),
           ],
         ),
       ),

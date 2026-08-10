@@ -32,7 +32,7 @@ class LocalDataSheet extends StatelessWidget {
     return FractionallySizedBox(
       heightFactor: 0.72,
       child: Material(
-        color: Colors.white,
+        color: SparkColors.of(context).card,
         borderRadius: const BorderRadius.vertical(
           top: Radius.circular(SparkDesignTokens.radius3Xl),
         ),

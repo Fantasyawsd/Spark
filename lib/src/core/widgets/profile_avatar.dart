@@ -29,7 +29,7 @@ class ProfileAvatar extends StatelessWidget {
             height: radius * 2,
             padding: const EdgeInsets.all(2),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: SparkColors.of(context).card,
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
@@ -63,7 +63,10 @@ class ProfileAvatar extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: statusColor ?? SparkColors.of(context).primary,
                   shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white, width: 2),
+                  border: Border.all(
+                    color: SparkColors.of(context).card,
+                    width: 2,
+                  ),
                 ),
               ),
             ),

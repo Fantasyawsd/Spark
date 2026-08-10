@@ -50,9 +50,9 @@ class _PaperFullReaderPageState extends State<PaperFullReaderPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       key: const ValueKey('paper-full-reader'),
-      backgroundColor: Colors.white,
+      backgroundColor: SparkColors.of(context).card,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: SparkColors.of(context).card,
         surfaceTintColor: Colors.transparent,
         title: Text(
           widget.title,

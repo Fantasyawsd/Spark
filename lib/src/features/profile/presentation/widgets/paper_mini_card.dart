@@ -22,7 +22,7 @@ class PaperMiniCard extends StatelessWidget {
         width: 224,
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: SparkColors.of(context).card,
           borderRadius: BorderRadius.circular(SparkDesignTokens.radiusLg),
           border: Border.all(color: SparkColors.of(context).line),
         ),

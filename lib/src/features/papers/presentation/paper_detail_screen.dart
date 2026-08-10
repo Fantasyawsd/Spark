@@ -141,7 +141,7 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> with RouteAware {
             left: 10,
             top: safeTop + 6,
             child: Material(
-              color: Colors.white.withValues(alpha: 0.94),
+              color: SparkColors.of(context).card.withValues(alpha: 0.94),
               shape: const CircleBorder(),
               child: IconButton(
                 key: const ValueKey('paper-detail-back'),

@@ -231,7 +231,7 @@ class _SparkBootstrapState extends State<_SparkBootstrap>
               opacity: _opacity,
               child: ColoredBox(
                 key: const ValueKey('spark-splash'),
-                color: Colors.white,
+                color: SparkColors.of(context).canvas,
                 child: Center(
                   child: ScaleTransition(
                     scale: _scale,

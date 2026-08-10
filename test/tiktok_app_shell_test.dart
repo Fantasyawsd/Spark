@@ -3,8 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:spark/spark.dart';
 
 void main() {
-  testWidgets('Spark shell renders and switches main pages',
-      (tester) async {
+  testWidgets('Spark shell renders and switches main pages', (tester) async {
     await tester.binding.setSurfaceSize(const Size(390, 844));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 

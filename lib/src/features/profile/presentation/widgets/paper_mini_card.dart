@@ -22,9 +22,9 @@ class PaperMiniCard extends StatelessWidget {
         width: 224,
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: SparkColors.of(context).card,
           borderRadius: BorderRadius.circular(SparkDesignTokens.radiusLg),
-          border: Border.all(color: SparkColors.line),
+          border: Border.all(color: SparkColors.of(context).line),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -33,8 +33,8 @@ class PaperMiniCard extends StatelessWidget {
               paper.title,
               maxLines: 3,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: SparkColors.ink,
+              style: TextStyle(
+                color: SparkColors.of(context).ink,
                 fontSize: SparkFontSizes.bodySmall,
                 height: 1.3,
                 fontWeight: FontWeight.w700,
@@ -47,8 +47,8 @@ class PaperMiniCard extends StatelessWidget {
                   (paper.source == 'arxiv' ? 'arXiv' : paper.source),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: SparkColors.muted,
+              style: TextStyle(
+                color: SparkColors.of(context).muted,
                 fontSize: SparkFontSizes.caption,
               ),
             ),

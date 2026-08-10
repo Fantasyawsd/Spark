@@ -6,16 +6,19 @@ import '../theme/spark_font_sizes.dart';
 import '../theme/spark_theme_color.dart';
 import '../theme/spark_theme.dart';
 import '../theme/theme_controller.dart';
+import '../theme/theme_preference_repository.dart';
+import 'spark_segmented_control.dart';
 import 'spark_sheet.dart';
 
 void showSparkThemeSheet(BuildContext context) {
   showSparkSheet<void>(
     context: context,
     builder: (context) => Container(
-      decoration: const BoxDecoration(
-        color: SparkColors.card,
+      decoration: BoxDecoration(
+        color: SparkColors.of(context).card,
         borderRadius: BorderRadius.vertical(
-            top: Radius.circular(SparkDesignTokens.radius3Xl)),
+          top: Radius.circular(SparkDesignTokens.radius3Xl),
+        ),
       ),
       child: SafeArea(
         top: false,
@@ -27,19 +30,38 @@ void showSparkThemeSheet(BuildContext context) {
             children: [
               const SparkSheetHandle(height: 20),
               const SizedBox(height: 4),
-              const Text(
+              Text(
                 '主题与配色',
                 style: TextStyle(
-                  color: SparkColors.ink,
+                  color: SparkColors.of(context).ink,
                   fontSize: SparkFontSizes.titleLarge,
                   fontWeight: FontWeight.w800,
                 ),
               ),
               const SizedBox(height: 5),
-              const Text(
+              Text(
+                '外观',
+                style: TextStyle(
+                  color: SparkColors.of(context).muted,
+                  fontSize: SparkFontSizes.footnote,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 8),
+              ListenableBuilder(
+                listenable: ThemeController.instance,
+                builder: (context, _) => SparkSegmentedControl(
+                  tabs: const ['跟随系统', '浅色', '深色'],
+                  selectedIndex: ThemeController.instance.mode.index,
+                  onSelected: (index) => ThemeController.instance
+                      .setMode(AppThemeMode.values[index]),
+                ),
+              ),
+              const SizedBox(height: 18),
+              Text(
                 '强调色',
                 style: TextStyle(
-                  color: SparkColors.muted,
+                  color: SparkColors.of(context).muted,
                   fontSize: SparkFontSizes.footnote,
                   fontWeight: FontWeight.w500,
                 ),
@@ -96,17 +118,20 @@ class _ThemeColorOption extends StatelessWidget {
           onTap: onTap,
           borderRadius: BorderRadius.circular(SparkDesignTokens.radiusLg),
           child: AnimatedContainer(
-            duration: MotionTokens.duration(
-              context,
-              MotionTokens.tabDuration,
-            ),
+            duration: MotionTokens.duration(context, MotionTokens.tabDuration),
             curve: MotionTokens.pageCurve,
             padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 2),
             decoration: BoxDecoration(
-              color: selected ? color.pale : Colors.transparent,
+              // 选中态底/边用当前主题 palette 派生色（选中项即当前强调色），
+              // 暗色下自动获得 blend 变体，而非 SparkThemeColor 的亮色静态值。
+              color: selected
+                  ? SparkColors.of(context).primaryPale
+                  : Colors.transparent,
               borderRadius: BorderRadius.circular(SparkDesignTokens.radiusLg),
               border: Border.all(
-                color: selected ? color.soft : Colors.transparent,
+                color: selected
+                    ? SparkColors.of(context).primarySoft
+                    : Colors.transparent,
               ),
             ),
             child: Column(
@@ -119,7 +144,8 @@ class _ThemeColorOption extends StatelessWidget {
                     color: color.value,
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.9),
+                      color:
+                          SparkColors.of(context).card.withValues(alpha: 0.9),
                       width: 2,
                     ),
                   ),
@@ -137,7 +163,9 @@ class _ThemeColorOption extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    color: selected ? SparkColors.ink : SparkColors.muted,
+                    color: selected
+                        ? SparkColors.of(context).ink
+                        : SparkColors.of(context).muted,
                     fontSize: SparkFontSizes.caption,
                     fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
                   ),

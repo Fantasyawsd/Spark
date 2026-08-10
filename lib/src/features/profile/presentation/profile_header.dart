@@ -30,11 +30,11 @@ class ProfileHeader extends StatelessWidget {
       children: [
         Row(
           children: [
-            const Expanded(
+            Expanded(
               child: Text(
                 '我的研究库',
                 style: TextStyle(
-                  color: SparkColors.ink,
+                  color: SparkColors.of(context).ink,
                   fontSize: SparkFontSizes.display,
                   fontWeight: FontWeight.w800,
                 ),
@@ -49,19 +49,17 @@ class ProfileHeader extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 4),
-        const Text(
+        Text(
           '本地论文、阅读记录与 AI 配置',
           style: TextStyle(
-              color: SparkColors.muted, fontSize: SparkFontSizes.bodySmall),
+            color: SparkColors.of(context).muted,
+            fontSize: SparkFontSizes.bodySmall,
+          ),
         ),
         const SizedBox(height: 16),
         Row(
           children: [
-            _ProfileStat(
-              value: '$savedCount',
-              label: '收藏',
-              onTap: onSavedTap,
-            ),
+            _ProfileStat(value: '$savedCount', label: '收藏', onTap: onSavedTap),
             const _StatDivider(),
             _ProfileStat(
               value: '$readLaterCount',
@@ -106,8 +104,8 @@ class _ProfileStat extends StatelessWidget {
               children: [
                 Text(
                   value,
-                  style: const TextStyle(
-                    color: SparkColors.ink,
+                  style: TextStyle(
+                    color: SparkColors.of(context).ink,
                     fontSize: SparkFontSizes.headlineSmall,
                     fontWeight: FontWeight.w800,
                   ),
@@ -116,8 +114,8 @@ class _ProfileStat extends StatelessWidget {
                 Text(
                   label,
                   maxLines: 1,
-                  style: const TextStyle(
-                    color: SparkColors.muted,
+                  style: TextStyle(
+                    color: SparkColors.of(context).muted,
                     fontSize: SparkFontSizes.caption,
                   ),
                 ),
@@ -135,9 +133,9 @@ class _StatDivider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const SizedBox(
+    return SizedBox(
       height: 37,
-      child: VerticalDivider(width: 1, color: SparkColors.line),
+      child: VerticalDivider(width: 1, color: SparkColors.of(context).line),
     );
   }
 }

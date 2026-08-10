@@ -378,7 +378,7 @@ void main() {
       ),
       findsWidgets,
     );
-    // PaperAiModelAvatar 自带 auto_awesome 图标作为加载失败回退，因此这里只断言
+    // PaperAiModelAvatar 以内置 DeepSeek 标识呈现模型提供方，因此这里断言
     // 模型面板以头像组件承载模型入口，而不是直接显示裸图标。
     final sheetAvatars = find.descendant(
       of: find.byType(BottomSheet),
@@ -386,7 +386,7 @@ void main() {
     );
     expect(sheetAvatars, findsWidgets);
     expect(
-      find.descendant(of: sheetAvatars.first, matching: find.byType(Icon)),
+      find.descendant(of: sheetAvatars.first, matching: find.byType(Image)),
       findsWidgets,
     );
     expect(tester.takeException(), isNull);

@@ -6,11 +6,7 @@ import '../../domain/paper.dart';
 import '../../domain/paper_link_service.dart';
 
 class PaperPdfButton extends StatelessWidget {
-  const PaperPdfButton({
-    super.key,
-    required this.paper,
-    required this.onOpen,
-  });
+  const PaperPdfButton({super.key, required this.paper, required this.onOpen});
 
   final Paper paper;
   final ValueChanged<Uri> onOpen;
@@ -26,7 +22,7 @@ class PaperPdfButton extends StatelessWidget {
         key: const ValueKey('paper-open-link'),
         onPressed: () => onOpen(uri),
         style: TextButton.styleFrom(
-          foregroundColor: SparkColors.ink,
+          foregroundColor: SparkColors.of(context).ink,
           padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 2),
           minimumSize: const Size(0, 32),
           tapTargetSize: MaterialTapTargetSize.shrinkWrap,

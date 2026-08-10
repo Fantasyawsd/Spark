@@ -3,81 +3,90 @@ import 'package:flutter/material.dart';
 
 import 'spark_design_tokens.dart';
 import 'spark_font_sizes.dart';
+import 'spark_palette.dart';
 import 'spark_theme_color.dart';
 import 'theme_controller.dart';
 
+/// 语义颜色访问门面。
+///
+/// 亮/暗调色板由 [SparkTheme] 经 `ThemeData.extensions` 注入；
+/// 在未注入 Spark 主题的兜底场景（如独立 widget 测试）返回亮色调色板，
+/// 强调色取自 [ThemeController] 当前值。
 abstract final class SparkColors {
-  static Color get primary => ThemeController.instance.color.value;
-  static Color get primarySoft => ThemeController.instance.color.soft;
-  static Color get primaryPale => ThemeController.instance.color.pale;
-  static const ink = Color(0xFF182230);
-  static const muted = Color(0xFF667085);
-  static const subtle = Color(0xFF98A2B3);
-  static const foregroundTertiary = Color(0xFF7C8798);
-  static const foregroundDisabled = Color(0xFFB6BFCC);
-  static const line = Color(0xFFE4E7EC);
-  static const lineStrong = Color(0xFFD0D5DD);
-  static const canvas = Color(0xFFF7F8FA);
-  static const card = Colors.white;
-  static const popover = Color(0xFFFCFCFD);
-  static const surfaceMuted = Color(0xFFF2F4F7);
-  static const surfaceStrong = Color(0xFFEAECF0);
-  static const accent = Color(0xFFF0F2F5);
-  static const accentForeground = Color(0xFF182230);
-  static const blue = Color(0xFF356FAE);
-  static const purple = Color(0xFF7256A8);
-  static const green = Color(0xFF267A65);
-  static const orange = Color(0xFFAD5A17);
-  static const danger = Color(0xFFB42318);
-  static const dangerSoft = Color(0xFFFEF3F2);
-  static const dangerBorder = Color(0xFFF0B4AE);
-  static const warning = Color(0xFFB54708);
-  static const barrier = Color(0x66182230);
+  static SparkPalette of(BuildContext context) {
+    return Theme.of(context).extension<SparkPalette>() ??
+        SparkPalette.light(ThemeController.instance.color);
+  }
+}
+
+/// `SparkColors.of(context)` 的简写：`context.sparkColors.ink`。
+extension SparkColorsContext on BuildContext {
+  SparkPalette get sparkColors => SparkColors.of(this);
 }
 
 abstract final class SparkTheme {
   static ThemeData light() {
+    return _themeData(
+      SparkPalette.light(ThemeController.instance.color),
+      Brightness.light,
+    );
+  }
+
+  static ThemeData dark() {
+    return _themeData(
+      SparkPalette.dark(ThemeController.instance.color),
+      Brightness.dark,
+    );
+  }
+
+  static ThemeData _themeData(SparkPalette palette, Brightness brightness) {
+    final isDark = brightness == Brightness.dark;
     final generatedScheme = ColorScheme.fromSeed(
-      seedColor: SparkColors.primary,
-      brightness: Brightness.light,
+      seedColor: palette.primary,
+      brightness: brightness,
     );
     final scheme = generatedScheme.copyWith(
-      primary: SparkColors.primary,
+      primary: palette.primary,
       onPrimary: Colors.white,
-      primaryContainer: SparkColors.primarySoft,
-      onPrimaryContainer: SparkColors.ink,
-      secondary: SparkThemeColor.blue.value,
+      primaryContainer: palette.primarySoft,
+      onPrimaryContainer: palette.ink,
+      secondary: isDark ? palette.blue : SparkThemeColor.blue.value,
       onSecondary: Colors.white,
-      secondaryContainer: SparkThemeColor.blue.soft,
-      onSecondaryContainer: SparkColors.ink,
-      error: SparkColors.danger,
-      onError: Colors.white,
-      errorContainer: SparkColors.dangerSoft,
-      onErrorContainer: SparkColors.danger,
-      surface: SparkColors.card,
-      onSurface: SparkColors.ink,
-      onSurfaceVariant: SparkColors.muted,
-      outline: SparkColors.subtle,
-      outlineVariant: SparkColors.line,
-      shadow: SparkColors.ink,
-      scrim: SparkColors.ink,
-      inverseSurface: SparkColors.ink,
-      onInverseSurface: SparkColors.card,
-      inversePrimary: SparkColors.primarySoft,
+      secondaryContainer: isDark
+          ? Color.alphaBlend(palette.blue.withValues(alpha: 0.28), palette.card)
+          : SparkThemeColor.blue.soft,
+      onSecondaryContainer: palette.ink,
+      error: palette.danger,
+      onError: isDark ? Colors.black : Colors.white,
+      errorContainer: palette.dangerSoft,
+      onErrorContainer: palette.danger,
+      surface: palette.card,
+      onSurface: palette.ink,
+      onSurfaceVariant: palette.muted,
+      outline: palette.subtle,
+      outlineVariant: palette.line,
+      shadow: isDark ? Colors.black : palette.ink,
+      scrim: isDark ? Colors.black : palette.ink,
+      inverseSurface: palette.ink,
+      onInverseSurface: palette.card,
+      inversePrimary: palette.primarySoft,
       surfaceTint: Colors.transparent,
-      surfaceContainerLowest: SparkColors.card,
-      surfaceContainerLow: const Color(0xFFFAFBFC),
-      surfaceContainer: SparkColors.surfaceMuted,
-      surfaceContainerHigh: const Color(0xFFEEF0F3),
-      surfaceContainerHighest: SparkColors.surfaceStrong,
+      surfaceContainerLowest: palette.card,
+      surfaceContainerLow:
+          isDark ? const Color(0xFF1B222E) : const Color(0xFFFAFBFC),
+      surfaceContainer: palette.surfaceMuted,
+      surfaceContainerHigh:
+          isDark ? const Color(0xFF232B38) : const Color(0xFFEEF0F3),
+      surfaceContainerHighest: palette.surfaceStrong,
     );
-    const textTheme = _textTheme;
+    final textTheme = _textTheme(palette);
 
     return ThemeData(
       useMaterial3: true,
       colorScheme: scheme,
-      scaffoldBackgroundColor: SparkColors.canvas,
-      canvasColor: SparkColors.canvas,
+      extensions: [palette],
+      scaffoldBackgroundColor: palette.canvas,
+      canvasColor: palette.canvas,
       fontFamilyFallback: const [
         'PingFang SC',
         'Microsoft YaHei',
@@ -86,87 +95,89 @@ abstract final class SparkTheme {
       ],
       textTheme: textTheme,
       primaryTextTheme: textTheme,
-      iconTheme: const IconThemeData(color: SparkColors.ink, size: 22),
-      appBarTheme: const AppBarTheme(
-        backgroundColor: SparkColors.card,
-        foregroundColor: SparkColors.ink,
+      iconTheme: IconThemeData(color: palette.ink, size: 22),
+      appBarTheme: AppBarTheme(
+        backgroundColor: palette.card,
+        foregroundColor: palette.ink,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: false,
       ),
       cardTheme: CardThemeData(
-        color: SparkColors.card,
+        color: palette.card,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(SparkDesignTokens.radiusLg),
-          side: const BorderSide(color: SparkColors.line),
+          side: BorderSide(color: palette.line),
         ),
       ),
       dialogTheme: DialogThemeData(
-        backgroundColor: SparkColors.card,
+        backgroundColor: palette.card,
         surfaceTintColor: Colors.transparent,
         elevation: 12,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(SparkDesignTokens.radius3Xl),
         ),
       ),
-      bottomSheetTheme: const BottomSheetThemeData(
-        backgroundColor: SparkColors.card,
+      bottomSheetTheme: BottomSheetThemeData(
+        backgroundColor: palette.card,
         surfaceTintColor: Colors.transparent,
-        modalBackgroundColor: SparkColors.card,
-        modalBarrierColor: SparkColors.barrier,
+        modalBackgroundColor: palette.card,
+        modalBarrierColor: palette.barrier,
         elevation: 0,
         modalElevation: 0,
       ),
       popupMenuTheme: PopupMenuThemeData(
-        color: SparkColors.card,
+        color: palette.card,
         surfaceTintColor: Colors.transparent,
         elevation: 8,
-        shadowColor: const Color(0x1A182230),
+        shadowColor: isDark ? const Color(0x3D000000) : const Color(0x1A182230),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(SparkDesignTokens.radiusXl),
         ),
-        textStyle: const TextStyle(
-          color: SparkColors.ink,
+        textStyle: TextStyle(
+          color: palette.ink,
           fontSize: SparkFontSizes.bodySmall,
           fontWeight: FontWeight.w600,
         ),
       ),
-      dividerColor: SparkColors.line,
-      dividerTheme: const DividerThemeData(
-        color: SparkColors.line,
+      dividerColor: palette.line,
+      dividerTheme: DividerThemeData(
+        color: palette.line,
         thickness: 1,
         space: 1,
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: SparkColors.surfaceMuted,
+        fillColor: palette.surfaceMuted,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 14,
           vertical: 13,
         ),
-        hintStyle: const TextStyle(
-            color: SparkColors.subtle, fontSize: SparkFontSizes.body),
+        hintStyle: TextStyle(
+          color: palette.subtle,
+          fontSize: SparkFontSizes.body,
+        ),
         border: _inputBorder(Colors.transparent),
         enabledBorder: _inputBorder(Colors.transparent),
-        focusedBorder: _inputBorder(SparkColors.primary, width: 1.4),
-        errorBorder: _inputBorder(SparkColors.danger),
-        focusedErrorBorder: _inputBorder(SparkColors.danger, width: 1.4),
+        focusedBorder: _inputBorder(palette.primary, width: 1.4),
+        errorBorder: _inputBorder(palette.danger),
+        focusedErrorBorder: _inputBorder(palette.danger, width: 1.4),
       ),
       textSelectionTheme: TextSelectionThemeData(
-        cursorColor: SparkColors.primary,
-        selectionColor: SparkColors.primary.withValues(alpha: 0.18),
-        selectionHandleColor: SparkColors.primary,
+        cursorColor: palette.primary,
+        selectionColor: palette.primary.withValues(alpha: 0.18),
+        selectionHandleColor: palette.primary,
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          backgroundColor: SparkColors.primary,
+          backgroundColor: palette.primary,
           foregroundColor: Colors.white,
-          disabledBackgroundColor: SparkColors.surfaceStrong,
-          disabledForegroundColor: SparkColors.subtle,
+          disabledBackgroundColor: palette.surfaceStrong,
+          disabledForegroundColor: palette.subtle,
           minimumSize: const Size(44, 44),
           elevation: 0,
           shape: RoundedRectangleBorder(
@@ -176,17 +187,19 @@ abstract final class SparkTheme {
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          foregroundColor: SparkColors.primary,
+          foregroundColor: palette.primary,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(SparkDesignTokens.radiusMd),
           ),
         ),
       ),
       snackBarTheme: SnackBarThemeData(
-        backgroundColor: SparkColors.ink,
-        contentTextStyle: const TextStyle(
-            color: Colors.white, fontSize: SparkFontSizes.bodySmall),
-        actionTextColor: SparkColors.primarySoft,
+        backgroundColor: palette.ink,
+        contentTextStyle: TextStyle(
+          color: isDark ? palette.card : Colors.white,
+          fontSize: SparkFontSizes.bodySmall,
+        ),
+        actionTextColor: isDark ? palette.primary : palette.primarySoft,
         behavior: SnackBarBehavior.floating,
         elevation: 0,
         shape: RoundedRectangleBorder(
@@ -194,68 +207,70 @@ abstract final class SparkTheme {
         ),
       ),
       chipTheme: ChipThemeData(
-        backgroundColor: SparkColors.surfaceMuted,
-        selectedColor: SparkColors.primarySoft,
-        disabledColor: SparkColors.surfaceMuted,
+        backgroundColor: palette.surfaceMuted,
+        selectedColor: palette.primarySoft,
+        disabledColor: palette.surfaceMuted,
         side: BorderSide.none,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(SparkDesignTokens.radiusSm),
         ),
-        labelStyle: const TextStyle(
-          color: SparkColors.ink,
+        labelStyle: TextStyle(
+          color: palette.ink,
           fontSize: SparkFontSizes.footnote,
           fontWeight: FontWeight.w500,
         ),
         secondaryLabelStyle: TextStyle(
-          color: SparkColors.primary,
+          color: palette.primary,
           fontSize: SparkFontSizes.footnote,
           fontWeight: FontWeight.w700,
         ),
       ),
-      listTileTheme: const ListTileThemeData(
-        iconColor: SparkColors.muted,
-        textColor: SparkColors.ink,
+      listTileTheme: ListTileThemeData(
+        iconColor: palette.muted,
+        textColor: palette.ink,
       ),
       splashFactory: InkRipple.splashFactory,
       highlightColor: Colors.transparent,
     );
   }
 
-  static const TextTheme _textTheme = TextTheme(
-    headlineLarge: TextStyle(
-      color: SparkColors.ink,
-      fontSize: 30,
-      height: 1.15,
-      fontWeight: FontWeight.w800,
-      letterSpacing: 0,
-    ),
-    headlineMedium: TextStyle(
-      color: SparkColors.ink,
-      fontSize: SparkFontSizes.display,
-      height: 1.18,
-      fontWeight: FontWeight.w800,
-    ),
-    titleLarge: TextStyle(
-      color: SparkColors.ink,
-      fontSize: SparkFontSizes.headlineSmall,
-      fontWeight: FontWeight.w800,
-    ),
-    titleMedium: TextStyle(
-      color: SparkColors.ink,
-      fontSize: SparkFontSizes.titleSmall,
-      fontWeight: FontWeight.w700,
-    ),
-    bodyLarge: TextStyle(
-      color: SparkColors.ink,
-      fontSize: SparkFontSizes.bodyLarge,
-      height: 1.55,
-    ),
-    bodyMedium: TextStyle(
-      color: SparkColors.muted,
-      fontSize: SparkFontSizes.bodySmall,
-      height: 1.45,
-    ),
-  );
+  static TextTheme _textTheme(SparkPalette palette) {
+    return TextTheme(
+      headlineLarge: TextStyle(
+        color: palette.ink,
+        fontSize: 30,
+        height: 1.15,
+        fontWeight: FontWeight.w800,
+        letterSpacing: 0,
+      ),
+      headlineMedium: TextStyle(
+        color: palette.ink,
+        fontSize: SparkFontSizes.display,
+        height: 1.18,
+        fontWeight: FontWeight.w800,
+      ),
+      titleLarge: TextStyle(
+        color: palette.ink,
+        fontSize: SparkFontSizes.headlineSmall,
+        fontWeight: FontWeight.w800,
+      ),
+      titleMedium: TextStyle(
+        color: palette.ink,
+        fontSize: SparkFontSizes.titleSmall,
+        fontWeight: FontWeight.w700,
+      ),
+      bodyLarge: TextStyle(
+        color: palette.ink,
+        fontSize: SparkFontSizes.bodyLarge,
+        height: 1.55,
+      ),
+      bodyMedium: TextStyle(
+        color: palette.muted,
+        fontSize: SparkFontSizes.bodySmall,
+        height: 1.45,
+      ),
+    );
+  }
 
   static OutlineInputBorder _inputBorder(Color color, {double width = 1}) {
     return OutlineInputBorder(

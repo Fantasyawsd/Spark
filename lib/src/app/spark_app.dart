@@ -8,6 +8,7 @@ import '../core/motion/motion_tokens.dart';
 import '../core/navigation/spark_route_observer.dart';
 import '../core/theme/spark_theme.dart';
 import '../core/theme/theme_controller.dart';
+import '../core/theme/theme_preference_repository.dart';
 import '../features/ai_settings/application/deepseek_credential_controller.dart';
 import '../features/ai_settings/presentation/deepseek_settings_section.dart';
 import '../features/chat/application/chat_session_controller.dart';
@@ -124,6 +125,12 @@ class _SparkAppState extends State<SparkApp> {
         title: widget.config.applicationTitle,
         debugShowCheckedModeBanner: widget.config.showDebugBanner,
         theme: SparkTheme.light(),
+        darkTheme: SparkTheme.dark(),
+        themeMode: switch (ThemeController.instance.mode) {
+          AppThemeMode.system => ThemeMode.system,
+          AppThemeMode.light => ThemeMode.light,
+          AppThemeMode.dark => ThemeMode.dark,
+        },
         navigatorObservers: [SparkRouteObserver.instance],
         home: _SparkBootstrap(
           showSplash: widget.showSplash,
@@ -167,20 +174,19 @@ class _SparkBootstrapState extends State<_SparkBootstrap>
       duration: MotionTokens.splashDuration,
     );
     _opacity = TweenSequence<double>([
-      TweenSequenceItem(
-        tween: ConstantTween(1.0),
-        weight: 42,
-      ),
+      TweenSequenceItem(tween: ConstantTween(1.0), weight: 42),
       TweenSequenceItem<double>(
-        tween: Tween(begin: 1.0, end: 0.0).chain(
-          CurveTween(curve: Curves.easeInCubic),
-        ),
+        tween: Tween(
+          begin: 1.0,
+          end: 0.0,
+        ).chain(CurveTween(curve: Curves.easeInCubic)),
         weight: 58,
       ),
     ]).animate(_controller);
-    _scale = Tween(begin: 1.0, end: 1.035).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
-    );
+    _scale = Tween(
+      begin: 1.0,
+      end: 1.035,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
 
     if (widget.showSplash) {
       _controller.addStatusListener(_handleAnimationStatus);
@@ -225,7 +231,7 @@ class _SparkBootstrapState extends State<_SparkBootstrap>
               opacity: _opacity,
               child: ColoredBox(
                 key: const ValueKey('spark-splash'),
-                color: Colors.white,
+                color: SparkColors.of(context).canvas,
                 child: Center(
                   child: ScaleTransition(
                     scale: _scale,
@@ -388,7 +394,7 @@ class _SparkShellState extends State<SparkShell> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: SparkColors.canvas,
+      backgroundColor: SparkColors.of(context).canvas,
       body: Stack(
         children: [
           Positioned.fill(
@@ -499,9 +505,8 @@ class _SparkShellState extends State<SparkShell> {
   }
 
   Iterable<ChatContextSummary> get _paperChatContexts =>
-      _paperController.feed.allPapers.map(
-        (paper) => ChatContextSummary(id: paper.id, title: paper.title),
-      );
+      _paperController.feed.allPapers
+          .map((paper) => ChatContextSummary(id: paper.id, title: paper.title));
 
   Future<void> _initializePaperState() async {
     await _paperController.initialize();
@@ -640,10 +645,7 @@ class _SparkShellState extends State<SparkShell> {
           fullTextAvailable: widget.features.experimentalPdfAi &&
               validPaperUri(paper.pdfUrl) != null,
           onLoadFullText: widget.features.experimentalPdfAi
-              ? () => _paperChatContextLoader.load(
-                    paper,
-                    includeFullText: true,
-                  )
+              ? () => _paperChatContextLoader.load(paper, includeFullText: true)
               : null,
         ),
       ),

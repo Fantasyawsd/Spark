@@ -33,8 +33,8 @@ class PaperMetadata extends StatelessWidget {
                 compactAuthorLine(paper),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: SparkColors.muted,
+                style: TextStyle(
+                  color: SparkColors.of(context).muted,
                   fontSize: SparkFontSizes.footnote,
                   fontWeight: FontWeight.w500,
                 ),
@@ -45,16 +45,18 @@ class PaperMetadata extends StatelessWidget {
               key: ValueKey('paper-follow-${paper.id}'),
               onPressed: onFollow,
               style: OutlinedButton.styleFrom(
-                foregroundColor:
-                    followed ? SparkColors.primary : SparkColors.ink,
+                foregroundColor: followed
+                    ? SparkColors.of(context).primary
+                    : SparkColors.of(context).ink,
                 side: BorderSide(
                   color: followed
-                      ? SparkColors.primary.withValues(alpha: 0.4)
-                      : SparkColors.line,
+                      ? SparkColors.of(context).primary.withValues(alpha: 0.4)
+                      : SparkColors.of(context).line,
                 ),
                 minimumSize: const Size(0, 30),
                 padding: const EdgeInsets.symmetric(
-                    horizontal: SparkDesignTokens.space2),
+                  horizontal: SparkDesignTokens.space2,
+                ),
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 visualDensity: VisualDensity.compact,
               ),
@@ -82,8 +84,8 @@ class PaperMetadata extends StatelessWidget {
           children: [
             Text(
               venueLabel(paper),
-              style: const TextStyle(
-                color: SparkColors.muted,
+              style: TextStyle(
+                color: SparkColors.of(context).muted,
                 fontSize: SparkFontSizes.caption,
                 fontWeight: FontWeight.w700,
               ),
@@ -91,8 +93,8 @@ class PaperMetadata extends StatelessWidget {
             if (year != null)
               Text(
                 '$year 年发布',
-                style: const TextStyle(
-                  color: SparkColors.muted,
+                style: TextStyle(
+                  color: SparkColors.of(context).muted,
                   fontSize: SparkFontSizes.caption,
                   fontWeight: FontWeight.w600,
                 ),
@@ -100,8 +102,8 @@ class PaperMetadata extends StatelessWidget {
             if (citations != null)
               Text(
                 citations,
-                style: const TextStyle(
-                  color: SparkColors.muted,
+                style: TextStyle(
+                  color: SparkColors.of(context).muted,
                   fontSize: SparkFontSizes.caption,
                   fontWeight: FontWeight.w600,
                 ),

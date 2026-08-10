@@ -70,10 +70,10 @@ class SparkTabBar extends StatelessWidget {
                           if (contentWidth)
                             SizedBox(
                               width: widths[index],
-                              child: _tabButton(index),
+                              child: _tabButton(context, index),
                             )
                           else
-                            Expanded(child: _tabButton(index)),
+                            Expanded(child: _tabButton(context, index)),
                           if (contentWidth && index != tabs.length - 1)
                             SizedBox(width: gap),
                         ],
@@ -92,7 +92,8 @@ class SparkTabBar extends StatelessWidget {
                       ),
                       curve: MotionTokens.enterCurve,
                       decoration: BoxDecoration(
-                        color: indicatorColor ?? SparkColors.primary,
+                        color:
+                            indicatorColor ?? SparkColors.of(context).primary,
                         borderRadius: BorderRadius.circular(99),
                       ),
                     ),
@@ -106,7 +107,7 @@ class SparkTabBar extends StatelessWidget {
     );
   }
 
-  Widget _tabButton(int index) {
+  Widget _tabButton(BuildContext context, int index) {
     return InkWell(
       onTap: () => onSelected(index),
       splashFactory: NoSplash.splashFactory,
@@ -126,8 +127,8 @@ class SparkTabBar extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
               color: index == selectedIndex
-                  ? (selectedColor ?? SparkColors.primary)
-                  : SparkColors.muted,
+                  ? (selectedColor ?? SparkColors.of(context).primary)
+                  : SparkColors.of(context).muted,
               fontSize: textSize,
               fontFamily: SparkTheme.platformCjkFontFamily(),
               fontWeight:

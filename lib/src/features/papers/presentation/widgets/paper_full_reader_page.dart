@@ -50,16 +50,16 @@ class _PaperFullReaderPageState extends State<PaperFullReaderPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       key: const ValueKey('paper-full-reader'),
-      backgroundColor: Colors.white,
+      backgroundColor: SparkColors.of(context).card,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: SparkColors.of(context).card,
         surfaceTintColor: Colors.transparent,
         title: Text(
           widget.title,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: const TextStyle(
-            color: SparkColors.ink,
+          style: TextStyle(
+            color: SparkColors.of(context).ink,
             fontSize: SparkFontSizes.titleSmall,
             fontWeight: FontWeight.w800,
           ),
@@ -67,9 +67,8 @@ class _PaperFullReaderPageState extends State<PaperFullReaderPage> {
         actions: [
           IconButton(
             tooltip: '复制标题',
-            onPressed: () => platformSparkClipboard.copyText(
-              widget.paper.title,
-            ),
+            onPressed: () =>
+                platformSparkClipboard.copyText(widget.paper.title),
             icon: const Icon(Icons.copy_all_outlined),
           ),
         ],
@@ -81,7 +80,7 @@ class _PaperFullReaderPageState extends State<PaperFullReaderPage> {
             padding: const EdgeInsets.fromLTRB(18, 8, 18, 28),
             child: SparkMarkdown(
               data: widget.markdown,
-              styleSheet: paperReaderMarkdownStyle(),
+              styleSheet: paperReaderMarkdownStyle(context),
             ),
           ),
         ),

@@ -35,10 +35,11 @@ class PaperMessageComposer extends StatelessWidget {
         height: 64,
         child: Container(
           padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
-          color: SparkColors.card,
+          color: SparkColors.of(context).card,
           child: TextField(
             key: ValueKey(
-                aiMode ? 'paper-ai-message-input' : 'paper-comment-input'),
+              aiMode ? 'paper-ai-message-input' : 'paper-comment-input',
+            ),
             controller: controller,
             readOnly: !enabled,
             onChanged: onChanged,
@@ -51,14 +52,14 @@ class PaperMessageComposer extends StatelessWidget {
             style: const TextStyle(fontSize: SparkFontSizes.body),
             decoration: InputDecoration(
               hintText: aiMode ? '问 AI 或按住说话' : replyTarget ?? '有价值的讨论更容易被看见',
-              hintStyle: const TextStyle(
-                color: SparkColors.subtle,
+              hintStyle: TextStyle(
+                color: SparkColors.of(context).subtle,
                 fontSize: SparkFontSizes.bodySmall,
               ),
               prefixIcon: aiMode
-                  ? const Icon(
+                  ? Icon(
                       Icons.auto_awesome_rounded,
-                      color: SparkColors.ink,
+                      color: SparkColors.of(context).ink,
                       size: 20,
                     )
                   : null,
@@ -93,19 +94,20 @@ class PaperMessageComposer extends StatelessWidget {
                           aiMode
                               ? Icons.graphic_eq_rounded
                               : Icons.sentiment_satisfied_alt_rounded,
-                          color: SparkColors.muted,
+                          color: SparkColors.of(context).muted,
                           size: 22,
                         ),
               filled: true,
-              fillColor: SparkColors.surfaceMuted,
+              fillColor: SparkColors.of(context).surfaceMuted,
               isDense: true,
               contentPadding: const EdgeInsets.symmetric(
                 horizontal: 14,
                 vertical: 12,
               ),
               border: OutlineInputBorder(
-                borderRadius:
-                    BorderRadius.circular(SparkDesignTokens.radius3Xl),
+                borderRadius: BorderRadius.circular(
+                  SparkDesignTokens.radius3Xl,
+                ),
                 borderSide: BorderSide.none,
               ),
             ),

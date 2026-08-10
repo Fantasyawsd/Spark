@@ -32,20 +32,22 @@ class PaperGridCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = SparkColors.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: onOpen,
       child: Container(
         clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: palette.card,
           borderRadius: BorderRadius.circular(SparkDesignTokens.radius2Xl),
-          border: Border.all(color: SparkColors.line),
-          boxShadow: const [
+          border: Border.all(color: palette.line),
+          boxShadow: [
             BoxShadow(
-              color: Color(0x0F15213A),
+              color: isDark ? const Color(0x3D000000) : const Color(0x0F15213A),
               blurRadius: 16,
-              offset: Offset(0, 7),
+              offset: const Offset(0, 7),
             ),
           ],
         ),
@@ -62,8 +64,8 @@ class PaperGridCard extends StatelessWidget {
                     compactAuthorLine(paper),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: SparkColors.muted,
+                    style: TextStyle(
+                      color: SparkColors.of(context).muted,
                       fontSize: SparkFontSizes.caption,
                       height: 1.35,
                     ),
@@ -80,8 +82,9 @@ class PaperGridCard extends StatelessWidget {
                           liked
                               ? Icons.favorite_rounded
                               : Icons.favorite_border_rounded,
-                          color:
-                              liked ? SparkColors.primary : SparkColors.muted,
+                          color: liked
+                              ? SparkColors.of(context).primary
+                              : SparkColors.of(context).muted,
                           size: 18,
                         ),
                       ),
@@ -91,8 +94,8 @@ class PaperGridCard extends StatelessWidget {
                           paper.metrics.likes,
                           delta: liked ? 1 : 0,
                         ),
-                        style: const TextStyle(
-                          color: SparkColors.muted,
+                        style: TextStyle(
+                          color: SparkColors.of(context).muted,
                           fontSize: SparkFontSizes.tiny,
                         ),
                       ),
@@ -104,8 +107,9 @@ class PaperGridCard extends StatelessWidget {
                           saved
                               ? Icons.bookmark_rounded
                               : Icons.bookmark_border_rounded,
-                          color:
-                              saved ? SparkColors.primary : SparkColors.muted,
+                          color: saved
+                              ? SparkColors.of(context).primary
+                              : SparkColors.of(context).muted,
                           size: 18,
                         ),
                       ),
@@ -130,6 +134,12 @@ class _PaperGridCover extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final accent = paper.accent.color;
+    final palette = SparkColors.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    // 渐变基色按卡片表面色混合派生（暗色下 overlay alpha 上调），
+    // 亮色呈现与透明渐变叠白底等价。
+    final overlayTop = isDark ? 0.30 : 0.22;
+    final overlayBottom = isDark ? 0.10 : 0.06;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(12, 12, 12, 14),
@@ -138,8 +148,12 @@ class _PaperGridCover extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            accent.withValues(alpha: 0.22),
-            accent.withValues(alpha: 0.06),
+            Color.alphaBlend(
+                accent.withValues(alpha: overlayTop), palette.card),
+            Color.alphaBlend(
+              accent.withValues(alpha: overlayBottom),
+              palette.card,
+            ),
           ],
         ),
       ),
@@ -169,8 +183,8 @@ class _PaperGridCover extends StatelessWidget {
             paper.title,
             maxLines: index.isEven ? 4 : 5,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: SparkColors.ink,
+            style: TextStyle(
+              color: SparkColors.of(context).ink,
               fontSize: SparkFontSizes.bodyLarge,
               height: 1.2,
               fontWeight: FontWeight.w900,
@@ -180,16 +194,16 @@ class _PaperGridCover extends StatelessWidget {
           if (citationLine(paper) case final citations?)
             Row(
               children: [
-                const Icon(
+                Icon(
                   Icons.format_quote_rounded,
-                  color: SparkColors.muted,
+                  color: SparkColors.of(context).muted,
                   size: 14,
                 ),
                 const SizedBox(width: 4),
                 Text(
                   citations,
-                  style: const TextStyle(
-                    color: SparkColors.muted,
+                  style: TextStyle(
+                    color: SparkColors.of(context).muted,
                     fontSize: SparkFontSizes.tiny,
                     fontWeight: FontWeight.w600,
                   ),

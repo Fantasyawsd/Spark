@@ -15,10 +15,8 @@ Future<void> showPaperFavoriteGroupSheet(
     context: context,
     isScrollControlled: true,
     useSafeArea: true,
-    builder: (context) => _PaperFavoriteGroupSheet(
-      paperId: paperId,
-      controller: controller,
-    ),
+    builder: (context) =>
+        _PaperFavoriteGroupSheet(paperId: paperId, controller: controller),
   );
 }
 
@@ -61,9 +59,10 @@ class _PaperFavoriteGroupSheetState extends State<_PaperFavoriteGroupSheet> {
   Widget build(BuildContext context) {
     final groups = widget.controller.favoriteGroups;
     return Material(
-      color: Colors.white,
+      color: SparkColors.of(context).card,
       borderRadius: const BorderRadius.vertical(
-          top: Radius.circular(SparkDesignTokens.radius3Xl)),
+        top: Radius.circular(SparkDesignTokens.radius3Xl),
+      ),
       clipBehavior: Clip.antiAlias,
       child: SafeArea(
         top: false,
@@ -79,11 +78,11 @@ class _PaperFavoriteGroupSheetState extends State<_PaperFavoriteGroupSheet> {
                 padding: const EdgeInsets.fromLTRB(18, 6, 10, 8),
                 child: Row(
                   children: [
-                    const Expanded(
+                    Expanded(
                       child: Text(
                         '收藏到分组',
                         style: TextStyle(
-                          color: SparkColors.ink,
+                          color: SparkColors.of(context).ink,
                           fontSize: SparkFontSizes.titleLarge,
                           fontWeight: FontWeight.w800,
                         ),
@@ -116,8 +115,9 @@ class _PaperFavoriteGroupSheetState extends State<_PaperFavoriteGroupSheet> {
                         group.isDefault
                             ? Icons.bookmark_rounded
                             : Icons.folder_outlined,
-                        color:
-                            selected ? SparkColors.primary : SparkColors.muted,
+                        color: selected
+                            ? SparkColors.of(context).primary
+                            : SparkColors.of(context).muted,
                       ),
                       title: Text(group.name),
                       onChanged: (value) {
@@ -133,10 +133,11 @@ class _PaperFavoriteGroupSheetState extends State<_PaperFavoriteGroupSheet> {
               ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(
-                    SparkDesignTokens.space4,
-                    SparkDesignTokens.space2,
-                    SparkDesignTokens.space4,
-                    SparkDesignTokens.space4),
+                  SparkDesignTokens.space4,
+                  SparkDesignTokens.space2,
+                  SparkDesignTokens.space4,
+                  SparkDesignTokens.space4,
+                ),
                 child: SizedBox(
                   width: double.infinity,
                   child: OutlinedButton.icon(

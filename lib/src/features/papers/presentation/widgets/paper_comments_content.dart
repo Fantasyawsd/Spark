@@ -29,10 +29,11 @@ class PaperCommentsContent extends StatelessWidget {
     final roots = comments.where((comment) => comment.parentId == null);
     return Padding(
       padding: const EdgeInsets.fromLTRB(
-          SparkDesignTokens.space4,
-          SparkDesignTokens.space1,
-          SparkDesignTokens.space4,
-          SparkDesignTokens.space4),
+        SparkDesignTokens.space4,
+        SparkDesignTokens.space1,
+        SparkDesignTokens.space4,
+        SparkDesignTokens.space4,
+      ),
       child: Column(
         children: [
           for (final comment in roots) ...[
@@ -63,13 +64,14 @@ class PaperCommentsContent extends StatelessWidget {
                 ),
           ],
           if (comments.isEmpty)
-            const Padding(
+            Padding(
               padding: EdgeInsets.only(top: 48),
               child: Text(
                 '还没有评论，来发表第一条看法吧',
                 style: TextStyle(
-                    color: SparkColors.muted,
-                    fontSize: SparkFontSizes.bodySmall),
+                  color: SparkColors.of(context).muted,
+                  fontSize: SparkFontSizes.bodySmall,
+                ),
               ),
             ),
         ],
@@ -99,8 +101,8 @@ class _CommentTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: EdgeInsets.symmetric(
-          vertical:
-              compact ? SparkDesignTokens.space2 : SparkDesignTokens.space3),
+        vertical: compact ? SparkDesignTokens.space2 : SparkDesignTokens.space3,
+      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -126,8 +128,8 @@ class _CommentTile extends StatelessWidget {
                     Expanded(
                       child: Text(
                         comment.name,
-                        style: const TextStyle(
-                          color: SparkColors.muted,
+                        style: TextStyle(
+                          color: SparkColors.of(context).muted,
                           fontSize: SparkFontSizes.footnote,
                           fontWeight: FontWeight.w600,
                         ),
@@ -142,16 +144,18 @@ class _CommentTile extends StatelessWidget {
                           width: 24,
                           height: 24,
                         ),
-                        icon:
-                            const Icon(Icons.delete_outline_rounded, size: 16),
+                        icon: const Icon(
+                          Icons.delete_outline_rounded,
+                          size: 16,
+                        ),
                       ),
                   ],
                 ),
                 const SizedBox(height: 4),
                 Text(
                   comment.body,
-                  style: const TextStyle(
-                    color: SparkColors.ink,
+                  style: TextStyle(
+                    color: SparkColors.of(context).ink,
                     fontSize: SparkFontSizes.body,
                     height: 1.45,
                   ),
@@ -161,18 +165,18 @@ class _CommentTile extends StatelessWidget {
                   children: [
                     Text(
                       '${comment.time} · ${comment.location}',
-                      style: const TextStyle(
-                        color: SparkColors.subtle,
+                      style: TextStyle(
+                        color: SparkColors.of(context).subtle,
                         fontSize: SparkFontSizes.caption,
                       ),
                     ),
                     const SizedBox(width: 14),
                     GestureDetector(
                       onTap: onReply,
-                      child: const Text(
+                      child: Text(
                         '回复',
                         style: TextStyle(
-                          color: SparkColors.muted,
+                          color: SparkColors.of(context).muted,
                           fontSize: SparkFontSizes.caption,
                           fontWeight: FontWeight.w600,
                         ),
@@ -189,14 +193,14 @@ class _CommentTile extends StatelessWidget {
                                 : Icons.favorite_border_rounded,
                             size: 20,
                             color: comment.liked
-                                ? SparkColors.primary
-                                : SparkColors.muted,
+                                ? SparkColors.of(context).primary
+                                : SparkColors.of(context).muted,
                           ),
                           const SizedBox(width: 4),
                           Text(
                             '${comment.likes}',
-                            style: const TextStyle(
-                              color: SparkColors.muted,
+                            style: TextStyle(
+                              color: SparkColors.of(context).muted,
                               fontSize: SparkFontSizes.caption,
                             ),
                           ),
@@ -214,20 +218,20 @@ class _CommentTile extends StatelessWidget {
                         Container(
                           width: 20,
                           height: 1,
-                          color: SparkColors.line,
+                          color: SparkColors.of(context).line,
                         ),
                         const SizedBox(width: 8),
                         Text(
                           '展开 ${comment.replies} 条回复',
-                          style: const TextStyle(
-                            color: SparkColors.muted,
+                          style: TextStyle(
+                            color: SparkColors.of(context).muted,
                             fontSize: SparkFontSizes.caption,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
-                        const Icon(
+                        Icon(
                           Icons.keyboard_arrow_down_rounded,
-                          color: SparkColors.muted,
+                          color: SparkColors.of(context).muted,
                           size: 17,
                         ),
                       ],

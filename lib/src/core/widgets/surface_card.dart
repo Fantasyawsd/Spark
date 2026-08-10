@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import 'cherry_primitives.dart';
 import '../theme/spark_design_tokens.dart';
-import '../theme/spark_theme.dart';
 
 class SurfaceCard extends StatelessWidget {
   const SurfaceCard({
@@ -11,7 +10,7 @@ class SurfaceCard extends StatelessWidget {
     this.padding = const EdgeInsets.all(SparkDesignTokens.space4),
     this.margin,
     this.radius = SparkDesignTokens.radiusLg,
-    this.color = SparkColors.card,
+    this.color,
     this.border,
     this.level = CherrySurfaceLevel.flat,
   });
@@ -20,7 +19,7 @@ class SurfaceCard extends StatelessWidget {
   final EdgeInsetsGeometry padding;
   final EdgeInsetsGeometry? margin;
   final double radius;
-  final Color color;
+  final Color? color;
   final Border? border;
   final CherrySurfaceLevel level;
 

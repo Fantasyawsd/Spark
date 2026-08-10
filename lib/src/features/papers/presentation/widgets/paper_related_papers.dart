@@ -24,7 +24,7 @@ class PaperRelatedPapers extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: SparkDesignTokens.space3),
       children: [
         if (papers.isEmpty)
-          const Padding(
+          Padding(
             padding: EdgeInsets.only(top: 44),
             child: Center(
               child: Column(
@@ -33,13 +33,13 @@ class PaperRelatedPapers extends StatelessWidget {
                   Icon(
                     Icons.article_outlined,
                     size: 28,
-                    color: SparkColors.muted,
+                    color: SparkColors.of(context).muted,
                   ),
                   SizedBox(height: 12),
                   Text(
                     '相关论文',
                     style: TextStyle(
-                      color: SparkColors.ink,
+                      color: SparkColors.of(context).ink,
                       fontSize: SparkFontSizes.body,
                       fontWeight: FontWeight.w700,
                     ),
@@ -49,7 +49,7 @@ class PaperRelatedPapers extends StatelessWidget {
                     '相关论文推荐将在后续版本提供。',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      color: SparkColors.muted,
+                      color: SparkColors.of(context).muted,
                       fontSize: SparkFontSizes.bodySmall,
                     ),
                   ),
@@ -64,7 +64,7 @@ class PaperRelatedPapers extends StatelessWidget {
               onOpen: onOpen == null ? null : () => onOpen!(papers[index].id),
             ),
             if (index != papers.length - 1)
-              const Divider(height: 1, color: SparkColors.line),
+              Divider(height: 1, color: SparkColors.of(context).line),
           ],
         if (topics.isNotEmpty) ...[
           const SizedBox(height: 18),
@@ -106,8 +106,8 @@ class _RelatedPaperRow extends StatelessWidget {
                     paper.title,
                     maxLines: 3,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: SparkColors.ink,
+                    style: TextStyle(
+                      color: SparkColors.of(context).ink,
                       fontSize: SparkFontSizes.body,
                       height: 1.35,
                       fontWeight: FontWeight.w700,
@@ -118,8 +118,8 @@ class _RelatedPaperRow extends StatelessWidget {
                     paper.venue == null
                         ? paper.relation
                         : '${paper.venue} · ${paper.relation}',
-                    style: const TextStyle(
-                      color: SparkColors.muted,
+                    style: TextStyle(
+                      color: SparkColors.of(context).muted,
                       fontSize: SparkFontSizes.caption,
                       height: 1.3,
                     ),
@@ -128,12 +128,12 @@ class _RelatedPaperRow extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 10),
-            const Padding(
+            Padding(
               padding: EdgeInsets.only(top: 2),
               child: Icon(
                 Icons.arrow_forward_ios_rounded,
                 size: 15,
-                color: SparkColors.subtle,
+                color: SparkColors.of(context).subtle,
               ),
             ),
           ],

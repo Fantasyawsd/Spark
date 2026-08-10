@@ -121,6 +121,7 @@ class _UserMessage extends StatelessWidget {
                 child: SparkMarkdown(
                   data: message.content,
                   styleSheet: sparkMarkdownStyle(
+                    context,
                     color: Theme.of(context).colorScheme.onPrimaryContainer,
                   ),
                   selectable: false,
@@ -214,6 +215,7 @@ class _AssistantMessage extends StatelessWidget {
             SparkMarkdown(
               data: message.content,
               styleSheet: sparkMarkdownStyle(
+                context,
                 color: Theme.of(context).colorScheme.onSurface,
               ),
               stabilizeGeneratedSyntax: true,
@@ -597,6 +599,7 @@ class _ReasoningPanelState extends State<_ReasoningPanel> {
                       child: SparkMarkdown(
                         data: widget.reasoning,
                         styleSheet: sparkMarkdownStyle(
+                          context,
                           color: PaperAiUiTokens.assistantReasoningText(
                             context,
                           ),

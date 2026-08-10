@@ -15,7 +15,7 @@ Future<void> showPaperChannelManagerSheet(
   return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
-    backgroundColor: SparkColors.card,
+    backgroundColor: SparkColors.of(context).card,
     builder: (sheetContext) => PaperChannelManagerSheet(
       userChannels: userChannels,
       onChannelsChanged: onChannelsChanged,
@@ -69,11 +69,11 @@ class _PaperChannelManagerSheetState extends State<PaperChannelManagerSheet> {
               padding: const EdgeInsets.fromLTRB(20, 14, 20, 4),
               child: Row(
                 children: [
-                  const Expanded(
+                  Expanded(
                     child: Text(
                       '频道管理',
                       style: TextStyle(
-                        color: SparkColors.ink,
+                        color: SparkColors.of(context).ink,
                         fontSize: SparkFontSizes.titleSmall,
                         fontWeight: FontWeight.w800,
                       ),
@@ -95,9 +95,9 @@ class _PaperChannelManagerSheetState extends State<PaperChannelManagerSheet> {
                   children: [
                     TabBar(
                       key: const ValueKey('paper-channel-manager-tabs'),
-                      labelColor: SparkColors.ink,
-                      unselectedLabelColor: SparkColors.muted,
-                      indicatorColor: SparkColors.primary,
+                      labelColor: SparkColors.of(context).ink,
+                      unselectedLabelColor: SparkColors.of(context).muted,
+                      indicatorColor: SparkColors.of(context).primary,
                       labelStyle: const TextStyle(
                         fontSize: SparkFontSizes.bodySmall,
                         fontWeight: FontWeight.w700,
@@ -114,10 +114,11 @@ class _PaperChannelManagerSheetState extends State<PaperChannelManagerSheet> {
                           SingleChildScrollView(
                             key: const ValueKey('paper-channel-subject-page'),
                             padding: const EdgeInsets.fromLTRB(
-                                SparkDesignTokens.space5,
-                                SparkDesignTokens.space1,
-                                SparkDesignTokens.space5,
-                                SparkDesignTokens.space5),
+                              SparkDesignTokens.space5,
+                              SparkDesignTokens.space1,
+                              SparkDesignTokens.space5,
+                              SparkDesignTokens.space5,
+                            ),
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -138,18 +139,19 @@ class _PaperChannelManagerSheetState extends State<PaperChannelManagerSheet> {
                                 'paper-channel-conference-page',
                               ),
                               padding: const EdgeInsets.fromLTRB(
-                                  SparkDesignTokens.space5,
-                                  SparkDesignTokens.space4,
-                                  SparkDesignTokens.space5,
-                                  SparkDesignTokens.space5),
-                              child: const Column(
+                                SparkDesignTokens.space5,
+                                SparkDesignTokens.space4,
+                                SparkDesignTokens.space5,
+                                SparkDesignTokens.space5,
+                              ),
+                              child: Column(
                                 mainAxisSize: MainAxisSize.min,
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
                                     '会议频道尚未开放，真实会议数据源接入后可编辑。',
                                     style: TextStyle(
-                                      color: SparkColors.muted,
+                                      color: SparkColors.of(context).muted,
                                       fontSize: SparkFontSizes.footnote,
                                     ),
                                   ),
@@ -221,14 +223,16 @@ class _SubjectRow extends StatelessWidget {
       title: Text(subject.displayName),
       subtitle: Text(
         subject.code,
-        style: const TextStyle(
-          color: SparkColors.muted,
+        style: TextStyle(
+          color: SparkColors.of(context).muted,
           fontSize: SparkFontSizes.caption,
         ),
       ),
       trailing: Icon(
         added ? Icons.check_circle_rounded : Icons.add_circle_outline_rounded,
-        color: added ? SparkColors.primary : SparkColors.muted,
+        color: added
+            ? SparkColors.of(context).primary
+            : SparkColors.of(context).muted,
         size: 20,
       ),
     );

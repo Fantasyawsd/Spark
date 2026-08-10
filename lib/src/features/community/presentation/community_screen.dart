@@ -36,7 +36,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
   @override
   Widget build(BuildContext context) {
     return ColoredBox(
-      color: SparkColors.canvas,
+      color: SparkColors.of(context).canvas,
       child: SafeArea(
         bottom: false,
         child: Column(
@@ -61,10 +61,8 @@ class _CommunityScreenState extends State<CommunityScreen> {
                   crossAxisSpacing: 10,
                   padding: const EdgeInsets.fromLTRB(12, 8, 12, 92),
                   itemCount: widget.posts.length,
-                  itemBuilder: (context, index) => _DiscoveryCard(
-                    post: widget.posts[index],
-                    index: index,
-                  ),
+                  itemBuilder: (context, index) =>
+                      _DiscoveryCard(post: widget.posts[index], index: index),
                 ),
               ),
             ),
@@ -107,8 +105,8 @@ class _CommunityFilters extends StatelessWidget {
         pageController: pageController,
         height: 44,
         indicatorWidth: 24,
-        selectedColor: SparkColors.ink,
-        indicatorColor: SparkColors.ink,
+        selectedColor: SparkColors.of(context).ink,
+        indicatorColor: SparkColors.of(context).ink,
         textSize: 13,
         onSelected: onFeedSelected,
       ),
@@ -139,7 +137,7 @@ class _DiscoveryCardState extends State<_DiscoveryCard> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: SparkColors.line),
+        border: Border.all(color: SparkColors.of(context).line),
         boxShadow: const [
           BoxShadow(
             color: Color(0x0E15213A),
@@ -161,8 +159,8 @@ class _DiscoveryCardState extends State<_DiscoveryCard> {
                   title,
                   maxLines: post.paperTitle != null ? 3 : 4,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: SparkColors.ink,
+                  style: TextStyle(
+                    color: SparkColors.of(context).ink,
                     fontSize: 13,
                     height: 1.35,
                     fontWeight: FontWeight.w700,
@@ -174,8 +172,8 @@ class _DiscoveryCardState extends State<_DiscoveryCard> {
                     post.content,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: SparkColors.muted,
+                    style: TextStyle(
+                      color: SparkColors.of(context).muted,
                       fontSize: 10.5,
                       height: 1.35,
                     ),
@@ -191,8 +189,8 @@ class _DiscoveryCardState extends State<_DiscoveryCard> {
                         post.author,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: SparkColors.muted,
+                        style: TextStyle(
+                          color: SparkColors.of(context).muted,
                           fontSize: 10.5,
                         ),
                       ),
@@ -222,8 +220,8 @@ class _DiscoveryCardState extends State<_DiscoveryCard> {
                                     : Icons.favorite_border_rounded,
                                 key: ValueKey(_liked),
                                 color: _liked
-                                    ? SparkColors.primary
-                                    : SparkColors.muted,
+                                    ? SparkColors.of(context).primary
+                                    : SparkColors.of(context).muted,
                                 size: 19,
                               ),
                             ),
@@ -235,8 +233,8 @@ class _DiscoveryCardState extends State<_DiscoveryCard> {
                       const SizedBox(width: 3),
                       Text(
                         post.likes,
-                        style: const TextStyle(
-                          color: SparkColors.muted,
+                        style: TextStyle(
+                          color: SparkColors.of(context).muted,
                           fontSize: 9.5,
                         ),
                       ),
@@ -301,20 +299,23 @@ class _AcademicCover extends StatelessWidget {
               Text(
                 post.venue ?? 'PAPER NOTE',
                 style: TextStyle(
-                  color: SparkColors.primary,
+                  color: SparkColors.of(context).primary,
                   fontSize: 9.5,
                   fontWeight: FontWeight.w800,
                 ),
               ),
               const Spacer(),
-              const PaperDiagram(accent: SparkColors.purple),
+              PaperDiagram(accent: SparkColors.of(context).purple),
             ],
           ),
         1 => Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(Icons.format_quote_rounded,
-                  color: SparkColors.primary, size: 26),
+              Icon(
+                Icons.format_quote_rounded,
+                color: SparkColors.of(context).primary,
+                size: 26,
+              ),
               const Spacer(),
               Text(
                 post.tags.first.toUpperCase(),
@@ -342,18 +343,21 @@ class _AcademicCover extends StatelessWidget {
                 width: 52,
                 height: 70,
                 decoration: BoxDecoration(
-                  color: SparkColors.primary,
+                  color: SparkColors.of(context).primary,
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(Icons.description_rounded,
-                    color: Colors.white, size: 30),
+                child: const Icon(
+                  Icons.description_rounded,
+                  color: Colors.white,
+                  size: 30,
+                ),
               ),
               const SizedBox(width: 10),
-              const Expanded(
+              Expanded(
                 child: Text(
                   'RESEARCH\nNOTES',
                   style: TextStyle(
-                    color: SparkColors.ink,
+                    color: SparkColors.of(context).ink,
                     fontSize: 16,
                     height: 1.15,
                     fontWeight: FontWeight.w900,
@@ -365,10 +369,10 @@ class _AcademicCover extends StatelessWidget {
         _ => Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              Text(
                 'WEEKLY READING',
                 style: TextStyle(
-                  color: SparkColors.blue,
+                  color: SparkColors.of(context).blue,
                   fontSize: 9.5,
                   fontWeight: FontWeight.w800,
                 ),
@@ -383,8 +387,10 @@ class _AcademicCover extends StatelessWidget {
                       margin: const EdgeInsets.symmetric(horizontal: 3),
                       decoration: BoxDecoration(
                         color: bar == 3
-                            ? SparkColors.primary
-                            : SparkColors.blue.withValues(alpha: 0.35),
+                            ? SparkColors.of(context).primary
+                            : SparkColors.of(
+                                context,
+                              ).blue.withValues(alpha: 0.35),
                         borderRadius: BorderRadius.circular(5),
                       ),
                     ),

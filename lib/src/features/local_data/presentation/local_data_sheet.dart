@@ -32,9 +32,10 @@ class LocalDataSheet extends StatelessWidget {
     return FractionallySizedBox(
       heightFactor: 0.72,
       child: Material(
-        color: Colors.white,
+        color: SparkColors.of(context).card,
         borderRadius: const BorderRadius.vertical(
-            top: Radius.circular(SparkDesignTokens.radius3Xl)),
+          top: Radius.circular(SparkDesignTokens.radius3Xl),
+        ),
         clipBehavior: Clip.antiAlias,
         child: SafeArea(
           top: false,
@@ -47,11 +48,11 @@ class LocalDataSheet extends StatelessWidget {
                   padding: const EdgeInsets.fromLTRB(20, 6, 10, 10),
                   child: Row(
                     children: [
-                      const Expanded(
+                      Expanded(
                         child: Text(
                           '本地数据',
                           style: TextStyle(
-                            color: SparkColors.ink,
+                            color: SparkColors.of(context).ink,
                             fontSize: SparkFontSizes.headlineSmall,
                             fontWeight: FontWeight.w800,
                           ),
@@ -116,9 +117,10 @@ class LocalDataSheet extends StatelessWidget {
                                   target: LocalDataClearTarget.allBusinessData,
                                 ),
                         style: OutlinedButton.styleFrom(
-                          foregroundColor: SparkColors.danger,
-                          side:
-                              const BorderSide(color: SparkColors.dangerBorder),
+                          foregroundColor: SparkColors.of(context).danger,
+                          side: BorderSide(
+                            color: SparkColors.of(context).dangerBorder,
+                          ),
                           minimumSize: const Size.fromHeight(48),
                         ),
                         icon: const Icon(Icons.delete_sweep_outlined),
@@ -132,8 +134,8 @@ class LocalDataSheet extends StatelessWidget {
                         const SizedBox(height: 12),
                         Text(
                           error,
-                          style: const TextStyle(
-                            color: SparkColors.danger,
+                          style: TextStyle(
+                            color: SparkColors.of(context).danger,
                             fontSize: SparkFontSizes.bodySmall,
                           ),
                         ),
@@ -186,21 +188,21 @@ class _UsageSummary extends StatelessWidget {
   Widget build(BuildContext context) {
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: SparkColors.canvas,
+        color: SparkColors.of(context).canvas,
         borderRadius: BorderRadius.circular(SparkDesignTokens.radiusMd),
-        border: Border.all(color: SparkColors.line),
+        border: Border.all(color: SparkColors.of(context).line),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Row(
           children: [
-            Icon(Icons.storage_rounded, color: SparkColors.primary),
+            Icon(Icons.storage_rounded, color: SparkColors.of(context).primary),
             const SizedBox(width: 12),
-            const Expanded(
+            Expanded(
               child: Text(
                 '已使用空间',
                 style: TextStyle(
-                  color: SparkColors.ink,
+                  color: SparkColors.of(context).ink,
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -214,8 +216,8 @@ class _UsageSummary extends StatelessWidget {
               Text(
                 formatLocalDataBytes(usage.totalBytes),
                 key: const ValueKey('local-data-total-size'),
-                style: const TextStyle(
-                  color: SparkColors.ink,
+                style: TextStyle(
+                  color: SparkColors.of(context).ink,
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -248,7 +250,7 @@ class _DataAction extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 4),
-      leading: Icon(icon, color: SparkColors.ink),
+      leading: Icon(icon, color: SparkColors.of(context).ink),
       title: Text(title),
       subtitle: Text(subtitle),
       trailing: Row(
@@ -256,7 +258,7 @@ class _DataAction extends StatelessWidget {
         children: [
           Text(
             formatLocalDataBytes(size),
-            style: const TextStyle(color: SparkColors.muted),
+            style: TextStyle(color: SparkColors.of(context).muted),
           ),
           if (onTap != null) ...[
             const SizedBox(width: 4),
@@ -307,7 +309,7 @@ class _ClearConfirmationDialog extends StatelessWidget {
           onPressed: () => Navigator.pop(context, true),
           style: target == LocalDataClearTarget.allBusinessData
               ? FilledButton.styleFrom(
-                  backgroundColor: SparkColors.danger,
+                  backgroundColor: SparkColors.of(context).danger,
                 )
               : null,
           child: Text(action),

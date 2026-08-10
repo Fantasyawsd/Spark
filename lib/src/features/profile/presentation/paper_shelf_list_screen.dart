@@ -45,14 +45,14 @@ class _PaperShelfListScreenState extends State<PaperShelfListScreen> {
         ? (widget.papersByGroup[_selectedGroupId] ?? const <Paper>[])
         : widget.papers;
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: SparkColors.of(context).card,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: SparkColors.of(context).card,
         surfaceTintColor: Colors.transparent,
         title: Text(
           widget.title,
-          style: const TextStyle(
-            color: SparkColors.ink,
+          style: TextStyle(
+            color: SparkColors.of(context).ink,
             fontSize: SparkFontSizes.title,
             fontWeight: FontWeight.w800,
           ),
@@ -114,16 +114,16 @@ class _PaperShelfListScreenState extends State<PaperShelfListScreen> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(
+          Icon(
             Icons.inbox_outlined,
-            color: SparkColors.muted,
+            color: SparkColors.of(context).muted,
             size: 34,
           ),
           const SizedBox(height: 10),
           Text(
             widget._grouped ? '这个分组还是空的' : '还没有内容',
-            style: const TextStyle(
-              color: SparkColors.ink,
+            style: TextStyle(
+              color: SparkColors.of(context).ink,
               fontSize: SparkFontSizes.body,
               fontWeight: FontWeight.w700,
             ),
@@ -143,7 +143,7 @@ class _ShelfPaperRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: Colors.white,
+      color: SparkColors.of(context).card,
       borderRadius: BorderRadius.circular(SparkDesignTokens.radiusLg),
       child: InkWell(
         key: ValueKey('paper-shelf-row-${paper.id}'),
@@ -153,7 +153,7 @@ class _ShelfPaperRow extends StatelessWidget {
           padding: const EdgeInsets.all(13),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(SparkDesignTokens.radiusLg),
-            border: Border.all(color: SparkColors.line),
+            border: Border.all(color: SparkColors.of(context).line),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -162,8 +162,8 @@ class _ShelfPaperRow extends StatelessWidget {
                 paper.title,
                 maxLines: 3,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: SparkColors.ink,
+                style: TextStyle(
+                  color: SparkColors.of(context).ink,
                   fontSize: SparkFontSizes.body,
                   height: 1.35,
                   fontWeight: FontWeight.w700,
@@ -176,8 +176,8 @@ class _ShelfPaperRow extends StatelessWidget {
                     (paper.source == 'arxiv' ? 'arXiv' : paper.source),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: SparkColors.muted,
+                style: TextStyle(
+                  color: SparkColors.of(context).muted,
                   fontSize: SparkFontSizes.caption,
                 ),
               ),

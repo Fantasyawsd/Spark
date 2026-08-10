@@ -116,7 +116,7 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> with RouteAware {
     final safeTop = MediaQuery.paddingOf(context).top;
     return Scaffold(
       key: ValueKey('paper-detail-${_paper.id}'),
-      backgroundColor: SparkColors.card,
+      backgroundColor: SparkColors.of(context).card,
       body: Stack(
         children: [
           Positioned.fill(
@@ -141,14 +141,14 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> with RouteAware {
             left: 10,
             top: safeTop + 6,
             child: Material(
-              color: Colors.white.withValues(alpha: 0.94),
+              color: SparkColors.of(context).card.withValues(alpha: 0.94),
               shape: const CircleBorder(),
               child: IconButton(
                 key: const ValueKey('paper-detail-back'),
                 tooltip: '返回',
                 onPressed: () => Navigator.maybePop(context),
                 icon: const Icon(Icons.arrow_back_rounded),
-                color: SparkColors.ink,
+                color: SparkColors.of(context).ink,
               ),
             ),
           ),

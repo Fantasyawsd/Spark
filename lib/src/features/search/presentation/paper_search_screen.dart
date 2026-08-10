@@ -41,7 +41,7 @@ class _PaperSearchScreenState extends State<PaperSearchScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: SparkColors.card,
+      backgroundColor: SparkColors.of(context).card,
       body: SafeArea(
         child: Column(
           children: [
@@ -171,11 +171,12 @@ class _SearchHeader extends StatelessWidget {
                   icon: const Icon(Icons.close_rounded, size: 18),
                 ),
                 filled: true,
-                fillColor: SparkColors.surfaceMuted,
+                fillColor: SparkColors.of(context).surfaceMuted,
                 contentPadding: const EdgeInsets.symmetric(vertical: 10),
                 border: OutlineInputBorder(
-                  borderRadius:
-                      BorderRadius.circular(SparkDesignTokens.radiusMd),
+                  borderRadius: BorderRadius.circular(
+                    SparkDesignTokens.radiusMd,
+                  ),
                   borderSide: BorderSide.none,
                 ),
               ),
@@ -213,11 +214,11 @@ class _SearchHistory extends StatelessWidget {
       children: [
         Row(
           children: [
-            const Expanded(
+            Expanded(
               child: Text(
                 '搜索历史',
                 style: TextStyle(
-                  color: SparkColors.ink,
+                  color: SparkColors.of(context).ink,
                   fontSize: SparkFontSizes.bodyLarge,
                   fontWeight: FontWeight.w800,
                 ),
@@ -233,20 +234,21 @@ class _SearchHistory extends StatelessWidget {
             child: Text(
               error!,
               style: TextStyle(
-                color: SparkColors.primary,
+                color: SparkColors.of(context).primary,
                 fontSize: SparkFontSizes.caption,
               ),
             ),
           ),
         if (history.isEmpty)
-          const Padding(
+          Padding(
             padding: EdgeInsets.only(top: 34),
             child: Center(
               child: Text(
                 '暂无搜索历史',
                 style: TextStyle(
-                    color: SparkColors.muted,
-                    fontSize: SparkFontSizes.footnote),
+                  color: SparkColors.of(context).muted,
+                  fontSize: SparkFontSizes.footnote,
+                ),
               ),
             ),
           )
@@ -254,9 +256,9 @@ class _SearchHistory extends StatelessWidget {
           for (final item in history)
             ListTile(
               contentPadding: EdgeInsets.zero,
-              leading: const Icon(
+              leading: Icon(
                 Icons.history_rounded,
-                color: SparkColors.muted,
+                color: SparkColors.of(context).muted,
                 size: 20,
               ),
               title: Text(item, maxLines: 1, overflow: TextOverflow.ellipsis),
@@ -288,8 +290,8 @@ class _PaperSearchResult extends StatelessWidget {
         paper.title,
         maxLines: 2,
         overflow: TextOverflow.ellipsis,
-        style: const TextStyle(
-          color: SparkColors.ink,
+        style: TextStyle(
+          color: SparkColors.of(context).ink,
           fontSize: SparkFontSizes.body,
           height: 1.3,
           fontWeight: FontWeight.w700,
@@ -301,8 +303,10 @@ class _PaperSearchResult extends StatelessWidget {
           _searchResultSubtitle(paper),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: const TextStyle(
-              color: SparkColors.muted, fontSize: SparkFontSizes.caption),
+          style: TextStyle(
+            color: SparkColors.of(context).muted,
+            fontSize: SparkFontSizes.caption,
+          ),
         ),
       ),
       trailing: const Icon(Icons.chevron_right_rounded, size: 20),
@@ -317,11 +321,7 @@ class _PaperSearchResult extends StatelessWidget {
         ? paper.contentKeywords.first
         : (paper.primarySubject ??
             (paper.subjects.isNotEmpty ? paper.subjects.first : null));
-    return [
-      paper.firstAuthor,
-      venue,
-      if (topic != null) topic,
-    ].join(' · ');
+    return [paper.firstAuthor, venue, if (topic != null) topic].join(' · ');
   }
 }
 
@@ -337,13 +337,16 @@ class _NoSearchResults extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.search_off_rounded,
-              color: SparkColors.muted, size: 36),
+          Icon(
+            Icons.search_off_rounded,
+            color: SparkColors.of(context).muted,
+            size: 36,
+          ),
           const SizedBox(height: 10),
           Text(
             message ?? '没有找到相关论文',
-            style: const TextStyle(
-              color: SparkColors.ink,
+            style: TextStyle(
+              color: SparkColors.of(context).ink,
               fontSize: SparkFontSizes.body,
               fontWeight: FontWeight.w700,
             ),

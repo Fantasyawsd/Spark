@@ -7,14 +7,14 @@ Future<T?> showSparkSheet<T>({
   required WidgetBuilder builder,
   bool isScrollControlled = false,
   bool useSafeArea = false,
-  Color barrierColor = SparkColors.barrier,
+  Color? barrierColor,
 }) {
   return showModalBottomSheet<T>(
     context: context,
     isScrollControlled: isScrollControlled,
     useSafeArea: useSafeArea,
     backgroundColor: Colors.transparent,
-    barrierColor: barrierColor,
+    barrierColor: barrierColor ?? SparkColors.of(context).barrier,
     builder: builder,
   );
 }
@@ -33,7 +33,7 @@ class SparkSheetHandle extends StatelessWidget {
           width: 34,
           height: 4,
           decoration: BoxDecoration(
-            color: SparkColors.line,
+            color: SparkColors.of(context).line,
             borderRadius: BorderRadius.circular(99),
           ),
         ),

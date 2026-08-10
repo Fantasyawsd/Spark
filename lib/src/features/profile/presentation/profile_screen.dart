@@ -52,7 +52,7 @@ class ProfileScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final status = catalogStatus;
     return ColoredBox(
-      color: SparkColors.canvas,
+      color: SparkColors.of(context).canvas,
       child: SafeArea(
         bottom: false,
         child: ListView(

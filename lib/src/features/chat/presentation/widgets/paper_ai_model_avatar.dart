@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
-import '../paper_ai_ui_tokens.dart';
-
 /// Shared model avatar used by the message header and Composer model selector.
 ///
-/// Local-only visual: a tinted circle with the built-in spark icon. No network
-/// dependency, so it renders identically offline and online.
+/// Local-only visual: the bundled DeepSeek mark with a transparent background,
+/// no tinted circle. No network dependency, so it renders identically offline
+/// and online. The mark is extracted from the provider's published favicon and
+/// identifies the model provider for BYOK chats.
 class PaperAiModelAvatar extends StatelessWidget {
   const PaperAiModelAvatar({
     super.key,
@@ -16,20 +16,12 @@ class PaperAiModelAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return Image.asset(
+      'assets/images/deepseek_logo.png',
       width: size,
       height: size,
-      decoration: BoxDecoration(
-        color: PaperAiUiTokens.userBubble(context),
-        shape: BoxShape.circle,
-      ),
-      child: Center(
-        child: Icon(
-          Icons.auto_awesome_rounded,
-          size: size * 0.5,
-          color: PaperAiUiTokens.accent(context),
-        ),
-      ),
+      fit: BoxFit.contain,
+      filterQuality: FilterQuality.high,
     );
   }
 }

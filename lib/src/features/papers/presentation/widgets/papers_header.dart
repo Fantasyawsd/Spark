@@ -35,7 +35,7 @@ class PapersHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: SparkColors.card,
+      color: SparkColors.of(context).card,
       elevation: 0,
       shadowColor: Colors.transparent,
       surfaceTintColor: Colors.transparent,
@@ -134,7 +134,9 @@ class _ChannelTab extends StatelessWidget {
             Text(
               label,
               style: TextStyle(
-                color: selected ? SparkColors.ink : SparkColors.muted,
+                color: selected
+                    ? SparkColors.of(context).ink
+                    : SparkColors.of(context).muted,
                 fontSize: SparkFontSizes.body,
                 fontWeight: selected ? FontWeight.w800 : FontWeight.w500,
                 fontFamily: SparkTheme.platformCjkFontFamily(),
@@ -150,7 +152,7 @@ class _ChannelTab extends StatelessWidget {
               width: selected ? 24 : 0,
               height: 3,
               decoration: BoxDecoration(
-                color: SparkColors.primary,
+                color: SparkColors.of(context).primary,
                 borderRadius: BorderRadius.circular(99),
               ),
             ),

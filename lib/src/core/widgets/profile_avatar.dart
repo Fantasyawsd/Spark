@@ -29,11 +29,11 @@ class ProfileAvatar extends StatelessWidget {
             height: radius * 2,
             padding: const EdgeInsets.all(2),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: SparkColors.of(context).card,
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: SparkColors.ink.withValues(alpha: 0.1),
+                  color: SparkColors.of(context).ink.withValues(alpha: 0.1),
                   blurRadius: 12,
                   offset: Offset(0, 4),
                 ),
@@ -43,9 +43,12 @@ class ProfileAvatar extends StatelessWidget {
               child: Image.network(
                 imageUrl,
                 fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) => const ColoredBox(
-                  color: SparkColors.surfaceMuted,
-                  child: Icon(Icons.person_rounded, color: SparkColors.muted),
+                errorBuilder: (context, error, stackTrace) => ColoredBox(
+                  color: SparkColors.of(context).surfaceMuted,
+                  child: Icon(
+                    Icons.person_rounded,
+                    color: SparkColors.of(context).muted,
+                  ),
                 ),
               ),
             ),
@@ -58,9 +61,12 @@ class ProfileAvatar extends StatelessWidget {
                 width: radius * 0.48,
                 height: radius * 0.48,
                 decoration: BoxDecoration(
-                  color: statusColor ?? SparkColors.primary,
+                  color: statusColor ?? SparkColors.of(context).primary,
                   shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white, width: 2),
+                  border: Border.all(
+                    color: SparkColors.of(context).card,
+                    width: 2,
+                  ),
                 ),
               ),
             ),

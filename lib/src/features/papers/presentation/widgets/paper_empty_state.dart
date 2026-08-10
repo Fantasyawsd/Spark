@@ -28,16 +28,16 @@ class PaperEmptyState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
+            Icon(
               Icons.library_books_outlined,
-              color: SparkColors.muted,
+              color: SparkColors.of(context).muted,
               size: 38,
             ),
             const SizedBox(height: 14),
             Text(
               title,
-              style: const TextStyle(
-                color: SparkColors.ink,
+              style: TextStyle(
+                color: SparkColors.of(context).ink,
                 fontSize: SparkFontSizes.title,
                 fontWeight: FontWeight.w800,
               ),
@@ -46,8 +46,8 @@ class PaperEmptyState extends StatelessWidget {
             Text(
               message,
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: SparkColors.muted,
+              style: TextStyle(
+                color: SparkColors.of(context).muted,
                 fontSize: SparkFontSizes.footnote,
                 height: 1.45,
               ),

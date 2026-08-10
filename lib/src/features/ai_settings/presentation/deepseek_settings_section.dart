@@ -8,10 +8,7 @@ import '../../../core/widgets/surface_card.dart';
 import '../application/deepseek_credential_controller.dart';
 
 class DeepSeekSettingsSection extends StatelessWidget {
-  const DeepSeekSettingsSection({
-    super.key,
-    required this.controller,
-  });
+  const DeepSeekSettingsSection({super.key, required this.controller});
 
   final DeepSeekCredentialController controller;
 
@@ -29,14 +26,18 @@ class DeepSeekSettingsSection extends StatelessWidget {
                 width: 42,
                 height: 42,
                 decoration: BoxDecoration(
-                  color:
-                      configured ? SparkColors.primarySoft : SparkColors.canvas,
-                  borderRadius:
-                      BorderRadius.circular(SparkDesignTokens.radiusMd),
+                  color: configured
+                      ? SparkColors.of(context).primarySoft
+                      : SparkColors.of(context).canvas,
+                  borderRadius: BorderRadius.circular(
+                    SparkDesignTokens.radiusMd,
+                  ),
                 ),
                 child: Icon(
                   Icons.key_rounded,
-                  color: configured ? SparkColors.primary : SparkColors.muted,
+                  color: configured
+                      ? SparkColors.of(context).primary
+                      : SparkColors.of(context).muted,
                 ),
               ),
               const SizedBox(width: 12),
@@ -44,10 +45,10 @@ class DeepSeekSettingsSection extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'DeepSeek API',
                       style: TextStyle(
-                        color: SparkColors.ink,
+                        color: SparkColors.of(context).ink,
                         fontSize: SparkFontSizes.bodyLarge,
                         fontWeight: FontWeight.w800,
                       ),
@@ -59,8 +60,8 @@ class DeepSeekSettingsSection extends StatelessWidget {
                           : configured
                               ? controller.maskedApiKey ?? '已配置'
                               : '未配置',
-                      style: const TextStyle(
-                        color: SparkColors.muted,
+                      style: TextStyle(
+                        color: SparkColors.of(context).muted,
                         fontSize: SparkFontSizes.footnote,
                       ),
                     ),
@@ -125,9 +126,10 @@ class _DeepSeekCredentialSheetState extends State<_DeepSeekCredentialSheet> {
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
     return Material(
-      color: Colors.white,
+      color: SparkColors.of(context).card,
       borderRadius: const BorderRadius.vertical(
-          top: Radius.circular(SparkDesignTokens.radius3Xl)),
+        top: Radius.circular(SparkDesignTokens.radius3Xl),
+      ),
       child: Padding(
         padding: EdgeInsets.fromLTRB(20, 0, 20, 20 + bottomInset),
         child: ListenableBuilder(
@@ -139,10 +141,10 @@ class _DeepSeekCredentialSheetState extends State<_DeepSeekCredentialSheet> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const SparkSheetHandle(height: 22),
-                const Text(
+                Text(
                   'DeepSeek API 设置',
                   style: TextStyle(
-                    color: SparkColors.ink,
+                    color: SparkColors.of(context).ink,
                     fontSize: SparkFontSizes.titleLarge,
                     fontWeight: FontWeight.w800,
                   ),
@@ -176,8 +178,8 @@ class _DeepSeekCredentialSheetState extends State<_DeepSeekCredentialSheet> {
                   const SizedBox(height: 10),
                   Text(
                     error,
-                    style: const TextStyle(
-                      color: SparkColors.danger,
+                    style: TextStyle(
+                      color: SparkColors.of(context).danger,
                       fontSize: SparkFontSizes.footnote,
                     ),
                   ),

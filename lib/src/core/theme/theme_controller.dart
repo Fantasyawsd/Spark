@@ -3,18 +3,20 @@ import 'package:flutter/material.dart';
 import 'spark_theme_color.dart';
 import 'theme_preference_repository.dart';
 
-/// 全局主题状态：当前主题色。切换后通知 MaterialApp 重建。
+/// 全局主题状态：当前主题色与外观模式。切换后通知 MaterialApp 重建。
 class ThemeController extends ChangeNotifier {
   ThemeController._();
 
   static final ThemeController instance = ThemeController._();
 
   SparkThemeColor _color = SparkThemeColor.pink;
+  AppThemeMode _mode = AppThemeMode.system;
   ThemePreferenceRepository? _repository;
   Future<void> _writeQueue = Future.value();
   String? _persistenceError;
 
   SparkThemeColor get color => _color;
+  AppThemeMode get mode => _mode;
   String? get persistenceError => _persistenceError;
 
   Future<void> configure(ThemePreferenceRepository repository) {
@@ -31,6 +33,7 @@ class ThemeController extends ChangeNotifier {
     if (repository == null) return;
     try {
       _color = await repository.load() ?? SparkThemeColor.pink;
+      _mode = await repository.loadMode() ?? AppThemeMode.system;
       _persistenceError = null;
     } on ThemePreferencePersistenceException catch (error) {
       _persistenceError = error.message;
@@ -57,5 +60,39 @@ class ThemeController extends ChangeNotifier {
     });
   }
 
+  void setMode(AppThemeMode mode) {
+    if (mode == _mode) return;
+    _mode = mode;
+    notifyListeners();
+    final repository = _repository;
+    if (repository == null) return;
+    _writeQueue = _writeQueue.then((_) async {
+      try {
+        await repository.saveMode(mode);
+        _persistenceError = null;
+      } on ThemePreferencePersistenceException catch (error) {
+        _persistenceError = error.message;
+      } catch (error) {
+        _persistenceError = '主题设置保存失败：$error';
+      }
+      notifyListeners();
+    });
+  }
+
   Future<void> flushPendingWrites() => _writeQueue;
+
+  /// 测试辅助：重置单例状态，隔离用例间污染。
+  ///
+  /// testWidgets 的 FakeAsync 会丢弃测试体结束后仍未派送的 microtask，
+  /// 可能导致写队列 Future 永不完成；后续用例在真实事件循环中
+  /// `await flushPendingWrites()` 便会挂起。每个用例前调用本方法
+  /// 重置写队列与偏好缓存，避免跨用例泄漏。
+  @visibleForTesting
+  void debugResetForTesting() {
+    _color = SparkThemeColor.pink;
+    _mode = AppThemeMode.system;
+    _repository = null;
+    _writeQueue = Future.value();
+    _persistenceError = null;
+  }
 }

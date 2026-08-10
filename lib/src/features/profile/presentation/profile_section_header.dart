@@ -22,13 +22,13 @@ class ProfileSectionHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, color: SparkColors.muted, size: 21),
+        Icon(icon, color: SparkColors.of(context).muted, size: 21),
         const SizedBox(width: 8),
         Expanded(
           child: Text(
             title,
-            style: const TextStyle(
-              color: SparkColors.ink,
+            style: TextStyle(
+              color: SparkColors.of(context).ink,
               fontSize: SparkFontSizes.titleSmall,
               fontWeight: FontWeight.w800,
             ),
@@ -45,14 +45,14 @@ class ProfileSectionHeader extends StatelessWidget {
                 children: [
                   Text(
                     action,
-                    style: const TextStyle(
-                      color: SparkColors.muted,
+                    style: TextStyle(
+                      color: SparkColors.of(context).muted,
                       fontSize: SparkFontSizes.caption,
                     ),
                   ),
-                  const Icon(
+                  Icon(
                     Icons.chevron_right_rounded,
-                    color: SparkColors.muted,
+                    color: SparkColors.of(context).muted,
                     size: 19,
                   ),
                 ],

@@ -10,8 +10,8 @@
 - Worktree：`../feature--dark-mode`
 - 基线提交：`e1459d2`（WS1 分支头）
 - 负责人：编排者 Fantasy；执行 Claude Code Agent
-- 状态：开发中
-- 最近更新：`2026-08-10 20:48`
+- 状态：开发中（待用户实机验收）
+- 最近更新：`2026-08-10 22:20`
 
 ## 目标
 
@@ -27,15 +27,15 @@
 
 ## 验收标准
 
-- [ ] 新增 `lib/src/core/theme/spark_palette.dart`：字段覆盖原 SparkColors 全部成员，`light()/dark()` 工厂，primarySoft/primaryPale 暗色由 alphaBlend 派生。
-- [ ] 原静态 `SparkColors` 删除，lib 内全部调用点迁移为 `SparkColors.of(context)`（含 community/messages，若引用）。
-- [ ] `SparkTheme.dark()` 与 `SparkTheme.light()` 并存，palette 经 `ThemeData.extensions` 注入。
-- [ ] `AppThemeMode` 持久化于 ThemePreferenceRepository（file/in-memory/测试替身同步），重启后保持。
-- [ ] `ThemeController` 暴露 mode/setMode，写队列模式与 setColor 一致。
-- [ ] `spark_app.dart` MaterialApp 接线 theme/darkTheme/themeMode。
-- [ ] 主题设置 sheet 强调色上方有「外观」三档（跟随系统/浅色/深色）。
-- [ ] splash 白底与 `paper_grid_card.dart` 封面渐变基色改为主题感知。
-- [ ] `verify_changed_dart_format.ps1`、`flutter analyze`、`flutter test` 全部通过，含新增 mode 持久化单测、sheet widget 测试、暗色冒烟测试。
+- [x] 新增 `lib/src/core/theme/spark_palette.dart`：字段覆盖原 SparkColors 全部成员，`light()/dark()` 工厂，primarySoft/primaryPale 暗色由 alphaBlend 派生。
+- [x] 原静态 `SparkColors` 删除，lib 内全部调用点迁移为 `SparkColors.of(context)`（含 community/messages，若引用）。
+- [x] `SparkTheme.dark()` 与 `SparkTheme.light()` 并存，palette 经 `ThemeData.extensions` 注入。
+- [x] `AppThemeMode` 持久化于 ThemePreferenceRepository（file/in-memory/测试替身同步），重启后保持。
+- [x] `ThemeController` 暴露 mode/setMode，写队列模式与 setColor 一致。
+- [x] `spark_app.dart` MaterialApp 接线 theme/darkTheme/themeMode。
+- [x] 主题设置 sheet 强调色上方有「外观」三档（跟随系统/浅色/深色）。
+- [x] splash 白底与 `paper_grid_card.dart` 封面渐变基色改为主题感知。
+- [x] `verify_changed_dart_format.ps1`、`flutter analyze`、`flutter test` 全部通过，含新增 mode 持久化单测、sheet widget 测试、暗色冒烟测试。
 - [ ] 用户 Windows 实机验收亮/暗切换。
 
 ## 写入范围
@@ -70,9 +70,9 @@
 
 ## 当前进度
 
-- 已完成：分支与 worktree 建立（基线 e1459d2）、台账初始化。
-- 正在进行：C1 SparkPalette 与调用点迁移。
-- 下一步：grep 统计 `SparkColors.` 调用点规模，编写 spark_palette.dart 与迁移脚本。
+- 已完成：C1 SparkPalette 与全量迁移（1745e84）、C2 mode 持久化 + controller + dark() + MaterialApp 接线（ad4201c）、C3 主题 sheet 外观三档（d33ec18）、C4 splash/渐变/杂项主题感知（b6d466b）、C5 测试（698855e）、完整验证门禁（format 63 文件、analyze、test 400 全绿）。
+- 正在进行：等待用户 Windows 实机验收亮/暗切换（`flutter run -d windows`）。
+- 下一步：用户验收后由编排者触发 /test → /review → /finish；WS3 桌面自适应以本分支头为基线另行建流。
 - 阻塞项：无
 
 ## 决策记录
@@ -82,6 +82,11 @@
 | 2026-08-10 | 三个工作流链式基线（WS2 基于 WS1 头） | 合并由编排者 /finish 触发，链式避免中途合入 main | 合并顺序固定为 WS1→WS2→WS3 |
 | 2026-08-10 | 暗色 primarySoft/primaryPale 用 `Color.alphaBlend(primary.withValues(alpha:.28/.14), darkCard)` 派生 | 跟随强调色变化，避免每强调色手写一对暗色 | 暗色下强调色容器色随 BYOK 强调色联动 |
 | 2026-08-10 | 本工作流起提交信息使用中文格式 `<类型>（<范围>）：<主题>` | main dbc6b08 完善中文提交信息约定 | 本分支全部提交遵循新约定 |
+| 2026-08-10 | 迁移文件随 dart format 3.12（tall style）重排，非迁移文件一律恢复不提交 | dart 3.12 formatter 只剩 tall style，WS1 已开先例；门禁要求变更文件格式合规 | C1 diff 含迁移文件的格式重排（无行为变化）；其余 ~106 个 short-style 文件留待编排者统一重排 |
+| 2026-08-10 | 无 context 场景改显式传参而非兜底亮色：CustomPainter 加 ink 字段、markdown 样式函数加 context 参数、构造器默认色改可空 build 解析 | 兜底亮色在暗色下是错误数据，传参让主题解析发生在有 context 处 | sparkMarkdownStyle/paperReaderMarkdownStyle 签名变更（内部 API）；测试调用点包 Builder |
+| 2026-08-10 | FileThemePreferenceRepository 读-改-写单键；schema 校验 color/mode 双键可选 | 两键共存同一 JSON，旧数据无 mode 键视为 system | 存量数据零迁移 |
+| 2026-08-10 | SparkTheme 抽 _themeData(palette, brightness) 共享构建体，dark()/light() 委托 | 防止亮暗两套主题定义漂移 | 暗色差异点（secondary 派生、onError、shadow/scrim、surfaceContainer、SnackBar、弹窗阴影）集中 isDark 三元 |
+| 2026-08-10 | ThemeController 新增 debugResetForTesting() 处理 testWidgets 跨用例挂起 | 用例在 FakeAsync 中 setColor/setMode 后，写队列 Future 的完成 microtask 可能随 FakeAsync 丢弃而永不派送，下一用例真实事件循环 await flushPendingWrites 即挂起（两个 sheet 用例连跑时必现） | widget 测试 setUp 先重置单例；paper_ai_mobile_chat_ui_test 等直接 setColor 的既有用例目前未踩坑，保持不动，未来可用同一辅助方法 |
 
 ## 验证记录
 
@@ -89,7 +94,10 @@
 
 | 命令或人工检查 | 结果 | 日期 |
 | --- | --- | --- |
-| （待记录） | - | - |
+| `tool\verify_changed_dart_format.ps1` | 通过（63 个文件） | 2026-08-10 |
+| `flutter analyze` | 通过，No issues found | 2026-08-10 |
+| `flutter test`（全量） | 通过，400 个用例全绿（395 既有 + 5 新增） | 2026-08-10 |
+| 用户 Windows 实机验收亮/暗切换 | 待用户验收 | - |
 
 ## 审查结论
 
@@ -104,7 +112,12 @@
 
 | SHA | 提交信息 | 对应阶段 | 验证摘要 |
 | --- | --- | --- | --- |
-| （待记录） | - | - | - |
+| c050898 | 文档：新增 dark-mode 任务台账 | 台账初始化 | - |
+| 1745e84 | 重构（core）：SparkColors 静态常量迁移为 SparkPalette 主题扩展 | C1 | format 58 文件、analyze、flutter test 395 全绿 |
+| ad4201c | 新增（core）：外观模式持久化与暗色主题接线 | C2 | analyze 通过、flutter test 395 全绿 |
+| d33ec18 | 新增（core）：主题设置增加外观模式三档 | C3 | analyze 通过、sheet 既有 widget 测试通过 |
+| b6d466b | 修复（core）：表面白底假设改为主题感知 | C4 | analyze 通过、flutter test 395 全绿 |
+| 698855e | 测试（core）：外观模式持久化、主题切换与暗色冒烟用例 | C5 | format 63 文件、analyze、flutter test 400 全绿 |
 
 ## 交付准备（合并前收集）
 

@@ -54,7 +54,8 @@ class PaperAiChatScreen extends StatefulWidget {
 class _PaperAiChatScreenState extends State<PaperAiChatScreen> {
   final TextEditingController _composer = TextEditingController();
   final FocusNode _composerFocusNode = FocusNode();
-  final ScrollController _scrollController = ScrollController();
+  final _ImeAnchoringScrollController _scrollController =
+      _ImeAnchoringScrollController();
   late final ChatConversationController _conversation;
   late String _conversationTitle;
   bool _previewMode = false;
@@ -101,76 +102,77 @@ class _PaperAiChatScreenState extends State<PaperAiChatScreen> {
       appBar: _selectionMode
           ? _buildSelectionAppBar(context)
           : _buildChatAppBar(context),
-      body: _AndroidChatKeyboardFollower(
-        child: Column(
-          children: [
-            Expanded(
-              child: ScrollConfiguration(
-                behavior: ScrollConfiguration.of(
-                  context,
-                ).copyWith(scrollbars: false),
-                child: ListView(
-                  key: const ValueKey('global-paper-ai-chat'),
-                  controller: _scrollController,
-                  keyboardDismissBehavior:
-                      ScrollViewKeyboardDismissBehavior.onDrag,
-                  padding: EdgeInsets.zero,
-                  children: [
-                    PaperAiContent(
-                      chatContext: widget.chatContext,
-                      messages: _conversation.messages,
-                      loading: _conversation.loading,
-                      sending: _conversation.sending,
-                      error: _conversation.error,
-                      onPrompt: (_) {},
-                      onRetry: _conversation.retry,
-                      onCancel: _conversation.cancel,
-                      onDelete: _deleteMessage,
-                      onEdit: _editMessage,
-                      selectionMode: _selectionMode,
-                      selectedMessageIndexes: _selectedMessageIndexes,
-                      onToggleMessageSelection: _toggleMessageSelection,
-                      searching: _conversation.searching,
-                      requestStatus: _conversation.requestStatus,
-                      canRetryRequestError: _conversation.canRetryRequestError,
-                      welcomeTitle: widget.welcomeTitle,
-                      welcomeDescription: widget.welcomeDescription,
-                      previewMode: _previewMode,
-                      assistantLabel: widget.assistantLabel,
-                      modelName: widget.modelName,
-                      providerName: widget.providerName,
-                    ),
-                  ],
-                ),
+      body: Column(
+        children: [
+          Expanded(
+            child: ScrollConfiguration(
+              behavior: ScrollConfiguration.of(
+                context,
+              ).copyWith(scrollbars: false),
+              child: ListView(
+                key: const ValueKey('global-paper-ai-chat'),
+                controller: _scrollController,
+                keyboardDismissBehavior:
+                    ScrollViewKeyboardDismissBehavior.onDrag,
+                padding: EdgeInsets.zero,
+                children: [
+                  PaperAiContent(
+                    chatContext: widget.chatContext,
+                    messages: _conversation.messages,
+                    loading: _conversation.loading,
+                    sending: _conversation.sending,
+                    error: _conversation.error,
+                    onPrompt: (_) {},
+                    onRetry: _conversation.retry,
+                    onCancel: _conversation.cancel,
+                    onDelete: _deleteMessage,
+                    onEdit: _editMessage,
+                    selectionMode: _selectionMode,
+                    selectedMessageIndexes: _selectedMessageIndexes,
+                    onToggleMessageSelection: _toggleMessageSelection,
+                    searching: _conversation.searching,
+                    requestStatus: _conversation.requestStatus,
+                    canRetryRequestError: _conversation.canRetryRequestError,
+                    welcomeTitle: widget.welcomeTitle,
+                    welcomeDescription: widget.welcomeDescription,
+                    previewMode: _previewMode,
+                    assistantLabel: widget.assistantLabel,
+                    modelName: widget.modelName,
+                    providerName: widget.providerName,
+                  ),
+                  const _AndroidImeScrollSpacer(),
+                ],
               ),
             ),
-            if (_selectionMode)
-              _MessageSelectionBar(
-                key: const ValueKey('paper-ai-selection-bar'),
-                count: _selectedMessageIndexes.length,
-                onCancel: _exitSelectionMode,
-                onDelete: _confirmDeleteSelectedMessages,
-              )
-            else
-              PaperAiComposer(
-                controller: _composer,
-                focusNode: _composerFocusNode,
-                enabled: !_conversation.sending,
-                sending: _conversation.sending,
-                reasoningEffort: _conversation.reasoningEffort,
-                onReasoningEffortChanged: _conversation.setReasoningEffort,
-                webSearchAvailable: _conversation.webSearchAvailable,
-                webSearchEnabled: _conversation.webSearchEnabled,
-                onWebSearchChanged: _conversation.setWebSearchEnabled,
-                hasContext: _conversation.messages.isNotEmpty,
-                onClearContext: _confirmClearContext,
-                modelName: widget.modelName,
-                onChanged: (_) => setState(() {}),
-                onSend: () => _send(_composer.text),
-                onCancel: _conversation.cancel,
-              ),
-          ],
-        ),
+          ),
+          _AndroidChatBottomBarFollower(
+            scrollController: _scrollController,
+            child: _selectionMode
+                ? _MessageSelectionBar(
+                    key: const ValueKey('paper-ai-selection-bar'),
+                    count: _selectedMessageIndexes.length,
+                    onCancel: _exitSelectionMode,
+                    onDelete: _confirmDeleteSelectedMessages,
+                  )
+                : PaperAiComposer(
+                    controller: _composer,
+                    focusNode: _composerFocusNode,
+                    enabled: !_conversation.sending,
+                    sending: _conversation.sending,
+                    reasoningEffort: _conversation.reasoningEffort,
+                    onReasoningEffortChanged: _conversation.setReasoningEffort,
+                    webSearchAvailable: _conversation.webSearchAvailable,
+                    webSearchEnabled: _conversation.webSearchEnabled,
+                    onWebSearchChanged: _conversation.setWebSearchEnabled,
+                    hasContext: _conversation.messages.isNotEmpty,
+                    onClearContext: _confirmClearContext,
+                    modelName: widget.modelName,
+                    onChanged: (_) => setState(() {}),
+                    onSend: () => _send(_composer.text),
+                    onCancel: _conversation.cancel,
+                  ),
+          ),
+        ],
       ),
     );
   }
@@ -530,9 +532,13 @@ class _PaperAiChatScreenState extends State<PaperAiChatScreen> {
   }
 }
 
-class _AndroidChatKeyboardFollower extends StatelessWidget {
-  const _AndroidChatKeyboardFollower({required this.child});
+class _AndroidChatBottomBarFollower extends StatelessWidget {
+  const _AndroidChatBottomBarFollower({
+    required this.scrollController,
+    required this.child,
+  });
 
+  final _ImeAnchoringScrollController scrollController;
   final Widget child;
 
   @override
@@ -540,17 +546,97 @@ class _AndroidChatKeyboardFollower extends StatelessWidget {
     if (defaultTargetPlatform != TargetPlatform.android) return child;
 
     final mediaQuery = MediaQuery.of(context);
-    // AppBar 位于该组件之外；这里只更新对话 body 的合成变换，
-    // 并屏蔽子树 inset，避免消息与输入组件再做一次局部 resize。
-    return ClipRect(
-      child: Transform.translate(
-        offset: Offset(0, -mediaQuery.viewInsets.bottom),
-        child: MediaQuery(
-          data: mediaQuery.removeViewInsets(removeBottom: true),
-          child: child,
-        ),
+    final keyboardInset = mediaQuery.viewInsets.bottom;
+    scrollController.updateImeInset(keyboardInset);
+    // 只平移体积很小的底部栏；消息视口不参与 IME 合成变换。
+    return Transform.translate(
+      offset: Offset(0, -keyboardInset),
+      child: MediaQuery(
+        data: mediaQuery.removeViewInsets(removeBottom: true),
+        child: RepaintBoundary(child: child),
       ),
     );
+  }
+}
+
+class _AndroidImeScrollSpacer extends StatelessWidget {
+  const _AndroidImeScrollSpacer();
+
+  @override
+  Widget build(BuildContext context) {
+    if (defaultTargetPlatform != TargetPlatform.android) {
+      return const SizedBox.shrink();
+    }
+    return SizedBox(height: MediaQuery.viewInsetsOf(context).bottom);
+  }
+}
+
+class _ImeAnchoringScrollController extends ScrollController {
+  static const double _followThreshold = 160;
+
+  double _imeInset = 0;
+
+  void updateImeInset(double nextInset) {
+    if (nextInset == _imeInset) return;
+    final delta = nextInset - _imeInset;
+    _imeInset = nextInset;
+    for (final position in positions.whereType<_ImeAnchoringScrollPosition>()) {
+      position.queueImeCorrection(delta, _followThreshold);
+    }
+  }
+
+  @override
+  ScrollPosition createScrollPosition(
+    ScrollPhysics physics,
+    ScrollContext context,
+    ScrollPosition? oldPosition,
+  ) {
+    return _ImeAnchoringScrollPosition(
+      physics: physics,
+      context: context,
+      initialPixels: initialScrollOffset,
+      keepScrollOffset: keepScrollOffset,
+      oldPosition: oldPosition,
+      debugLabel: debugLabel,
+    );
+  }
+}
+
+class _ImeAnchoringScrollPosition extends ScrollPositionWithSingleContext {
+  _ImeAnchoringScrollPosition({
+    required super.physics,
+    required super.context,
+    super.initialPixels,
+    super.keepScrollOffset,
+    super.oldPosition,
+    super.debugLabel,
+  });
+
+  double _pendingImeCorrection = 0;
+
+  void queueImeCorrection(double delta, double followThreshold) {
+    if (!hasPixels || !haveDimensions) return;
+    if (maxScrollExtent - pixels > followThreshold) return;
+    _pendingImeCorrection += delta;
+  }
+
+  @override
+  bool correctForNewDimensions(
+    ScrollMetrics oldPosition,
+    ScrollMetrics newPosition,
+  ) {
+    if (_pendingImeCorrection != 0) {
+      final target = (pixels + _pendingImeCorrection).clamp(
+        newPosition.minScrollExtent,
+        newPosition.maxScrollExtent,
+      );
+      _pendingImeCorrection = 0;
+      if (target != pixels) {
+        correctPixels(target);
+        return false;
+      }
+    }
+    return super.correctForNewDimensions(oldPosition, newPosition);
   }
 }
 

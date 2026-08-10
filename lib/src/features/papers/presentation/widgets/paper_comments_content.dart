@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/theme/spark_design_tokens.dart';
+import '../../../../core/theme/spark_font_sizes.dart';
 import '../../../../core/theme/spark_theme.dart';
 import '../../../../core/widgets/spark_entry_animation.dart';
 import 'paper_discussion_models.dart';
@@ -26,7 +28,11 @@ class PaperCommentsContent extends StatelessWidget {
   Widget build(BuildContext context) {
     final roots = comments.where((comment) => comment.parentId == null);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+      padding: const EdgeInsets.fromLTRB(
+          SparkDesignTokens.space4,
+          SparkDesignTokens.space1,
+          SparkDesignTokens.space4,
+          SparkDesignTokens.space4),
       child: Column(
         children: [
           for (final comment in roots) ...[
@@ -61,7 +67,9 @@ class PaperCommentsContent extends StatelessWidget {
               padding: EdgeInsets.only(top: 48),
               child: Text(
                 '还没有评论，来发表第一条看法吧',
-                style: TextStyle(color: SparkColors.muted, fontSize: 13),
+                style: TextStyle(
+                    color: SparkColors.muted,
+                    fontSize: SparkFontSizes.bodySmall),
               ),
             ),
         ],
@@ -90,7 +98,9 @@ class _CommentTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: compact ? 8 : 12),
+      padding: EdgeInsets.symmetric(
+          vertical:
+              compact ? SparkDesignTokens.space2 : SparkDesignTokens.space3),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -118,7 +128,7 @@ class _CommentTile extends StatelessWidget {
                         comment.name,
                         style: const TextStyle(
                           color: SparkColors.muted,
-                          fontSize: 12,
+                          fontSize: SparkFontSizes.footnote,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -142,7 +152,7 @@ class _CommentTile extends StatelessWidget {
                   comment.body,
                   style: const TextStyle(
                     color: SparkColors.ink,
-                    fontSize: 14,
+                    fontSize: SparkFontSizes.body,
                     height: 1.45,
                   ),
                 ),
@@ -153,7 +163,7 @@ class _CommentTile extends StatelessWidget {
                       '${comment.time} · ${comment.location}',
                       style: const TextStyle(
                         color: SparkColors.subtle,
-                        fontSize: 11,
+                        fontSize: SparkFontSizes.caption,
                       ),
                     ),
                     const SizedBox(width: 14),
@@ -163,7 +173,7 @@ class _CommentTile extends StatelessWidget {
                         '回复',
                         style: TextStyle(
                           color: SparkColors.muted,
-                          fontSize: 11,
+                          fontSize: SparkFontSizes.caption,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -187,7 +197,7 @@ class _CommentTile extends StatelessWidget {
                             '${comment.likes}',
                             style: const TextStyle(
                               color: SparkColors.muted,
-                              fontSize: 11,
+                              fontSize: SparkFontSizes.caption,
                             ),
                           ),
                         ],
@@ -211,7 +221,7 @@ class _CommentTile extends StatelessWidget {
                           '展开 ${comment.replies} 条回复',
                           style: const TextStyle(
                             color: SparkColors.muted,
-                            fontSize: 11,
+                            fontSize: SparkFontSizes.caption,
                             fontWeight: FontWeight.w600,
                           ),
                         ),

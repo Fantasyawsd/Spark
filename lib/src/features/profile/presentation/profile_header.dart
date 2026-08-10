@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/theme/spark_design_tokens.dart';
+import '../../../core/theme/spark_font_sizes.dart';
 import '../../../core/theme/spark_theme.dart';
 import '../../../core/widgets/spark_theme_sheet.dart';
 
@@ -33,7 +35,7 @@ class ProfileHeader extends StatelessWidget {
                 '我的研究库',
                 style: TextStyle(
                   color: SparkColors.ink,
-                  fontSize: 24,
+                  fontSize: SparkFontSizes.display,
                   fontWeight: FontWeight.w800,
                 ),
               ),
@@ -49,7 +51,8 @@ class ProfileHeader extends StatelessWidget {
         const SizedBox(height: 4),
         const Text(
           '本地论文、阅读记录与 AI 配置',
-          style: TextStyle(color: SparkColors.muted, fontSize: 12.5),
+          style: TextStyle(
+              color: SparkColors.muted, fontSize: SparkFontSizes.bodySmall),
         ),
         const SizedBox(height: 16),
         Row(
@@ -96,7 +99,7 @@ class _ProfileStat extends StatelessWidget {
         color: Colors.transparent,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(SparkDesignTokens.radiusLg),
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 4),
             child: Column(
@@ -105,7 +108,7 @@ class _ProfileStat extends StatelessWidget {
                   value,
                   style: const TextStyle(
                     color: SparkColors.ink,
-                    fontSize: 20,
+                    fontSize: SparkFontSizes.headlineSmall,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
@@ -115,7 +118,7 @@ class _ProfileStat extends StatelessWidget {
                   maxLines: 1,
                   style: const TextStyle(
                     color: SparkColors.muted,
-                    fontSize: 10.5,
+                    fontSize: SparkFontSizes.caption,
                   ),
                 ),
               ],

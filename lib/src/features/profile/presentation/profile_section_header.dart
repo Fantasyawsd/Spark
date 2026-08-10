@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/theme/spark_design_tokens.dart';
+import '../../../core/theme/spark_font_sizes.dart';
 import '../../../core/theme/spark_theme.dart';
 
 class ProfileSectionHeader extends StatelessWidget {
@@ -27,7 +29,7 @@ class ProfileSectionHeader extends StatelessWidget {
             title,
             style: const TextStyle(
               color: SparkColors.ink,
-              fontSize: 16,
+              fontSize: SparkFontSizes.titleSmall,
               fontWeight: FontWeight.w800,
             ),
           ),
@@ -35,7 +37,7 @@ class ProfileSectionHeader extends StatelessWidget {
         if (action.isNotEmpty)
           InkWell(
             onTap: onActionTap,
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(SparkDesignTokens.radiusMd),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
               child: Row(
@@ -45,7 +47,7 @@ class ProfileSectionHeader extends StatelessWidget {
                     action,
                     style: const TextStyle(
                       color: SparkColors.muted,
-                      fontSize: 11.5,
+                      fontSize: SparkFontSizes.caption,
                     ),
                   ),
                   const Icon(

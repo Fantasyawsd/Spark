@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/platform/spark_clipboard.dart';
+import '../../../../core/theme/spark_design_tokens.dart';
+import '../../../../core/theme/spark_font_sizes.dart';
 import '../../../../core/widgets/spark_markdown.dart';
 import '../../domain/chat_message.dart';
 import '../paper_ai_ui_tokens.dart';
@@ -113,7 +115,8 @@ class _UserMessage extends StatelessWidget {
                     const EdgeInsets.symmetric(horizontal: 15, vertical: 9),
                 decoration: BoxDecoration(
                   color: PaperAiUiTokens.userBubble(context),
-                  borderRadius: BorderRadius.circular(18),
+                  borderRadius:
+                      BorderRadius.circular(SparkDesignTokens.radius2Xl),
                 ),
                 child: SparkMarkdown(
                   data: message.content,
@@ -186,7 +189,7 @@ class _AssistantMessage extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             color: Theme.of(context).colorScheme.onSurface,
-                            fontSize: 15.5,
+                            fontSize: SparkFontSizes.titleSmall,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
@@ -242,7 +245,7 @@ class _AssistantMessage extends StatelessWidget {
                     : '生成失败',
                 style: TextStyle(
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  fontSize: 10.5,
+                  fontSize: SparkFontSizes.caption,
                 ),
               ),
             ),
@@ -284,11 +287,11 @@ class _SelectableMessage extends StatelessWidget {
                 selected ? PaperAiUiTokens.accent(context) : Colors.transparent,
             width: 1.2,
           ),
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(SparkDesignTokens.radius2Xl),
         ),
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(SparkDesignTokens.radiusLg),
           child: Stack(
             children: [
               child,
@@ -413,7 +416,8 @@ class _MessageActionRow extends StatelessWidget {
       context: context,
       backgroundColor: PaperAiUiTokens.canvas(context),
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
+        borderRadius: BorderRadius.vertical(
+            top: Radius.circular(SparkDesignTokens.radius3Xl)),
       ),
       clipBehavior: Clip.antiAlias,
       showDragHandle: true,
@@ -530,7 +534,7 @@ class _ReasoningPanelState extends State<_ReasoningPanel> {
       margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
         color: PaperAiUiTokens.assistantReasoning(context),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(SparkDesignTokens.radiusXl),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -538,7 +542,7 @@ class _ReasoningPanelState extends State<_ReasoningPanel> {
           InkWell(
             key: const ValueKey('paper-ai-reasoning-toggle'),
             onTap: () => setState(() => _expanded = !_expanded),
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(SparkDesignTokens.radiusXl),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
               child: Row(
@@ -558,7 +562,7 @@ class _ReasoningPanelState extends State<_ReasoningPanel> {
                               color: PaperAiUiTokens.assistantReasoningText(
                                 context,
                               ),
-                              fontSize: 14,
+                              fontSize: SparkFontSizes.body,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -667,7 +671,7 @@ class _ShimmerTextState extends State<_ShimmerText>
         widget.text,
         style: TextStyle(
           color: PaperAiUiTokens.assistantReasoningText(context),
-          fontSize: 15,
+          fontSize: SparkFontSizes.bodyLarge,
           fontWeight: FontWeight.w600,
         ),
       ),
@@ -704,7 +708,7 @@ class _SourcesPanelState extends State<_SourcesPanel> {
         color: PaperAiUiTokens.assistantReasoning(
           context,
         ).withValues(alpha: 0.64),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(SparkDesignTokens.radiusXl),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -712,7 +716,7 @@ class _SourcesPanelState extends State<_SourcesPanel> {
           InkWell(
             key: const ValueKey('paper-ai-sources-toggle'),
             onTap: () => setState(() => _expanded = !_expanded),
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(SparkDesignTokens.radiusLg),
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 2),
               child: Row(
@@ -727,7 +731,7 @@ class _SourcesPanelState extends State<_SourcesPanel> {
                     '来源',
                     style: TextStyle(
                       color: Theme.of(context).colorScheme.onSurface,
-                      fontSize: 12,
+                      fontSize: SparkFontSizes.footnote,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -736,7 +740,7 @@ class _SourcesPanelState extends State<_SourcesPanel> {
                     '${sources.length} 个',
                     style: TextStyle(
                       color: Theme.of(context).colorScheme.outline,
-                      fontSize: 10.5,
+                      fontSize: SparkFontSizes.caption,
                     ),
                   ),
                   const Spacer(),
@@ -775,7 +779,7 @@ class _SourcesPanelState extends State<_SourcesPanel> {
                             '另有 $remaining 个来源',
                             style: TextStyle(
                               color: Theme.of(context).colorScheme.outline,
-                              fontSize: 10.5,
+                              fontSize: SparkFontSizes.caption,
                             ),
                           ),
                         ),
@@ -811,7 +815,7 @@ class _SourceRow extends StatelessWidget {
         child: InkWell(
           key: ValueKey('paper-ai-source-$index'),
           onTap: uri == null ? null : () => _open(context, uri),
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(SparkDesignTokens.radiusLg),
           child: Padding(
             padding: const EdgeInsets.only(bottom: 7, top: 2),
             child: Row(
@@ -823,13 +827,14 @@ class _SourceRow extends StatelessWidget {
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
                     color: PaperAiUiTokens.canvas(context),
-                    borderRadius: BorderRadius.circular(7),
+                    borderRadius:
+                        BorderRadius.circular(SparkDesignTokens.radiusSm),
                   ),
                   child: Text(
                     '$index',
                     style: TextStyle(
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      fontSize: 10,
+                      fontSize: SparkFontSizes.tiny,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -847,7 +852,7 @@ class _SourceRow extends StatelessWidget {
                           color: uri == null
                               ? Theme.of(context).colorScheme.onSurface
                               : Theme.of(context).colorScheme.secondary,
-                          fontSize: 11.5,
+                          fontSize: SparkFontSizes.caption,
                           fontWeight: FontWeight.w600,
                           height: 1.3,
                         ),
@@ -859,7 +864,7 @@ class _SourceRow extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           color: Theme.of(context).colorScheme.outline,
-                          fontSize: 9.8,
+                          fontSize: SparkFontSizes.tiny,
                         ),
                       ),
                     ],

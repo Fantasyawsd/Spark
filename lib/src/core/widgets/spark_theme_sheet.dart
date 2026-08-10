@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../motion/motion_tokens.dart';
+import '../theme/spark_design_tokens.dart';
+import '../theme/spark_font_sizes.dart';
 import '../theme/spark_theme_color.dart';
 import '../theme/spark_theme.dart';
 import '../theme/theme_controller.dart';
@@ -12,7 +14,8 @@ void showSparkThemeSheet(BuildContext context) {
     builder: (context) => Container(
       decoration: const BoxDecoration(
         color: SparkColors.card,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(
+            top: Radius.circular(SparkDesignTokens.radius3Xl)),
       ),
       child: SafeArea(
         top: false,
@@ -28,7 +31,7 @@ void showSparkThemeSheet(BuildContext context) {
                 '主题与配色',
                 style: TextStyle(
                   color: SparkColors.ink,
-                  fontSize: 18,
+                  fontSize: SparkFontSizes.titleLarge,
                   fontWeight: FontWeight.w800,
                 ),
               ),
@@ -37,7 +40,7 @@ void showSparkThemeSheet(BuildContext context) {
                 '强调色',
                 style: TextStyle(
                   color: SparkColors.muted,
-                  fontSize: 12,
+                  fontSize: SparkFontSizes.footnote,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -91,7 +94,7 @@ class _ThemeColorOption extends StatelessWidget {
         child: InkWell(
           key: ValueKey('spark-theme-${color.name}'),
           onTap: onTap,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(SparkDesignTokens.radiusLg),
           child: AnimatedContainer(
             duration: MotionTokens.duration(
               context,
@@ -101,7 +104,7 @@ class _ThemeColorOption extends StatelessWidget {
             padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 2),
             decoration: BoxDecoration(
               color: selected ? color.pale : Colors.transparent,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(SparkDesignTokens.radiusLg),
               border: Border.all(
                 color: selected ? color.soft : Colors.transparent,
               ),
@@ -135,7 +138,7 @@ class _ThemeColorOption extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: selected ? SparkColors.ink : SparkColors.muted,
-                    fontSize: 10.5,
+                    fontSize: SparkFontSizes.caption,
                     fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
                   ),
                 ),

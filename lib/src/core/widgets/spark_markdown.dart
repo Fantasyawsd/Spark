@@ -5,6 +5,8 @@ import 'package:flutter_math_fork/flutter_math.dart';
 import 'package:markdown/markdown.dart' as md;
 
 import '../platform/spark_clipboard.dart';
+import '../theme/spark_design_tokens.dart';
+import '../theme/spark_font_sizes.dart';
 import '../theme/spark_theme.dart';
 
 /// Inline LaTeX syntax that replaces [LatexInlineSyntax] from
@@ -305,7 +307,7 @@ class _MarkdownCodeBlock extends StatelessWidget {
       margin: const EdgeInsets.symmetric(vertical: 7),
       decoration: BoxDecoration(
         color: const Color(0xFF172033),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(SparkDesignTokens.radiusLg),
       ),
       clipBehavior: Clip.antiAlias,
       child: Column(
@@ -320,7 +322,7 @@ class _MarkdownCodeBlock extends StatelessWidget {
                     language == null || language!.isEmpty ? '代码' : language!,
                     style: const TextStyle(
                       color: Color(0xFFB8C1D1),
-                      fontSize: 10.5,
+                      fontSize: SparkFontSizes.caption,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -352,7 +354,7 @@ class _MarkdownCodeBlock extends StatelessWidget {
 
 const paperReaderBodyTextStyle = TextStyle(
   color: SparkColors.ink,
-  fontSize: 17,
+  fontSize: SparkFontSizes.title,
   height: 1.28,
 );
 
@@ -360,21 +362,25 @@ MarkdownStyleSheet paperReaderMarkdownStyle() {
   const body = paperReaderBodyTextStyle;
   return MarkdownStyleSheet(
     p: body,
-    h1: body.copyWith(fontSize: 22, fontWeight: FontWeight.w800),
-    h2: body.copyWith(fontSize: 20, fontWeight: FontWeight.w800),
-    h3: body.copyWith(fontSize: 18, fontWeight: FontWeight.w700),
+    h1: body.copyWith(
+        fontSize: SparkFontSizes.headline, fontWeight: FontWeight.w800),
+    h2: body.copyWith(
+        fontSize: SparkFontSizes.headlineSmall, fontWeight: FontWeight.w800),
+    h3: body.copyWith(
+        fontSize: SparkFontSizes.titleLarge, fontWeight: FontWeight.w700),
     listBullet: body,
     strong: const TextStyle(fontWeight: FontWeight.w700),
     code: const TextStyle(
       color: Color(0xFFE9EDF5),
       fontFamily: 'monospace',
-      fontSize: 13,
+      fontSize: SparkFontSizes.bodySmall,
       height: 1.45,
     ),
     codeblockPadding: const EdgeInsets.all(12),
     codeblockDecoration: BoxDecoration(
       color: Color(0xFF172033),
-      borderRadius: BorderRadius.all(Radius.circular(12)),
+      borderRadius:
+          BorderRadius.all(Radius.circular(SparkDesignTokens.radiusLg)),
     ),
     blockSpacing: 7,
     listIndent: 20,
@@ -392,9 +398,12 @@ MarkdownStyleSheet sparkMarkdownStyle({
   );
   return MarkdownStyleSheet(
     p: body,
-    h1: body.copyWith(fontSize: 18, fontWeight: FontWeight.w800),
-    h2: body.copyWith(fontSize: 16, fontWeight: FontWeight.w800),
-    h3: body.copyWith(fontSize: 14, fontWeight: FontWeight.w700),
+    h1: body.copyWith(
+        fontSize: SparkFontSizes.titleLarge, fontWeight: FontWeight.w800),
+    h2: body.copyWith(
+        fontSize: SparkFontSizes.titleSmall, fontWeight: FontWeight.w800),
+    h3: body.copyWith(
+        fontSize: SparkFontSizes.body, fontWeight: FontWeight.w700),
     listBullet: body,
     strong: TextStyle(color: color, fontWeight: FontWeight.w700),
     code: TextStyle(
@@ -406,7 +415,8 @@ MarkdownStyleSheet sparkMarkdownStyle({
     codeblockPadding: const EdgeInsets.all(12),
     codeblockDecoration: BoxDecoration(
       color: Color(0xFF172033),
-      borderRadius: BorderRadius.all(Radius.circular(12)),
+      borderRadius:
+          BorderRadius.all(Radius.circular(SparkDesignTokens.radiusLg)),
     ),
     blockSpacing: reasoning ? 4 : 9,
     listIndent: reasoning ? 16 : 20,

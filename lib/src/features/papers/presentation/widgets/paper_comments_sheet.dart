@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/motion/motion_tokens.dart';
+import '../../../../core/theme/spark_design_tokens.dart';
+import '../../../../core/theme/spark_font_sizes.dart';
 import '../../../../core/theme/spark_theme.dart';
 import '../../../../core/widgets/spark_sheet.dart';
 import '../../../../core/widgets/spark_tab_bar.dart';
@@ -25,7 +27,7 @@ Future<void> showPaperCommentsSheet(
     context: context,
     isScrollControlled: true,
     useSafeArea: true,
-    barrierColor: const Color(0x660B1020),
+    barrierColor: SparkColors.barrier,
     builder: (context) => _PaperCommentsSheet(
       paper: paper,
       initialPage: initialPage,
@@ -118,7 +120,8 @@ class _PaperCommentsSheetState extends State<_PaperCommentsSheet> {
       clipBehavior: Clip.antiAlias,
       decoration: const BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        borderRadius: BorderRadius.vertical(
+            top: Radius.circular(SparkDesignTokens.radius3Xl)),
       ),
       child: Column(
         children: [
@@ -169,8 +172,8 @@ class _PaperCommentsSheetState extends State<_PaperCommentsSheet> {
                             widget.paper.id,
                           )!,
                           style: const TextStyle(
-                            color: Color(0xFFB42318),
-                            fontSize: 12.5,
+                            color: SparkColors.danger,
+                            fontSize: SparkFontSizes.bodySmall,
                           ),
                         ),
                       ),
@@ -372,7 +375,7 @@ class _CommentSortMenu extends StatelessWidget {
                 value == PaperCommentSort.newest ? '最新' : '最热',
                 style: const TextStyle(
                   color: SparkColors.muted,
-                  fontSize: 12,
+                  fontSize: SparkFontSizes.footnote,
                   fontWeight: FontWeight.w600,
                 ),
               ),

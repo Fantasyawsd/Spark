@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/motion/motion_tokens.dart';
+import '../../../../core/theme/spark_font_sizes.dart';
 import '../../../../core/theme/spark_theme.dart';
 import '../../../../core/widgets/cherry_primitives.dart';
 
@@ -14,6 +15,8 @@ class PapersHeader extends StatelessWidget {
     required this.onSearch,
     required this.timeRangeLabel,
     required this.onSelectTimeRange,
+    required this.gridMode,
+    required this.onToggleViewMode,
   });
 
   static const fixedChannelLabels = ['推荐', '关注', '最新'];
@@ -26,6 +29,8 @@ class PapersHeader extends StatelessWidget {
   final VoidCallback onSearch;
   final String timeRangeLabel;
   final VoidCallback onSelectTimeRange;
+  final bool gridMode;
+  final VoidCallback onToggleViewMode;
 
   @override
   Widget build(BuildContext context) {
@@ -85,6 +90,16 @@ class PapersHeader extends StatelessWidget {
                 iconSize: 20,
                 size: 36,
               ),
+              CherryIconButton(
+                key: const ValueKey('papers-view-mode-toggle'),
+                tooltip: gridMode ? '阅读视图' : '网格视图',
+                onPressed: onToggleViewMode,
+                icon: gridMode
+                    ? Icons.view_agenda_outlined
+                    : Icons.grid_view_rounded,
+                iconSize: 19,
+                size: 36,
+              ),
             ],
           ),
         ),
@@ -120,7 +135,7 @@ class _ChannelTab extends StatelessWidget {
               label,
               style: TextStyle(
                 color: selected ? SparkColors.ink : SparkColors.muted,
-                fontSize: 14,
+                fontSize: SparkFontSizes.body,
                 fontWeight: selected ? FontWeight.w800 : FontWeight.w500,
                 fontFamily: SparkTheme.platformCjkFontFamily(),
               ),

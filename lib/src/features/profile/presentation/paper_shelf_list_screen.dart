@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/theme/spark_design_tokens.dart';
+import '../../../core/theme/spark_font_sizes.dart';
 import '../../../core/theme/spark_theme.dart';
 import '../../papers/papers.dart';
 
@@ -51,7 +53,7 @@ class _PaperShelfListScreenState extends State<PaperShelfListScreen> {
           widget.title,
           style: const TextStyle(
             color: SparkColors.ink,
-            fontSize: 17,
+            fontSize: SparkFontSizes.title,
             fontWeight: FontWeight.w800,
           ),
         ),
@@ -122,7 +124,7 @@ class _PaperShelfListScreenState extends State<PaperShelfListScreen> {
             widget._grouped ? '这个分组还是空的' : '还没有内容',
             style: const TextStyle(
               color: SparkColors.ink,
-              fontSize: 14,
+              fontSize: SparkFontSizes.body,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -142,15 +144,15 @@ class _ShelfPaperRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: Colors.white,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(SparkDesignTokens.radiusLg),
       child: InkWell(
         key: ValueKey('paper-shelf-row-${paper.id}'),
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(SparkDesignTokens.radiusLg),
         child: Container(
           padding: const EdgeInsets.all(13),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(SparkDesignTokens.radiusLg),
             border: Border.all(color: SparkColors.line),
           ),
           child: Column(
@@ -162,7 +164,7 @@ class _ShelfPaperRow extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
                   color: SparkColors.ink,
-                  fontSize: 14,
+                  fontSize: SparkFontSizes.body,
                   height: 1.35,
                   fontWeight: FontWeight.w700,
                 ),
@@ -176,7 +178,7 @@ class _ShelfPaperRow extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
                   color: SparkColors.muted,
-                  fontSize: 11,
+                  fontSize: SparkFontSizes.caption,
                 ),
               ),
             ],

@@ -151,6 +151,8 @@ class _PapersScreenState extends State<PapersScreen> {
               onSearch: widget.onSearch ?? () {},
               timeRangeLabel: _feed.timeRange.label,
               onSelectTimeRange: _showTimeRangePicker,
+              gridMode: _feed.gridMode,
+              onToggleViewMode: _feed.toggleGridMode,
             ),
           ),
           Expanded(

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:spark/spark.dart';
+import 'package:spark/src/core/theme/spark_design_tokens.dart';
 import 'package:spark/src/features/chat/data/in_memory_chat_session_repository.dart';
 import 'package:spark/src/features/chat/presentation/paper_ai_discussion_view.dart';
 import 'package:spark/src/features/papers/application/paper_chat_context.dart';
@@ -551,10 +552,10 @@ void main() {
     expect(find.textContaining('被引'), findsNothing);
     expect(find.text('摘要'), findsWidgets);
 
-    await tester.tap(find.text('论文 ⇄'));
+    await tester.tap(find.byKey(const ValueKey('papers-view-mode-toggle')));
     await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey('paper-grid')), findsOneWidget);
-    expect(find.text('‹ 返回'), findsOneWidget);
+    expect(find.text('论文'), findsOneWidget);
 
     await tester.tap(find.textContaining('Perturbation Effects on Robustness'));
     await tester.pumpAndSettle();
@@ -563,7 +564,7 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('paper-detail-back')));
     await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey('paper-grid')), findsOneWidget);
-    expect(find.text('‹ 返回'), findsOneWidget);
+    expect(find.text('论文'), findsOneWidget);
   });
 
   testWidgets('paper feed is clipped below the fixed header', (tester) async {
@@ -1151,7 +1152,7 @@ void main() {
     );
     expect(
       actionsClip.borderRadius,
-      const BorderRadius.all(Radius.circular(16)),
+      const BorderRadius.all(Radius.circular(SparkDesignTokens.radius2Xl)),
     );
 
     await tester.tap(find.byKey(ValueKey('ai-session-pin-${paper.id}')));

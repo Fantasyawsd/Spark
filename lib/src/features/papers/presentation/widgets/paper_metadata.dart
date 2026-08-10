@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/theme/spark_design_tokens.dart';
+import '../../../../core/theme/spark_font_sizes.dart';
 import '../../../../core/theme/spark_theme.dart';
 import '../../domain/paper.dart';
 import 'paper_presenter.dart';
@@ -33,7 +35,7 @@ class PaperMetadata extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
                   color: SparkColors.muted,
-                  fontSize: 12,
+                  fontSize: SparkFontSizes.footnote,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -51,7 +53,8 @@ class PaperMetadata extends StatelessWidget {
                       : SparkColors.line,
                 ),
                 minimumSize: const Size(0, 30),
-                padding: const EdgeInsets.symmetric(horizontal: 8),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: SparkDesignTokens.space2),
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 visualDensity: VisualDensity.compact,
               ),
@@ -64,7 +67,7 @@ class PaperMetadata extends StatelessWidget {
               label: Text(
                 followed ? '已关注' : '关注作者',
                 style: const TextStyle(
-                  fontSize: 11,
+                  fontSize: SparkFontSizes.caption,
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -81,7 +84,7 @@ class PaperMetadata extends StatelessWidget {
               venueLabel(paper),
               style: const TextStyle(
                 color: SparkColors.muted,
-                fontSize: 11,
+                fontSize: SparkFontSizes.caption,
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -90,7 +93,7 @@ class PaperMetadata extends StatelessWidget {
                 '$year 年发布',
                 style: const TextStyle(
                   color: SparkColors.muted,
-                  fontSize: 11,
+                  fontSize: SparkFontSizes.caption,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -99,7 +102,7 @@ class PaperMetadata extends StatelessWidget {
                 citations,
                 style: const TextStyle(
                   color: SparkColors.muted,
-                  fontSize: 11,
+                  fontSize: SparkFontSizes.caption,
                   fontWeight: FontWeight.w600,
                 ),
               ),

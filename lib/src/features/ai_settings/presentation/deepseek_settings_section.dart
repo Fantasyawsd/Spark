@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/theme/spark_design_tokens.dart';
+import '../../../core/theme/spark_font_sizes.dart';
 import '../../../core/theme/spark_theme.dart';
 import '../../../core/widgets/spark_sheet.dart';
 import '../../../core/widgets/surface_card.dart';
@@ -29,7 +31,8 @@ class DeepSeekSettingsSection extends StatelessWidget {
                 decoration: BoxDecoration(
                   color:
                       configured ? SparkColors.primarySoft : SparkColors.canvas,
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius:
+                      BorderRadius.circular(SparkDesignTokens.radiusMd),
                 ),
                 child: Icon(
                   Icons.key_rounded,
@@ -45,7 +48,7 @@ class DeepSeekSettingsSection extends StatelessWidget {
                       'DeepSeek API',
                       style: TextStyle(
                         color: SparkColors.ink,
-                        fontSize: 15,
+                        fontSize: SparkFontSizes.bodyLarge,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
@@ -58,7 +61,7 @@ class DeepSeekSettingsSection extends StatelessWidget {
                               : '未配置',
                       style: const TextStyle(
                         color: SparkColors.muted,
-                        fontSize: 12,
+                        fontSize: SparkFontSizes.footnote,
                       ),
                     ),
                   ],
@@ -123,7 +126,8 @@ class _DeepSeekCredentialSheetState extends State<_DeepSeekCredentialSheet> {
     final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
     return Material(
       color: Colors.white,
-      borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+      borderRadius: const BorderRadius.vertical(
+          top: Radius.circular(SparkDesignTokens.radius3Xl)),
       child: Padding(
         padding: EdgeInsets.fromLTRB(20, 0, 20, 20 + bottomInset),
         child: ListenableBuilder(
@@ -139,7 +143,7 @@ class _DeepSeekCredentialSheetState extends State<_DeepSeekCredentialSheet> {
                   'DeepSeek API 设置',
                   style: TextStyle(
                     color: SparkColors.ink,
-                    fontSize: 18,
+                    fontSize: SparkFontSizes.titleLarge,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
@@ -173,8 +177,8 @@ class _DeepSeekCredentialSheetState extends State<_DeepSeekCredentialSheet> {
                   Text(
                     error,
                     style: const TextStyle(
-                      color: Colors.redAccent,
-                      fontSize: 12,
+                      color: SparkColors.danger,
+                      fontSize: SparkFontSizes.footnote,
                     ),
                   ),
                 ],

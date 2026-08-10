@@ -116,7 +116,7 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> with RouteAware {
     final safeTop = MediaQuery.paddingOf(context).top;
     return Scaffold(
       key: ValueKey('paper-detail-${_paper.id}'),
-      backgroundColor: Colors.white,
+      backgroundColor: SparkColors.card,
       body: Stack(
         children: [
           Positioned.fill(

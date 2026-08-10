@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../motion/motion_tokens.dart';
 import '../theme/spark_design_tokens.dart';
+import '../theme/spark_font_sizes.dart';
 import '../theme/spark_theme.dart';
 
 enum CherryButtonVariant { primary, outline, secondary, ghost, destructive }
@@ -41,9 +42,11 @@ class CherryButton extends StatelessWidget {
       CherryButtonSize.large => (height: 38.0, horizontal: 16.0),
     };
     final textStyle = switch (size) {
-      CherryButtonSize.small => const TextStyle(fontSize: 12),
-      CherryButtonSize.medium => const TextStyle(fontSize: 13),
-      CherryButtonSize.large => const TextStyle(fontSize: 14),
+      CherryButtonSize.small =>
+        const TextStyle(fontSize: SparkFontSizes.footnote),
+      CherryButtonSize.medium =>
+        const TextStyle(fontSize: SparkFontSizes.bodySmall),
+      CherryButtonSize.large => const TextStyle(fontSize: SparkFontSizes.body),
     };
     final button = Semantics(
       button: true,

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/theme/spark_design_tokens.dart';
+import '../../../core/theme/spark_font_sizes.dart';
 import '../application/chat_session_controller.dart';
 import '../domain/chat_session_repository.dart';
 import 'paper_ai_ui_tokens.dart';
@@ -65,7 +67,7 @@ class _AiChatHomeScreenState extends State<AiChatHomeScreen> {
                     key: ValueKey('ai-chat-home-title'),
                     style: TextStyle(
                       color: Theme.of(context).colorScheme.onSurface,
-                      fontSize: 22,
+                      fontSize: SparkFontSizes.headline,
                       fontWeight: FontWeight.w900,
                     ),
                   ),
@@ -172,9 +174,10 @@ class _AiSessionList extends StatelessWidget {
     if (loading && sessions.isEmpty) {
       return const Center(child: CircularProgressIndicator(strokeWidth: 2));
     }
+    final showEmptyHint = sessions.isEmpty;
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(14, 10, 14, 92),
-      itemCount: sessions.length + 1,
+      itemCount: sessions.length + 1 + (showEmptyHint ? 1 : 0),
       separatorBuilder: (_, __) => const SizedBox(height: 8),
       itemBuilder: (context, index) {
         if (index == 0) {
@@ -182,6 +185,9 @@ class _AiSessionList extends StatelessWidget {
             session: mainSession,
             onTap: onOpenMain,
           );
+        }
+        if (showEmptyHint && index == 1) {
+          return const _NoPaperSessionsHint();
         }
         final entry = sessions[index - 1];
         final session = entry.session;
@@ -196,11 +202,11 @@ class _AiSessionList extends StatelessWidget {
           onDelete: () => onDelete(entry),
           child: Material(
             color: Theme.of(context).colorScheme.surface,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(SparkDesignTokens.radius2Xl),
             child: InkWell(
               key: ValueKey('ai-session-$contextId'),
               onTap: () => onOpen(entry),
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(SparkDesignTokens.radius2Xl),
               child: Padding(
                 padding: const EdgeInsets.all(13),
                 child: Row(
@@ -241,7 +247,7 @@ class _AiSessionList extends StatelessWidget {
                                   style: TextStyle(
                                     color:
                                         Theme.of(context).colorScheme.onSurface,
-                                    fontSize: 14,
+                                    fontSize: SparkFontSizes.body,
                                     fontWeight: FontWeight.w800,
                                   ),
                                 ),
@@ -257,7 +263,7 @@ class _AiSessionList extends StatelessWidget {
                               color: Theme.of(context)
                                   .colorScheme
                                   .onSurfaceVariant,
-                              fontSize: 12,
+                              fontSize: SparkFontSizes.footnote,
                             ),
                           ),
                         ],
@@ -271,7 +277,7 @@ class _AiSessionList extends StatelessWidget {
                           _relativeTime(session.updatedAt),
                           style: TextStyle(
                             color: Theme.of(context).colorScheme.outline,
-                            fontSize: 10.5,
+                            fontSize: SparkFontSizes.caption,
                           ),
                         ),
                         const SizedBox(height: 8),
@@ -280,7 +286,7 @@ class _AiSessionList extends StatelessWidget {
                           style: TextStyle(
                             color:
                                 Theme.of(context).colorScheme.onSurfaceVariant,
-                            fontSize: 10.5,
+                            fontSize: SparkFontSizes.caption,
                           ),
                         ),
                       ],
@@ -317,11 +323,11 @@ class _MainAiChatCard extends StatelessWidget {
     final preview = currentSession?.preview.trim();
     return Material(
       color: Theme.of(context).colorScheme.primaryContainer,
-      borderRadius: BorderRadius.circular(18),
+      borderRadius: BorderRadius.circular(SparkDesignTokens.radius2Xl),
       child: InkWell(
         key: const ValueKey('main-ai-chat'),
         onTap: onTap,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(SparkDesignTokens.radius2Xl),
         child: Padding(
           padding: const EdgeInsets.all(13),
           child: Row(
@@ -355,7 +361,7 @@ class _MainAiChatCard extends StatelessWidget {
                               color: Theme.of(
                                 context,
                               ).colorScheme.onPrimaryContainer,
-                              fontSize: 14.5,
+                              fontSize: SparkFontSizes.bodyLarge,
                               fontWeight: FontWeight.w900,
                             ),
                           ),
@@ -385,7 +391,7 @@ class _MainAiChatCard extends StatelessWidget {
                                 '置顶',
                                 style: TextStyle(
                                   color: Theme.of(context).colorScheme.primary,
-                                  fontSize: 9.5,
+                                  fontSize: SparkFontSizes.tiny,
                                   fontWeight: FontWeight.w700,
                                 ),
                               ),
@@ -403,7 +409,7 @@ class _MainAiChatCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        fontSize: 12,
+                        fontSize: SparkFontSizes.footnote,
                       ),
                     ),
                   ],
@@ -423,7 +429,7 @@ class _MainAiChatCard extends StatelessWidget {
                       _AiSessionList._relativeTime(currentSession.updatedAt),
                       style: TextStyle(
                         color: Theme.of(context).colorScheme.outline,
-                        fontSize: 10.5,
+                        fontSize: SparkFontSizes.caption,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -431,7 +437,7 @@ class _MainAiChatCard extends StatelessWidget {
                       '${currentSession.messageCount} 条',
                       style: TextStyle(
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        fontSize: 10.5,
+                        fontSize: SparkFontSizes.caption,
                       ),
                     ),
                   ],
@@ -439,6 +445,36 @@ class _MainAiChatCard extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _NoPaperSessionsHint extends StatelessWidget {
+  const _NoPaperSessionsHint();
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Padding(
+      key: const ValueKey('ai-chat-empty-hint'),
+      padding: const EdgeInsets.symmetric(vertical: 36),
+      child: Column(
+        children: [
+          Icon(
+            Icons.forum_outlined,
+            size: 30,
+            color: scheme.onSurfaceVariant,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '暂无论文解读会话，从论文页打开「AI 解读」开始',
+            style: TextStyle(
+              color: scheme.onSurfaceVariant,
+              fontSize: SparkFontSizes.footnote,
+            ),
+          ),
+        ],
       ),
     );
   }

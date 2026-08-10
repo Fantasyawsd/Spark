@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/motion/motion_tokens.dart';
+import '../../../../core/theme/spark_design_tokens.dart';
+import '../../../../core/theme/spark_font_sizes.dart';
 import '../../../../core/theme/spark_theme.dart';
 import '../../domain/paper.dart';
 import 'paper_presenter.dart';
@@ -100,11 +102,12 @@ class PaperActionBar extends StatelessWidget {
                 color: SparkColors.card,
                 surfaceTintColor: Colors.transparent,
                 elevation: 8,
-                shadowColor: const Color(0x2410182B),
+                shadowColor: SparkColors.ink.withValues(alpha: 0.14),
                 offset: const Offset(0, -4),
                 constraints: const BoxConstraints.tightFor(width: 174),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius:
+                      BorderRadius.circular(SparkDesignTokens.radiusXl),
                 ),
                 icon: const Icon(
                   Icons.more_horiz_rounded,
@@ -123,7 +126,8 @@ class PaperActionBar extends StatelessWidget {
                   PopupMenuItem(
                     value: _PaperMoreAction.read,
                     height: 46,
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: SparkDesignTokens.space2),
                     child: _PaperMoreMenuItem(
                       icon: read
                           ? Icons.mark_email_unread_outlined
@@ -134,7 +138,8 @@ class PaperActionBar extends StatelessWidget {
                   PopupMenuItem(
                     value: _PaperMoreAction.readLater,
                     height: 46,
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: SparkDesignTokens.space2),
                     child: _PaperMoreMenuItem(
                       icon: readLater
                           ? Icons.playlist_remove_rounded
@@ -169,7 +174,7 @@ class _PaperMoreMenuItem extends StatelessWidget {
           height: 32,
           decoration: BoxDecoration(
             color: SparkColors.canvas,
-            borderRadius: BorderRadius.circular(9),
+            borderRadius: BorderRadius.circular(SparkDesignTokens.radiusMd),
           ),
           child: Icon(icon, size: 18, color: SparkColors.ink),
         ),
@@ -181,7 +186,7 @@ class _PaperMoreMenuItem extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(
               color: SparkColors.ink,
-              fontSize: 13,
+              fontSize: SparkFontSizes.bodySmall,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -264,7 +269,7 @@ class _PaperActionButtonState extends State<_PaperActionButton> {
                       widget.label!,
                       style: TextStyle(
                         color: color,
-                        fontSize: 10.5,
+                        fontSize: SparkFontSizes.caption,
                         fontWeight: FontWeight.w600,
                       ),
                     ),

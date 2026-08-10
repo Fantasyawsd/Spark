@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../../../core/theme/spark_design_tokens.dart';
+import '../../../../core/theme/spark_font_sizes.dart';
 
 class ChatSessionSwipeAction extends StatefulWidget {
   const ChatSessionSwipeAction({
@@ -11,7 +13,8 @@ class ChatSessionSwipeAction extends StatefulWidget {
     required this.onTogglePinned,
     required this.onDelete,
     required this.child,
-    this.borderRadius = const BorderRadius.all(Radius.circular(16)),
+    this.borderRadius =
+        const BorderRadius.all(Radius.circular(SparkDesignTokens.radius2Xl)),
   });
 
   final String sessionId;
@@ -176,7 +179,7 @@ class _SwipeActionButton extends StatelessWidget {
                 label,
                 style: TextStyle(
                   color: foregroundColor,
-                  fontSize: 10.5,
+                  fontSize: SparkFontSizes.caption,
                   fontWeight: FontWeight.w700,
                 ),
               ),

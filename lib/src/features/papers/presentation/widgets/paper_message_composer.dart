@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/theme/spark_design_tokens.dart';
+import '../../../../core/theme/spark_font_sizes.dart';
 import '../../../../core/theme/spark_theme.dart';
 
 class PaperMessageComposer extends StatelessWidget {
@@ -46,12 +48,12 @@ class PaperMessageComposer extends StatelessWidget {
             textInputAction: TextInputAction.send,
             minLines: 1,
             maxLines: 1,
-            style: const TextStyle(fontSize: 13.5),
+            style: const TextStyle(fontSize: SparkFontSizes.body),
             decoration: InputDecoration(
               hintText: aiMode ? '问 AI 或按住说话' : replyTarget ?? '有价值的讨论更容易被看见',
               hintStyle: const TextStyle(
                 color: SparkColors.subtle,
-                fontSize: 13,
+                fontSize: SparkFontSizes.bodySmall,
               ),
               prefixIcon: aiMode
                   ? const Icon(
@@ -102,7 +104,8 @@ class PaperMessageComposer extends StatelessWidget {
                 vertical: 12,
               ),
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(24),
+                borderRadius:
+                    BorderRadius.circular(SparkDesignTokens.radius3Xl),
                 borderSide: BorderSide.none,
               ),
             ),

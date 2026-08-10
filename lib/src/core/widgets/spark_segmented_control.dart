@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../motion/motion_tokens.dart';
+import '../theme/spark_font_sizes.dart';
 import '../theme/spark_theme.dart';
 
 /// Flat content tabs for dense reading surfaces.
@@ -89,7 +90,7 @@ class _ContentTab extends StatelessWidget {
             label,
             style: TextStyle(
               color: selected ? SparkColors.ink : SparkColors.muted,
-              fontSize: 13,
+              fontSize: SparkFontSizes.bodySmall,
               fontFamily: SparkTheme.platformCjkFontFamily(),
               fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
             ),

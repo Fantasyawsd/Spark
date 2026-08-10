@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../../core/theme/spark_design_tokens.dart';
+import '../../../core/theme/spark_font_sizes.dart';
 import '../../../core/theme/spark_theme.dart';
 import '../../papers/papers.dart';
 import '../application/paper_search_controller.dart';
@@ -39,7 +41,7 @@ class _PaperSearchScreenState extends State<PaperSearchScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: SparkColors.card,
       body: SafeArea(
         child: Column(
           children: [
@@ -172,7 +174,8 @@ class _SearchHeader extends StatelessWidget {
                 fillColor: SparkColors.surfaceMuted,
                 contentPadding: const EdgeInsets.symmetric(vertical: 10),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius:
+                      BorderRadius.circular(SparkDesignTokens.radiusMd),
                   borderSide: BorderSide.none,
                 ),
               ),
@@ -215,7 +218,7 @@ class _SearchHistory extends StatelessWidget {
                 '搜索历史',
                 style: TextStyle(
                   color: SparkColors.ink,
-                  fontSize: 15,
+                  fontSize: SparkFontSizes.bodyLarge,
                   fontWeight: FontWeight.w800,
                 ),
               ),
@@ -231,7 +234,7 @@ class _SearchHistory extends StatelessWidget {
               error!,
               style: TextStyle(
                 color: SparkColors.primary,
-                fontSize: 11,
+                fontSize: SparkFontSizes.caption,
               ),
             ),
           ),
@@ -241,7 +244,9 @@ class _SearchHistory extends StatelessWidget {
             child: Center(
               child: Text(
                 '暂无搜索历史',
-                style: TextStyle(color: SparkColors.muted, fontSize: 12),
+                style: TextStyle(
+                    color: SparkColors.muted,
+                    fontSize: SparkFontSizes.footnote),
               ),
             ),
           )
@@ -285,7 +290,7 @@ class _PaperSearchResult extends StatelessWidget {
         overflow: TextOverflow.ellipsis,
         style: const TextStyle(
           color: SparkColors.ink,
-          fontSize: 14,
+          fontSize: SparkFontSizes.body,
           height: 1.3,
           fontWeight: FontWeight.w700,
         ),
@@ -296,7 +301,8 @@ class _PaperSearchResult extends StatelessWidget {
           _searchResultSubtitle(paper),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: const TextStyle(color: SparkColors.muted, fontSize: 11),
+          style: const TextStyle(
+              color: SparkColors.muted, fontSize: SparkFontSizes.caption),
         ),
       ),
       trailing: const Icon(Icons.chevron_right_rounded, size: 20),
@@ -338,7 +344,7 @@ class _NoSearchResults extends StatelessWidget {
             message ?? '没有找到相关论文',
             style: const TextStyle(
               color: SparkColors.ink,
-              fontSize: 14,
+              fontSize: SparkFontSizes.body,
               fontWeight: FontWeight.w700,
             ),
           ),

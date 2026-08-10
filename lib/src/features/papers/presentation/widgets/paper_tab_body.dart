@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/theme/spark_design_tokens.dart';
 import '../../../../core/theme/spark_theme.dart';
 import '../../../../core/widgets/spark_markdown.dart';
 import '../../../../core/widgets/topic_chip.dart';
@@ -110,7 +111,7 @@ class _CollapsedPaperContent extends StatelessWidget {
                   ),
                 ),
               ),
-              const Positioned(
+              Positioned(
                 left: 0,
                 right: 0,
                 bottom: 0,
@@ -121,7 +122,10 @@ class _CollapsedPaperContent extends StatelessWidget {
                       gradient: LinearGradient(
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
-                        colors: [Color(0x00FFFFFF), Colors.white],
+                        colors: [
+                          SparkColors.card.withValues(alpha: 0),
+                          SparkColors.card,
+                        ],
                       ),
                     ),
                   ),
@@ -136,7 +140,8 @@ class _CollapsedPaperContent extends StatelessWidget {
             onPressed: onExpand,
             style: TextButton.styleFrom(
               foregroundColor: SparkColors.ink,
-              padding: const EdgeInsets.symmetric(horizontal: 4),
+              padding: const EdgeInsets.symmetric(
+                  horizontal: SparkDesignTokens.space1),
               minimumSize: const Size(0, actionHeight),
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
@@ -190,7 +195,7 @@ class _ScrollablePaperContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.only(bottom: SparkDesignTokens.space3),
       physics: const ClampingScrollPhysics(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,

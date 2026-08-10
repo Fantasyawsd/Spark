@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/theme/spark_design_tokens.dart';
+import '../../../../core/theme/spark_font_sizes.dart';
 import '../../../../core/theme/spark_theme.dart';
 import '../../../../core/widgets/spark_sheet.dart';
 import '../../application/paper_interaction_controller.dart';
@@ -60,7 +62,8 @@ class _PaperFavoriteGroupSheetState extends State<_PaperFavoriteGroupSheet> {
     final groups = widget.controller.favoriteGroups;
     return Material(
       color: Colors.white,
-      borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+      borderRadius: const BorderRadius.vertical(
+          top: Radius.circular(SparkDesignTokens.radius3Xl)),
       clipBehavior: Clip.antiAlias,
       child: SafeArea(
         top: false,
@@ -81,7 +84,7 @@ class _PaperFavoriteGroupSheetState extends State<_PaperFavoriteGroupSheet> {
                         '收藏到分组',
                         style: TextStyle(
                           color: SparkColors.ink,
-                          fontSize: 18,
+                          fontSize: SparkFontSizes.titleLarge,
                           fontWeight: FontWeight.w800,
                         ),
                       ),
@@ -113,9 +116,8 @@ class _PaperFavoriteGroupSheetState extends State<_PaperFavoriteGroupSheet> {
                         group.isDefault
                             ? Icons.bookmark_rounded
                             : Icons.folder_outlined,
-                        color: selected
-                            ? SparkColors.primary
-                            : SparkColors.muted,
+                        color:
+                            selected ? SparkColors.primary : SparkColors.muted,
                       ),
                       title: Text(group.name),
                       onChanged: (value) {
@@ -130,7 +132,11 @@ class _PaperFavoriteGroupSheetState extends State<_PaperFavoriteGroupSheet> {
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                padding: const EdgeInsets.fromLTRB(
+                    SparkDesignTokens.space4,
+                    SparkDesignTokens.space2,
+                    SparkDesignTokens.space4,
+                    SparkDesignTokens.space4),
                 child: SizedBox(
                   width: double.infinity,
                   child: OutlinedButton.icon(

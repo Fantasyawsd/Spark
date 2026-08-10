@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../../core/theme/spark_design_tokens.dart';
+import '../../../core/theme/spark_font_sizes.dart';
 import '../../../core/theme/spark_theme.dart';
 import '../../../core/widgets/spark_sheet.dart';
 import '../application/local_data_controller.dart';
@@ -31,7 +33,8 @@ class LocalDataSheet extends StatelessWidget {
       heightFactor: 0.72,
       child: Material(
         color: Colors.white,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: const BorderRadius.vertical(
+            top: Radius.circular(SparkDesignTokens.radius3Xl)),
         clipBehavior: Clip.antiAlias,
         child: SafeArea(
           top: false,
@@ -49,7 +52,7 @@ class LocalDataSheet extends StatelessWidget {
                           '本地数据',
                           style: TextStyle(
                             color: SparkColors.ink,
-                            fontSize: 20,
+                            fontSize: SparkFontSizes.headlineSmall,
                             fontWeight: FontWeight.w800,
                           ),
                         ),
@@ -113,8 +116,9 @@ class LocalDataSheet extends StatelessWidget {
                                   target: LocalDataClearTarget.allBusinessData,
                                 ),
                         style: OutlinedButton.styleFrom(
-                          foregroundColor: const Color(0xFFB42318),
-                          side: const BorderSide(color: Color(0xFFF0B4AE)),
+                          foregroundColor: SparkColors.danger,
+                          side:
+                              const BorderSide(color: SparkColors.dangerBorder),
                           minimumSize: const Size.fromHeight(48),
                         ),
                         icon: const Icon(Icons.delete_sweep_outlined),
@@ -129,8 +133,8 @@ class LocalDataSheet extends StatelessWidget {
                         Text(
                           error,
                           style: const TextStyle(
-                            color: Color(0xFFB42318),
-                            fontSize: 12.5,
+                            color: SparkColors.danger,
+                            fontSize: SparkFontSizes.bodySmall,
                           ),
                         ),
                       ],
@@ -183,7 +187,7 @@ class _UsageSummary extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         color: SparkColors.canvas,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(SparkDesignTokens.radiusMd),
         border: Border.all(color: SparkColors.line),
       ),
       child: Padding(
@@ -303,7 +307,7 @@ class _ClearConfirmationDialog extends StatelessWidget {
           onPressed: () => Navigator.pop(context, true),
           style: target == LocalDataClearTarget.allBusinessData
               ? FilledButton.styleFrom(
-                  backgroundColor: const Color(0xFFB42318),
+                  backgroundColor: SparkColors.danger,
                 )
               : null,
           child: Text(action),

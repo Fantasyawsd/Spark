@@ -8,6 +8,7 @@ import '../core/motion/motion_tokens.dart';
 import '../core/navigation/spark_route_observer.dart';
 import '../core/theme/spark_theme.dart';
 import '../core/theme/theme_controller.dart';
+import '../core/theme/theme_preference_repository.dart';
 import '../features/ai_settings/application/deepseek_credential_controller.dart';
 import '../features/ai_settings/presentation/deepseek_settings_section.dart';
 import '../features/chat/application/chat_session_controller.dart';
@@ -124,6 +125,12 @@ class _SparkAppState extends State<SparkApp> {
         title: widget.config.applicationTitle,
         debugShowCheckedModeBanner: widget.config.showDebugBanner,
         theme: SparkTheme.light(),
+        darkTheme: SparkTheme.dark(),
+        themeMode: switch (ThemeController.instance.mode) {
+          AppThemeMode.system => ThemeMode.system,
+          AppThemeMode.light => ThemeMode.light,
+          AppThemeMode.dark => ThemeMode.dark,
+        },
         navigatorObservers: [SparkRouteObserver.instance],
         home: _SparkBootstrap(
           showSplash: widget.showSplash,

@@ -26,22 +26,38 @@ extension SparkColorsContext on BuildContext {
 
 abstract final class SparkTheme {
   static ThemeData light() {
-    final palette = SparkPalette.light(ThemeController.instance.color);
+    return _themeData(
+      SparkPalette.light(ThemeController.instance.color),
+      Brightness.light,
+    );
+  }
+
+  static ThemeData dark() {
+    return _themeData(
+      SparkPalette.dark(ThemeController.instance.color),
+      Brightness.dark,
+    );
+  }
+
+  static ThemeData _themeData(SparkPalette palette, Brightness brightness) {
+    final isDark = brightness == Brightness.dark;
     final generatedScheme = ColorScheme.fromSeed(
       seedColor: palette.primary,
-      brightness: Brightness.light,
+      brightness: brightness,
     );
     final scheme = generatedScheme.copyWith(
       primary: palette.primary,
       onPrimary: Colors.white,
       primaryContainer: palette.primarySoft,
       onPrimaryContainer: palette.ink,
-      secondary: SparkThemeColor.blue.value,
+      secondary: isDark ? palette.blue : SparkThemeColor.blue.value,
       onSecondary: Colors.white,
-      secondaryContainer: SparkThemeColor.blue.soft,
+      secondaryContainer: isDark
+          ? Color.alphaBlend(palette.blue.withValues(alpha: 0.28), palette.card)
+          : SparkThemeColor.blue.soft,
       onSecondaryContainer: palette.ink,
       error: palette.danger,
-      onError: Colors.white,
+      onError: isDark ? Colors.black : Colors.white,
       errorContainer: palette.dangerSoft,
       onErrorContainer: palette.danger,
       surface: palette.card,
@@ -49,16 +65,18 @@ abstract final class SparkTheme {
       onSurfaceVariant: palette.muted,
       outline: palette.subtle,
       outlineVariant: palette.line,
-      shadow: palette.ink,
-      scrim: palette.ink,
+      shadow: isDark ? Colors.black : palette.ink,
+      scrim: isDark ? Colors.black : palette.ink,
       inverseSurface: palette.ink,
       onInverseSurface: palette.card,
       inversePrimary: palette.primarySoft,
       surfaceTint: Colors.transparent,
       surfaceContainerLowest: palette.card,
-      surfaceContainerLow: const Color(0xFFFAFBFC),
+      surfaceContainerLow:
+          isDark ? const Color(0xFF1B222E) : const Color(0xFFFAFBFC),
       surfaceContainer: palette.surfaceMuted,
-      surfaceContainerHigh: const Color(0xFFEEF0F3),
+      surfaceContainerHigh:
+          isDark ? const Color(0xFF232B38) : const Color(0xFFEEF0F3),
       surfaceContainerHighest: palette.surfaceStrong,
     );
     final textTheme = _textTheme(palette);
@@ -116,7 +134,7 @@ abstract final class SparkTheme {
         color: palette.card,
         surfaceTintColor: Colors.transparent,
         elevation: 8,
-        shadowColor: const Color(0x1A182230),
+        shadowColor: isDark ? const Color(0x3D000000) : const Color(0x1A182230),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(SparkDesignTokens.radiusXl),
         ),
@@ -177,11 +195,11 @@ abstract final class SparkTheme {
       ),
       snackBarTheme: SnackBarThemeData(
         backgroundColor: palette.ink,
-        contentTextStyle: const TextStyle(
-          color: Colors.white,
+        contentTextStyle: TextStyle(
+          color: isDark ? palette.card : Colors.white,
           fontSize: SparkFontSizes.bodySmall,
         ),
-        actionTextColor: palette.primarySoft,
+        actionTextColor: isDark ? palette.primary : palette.primarySoft,
         behavior: SnackBarBehavior.floating,
         elevation: 0,
         shape: RoundedRectangleBorder(

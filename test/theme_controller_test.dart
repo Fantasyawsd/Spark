@@ -83,4 +83,10 @@ class _FailsOnceThemePreferenceRepository implements ThemePreferenceRepository {
     }
     savedColor = color;
   }
+
+  @override
+  Future<AppThemeMode?> loadMode() async => null;
+
+  @override
+  Future<void> saveMode(AppThemeMode mode) async {}
 }

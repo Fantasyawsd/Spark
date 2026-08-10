@@ -87,11 +87,8 @@ class _PaperCommentsSheetState extends State<_PaperCommentsSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final keyboardInset = MediaQuery.viewInsetsOf(context).bottom;
-    return AnimatedPadding(
-      duration: const Duration(milliseconds: 180),
-      curve: Curves.easeOut,
-      padding: EdgeInsets.only(bottom: keyboardInset),
+    return _KeyboardInsetFollower(
+      preserveTopEdge: _fullscreen,
       child: NotificationListener<DraggableScrollableNotification>(
         onNotification: _handleSheetNotification,
         child: DraggableScrollableSheet(
@@ -383,6 +380,41 @@ class _CommentSortMenu extends StatelessWidget {
                 size: 18,
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _KeyboardInsetFollower extends StatelessWidget {
+  const _KeyboardInsetFollower({
+    required this.preserveTopEdge,
+    required this.child,
+  });
+
+  final bool preserveTopEdge;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final mediaQuery = MediaQuery.of(context);
+    // Android 会逐帧提供已经动画化的 IME inset。半屏态直接移动缓存图层，
+    // 避免重复启动补间并反复布局 Markdown/评论内容；全屏态仍同步缩放，
+    // 以保证顶部栏不会被推出屏幕。
+    return Transform.translate(
+      offset: Offset(
+        0,
+        preserveTopEdge ? 0 : -mediaQuery.viewInsets.bottom,
+      ),
+      child: MediaQuery(
+        data: mediaQuery.removeViewInsets(removeBottom: true),
+        child: RepaintBoundary(
+          child: Padding(
+            padding: EdgeInsets.only(
+              bottom: preserveTopEdge ? mediaQuery.viewInsets.bottom : 0,
+            ),
+            child: child,
           ),
         ),
       ),

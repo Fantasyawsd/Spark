@@ -66,9 +66,9 @@
 
 ## 当前进度
 
-- 已完成：预检（main 干净、无并行分支重叠）、分支与 worktree 创建、台账初始化。
-- 正在进行：WS1-A 颜色收敛。
-- 下一步：按实施计划逐项提交。
+- 已完成：全部 7 个实施项（A-G）+ 验证门禁（format 47 文件通过、analyze 通过、flutter test 395 全绿）。
+- 正在进行：无（WS1 收尾，台账归档提交）。
+- 下一步：编排者触发 /test → /review → /finish；WS2 暗色模式以本分支头（8532ade 起的最终提交）为基线另行建流。
 - 阻塞项：无
 
 ## 决策记录
@@ -87,6 +87,10 @@
 
 | 命令或人工检查 | 结果 | 日期 |
 | --- | --- | --- |
+| `tool\verify_changed_dart_format.ps1` | 通过（47 个文件） | 2026-08-10 |
+| `flutter analyze` | 通过，No issues found | 2026-08-10 |
+| `flutter test`（全量） | 通过，395 个用例全绿 | 2026-08-10 |
+| 用户 Windows 实机验收 | 待编排者在 /test 或合并前安排 | - |
 
 ## 审查结论
 
@@ -101,6 +105,14 @@
 
 | SHA | 提交信息 | 对应阶段 | 验证摘要 |
 | --- | --- | --- | --- |
+| 402ffa8 | docs: add workstream ledger for ui-design-tokens | 台账初始化 | - |
+| f289daa | refactor(core): 收敛语义色并消除硬编码颜色 | WS1-A | flutter analyze 通过 |
+| 6e07488 | refactor(core): 建立 SparkFontSizes 语义字号阶梯并统一字号 | WS1-B | dart format + analyze 通过 |
+| 298e2ca | refactor(core): 圆角对齐 SparkDesignTokens 语义档位 | WS1-C | dart format + analyze 通过 |
+| ed4cd35 | refactor(profile): 抽取横向论文小卡公共组件 PaperMiniCard | WS1-D | analyze 通过 |
+| 6082a38 | refactor(papers): 阅读/网格模式切换入口移至论文页顶栏 | WS1-E | analyze + ui_preview 定向测试通过 |
+| f9042c3 | fix(chat): 会话主页空态提示与模型头像去网络依赖 | WS1-F | dart format + analyze 通过 |
+| 145fcc1 | refactor(papers): 整表达式等刻度的间距接入 SparkDesignTokens | WS1-G | dart format + analyze 通过 |
 
 ## 交付准备（合并前收集）
 

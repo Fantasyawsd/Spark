@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/motion/motion_tokens.dart';
+import '../../../../core/theme/spark_font_sizes.dart';
 import '../../../../core/theme/spark_theme.dart';
 import '../../domain/paper.dart';
 import 'paper_presenter.dart';
@@ -181,7 +182,7 @@ class _PaperMoreMenuItem extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(
               color: SparkColors.ink,
-              fontSize: 13,
+              fontSize: SparkFontSizes.bodySmall,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -264,7 +265,7 @@ class _PaperActionButtonState extends State<_PaperActionButton> {
                       widget.label!,
                       style: TextStyle(
                         color: color,
-                        fontSize: 10.5,
+                        fontSize: SparkFontSizes.caption,
                         fontWeight: FontWeight.w600,
                       ),
                     ),

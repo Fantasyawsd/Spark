@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/theme/spark_font_sizes.dart';
 import '../../../core/theme/spark_theme.dart';
 import '../../papers/papers.dart';
 
@@ -51,7 +52,7 @@ class _PaperShelfListScreenState extends State<PaperShelfListScreen> {
           widget.title,
           style: const TextStyle(
             color: SparkColors.ink,
-            fontSize: 17,
+            fontSize: SparkFontSizes.title,
             fontWeight: FontWeight.w800,
           ),
         ),
@@ -122,7 +123,7 @@ class _PaperShelfListScreenState extends State<PaperShelfListScreen> {
             widget._grouped ? '这个分组还是空的' : '还没有内容',
             style: const TextStyle(
               color: SparkColors.ink,
-              fontSize: 14,
+              fontSize: SparkFontSizes.body,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -162,7 +163,7 @@ class _ShelfPaperRow extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
                   color: SparkColors.ink,
-                  fontSize: 14,
+                  fontSize: SparkFontSizes.body,
                   height: 1.35,
                   fontWeight: FontWeight.w700,
                 ),
@@ -176,7 +177,7 @@ class _ShelfPaperRow extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
                   color: SparkColors.muted,
-                  fontSize: 11,
+                  fontSize: SparkFontSizes.caption,
                 ),
               ),
             ],

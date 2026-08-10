@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/theme/spark_font_sizes.dart';
 
 class ChatSessionSwipeAction extends StatefulWidget {
   const ChatSessionSwipeAction({
@@ -176,7 +177,7 @@ class _SwipeActionButton extends StatelessWidget {
                 label,
                 style: TextStyle(
                   color: foregroundColor,
-                  fontSize: 10.5,
+                  fontSize: SparkFontSizes.caption,
                   fontWeight: FontWeight.w700,
                 ),
               ),

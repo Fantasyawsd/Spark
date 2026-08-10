@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/theme/spark_font_sizes.dart';
 import '../../../../core/theme/spark_theme.dart';
 import '../../domain/paper.dart';
 import '../../domain/paper_link_service.dart';
@@ -37,7 +38,7 @@ class PaperPdfButton extends StatelessWidget {
         label: Text(
           hasPdf ? '查看 PDF' : '查看论文',
           style: const TextStyle(
-            fontSize: 13,
+            fontSize: SparkFontSizes.bodySmall,
             fontWeight: FontWeight.w800,
           ),
         ),

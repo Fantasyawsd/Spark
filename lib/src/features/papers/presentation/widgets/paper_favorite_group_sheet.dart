@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/theme/spark_font_sizes.dart';
 import '../../../../core/theme/spark_theme.dart';
 import '../../../../core/widgets/spark_sheet.dart';
 import '../../application/paper_interaction_controller.dart';
@@ -81,7 +82,7 @@ class _PaperFavoriteGroupSheetState extends State<_PaperFavoriteGroupSheet> {
                         '收藏到分组',
                         style: TextStyle(
                           color: SparkColors.ink,
-                          fontSize: 18,
+                          fontSize: SparkFontSizes.titleLarge,
                           fontWeight: FontWeight.w800,
                         ),
                       ),
@@ -113,9 +114,8 @@ class _PaperFavoriteGroupSheetState extends State<_PaperFavoriteGroupSheet> {
                         group.isDefault
                             ? Icons.bookmark_rounded
                             : Icons.folder_outlined,
-                        color: selected
-                            ? SparkColors.primary
-                            : SparkColors.muted,
+                        color:
+                            selected ? SparkColors.primary : SparkColors.muted,
                       ),
                       title: Text(group.name),
                       onChanged: (value) {

@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import 'spark_design_tokens.dart';
+import 'spark_font_sizes.dart';
 import 'spark_theme_color.dart';
 import 'theme_controller.dart';
 
@@ -130,7 +131,7 @@ abstract final class SparkTheme {
         ),
         textStyle: const TextStyle(
           color: SparkColors.ink,
-          fontSize: 13,
+          fontSize: SparkFontSizes.bodySmall,
           fontWeight: FontWeight.w600,
         ),
       ),
@@ -147,7 +148,8 @@ abstract final class SparkTheme {
           horizontal: 14,
           vertical: 13,
         ),
-        hintStyle: const TextStyle(color: SparkColors.subtle, fontSize: 14),
+        hintStyle: const TextStyle(
+            color: SparkColors.subtle, fontSize: SparkFontSizes.body),
         border: _inputBorder(Colors.transparent),
         enabledBorder: _inputBorder(Colors.transparent),
         focusedBorder: _inputBorder(SparkColors.primary, width: 1.4),
@@ -182,7 +184,8 @@ abstract final class SparkTheme {
       ),
       snackBarTheme: SnackBarThemeData(
         backgroundColor: SparkColors.ink,
-        contentTextStyle: const TextStyle(color: Colors.white, fontSize: 13),
+        contentTextStyle: const TextStyle(
+            color: Colors.white, fontSize: SparkFontSizes.bodySmall),
         actionTextColor: SparkColors.primarySoft,
         behavior: SnackBarBehavior.floating,
         elevation: 0,
@@ -200,12 +203,12 @@ abstract final class SparkTheme {
         ),
         labelStyle: const TextStyle(
           color: SparkColors.ink,
-          fontSize: 12,
+          fontSize: SparkFontSizes.footnote,
           fontWeight: FontWeight.w500,
         ),
         secondaryLabelStyle: TextStyle(
           color: SparkColors.primary,
-          fontSize: 12,
+          fontSize: SparkFontSizes.footnote,
           fontWeight: FontWeight.w700,
         ),
       ),
@@ -228,28 +231,28 @@ abstract final class SparkTheme {
     ),
     headlineMedium: TextStyle(
       color: SparkColors.ink,
-      fontSize: 24,
+      fontSize: SparkFontSizes.display,
       height: 1.18,
       fontWeight: FontWeight.w800,
     ),
     titleLarge: TextStyle(
       color: SparkColors.ink,
-      fontSize: 20,
+      fontSize: SparkFontSizes.headlineSmall,
       fontWeight: FontWeight.w800,
     ),
     titleMedium: TextStyle(
       color: SparkColors.ink,
-      fontSize: 16,
+      fontSize: SparkFontSizes.titleSmall,
       fontWeight: FontWeight.w700,
     ),
     bodyLarge: TextStyle(
       color: SparkColors.ink,
-      fontSize: 15,
+      fontSize: SparkFontSizes.bodyLarge,
       height: 1.55,
     ),
     bodyMedium: TextStyle(
       color: SparkColors.muted,
-      fontSize: 13,
+      fontSize: SparkFontSizes.bodySmall,
       height: 1.45,
     ),
   );

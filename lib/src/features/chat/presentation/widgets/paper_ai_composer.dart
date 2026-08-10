@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/theme/spark_font_sizes.dart';
 import '../../domain/chat_ai_service.dart';
 import '../paper_ai_ui_tokens.dart';
 import 'paper_ai_model_avatar.dart';
@@ -189,7 +190,7 @@ class _PaperAiComposerState extends State<PaperAiComposer> {
                           textInputAction: TextInputAction.newline,
                           style: TextStyle(
                             color: Theme.of(context).colorScheme.onSurface,
-                            fontSize: 15.5,
+                            fontSize: SparkFontSizes.titleSmall,
                             height: 1.4,
                           ),
                           decoration: InputDecoration(
@@ -198,7 +199,7 @@ class _PaperAiComposerState extends State<PaperAiComposer> {
                               color: Theme.of(
                                 context,
                               ).colorScheme.onSurfaceVariant,
-                              fontSize: 15.5,
+                              fontSize: SparkFontSizes.titleSmall,
                             ),
                             filled: false,
                             border: InputBorder.none,
@@ -290,7 +291,7 @@ class _PaperAiComposerState extends State<PaperAiComposer> {
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       color: Theme.of(context).colorScheme.onSurface,
-                      fontSize: 15,
+                      fontSize: SparkFontSizes.bodyLarge,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -340,7 +341,7 @@ class _PaperAiComposerState extends State<PaperAiComposer> {
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       color: scheme.onSurface,
-                      fontSize: 22,
+                      fontSize: SparkFontSizes.headline,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -355,7 +356,7 @@ class _PaperAiComposerState extends State<PaperAiComposer> {
                     _displayLabel(selected),
                     style: TextStyle(
                       color: scheme.onSurface,
-                      fontSize: 17,
+                      fontSize: SparkFontSizes.title,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -422,7 +423,7 @@ class _PaperAiComposerState extends State<PaperAiComposer> {
                                   color: effort == selected
                                       ? PaperAiUiTokens.accent(context)
                                       : scheme.onSurfaceVariant,
-                                  fontSize: 12,
+                                  fontSize: SparkFontSizes.footnote,
                                   fontWeight: effort == selected
                                       ? FontWeight.w700
                                       : FontWeight.w500,

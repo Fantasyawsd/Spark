@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/theme/spark_font_sizes.dart';
 import '../application/chat_session_controller.dart';
 import '../domain/chat_session_repository.dart';
 import 'paper_ai_ui_tokens.dart';
@@ -65,7 +66,7 @@ class _AiChatHomeScreenState extends State<AiChatHomeScreen> {
                     key: ValueKey('ai-chat-home-title'),
                     style: TextStyle(
                       color: Theme.of(context).colorScheme.onSurface,
-                      fontSize: 22,
+                      fontSize: SparkFontSizes.headline,
                       fontWeight: FontWeight.w900,
                     ),
                   ),
@@ -241,7 +242,7 @@ class _AiSessionList extends StatelessWidget {
                                   style: TextStyle(
                                     color:
                                         Theme.of(context).colorScheme.onSurface,
-                                    fontSize: 14,
+                                    fontSize: SparkFontSizes.body,
                                     fontWeight: FontWeight.w800,
                                   ),
                                 ),
@@ -257,7 +258,7 @@ class _AiSessionList extends StatelessWidget {
                               color: Theme.of(context)
                                   .colorScheme
                                   .onSurfaceVariant,
-                              fontSize: 12,
+                              fontSize: SparkFontSizes.footnote,
                             ),
                           ),
                         ],
@@ -271,7 +272,7 @@ class _AiSessionList extends StatelessWidget {
                           _relativeTime(session.updatedAt),
                           style: TextStyle(
                             color: Theme.of(context).colorScheme.outline,
-                            fontSize: 10.5,
+                            fontSize: SparkFontSizes.caption,
                           ),
                         ),
                         const SizedBox(height: 8),
@@ -280,7 +281,7 @@ class _AiSessionList extends StatelessWidget {
                           style: TextStyle(
                             color:
                                 Theme.of(context).colorScheme.onSurfaceVariant,
-                            fontSize: 10.5,
+                            fontSize: SparkFontSizes.caption,
                           ),
                         ),
                       ],
@@ -355,7 +356,7 @@ class _MainAiChatCard extends StatelessWidget {
                               color: Theme.of(
                                 context,
                               ).colorScheme.onPrimaryContainer,
-                              fontSize: 14.5,
+                              fontSize: SparkFontSizes.bodyLarge,
                               fontWeight: FontWeight.w900,
                             ),
                           ),
@@ -385,7 +386,7 @@ class _MainAiChatCard extends StatelessWidget {
                                 '置顶',
                                 style: TextStyle(
                                   color: Theme.of(context).colorScheme.primary,
-                                  fontSize: 9.5,
+                                  fontSize: SparkFontSizes.tiny,
                                   fontWeight: FontWeight.w700,
                                 ),
                               ),
@@ -403,7 +404,7 @@ class _MainAiChatCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        fontSize: 12,
+                        fontSize: SparkFontSizes.footnote,
                       ),
                     ),
                   ],
@@ -423,7 +424,7 @@ class _MainAiChatCard extends StatelessWidget {
                       _AiSessionList._relativeTime(currentSession.updatedAt),
                       style: TextStyle(
                         color: Theme.of(context).colorScheme.outline,
-                        fontSize: 10.5,
+                        fontSize: SparkFontSizes.caption,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -431,7 +432,7 @@ class _MainAiChatCard extends StatelessWidget {
                       '${currentSession.messageCount} 条',
                       style: TextStyle(
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        fontSize: 10.5,
+                        fontSize: SparkFontSizes.caption,
                       ),
                     ),
                   ],

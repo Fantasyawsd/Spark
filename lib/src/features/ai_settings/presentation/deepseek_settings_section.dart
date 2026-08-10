@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/theme/spark_font_sizes.dart';
 import '../../../core/theme/spark_theme.dart';
 import '../../../core/widgets/spark_sheet.dart';
 import '../../../core/widgets/surface_card.dart';
@@ -45,7 +46,7 @@ class DeepSeekSettingsSection extends StatelessWidget {
                       'DeepSeek API',
                       style: TextStyle(
                         color: SparkColors.ink,
-                        fontSize: 15,
+                        fontSize: SparkFontSizes.bodyLarge,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
@@ -58,7 +59,7 @@ class DeepSeekSettingsSection extends StatelessWidget {
                               : '未配置',
                       style: const TextStyle(
                         color: SparkColors.muted,
-                        fontSize: 12,
+                        fontSize: SparkFontSizes.footnote,
                       ),
                     ),
                   ],
@@ -139,7 +140,7 @@ class _DeepSeekCredentialSheetState extends State<_DeepSeekCredentialSheet> {
                   'DeepSeek API 设置',
                   style: TextStyle(
                     color: SparkColors.ink,
-                    fontSize: 18,
+                    fontSize: SparkFontSizes.titleLarge,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
@@ -174,7 +175,7 @@ class _DeepSeekCredentialSheetState extends State<_DeepSeekCredentialSheet> {
                     error,
                     style: const TextStyle(
                       color: SparkColors.danger,
-                      fontSize: 12,
+                      fontSize: SparkFontSizes.footnote,
                     ),
                   ),
                 ],

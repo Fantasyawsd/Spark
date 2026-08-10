@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/motion/motion_tokens.dart';
 import '../../../../core/platform/spark_clipboard.dart';
+import '../../../../core/theme/spark_font_sizes.dart';
 import '../../../../core/theme/spark_theme.dart';
 import '../../../../core/widgets/spark_segmented_control.dart';
 import '../../../chat/chat.dart';
@@ -199,7 +200,7 @@ class _PaperReaderCardState extends State<PaperReaderCard> {
                     onTap: () => platformSparkClipboard.copyText(paper.title),
                     style: const TextStyle(
                       color: SparkColors.ink,
-                      fontSize: 21,
+                      fontSize: SparkFontSizes.headline,
                       height: 1.16,
                       fontWeight: FontWeight.w900,
                     ),
@@ -465,7 +466,8 @@ class _KeywordContent extends StatelessWidget {
             padding: const EdgeInsets.only(bottom: 8),
             child: Text(
               error!,
-              style: const TextStyle(color: SparkColors.danger, fontSize: 12),
+              style: const TextStyle(
+                  color: SparkColors.danger, fontSize: SparkFontSizes.footnote),
             ),
           ),
         Expanded(
@@ -584,7 +586,8 @@ class _AiInterpretButton extends StatelessWidget {
       icon: const Icon(Icons.auto_awesome_rounded, size: 16),
       label: const Text(
         'AI 解读',
-        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
+        style: TextStyle(
+            fontSize: SparkFontSizes.footnote, fontWeight: FontWeight.w800),
       ),
     );
   }

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../core/motion/motion_tokens.dart';
 import '../core/theme/spark_design_tokens.dart';
+import '../core/theme/spark_font_sizes.dart';
 import '../core/theme/spark_theme.dart';
 
 class SparkBottomNav extends StatelessWidget {
@@ -161,7 +162,7 @@ class _NavItem extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       color: color,
-                      fontSize: 10,
+                      fontSize: SparkFontSizes.tiny,
                       fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
                     ),
                   ),

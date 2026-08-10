@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/theme/spark_font_sizes.dart';
 import '../../../../core/theme/spark_theme.dart';
 import '../../../../core/widgets/spark_entry_animation.dart';
 import 'paper_discussion_models.dart';
@@ -61,7 +62,9 @@ class PaperCommentsContent extends StatelessWidget {
               padding: EdgeInsets.only(top: 48),
               child: Text(
                 '还没有评论，来发表第一条看法吧',
-                style: TextStyle(color: SparkColors.muted, fontSize: 13),
+                style: TextStyle(
+                    color: SparkColors.muted,
+                    fontSize: SparkFontSizes.bodySmall),
               ),
             ),
         ],
@@ -118,7 +121,7 @@ class _CommentTile extends StatelessWidget {
                         comment.name,
                         style: const TextStyle(
                           color: SparkColors.muted,
-                          fontSize: 12,
+                          fontSize: SparkFontSizes.footnote,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -142,7 +145,7 @@ class _CommentTile extends StatelessWidget {
                   comment.body,
                   style: const TextStyle(
                     color: SparkColors.ink,
-                    fontSize: 14,
+                    fontSize: SparkFontSizes.body,
                     height: 1.45,
                   ),
                 ),
@@ -153,7 +156,7 @@ class _CommentTile extends StatelessWidget {
                       '${comment.time} · ${comment.location}',
                       style: const TextStyle(
                         color: SparkColors.subtle,
-                        fontSize: 11,
+                        fontSize: SparkFontSizes.caption,
                       ),
                     ),
                     const SizedBox(width: 14),
@@ -163,7 +166,7 @@ class _CommentTile extends StatelessWidget {
                         '回复',
                         style: TextStyle(
                           color: SparkColors.muted,
-                          fontSize: 11,
+                          fontSize: SparkFontSizes.caption,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -187,7 +190,7 @@ class _CommentTile extends StatelessWidget {
                             '${comment.likes}',
                             style: const TextStyle(
                               color: SparkColors.muted,
-                              fontSize: 11,
+                              fontSize: SparkFontSizes.caption,
                             ),
                           ),
                         ],
@@ -211,7 +214,7 @@ class _CommentTile extends StatelessWidget {
                           '展开 ${comment.replies} 条回复',
                           style: const TextStyle(
                             color: SparkColors.muted,
-                            fontSize: 11,
+                            fontSize: SparkFontSizes.caption,
                             fontWeight: FontWeight.w600,
                           ),
                         ),

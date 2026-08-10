@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/motion/motion_tokens.dart';
+import '../../../../core/theme/spark_font_sizes.dart';
 import '../../../../core/theme/spark_theme.dart';
 import '../../../../core/widgets/spark_sheet.dart';
 import '../../../../core/widgets/spark_tab_bar.dart';
@@ -170,7 +171,7 @@ class _PaperCommentsSheetState extends State<_PaperCommentsSheet> {
                           )!,
                           style: const TextStyle(
                             color: SparkColors.danger,
-                            fontSize: 12.5,
+                            fontSize: SparkFontSizes.bodySmall,
                           ),
                         ),
                       ),
@@ -372,7 +373,7 @@ class _CommentSortMenu extends StatelessWidget {
                 value == PaperCommentSort.newest ? '最新' : '最热',
                 style: const TextStyle(
                   color: SparkColors.muted,
-                  fontSize: 12,
+                  fontSize: SparkFontSizes.footnote,
                   fontWeight: FontWeight.w600,
                 ),
               ),

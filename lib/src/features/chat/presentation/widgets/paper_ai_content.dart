@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/theme/spark_font_sizes.dart';
 import '../../../../core/widgets/spark_entry_animation.dart';
 import '../../application/chat_conversation_controller.dart';
 import '../../domain/chat_context.dart';
@@ -255,7 +256,7 @@ class _PaperAiOutline extends StatelessWidget {
             '对话大纲',
             style: TextStyle(
               color: Theme.of(context).colorScheme.onSurface,
-              fontSize: 20,
+              fontSize: SparkFontSizes.headlineSmall,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -264,7 +265,7 @@ class _PaperAiOutline extends StatelessWidget {
             messages.isEmpty ? '还没有消息' : '$modelName · ${messages.length} 条消息',
             style: TextStyle(
               color: Theme.of(context).colorScheme.onSurfaceVariant,
-              fontSize: 12,
+              fontSize: SparkFontSizes.footnote,
             ),
           ),
           const SizedBox(height: 20),
@@ -309,7 +310,7 @@ class _OutlineRow extends StatelessWidget {
               '$index',
               style: TextStyle(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
-                fontSize: 11,
+                fontSize: SparkFontSizes.caption,
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -323,7 +324,7 @@ class _OutlineRow extends StatelessWidget {
                   message.fromUser ? '用户' : 'Assistant',
                   style: TextStyle(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    fontSize: 11,
+                    fontSize: SparkFontSizes.caption,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -334,7 +335,7 @@ class _OutlineRow extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: Theme.of(context).colorScheme.onSurface,
-                    fontSize: 13,
+                    fontSize: SparkFontSizes.bodySmall,
                     height: 1.35,
                   ),
                 ),
@@ -364,7 +365,7 @@ class _OutlineEmptyState extends StatelessWidget {
         '发送第一条消息后，这里会显示会话大纲。',
         style: TextStyle(
           color: Theme.of(context).colorScheme.onSurfaceVariant,
-          fontSize: 13,
+          fontSize: SparkFontSizes.bodySmall,
           height: 1.4,
         ),
       ),
@@ -402,7 +403,7 @@ class _AiStoppedMessage extends StatelessWidget {
               '已停止生成',
               style: TextStyle(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
-                fontSize: 12.5,
+                fontSize: SparkFontSizes.bodySmall,
               ),
             ),
           ),
@@ -443,7 +444,7 @@ class _AiWelcome extends StatelessWidget {
                 title ?? '与论文对话',
                 style: TextStyle(
                   color: Theme.of(context).colorScheme.onSurface,
-                  fontSize: 18,
+                  fontSize: SparkFontSizes.titleLarge,
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -454,7 +455,7 @@ class _AiWelcome extends StatelessWidget {
             description ?? 'DeepSeek 已读取《${chatContext.title}》的摘要和元数据。',
             style: TextStyle(
               color: Theme.of(context).colorScheme.onSurfaceVariant,
-              fontSize: 14,
+              fontSize: SparkFontSizes.body,
               height: 1.5,
             ),
           ),
@@ -493,7 +494,7 @@ class _AiErrorMessage extends StatelessWidget {
               message,
               style: TextStyle(
                 color: Theme.of(context).colorScheme.onErrorContainer,
-                fontSize: 12.5,
+                fontSize: SparkFontSizes.bodySmall,
                 height: 1.4,
               ),
             ),
@@ -535,7 +536,7 @@ class _TypingIndicator extends StatelessWidget {
               searching ? '正在联网检索…' : '正在组织回答…',
               style: TextStyle(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
-                fontSize: 12.5,
+                fontSize: SparkFontSizes.bodySmall,
               ),
             ),
           ),

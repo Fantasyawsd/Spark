@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/theme/spark_font_sizes.dart';
 import '../../../core/theme/spark_theme.dart';
 import '../../../core/widgets/surface_card.dart';
 import '../../papers/papers.dart';
@@ -115,7 +116,7 @@ class _FavoriteCollectionSectionState extends State<FavoriteCollectionSection> {
                   selectedGroup.isDefault ? '还没有收藏论文' : '这个分组还是空的',
                   style: const TextStyle(
                     color: SparkColors.muted,
-                    fontSize: 12.5,
+                    fontSize: SparkFontSizes.bodySmall,
                   ),
                 ),
               ),
@@ -213,7 +214,7 @@ class _FavoritePaperTile extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(
                 color: SparkColors.ink,
-                fontSize: 13,
+                fontSize: SparkFontSizes.bodySmall,
                 height: 1.3,
                 fontWeight: FontWeight.w700,
               ),
@@ -227,7 +228,7 @@ class _FavoritePaperTile extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(
                 color: SparkColors.muted,
-                fontSize: 11,
+                fontSize: SparkFontSizes.caption,
               ),
             ),
           ],

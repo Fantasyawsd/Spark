@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/theme/spark_font_sizes.dart';
 import '../application/chat_skills.dart';
 import '../application/chat_conversation_controller.dart';
 import '../domain/chat_ai_service.dart';
@@ -402,7 +403,7 @@ class _PaperAiChatScreenState extends State<PaperAiChatScreen> {
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   color: Theme.of(context).colorScheme.onSurface,
-                  fontSize: 16.5,
+                  fontSize: SparkFontSizes.title,
                   height: 1.15,
                   fontWeight: FontWeight.w600,
                 ),
@@ -416,7 +417,7 @@ class _PaperAiChatScreenState extends State<PaperAiChatScreen> {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    fontSize: 11,
+                    fontSize: SparkFontSizes.caption,
                     height: 1.15,
                     fontWeight: FontWeight.w500,
                   ),
@@ -485,7 +486,7 @@ class _PaperAiChatScreenState extends State<PaperAiChatScreen> {
         '选择消息',
         style: TextStyle(
           color: Theme.of(context).colorScheme.onSurface,
-          fontSize: 17,
+          fontSize: SparkFontSizes.title,
           fontWeight: FontWeight.w700,
         ),
       ),
@@ -497,7 +498,7 @@ class _PaperAiChatScreenState extends State<PaperAiChatScreen> {
               '${_selectedMessageIndexes.length} 条',
               style: TextStyle(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
-                fontSize: 12,
+                fontSize: SparkFontSizes.footnote,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -558,7 +559,7 @@ class _MessageSelectionBar extends StatelessWidget {
                   '已选择 $count 条消息',
                   style: TextStyle(
                     color: Theme.of(context).colorScheme.onSurface,
-                    fontSize: 14,
+                    fontSize: SparkFontSizes.body,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -637,7 +638,7 @@ class _SessionSettingsSheetState extends State<_SessionSettingsSheet> {
                 '会话设置',
                 style: TextStyle(
                   color: Theme.of(context).colorScheme.onSurface,
-                  fontSize: 22,
+                  fontSize: SparkFontSizes.headline,
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -646,7 +647,7 @@ class _SessionSettingsSheetState extends State<_SessionSettingsSheet> {
                 '设置仅作用于当前会话；留空使用默认提示词。',
                 style: TextStyle(
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  fontSize: 12.5,
+                  fontSize: SparkFontSizes.bodySmall,
                 ),
               ),
               const SizedBox(height: 16),
@@ -667,7 +668,7 @@ class _SessionSettingsSheetState extends State<_SessionSettingsSheet> {
                 '回答风格',
                 style: TextStyle(
                   color: Theme.of(context).colorScheme.onSurface,
-                  fontSize: 15,
+                  fontSize: SparkFontSizes.bodyLarge,
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -689,7 +690,7 @@ class _SessionSettingsSheetState extends State<_SessionSettingsSheet> {
                 '技能',
                 style: TextStyle(
                   color: Theme.of(context).colorScheme.onSurface,
-                  fontSize: 15,
+                  fontSize: SparkFontSizes.bodyLarge,
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -703,7 +704,7 @@ class _SessionSettingsSheetState extends State<_SessionSettingsSheet> {
                     skill.name,
                     style: TextStyle(
                       color: Theme.of(context).colorScheme.onSurface,
-                      fontSize: 14.5,
+                      fontSize: SparkFontSizes.bodyLarge,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -714,7 +715,7 @@ class _SessionSettingsSheetState extends State<_SessionSettingsSheet> {
                           style: TextStyle(
                             color:
                                 Theme.of(context).colorScheme.onSurfaceVariant,
-                            fontSize: 12,
+                            fontSize: SparkFontSizes.footnote,
                           ),
                         ),
                   value: _enabledSkills.contains(skill.id),

@@ -7,6 +7,7 @@ export 'src/core/config/feature_flags.dart';
 export 'src/features/ai_settings/ai_settings.dart';
 export 'src/core/motion/motion_tokens.dart';
 export 'src/core/navigation/spark_route_observer.dart';
+export 'src/core/theme/spark_font_sizes.dart';
 export 'src/core/theme/spark_theme.dart';
 export 'src/core/theme/spark_theme_color.dart';
 export 'src/core/theme/theme_controller.dart';

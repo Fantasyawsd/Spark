@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/theme/spark_font_sizes.dart';
 import '../../../../core/theme/spark_theme.dart';
 import '../../../../core/widgets/topic_chip.dart';
 import '../../domain/paper.dart';
@@ -38,7 +39,7 @@ class PaperRelatedPapers extends StatelessWidget {
                     '相关论文',
                     style: TextStyle(
                       color: SparkColors.ink,
-                      fontSize: 14,
+                      fontSize: SparkFontSizes.body,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -48,7 +49,7 @@ class PaperRelatedPapers extends StatelessWidget {
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       color: SparkColors.muted,
-                      fontSize: 13,
+                      fontSize: SparkFontSizes.bodySmall,
                     ),
                   ),
                 ],
@@ -106,7 +107,7 @@ class _RelatedPaperRow extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       color: SparkColors.ink,
-                      fontSize: 14,
+                      fontSize: SparkFontSizes.body,
                       height: 1.35,
                       fontWeight: FontWeight.w700,
                     ),
@@ -118,7 +119,7 @@ class _RelatedPaperRow extends StatelessWidget {
                         : '${paper.venue} · ${paper.relation}',
                     style: const TextStyle(
                       color: SparkColors.muted,
-                      fontSize: 11.5,
+                      fontSize: SparkFontSizes.caption,
                       height: 1.3,
                     ),
                   ),

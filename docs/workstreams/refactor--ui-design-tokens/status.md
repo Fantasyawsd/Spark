@@ -77,6 +77,7 @@
 | --- | --- | --- | --- |
 | 2026-08-10 | 三个工作流链式基线（WS2 基于 WS1 头、WS3 基于 WS2 头） | 合并由编排者 /finish 触发，链式避免中途合入 main | 合并顺序固定为 WS1→WS2→WS3 |
 | 2026-08-10 | 字号收敛为整数语义阶梯，单项 Δ≤1px | 消除碎片化同时控制视觉回归 | 约 140 处调用点迁移 |
+| 2026-08-10 | 实施中将计划的完整 TextStyle 类（SparkTextStyles）简化为纯字号 token 类 `SparkFontSizes` | 约 120 处迁移需脚本机械完成；完整 TextStyle 重写会破坏现有样式结构、风险高；纯字号 token 保持调用点结构不变且严格满足 Δ≤1px | 新建 `lib/src/core/theme/spark_font_sizes.dart`；样式级语义层留待后续按需引入 |
 | 2026-08-10 | sheet 顶角统一 radius3Xl(22) | 与 dialogTheme 对齐，一个覆盖层语义一种圆角 | Δ≤6px，需用户验收背书 |
 | 2026-08-10 | 排除 community/messages 模块 | AGENTS.md §2：非生产导航 | 其中字面量不在本次收敛范围 |
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/motion/motion_tokens.dart';
+import '../../../../core/theme/spark_font_sizes.dart';
 import '../../../../core/theme/spark_theme.dart';
 import '../../../../core/widgets/cherry_primitives.dart';
 
@@ -120,7 +121,7 @@ class _ChannelTab extends StatelessWidget {
               label,
               style: TextStyle(
                 color: selected ? SparkColors.ink : SparkColors.muted,
-                fontSize: 14,
+                fontSize: SparkFontSizes.body,
                 fontWeight: selected ? FontWeight.w800 : FontWeight.w500,
                 fontFamily: SparkTheme.platformCjkFontFamily(),
               ),

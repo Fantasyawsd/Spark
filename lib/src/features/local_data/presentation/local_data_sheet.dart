@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../../core/theme/spark_font_sizes.dart';
 import '../../../core/theme/spark_theme.dart';
 import '../../../core/widgets/spark_sheet.dart';
 import '../application/local_data_controller.dart';
@@ -49,7 +50,7 @@ class LocalDataSheet extends StatelessWidget {
                           '本地数据',
                           style: TextStyle(
                             color: SparkColors.ink,
-                            fontSize: 20,
+                            fontSize: SparkFontSizes.headlineSmall,
                             fontWeight: FontWeight.w800,
                           ),
                         ),
@@ -114,7 +115,8 @@ class LocalDataSheet extends StatelessWidget {
                                 ),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: SparkColors.danger,
-                          side: const BorderSide(color: SparkColors.dangerBorder),
+                          side:
+                              const BorderSide(color: SparkColors.dangerBorder),
                           minimumSize: const Size.fromHeight(48),
                         ),
                         icon: const Icon(Icons.delete_sweep_outlined),
@@ -130,7 +132,7 @@ class LocalDataSheet extends StatelessWidget {
                           error,
                           style: const TextStyle(
                             color: SparkColors.danger,
-                            fontSize: 12.5,
+                            fontSize: SparkFontSizes.bodySmall,
                           ),
                         ),
                       ],

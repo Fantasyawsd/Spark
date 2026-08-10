@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/theme/spark_font_sizes.dart';
 import '../../../../core/theme/spark_theme.dart';
 import '../../domain/arxiv_subject_catalog.dart';
 import '../../domain/paper_channel.dart';
@@ -72,7 +73,7 @@ class _PaperChannelManagerSheetState extends State<PaperChannelManagerSheet> {
                       '频道管理',
                       style: TextStyle(
                         color: SparkColors.ink,
-                        fontSize: 16,
+                        fontSize: SparkFontSizes.titleSmall,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
@@ -97,7 +98,7 @@ class _PaperChannelManagerSheetState extends State<PaperChannelManagerSheet> {
                       unselectedLabelColor: SparkColors.muted,
                       indicatorColor: SparkColors.primary,
                       labelStyle: const TextStyle(
-                        fontSize: 13,
+                        fontSize: SparkFontSizes.bodySmall,
                         fontWeight: FontWeight.w700,
                       ),
                       tabs: [
@@ -141,7 +142,7 @@ class _PaperChannelManagerSheetState extends State<PaperChannelManagerSheet> {
                                     '会议频道尚未开放，真实会议数据源接入后可编辑。',
                                     style: TextStyle(
                                       color: SparkColors.muted,
-                                      fontSize: 12,
+                                      fontSize: SparkFontSizes.footnote,
                                     ),
                                   ),
                                 ],
@@ -214,7 +215,7 @@ class _SubjectRow extends StatelessWidget {
         subject.code,
         style: const TextStyle(
           color: SparkColors.muted,
-          fontSize: 11,
+          fontSize: SparkFontSizes.caption,
         ),
       ),
       trailing: Icon(

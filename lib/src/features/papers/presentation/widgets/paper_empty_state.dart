@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/theme/spark_font_sizes.dart';
 import '../../../../core/theme/spark_theme.dart';
 
 class PaperEmptyState extends StatelessWidget {
@@ -37,7 +38,7 @@ class PaperEmptyState extends StatelessWidget {
               title,
               style: const TextStyle(
                 color: SparkColors.ink,
-                fontSize: 17,
+                fontSize: SparkFontSizes.title,
                 fontWeight: FontWeight.w800,
               ),
             ),
@@ -47,7 +48,7 @@ class PaperEmptyState extends StatelessWidget {
               textAlign: TextAlign.center,
               style: const TextStyle(
                 color: SparkColors.muted,
-                fontSize: 12,
+                fontSize: SparkFontSizes.footnote,
                 height: 1.45,
               ),
             ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/theme/spark_font_sizes.dart';
 import '../../../core/theme/spark_theme.dart';
 import '../../../core/widgets/surface_card.dart';
 import '../../papers/papers.dart';
@@ -46,7 +47,7 @@ class PaperShelfSection extends StatelessWidget {
                   emptyText,
                   style: const TextStyle(
                     color: SparkColors.muted,
-                    fontSize: 12.5,
+                    fontSize: SparkFontSizes.bodySmall,
                   ),
                 ),
               ),
@@ -108,7 +109,7 @@ class _ShelfPaperTile extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(
                 color: SparkColors.ink,
-                fontSize: 13,
+                fontSize: SparkFontSizes.bodySmall,
                 height: 1.3,
                 fontWeight: FontWeight.w700,
               ),
@@ -122,7 +123,7 @@ class _ShelfPaperTile extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(
                 color: SparkColors.muted,
-                fontSize: 11,
+                fontSize: SparkFontSizes.caption,
               ),
             ),
           ],

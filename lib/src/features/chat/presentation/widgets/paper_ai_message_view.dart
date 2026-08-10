@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/platform/spark_clipboard.dart';
+import '../../../../core/theme/spark_font_sizes.dart';
 import '../../../../core/widgets/spark_markdown.dart';
 import '../../domain/chat_message.dart';
 import '../paper_ai_ui_tokens.dart';
@@ -186,7 +187,7 @@ class _AssistantMessage extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             color: Theme.of(context).colorScheme.onSurface,
-                            fontSize: 15.5,
+                            fontSize: SparkFontSizes.titleSmall,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
@@ -242,7 +243,7 @@ class _AssistantMessage extends StatelessWidget {
                     : '生成失败',
                 style: TextStyle(
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  fontSize: 10.5,
+                  fontSize: SparkFontSizes.caption,
                 ),
               ),
             ),
@@ -558,7 +559,7 @@ class _ReasoningPanelState extends State<_ReasoningPanel> {
                               color: PaperAiUiTokens.assistantReasoningText(
                                 context,
                               ),
-                              fontSize: 14,
+                              fontSize: SparkFontSizes.body,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -667,7 +668,7 @@ class _ShimmerTextState extends State<_ShimmerText>
         widget.text,
         style: TextStyle(
           color: PaperAiUiTokens.assistantReasoningText(context),
-          fontSize: 15,
+          fontSize: SparkFontSizes.bodyLarge,
           fontWeight: FontWeight.w600,
         ),
       ),
@@ -727,7 +728,7 @@ class _SourcesPanelState extends State<_SourcesPanel> {
                     '来源',
                     style: TextStyle(
                       color: Theme.of(context).colorScheme.onSurface,
-                      fontSize: 12,
+                      fontSize: SparkFontSizes.footnote,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -736,7 +737,7 @@ class _SourcesPanelState extends State<_SourcesPanel> {
                     '${sources.length} 个',
                     style: TextStyle(
                       color: Theme.of(context).colorScheme.outline,
-                      fontSize: 10.5,
+                      fontSize: SparkFontSizes.caption,
                     ),
                   ),
                   const Spacer(),
@@ -775,7 +776,7 @@ class _SourcesPanelState extends State<_SourcesPanel> {
                             '另有 $remaining 个来源',
                             style: TextStyle(
                               color: Theme.of(context).colorScheme.outline,
-                              fontSize: 10.5,
+                              fontSize: SparkFontSizes.caption,
                             ),
                           ),
                         ),
@@ -829,7 +830,7 @@ class _SourceRow extends StatelessWidget {
                     '$index',
                     style: TextStyle(
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      fontSize: 10,
+                      fontSize: SparkFontSizes.tiny,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -847,7 +848,7 @@ class _SourceRow extends StatelessWidget {
                           color: uri == null
                               ? Theme.of(context).colorScheme.onSurface
                               : Theme.of(context).colorScheme.secondary,
-                          fontSize: 11.5,
+                          fontSize: SparkFontSizes.caption,
                           fontWeight: FontWeight.w600,
                           height: 1.3,
                         ),
@@ -859,7 +860,7 @@ class _SourceRow extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           color: Theme.of(context).colorScheme.outline,
-                          fontSize: 9.8,
+                          fontSize: SparkFontSizes.tiny,
                         ),
                       ),
                     ],

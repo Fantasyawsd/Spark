@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/theme/spark_font_sizes.dart';
 import '../../../core/theme/spark_theme.dart';
 
 class ProfileSectionHeader extends StatelessWidget {
@@ -27,7 +28,7 @@ class ProfileSectionHeader extends StatelessWidget {
             title,
             style: const TextStyle(
               color: SparkColors.ink,
-              fontSize: 16,
+              fontSize: SparkFontSizes.titleSmall,
               fontWeight: FontWeight.w800,
             ),
           ),
@@ -45,7 +46,7 @@ class ProfileSectionHeader extends StatelessWidget {
                     action,
                     style: const TextStyle(
                       color: SparkColors.muted,
-                      fontSize: 11.5,
+                      fontSize: SparkFontSizes.caption,
                     ),
                   ),
                   const Icon(

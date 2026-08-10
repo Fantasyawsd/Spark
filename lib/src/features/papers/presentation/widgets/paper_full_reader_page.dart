@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/platform/spark_clipboard.dart';
+import '../../../../core/theme/spark_font_sizes.dart';
 import '../../../../core/theme/spark_theme.dart';
 import '../../../../core/widgets/spark_markdown.dart';
 import '../../domain/paper.dart';
@@ -59,7 +60,7 @@ class _PaperFullReaderPageState extends State<PaperFullReaderPage> {
           overflow: TextOverflow.ellipsis,
           style: const TextStyle(
             color: SparkColors.ink,
-            fontSize: 16,
+            fontSize: SparkFontSizes.titleSmall,
             fontWeight: FontWeight.w800,
           ),
         ),

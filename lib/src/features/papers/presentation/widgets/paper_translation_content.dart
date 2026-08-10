@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/theme/spark_font_sizes.dart';
 import '../../../../core/theme/spark_theme.dart';
 import 'paper_tab_body.dart';
 
@@ -82,7 +83,7 @@ class PaperTranslationContent extends StatelessWidget {
                   '正在生成…',
                   style: TextStyle(
                     color: SparkColors.muted,
-                    fontSize: 11,
+                    fontSize: SparkFontSizes.caption,
                   ),
                 ),
               ],
@@ -105,7 +106,8 @@ class PaperTranslationContent extends StatelessWidget {
             padding: const EdgeInsets.only(bottom: 6),
             child: Text(
               error!,
-              style: const TextStyle(color: SparkColors.danger, fontSize: 11.5),
+              style: const TextStyle(
+                  color: SparkColors.danger, fontSize: SparkFontSizes.caption),
             ),
           ),
         Expanded(
@@ -149,7 +151,7 @@ class _TranslationStatus extends StatelessWidget {
               textAlign: TextAlign.center,
               style: const TextStyle(
                 color: SparkColors.muted,
-                fontSize: 13,
+                fontSize: SparkFontSizes.bodySmall,
                 height: 1.4,
               ),
             ),

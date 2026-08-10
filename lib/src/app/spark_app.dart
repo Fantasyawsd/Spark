@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../core/config/app_config.dart';
@@ -126,26 +125,12 @@ class _SparkAppState extends State<SparkApp> {
         debugShowCheckedModeBanner: widget.config.showDebugBanner,
         theme: SparkTheme.light(),
         navigatorObservers: [SparkRouteObserver.instance],
-        builder: _buildAppSurface,
         home: _SparkBootstrap(
           showSplash: widget.showSplash,
           dependencies: _dependencies,
           features: widget.config.features,
         ),
       ),
-    );
-  }
-
-  Widget _buildAppSurface(BuildContext context, Widget? child) {
-    final app = child ?? const SizedBox.shrink();
-    if (defaultTargetPlatform != TargetPlatform.android) return app;
-
-    // Android 统一平移整个 Flutter 窗口。移除传给组件树的 IME inset，
-    // 防止 Scaffold、底部面板等在窗口平移之外再次局部 resize 或位移。
-    return MediaQuery.removeViewInsets(
-      context: context,
-      removeBottom: true,
-      child: app,
     );
   }
 }
@@ -403,6 +388,7 @@ class _SparkShellState extends State<SparkShell> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       backgroundColor: SparkColors.canvas,
       body: Stack(
         children: [

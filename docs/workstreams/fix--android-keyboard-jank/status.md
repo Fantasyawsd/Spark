@@ -9,11 +9,11 @@
 - 基线提交：`a768f0a4003c7f84a99fb7674c48202961f9d584`
 - 负责人：Fantasy（编排者）；执行：Codex
 - 状态：开发中
-- 最近更新：2026-08-10 23:19
+- 最近更新：2026-08-10 23:40
 
 ## 目标
 
-让 Spark Android 客户端在输入框获取焦点、软键盘弹出或收起时保持流畅，避免昂贵内容区随每个 IME inset 帧重复构建；键盘出现时由 Android 将整个 Flutter 窗口作为静态画面统一上移，不再只移动或缩放局部面板。
+让 Spark Android 客户端在输入框获取焦点、软键盘弹出或收起时保持流畅，避免昂贵内容区随每个 IME inset 帧重复构建；键盘出现时固定对话页顶栏，仅将顶栏下方的消息列表、工具栏和输入框作为静态画面统一上移。
 
 ## 非目标
 
@@ -24,8 +24,8 @@
 ## 验收标准
 
 - [x] 建立可重复的 IME inset 变化反馈环，能在修复前捕获面板追赶键盘与布局放大。
-- [x] Android Activity 使用窗口级平移；Flutter 组件树不再消费 IME bottom inset 做局部移动或缩放。
-- [x] 键盘过渡时评论面板与其背后的页面保持相对位置不变，由系统统一移动整个窗口画面。
+- [x] Android Activity 不做原生 resize/pan；对话页 body 消费 IME inset 并作为单一图层整体上移。
+- [x] 键盘过渡时顶栏坐标不变，消息列表、工具栏和输入框等距上移，body 内部布局和彼此相对位置不变。
 - [x] 评论与 AI 输入、发送、键盘收起以及半屏/全屏交互不回归。
 - [x] 相关 Widget 回归测试、格式检查与 `flutter analyze` 通过。
 - [x] development debug APK 构建成功；Android 真机性能结论如实记录。
@@ -36,6 +36,7 @@
 
 - `lib/src/features/papers/presentation/widgets/paper_comments_sheet.dart`
 - `lib/src/app/spark_app.dart`
+- `lib/src/features/chat/presentation/paper_ai_chat_screen.dart`
 - `android/app/src/main/AndroidManifest.xml`
 - `test/android_keyboard_window_config_test.dart`
 - `test/paper_comments_keyboard_test.dart`
@@ -56,12 +57,13 @@
 2. 对候选根因逐一做可证伪探针，确认重建或布局热点后实施最小展示层修复。
 3. 回归输入、发送、键盘收起与窄屏/多行布局，运行格式、静态分析、定向测试和 development APK 构建。
 4. 清理诊断代码，记录真实证据、剩余真机不确定性与回滚方式。
+5. 根据第二、三次真机反馈，以真实对话页“顶栏固定、消息列表与输入框等距上移”为红灯信号，改用对话页 body 统一平移并重新构建 APK。
 
 ## 当前进度
 
-- 已完成：必读文档、历史 ChatPaper 台账、基线与设备状态核对；建立实际评论面板的 IME 逐帧复现；第一轮移除二次动画后由编排者真机确认卡顿改善；第二轮根据反馈改为 Android 窗口级 `adjustPan`，Flutter Android 组件树不再消费 IME bottom inset；定向测试、格式、静态分析、401 项全量测试和 development APK 构建通过。
+- 已完成：必读文档、历史 ChatPaper 台账、基线与设备状态核对；第一轮移除二次动画后由编排者真机确认卡顿改善；第二轮 `adjustPan` 经真机证实只弹键盘、画面不动；第三轮已建立真实 `SparkApp → ChatPaper → 主聊天` 红灯并改为 `adjustNothing` + chat body 图层平移。顶栏在 8 个 IME 帧中保持固定，消息列表与输入区逐帧等距上移且保持命中；56 项定向测试、格式、静态分析、401 项全量测试和 development APK 构建通过。
 - 正在进行：本轮 `/develop` 实现与静态验证已完成，等待 Android 真机验收或编排者触发 `/test`。
-- 下一步：由编排者安装新 APK，确认键盘出现时页面、遮罩和面板作为一个静态画面整体上移；之后按需触发 `/test`。
+- 下一步：由编排者安装新 APK，确认顶栏固定、仅对话区域随键盘上移且体感保持流畅；之后按需触发 `/test`。
 - 阻塞项：无；本机没有 Android 真机，因此设备级帧时间尚未采集，自动证据不能替代最终真机验收。
 
 ## 决策记录
@@ -73,6 +75,7 @@
 | 2026-08-10 | 移除跟随 IME 的 180ms `AnimatedPadding` | Flutter 已逐帧更新 `viewInsets`；隐式补间会在每个新值到达时重新追赶，最小复现中最终位置比目标滞后约 259 logical px | 面板不再叠加第二段键盘动画 |
 | 2026-08-10 | 半屏使用 `Transform.translate` + `RepaintBoundary`，全屏保留同步 `Padding` | 半屏是主要输入场景，平移可保持内容布局稳定；全屏若整体平移会把顶部栏推出屏幕 | 半屏 8 帧布局事件由 504 降至 336（约 33%）；全屏顶部边缘保持固定 |
 | 2026-08-10 | 根据真机反馈改为 Android 窗口级 `adjustPan` | 第一轮已解决卡顿，但只移动面板；产品预期是页面、遮罩和面板作为同一静态画面统一上移 | Android 跳过面板级 inset follower，并在应用根部阻止 Flutter 组件消费 Android IME bottom inset，避免二次位移；其他平台保留原有避让 |
+| 2026-08-10 | 放弃原生 `adjustPan`，改由 Flutter 对话页 body 统一平移 | 真机证明 Android 仅弹出键盘，没有平移 Flutter 画面；编排者进一步明确顶栏必须固定，仅移动对话区域 | Activity 使用 `adjustNothing`；chat body 根据 IME inset 更新单一变换，body 子树看到 0 inset，避免布局抖动和局部二次位移 |
 
 ## 验证记录
 
@@ -97,6 +100,15 @@
 | `flutter build apk --debug --flavor development --dart-define=SPARK_ENV=development`（第二轮） | 通过；`build/app/outputs/flutter-apk/app-development-debug.apk`，193,261,916 字节（184.31 MiB），SHA-256 `7AFE8C85ECBFD65A713529953BA9594A12AAE18A8BA9A729896CE0BADAEECC9F` | 2026-08-10 |
 | 检查 Gradle merged/packaged manifest | 通过；developmentDebug 最终清单均包含 `android:windowSoftInputMode="adjustPan"` | 2026-08-10 |
 | `git diff --check`（第二轮） | 通过 | 2026-08-10 |
+| `flutter test test\android_keyboard_window_config_test.dart --reporter expanded`（第三轮修复前） | 失败（预期红灯）；最终配置仍为 `adjustPan`，真实主聊天页面在 320 logical px IME 下顶栏固定，但消息区仍停在 `y=56`，输入区也完全不动 | 2026-08-10 |
+| `flutter test test\android_keyboard_window_config_test.dart test\paper_comments_keyboard_test.dart --reporter expanded`（第三轮修复后） | 通过；6 项。主聊天顶栏在 8 个 IME 帧中坐标不变，消息区与输入区逐帧等距上移，输入区子树 inset 为 0 且上移后仍可命中；评论半屏/全屏避让不回归 | 2026-08-10 |
+| `flutter test test\android_keyboard_window_config_test.dart test\paper_comments_keyboard_test.dart test\ui_preview_test.dart test\paper_ai_mobile_chat_ui_test.dart test\paper_ai_composer_test.dart test\paper_message_composer_test.dart test\deepseek_settings_widget_test.dart test\tiktok_app_shell_test.dart test\widget_test.dart --reporter expanded` | 通过；56 项应用壳、评论、ChatPaper、输入和设置定向回归 | 2026-08-10 |
+| `.\tool\verify_changed_dart_format.ps1`（第三轮） | 通过；5 个变更 Dart 文件格式正确 | 2026-08-10 |
+| `flutter analyze`（第三轮） | 通过；No issues found | 2026-08-10 |
+| `flutter test`（第三轮） | 通过；401 项全量测试 | 2026-08-10 |
+| `flutter build apk --debug --flavor development --dart-define=SPARK_ENV=development`（第三轮） | 通过；`build/app/outputs/flutter-apk/app-development-debug.apk`，193,262,519 字节（184.31 MiB），SHA-256 `CF989F88FE881CE252D578CD393B0F4D911CF602D7AE4C798B260B5CE8CCD3BA` | 2026-08-10 |
+| 检查 Gradle merged/packaged manifest（第三轮） | 通过；developmentDebug 最终清单均包含 `android:windowSoftInputMode="adjustNothing"` | 2026-08-10 |
+| `git diff --check`（第三轮） | 通过 | 2026-08-10 |
 
 ## 审查结论
 
@@ -116,14 +128,14 @@
 
 ### 交付摘要
 
-Android 的评论/AI 面板不再为系统键盘的每个 inset 帧重启一段内部动画。根据真机反馈，最终交互改为窗口级平移：键盘出现时页面、遮罩和面板保持同一静态布局，由系统统一移动整个 Flutter 窗口；Flutter 内不再进行 Android IME 的局部 resize 或二次位移。
+Android 的评论/AI 面板不再为系统键盘的每个 inset 帧重启一段内部动画。根据真机反馈，最终交互由 Flutter 明确控制：Android 系统不 resize/pan 窗口；ChatPaper 顶栏固定，仅将顶栏下方的消息列表、工具栏和输入框作为一个静态 body 图层随 IME 上移。评论半屏继续平移缓存图层，全屏继续固定顶部并同步缩短内容区。
 
 ### 实际变更
 
 - 领域与业务逻辑：无计划变更。
 - 数据与基础设施：无计划变更。
-- 界面与交互：Android Activity 从 `adjustResize` 改为 `adjustPan`；应用根部仅在 Android 移除传向组件树的 IME bottom inset；评论面板在 Android 跳过局部 follower，其他平台保留原有避让。
-- 测试与工具：新增最终 Android 清单配置、应用根部静态布局、半屏/全屏评论面板静态几何和非 Android 兼容回归；保留输入焦点与布局次数约束。
+- 界面与交互：Android Activity 使用 `adjustNothing`；应用根部恢复 IME inset，仅把常驻主壳设为不 resize；`PaperAiChatScreen` 在 Android 固定 AppBar，并通过 `_AndroidChatKeyboardFollower` 平移整个 chat body；评论面板恢复已验证的半屏图层平移与全屏同步 padding；其他平台保留 Scaffold/inset 默认行为。
+- 测试与工具：最终 Android 清单配置测试覆盖 `adjustNothing`；真实主聊天路径覆盖 8 帧顶栏固定、消息区与输入区等距位移、body 子树 inset 隔离、布局上限和变换后命中；评论面板继续覆盖半屏/全屏几何、焦点和布局上限。
 - 文档：本任务台账。
 
 ### 兼容性与迁移
@@ -134,7 +146,7 @@ Android 的评论/AI 面板不再为系统键盘的每个 inset 帧重启一段�
 
 ### 已知风险与回滚
 
-- 已知风险：当前无 Android 真机，自动测试能够锁定 Flutter 内部不再二次位移，且最终 APK 清单为 `adjustPan`，但不能模拟 Android 系统实际选取的窗口平移距离，也不能直接证明具体设备的 UI/Raster 帧均低于刷新预算。
+- 已知风险：当前无 Android 真机；自动测试能够锁定 Flutter 根据真实 IME inset 逐帧移动 chat body，且最终 APK 清单为 `adjustNothing`，但不能直接证明具体设备的 UI/Raster 帧均低于刷新预算。
 - 回滚方式：在合入后 revert 本任务修复提交；不涉及数据迁移或 API 兼容。
 
 ### 文档更新建议
@@ -143,7 +155,7 @@ Android 的评论/AI 面板不再为系统键盘的每个 inset 帧重启一段�
 
 ### 未完成与后续工作
 
-- Android 真机安装后先确认页面、遮罩和面板统一上移且输入框不被遮挡，再使用系统 Profile GPU Rendering 或 Flutter DevTools Performance 复核键盘弹出与收起帧时间。
+- Android 真机安装后先确认顶栏固定、消息区与输入区统一上移且输入框不被遮挡，再使用系统 Profile GPU Rendering 或 Flutter DevTools Performance 复核键盘弹出与收起帧时间。
 
 ## 合并归档（合并后在 main 补齐）
 

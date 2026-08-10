@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../application/chat_skills.dart';
@@ -95,78 +96,81 @@ class _PaperAiChatScreenState extends State<PaperAiChatScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       key: const ValueKey('paper-ai-chat-screen'),
+      resizeToAvoidBottomInset: defaultTargetPlatform != TargetPlatform.android,
       backgroundColor: PaperAiUiTokens.canvas(context),
       appBar: _selectionMode
           ? _buildSelectionAppBar(context)
           : _buildChatAppBar(context),
-      body: Column(
-        children: [
-          Expanded(
-            child: ScrollConfiguration(
-              behavior: ScrollConfiguration.of(
-                context,
-              ).copyWith(scrollbars: false),
-              child: ListView(
-                key: const ValueKey('global-paper-ai-chat'),
-                controller: _scrollController,
-                keyboardDismissBehavior:
-                    ScrollViewKeyboardDismissBehavior.onDrag,
-                padding: EdgeInsets.zero,
-                children: [
-                  PaperAiContent(
-                    chatContext: widget.chatContext,
-                    messages: _conversation.messages,
-                    loading: _conversation.loading,
-                    sending: _conversation.sending,
-                    error: _conversation.error,
-                    onPrompt: (_) {},
-                    onRetry: _conversation.retry,
-                    onCancel: _conversation.cancel,
-                    onDelete: _deleteMessage,
-                    onEdit: _editMessage,
-                    selectionMode: _selectionMode,
-                    selectedMessageIndexes: _selectedMessageIndexes,
-                    onToggleMessageSelection: _toggleMessageSelection,
-                    searching: _conversation.searching,
-                    requestStatus: _conversation.requestStatus,
-                    canRetryRequestError: _conversation.canRetryRequestError,
-                    welcomeTitle: widget.welcomeTitle,
-                    welcomeDescription: widget.welcomeDescription,
-                    previewMode: _previewMode,
-                    assistantLabel: widget.assistantLabel,
-                    modelName: widget.modelName,
-                    providerName: widget.providerName,
-                  ),
-                ],
+      body: _AndroidChatKeyboardFollower(
+        child: Column(
+          children: [
+            Expanded(
+              child: ScrollConfiguration(
+                behavior: ScrollConfiguration.of(
+                  context,
+                ).copyWith(scrollbars: false),
+                child: ListView(
+                  key: const ValueKey('global-paper-ai-chat'),
+                  controller: _scrollController,
+                  keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.onDrag,
+                  padding: EdgeInsets.zero,
+                  children: [
+                    PaperAiContent(
+                      chatContext: widget.chatContext,
+                      messages: _conversation.messages,
+                      loading: _conversation.loading,
+                      sending: _conversation.sending,
+                      error: _conversation.error,
+                      onPrompt: (_) {},
+                      onRetry: _conversation.retry,
+                      onCancel: _conversation.cancel,
+                      onDelete: _deleteMessage,
+                      onEdit: _editMessage,
+                      selectionMode: _selectionMode,
+                      selectedMessageIndexes: _selectedMessageIndexes,
+                      onToggleMessageSelection: _toggleMessageSelection,
+                      searching: _conversation.searching,
+                      requestStatus: _conversation.requestStatus,
+                      canRetryRequestError: _conversation.canRetryRequestError,
+                      welcomeTitle: widget.welcomeTitle,
+                      welcomeDescription: widget.welcomeDescription,
+                      previewMode: _previewMode,
+                      assistantLabel: widget.assistantLabel,
+                      modelName: widget.modelName,
+                      providerName: widget.providerName,
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-          if (_selectionMode)
-            _MessageSelectionBar(
-              key: const ValueKey('paper-ai-selection-bar'),
-              count: _selectedMessageIndexes.length,
-              onCancel: _exitSelectionMode,
-              onDelete: _confirmDeleteSelectedMessages,
-            )
-          else
-            PaperAiComposer(
-              controller: _composer,
-              focusNode: _composerFocusNode,
-              enabled: !_conversation.sending,
-              sending: _conversation.sending,
-              reasoningEffort: _conversation.reasoningEffort,
-              onReasoningEffortChanged: _conversation.setReasoningEffort,
-              webSearchAvailable: _conversation.webSearchAvailable,
-              webSearchEnabled: _conversation.webSearchEnabled,
-              onWebSearchChanged: _conversation.setWebSearchEnabled,
-              hasContext: _conversation.messages.isNotEmpty,
-              onClearContext: _confirmClearContext,
-              modelName: widget.modelName,
-              onChanged: (_) => setState(() {}),
-              onSend: () => _send(_composer.text),
-              onCancel: _conversation.cancel,
-            ),
-        ],
+            if (_selectionMode)
+              _MessageSelectionBar(
+                key: const ValueKey('paper-ai-selection-bar'),
+                count: _selectedMessageIndexes.length,
+                onCancel: _exitSelectionMode,
+                onDelete: _confirmDeleteSelectedMessages,
+              )
+            else
+              PaperAiComposer(
+                controller: _composer,
+                focusNode: _composerFocusNode,
+                enabled: !_conversation.sending,
+                sending: _conversation.sending,
+                reasoningEffort: _conversation.reasoningEffort,
+                onReasoningEffortChanged: _conversation.setReasoningEffort,
+                webSearchAvailable: _conversation.webSearchAvailable,
+                webSearchEnabled: _conversation.webSearchEnabled,
+                onWebSearchChanged: _conversation.setWebSearchEnabled,
+                hasContext: _conversation.messages.isNotEmpty,
+                onClearContext: _confirmClearContext,
+                modelName: widget.modelName,
+                onChanged: (_) => setState(() {}),
+                onSend: () => _send(_composer.text),
+                onCancel: _conversation.cancel,
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -523,6 +527,30 @@ class _PaperAiChatScreenState extends State<PaperAiChatScreen> {
         curve: Curves.easeOut,
       );
     });
+  }
+}
+
+class _AndroidChatKeyboardFollower extends StatelessWidget {
+  const _AndroidChatKeyboardFollower({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    if (defaultTargetPlatform != TargetPlatform.android) return child;
+
+    final mediaQuery = MediaQuery.of(context);
+    // AppBar 位于该组件之外；这里只更新对话 body 的合成变换，
+    // 并屏蔽子树 inset，避免消息与输入组件再做一次局部 resize。
+    return ClipRect(
+      child: Transform.translate(
+        offset: Offset(0, -mediaQuery.viewInsets.bottom),
+        child: MediaQuery(
+          data: mediaQuery.removeViewInsets(removeBottom: true),
+          child: child,
+        ),
+      ),
+    );
   }
 }
 

@@ -7,7 +7,7 @@ import 'package:spark/src/features/papers/data/demo_paper_repository.dart';
 import 'package:spark/src/features/papers/presentation/widgets/paper_comments_sheet.dart';
 
 void main() {
-  testWidgets('half-height comments sheet stays static during Android IME',
+  testWidgets('half-height comments sheet follows Android IME without relayout',
       (tester) async {
     try {
       debugDefaultTargetPlatformOverride = TargetPlatform.android;
@@ -37,13 +37,19 @@ void main() {
 
       final shiftedRect = tester.getRect(sheet);
       printOnFailure('IME layout count: ${layoutLogs.length}');
-      expect(shiftedRect.top, closeTo(initialRect.top, 1));
-      expect(shiftedRect.bottom, closeTo(initialRect.bottom, 1));
+      expect(
+        shiftedRect.top,
+        closeTo(initialRect.top - _keyboardInset, 1),
+      );
+      expect(
+        shiftedRect.bottom,
+        closeTo(initialRect.bottom - _keyboardInset, 1),
+      );
       expect(shiftedRect.height, closeTo(initialRect.height, 0.1));
       expect(
         layoutLogs.length,
         lessThanOrEqualTo(400),
-        reason: 'Flutter 面板应保持静态，由 Android 统一平移整个窗口。',
+        reason: '半屏面板应只更新图层变换，不能逐帧重排整张内容树。',
       );
 
       editable.focusNode.unfocus();
@@ -56,7 +62,7 @@ void main() {
     }
   });
 
-  testWidgets('fullscreen comments sheet stays static during Android IME',
+  testWidgets('fullscreen comments sheet keeps its top edge during Android IME',
       (tester) async {
     debugDefaultTargetPlatformOverride = TargetPlatform.android;
     try {
@@ -67,9 +73,17 @@ void main() {
       final sheet = find.byKey(const ValueKey('paper-comments-sheet'));
       final initialRect = tester.getRect(sheet);
       await _driveImeTransition(tester);
-      final staticRect = tester.getRect(sheet);
+      final resizedRect = tester.getRect(sheet);
 
-      expect(staticRect, initialRect);
+      expect(resizedRect.top, closeTo(initialRect.top, 1));
+      expect(
+        resizedRect.bottom,
+        closeTo(initialRect.bottom - _keyboardInset, 1),
+      );
+      expect(
+        resizedRect.height,
+        closeTo(initialRect.height - _keyboardInset, 1),
+      );
     } finally {
       debugDefaultTargetPlatformOverride = null;
     }

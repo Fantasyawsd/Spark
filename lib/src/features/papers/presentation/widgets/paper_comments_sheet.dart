@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../core/motion/motion_tokens.dart';
@@ -399,8 +398,6 @@ class _KeyboardInsetFollower extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (defaultTargetPlatform == TargetPlatform.android) return child;
-
     final mediaQuery = MediaQuery.of(context);
     return Transform.translate(
       offset: Offset(

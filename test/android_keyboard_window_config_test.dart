@@ -2,27 +2,27 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:spark/spark.dart';
-import 'package:spark/src/app/spark_bottom_nav.dart';
 
 void main() {
-  test('Android delegates keyboard avoidance to whole-window panning', () {
+  test('Android leaves keyboard movement to the Flutter chat surface', () {
     final manifest = File(
       'android/app/src/main/AndroidManifest.xml',
     ).readAsStringSync();
 
     expect(
       manifest,
-      contains('android:windowSoftInputMode="adjustPan"'),
+      contains('android:windowSoftInputMode="adjustNothing"'),
     );
     expect(
       manifest,
-      isNot(contains('android:windowSoftInputMode="adjustResize"')),
+      isNot(anyOf(contains('adjustPan'), contains('adjustResize'))),
     );
   });
 
-  testWidgets('Android Flutter layout stays static while the window pans', (
+  testWidgets('Android moves only the chat body above the keyboard', (
     tester,
   ) async {
     debugDefaultTargetPlatformOverride = TargetPlatform.android;
@@ -33,17 +33,78 @@ void main() {
 
       await tester.pumpWidget(const SparkApp(showSplash: false));
       await tester.pump();
-      final bottomNav = find.byType(SparkBottomNav);
-      final initialRect = tester.getRect(bottomNav);
+      await tester.tap(find.byKey(const ValueKey('bottom-nav-1')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('main-ai-chat')));
+      await tester.pumpAndSettle();
 
-      tester.view.viewInsets = FakeViewPadding(
-        bottom: 320 * tester.view.devicePixelRatio,
+      final appBar = find.byType(AppBar);
+      final conversation = find.byKey(
+        const ValueKey('global-paper-ai-chat'),
       );
+      final composer = find.byKey(
+        const ValueKey('paper-ai-composer-surface'),
+      );
+      final initialAppBarRect = tester.getRect(appBar);
+      final initialConversationRect = tester.getRect(conversation);
+      final initialComposerRect = tester.getRect(composer);
+      final input = find.byKey(const ValueKey('paper-ai-input'));
+      await tester.tap(input);
       await tester.pump();
+      final editable = tester.widget<EditableText>(
+        find.descendant(of: input, matching: find.byType(EditableText)),
+      );
+      expect(editable.focusNode.hasFocus, isTrue);
 
-      final shellContext = tester.element(find.byType(SparkShell));
-      expect(MediaQuery.viewInsetsOf(shellContext).bottom, 0);
-      expect(tester.getRect(bottomNav), initialRect);
+      final layoutLogs = <String>[];
+      final previousDebugPrint = debugPrint;
+      debugPrint = (message, {wrapWidth}) {
+        if (message != null) layoutLogs.add(message);
+      };
+      debugPrintLayouts = true;
+      try {
+        for (final logicalInset in _imeFrames) {
+          tester.view.viewInsets = FakeViewPadding(
+            bottom: logicalInset * tester.view.devicePixelRatio,
+          );
+          await tester.pump(const Duration(milliseconds: 16));
+          expect(tester.getRect(appBar), initialAppBarRect);
+          expect(
+            tester.getRect(conversation),
+            initialConversationRect.shift(Offset(0, -logicalInset)),
+          );
+          expect(
+            tester.getRect(composer),
+            initialComposerRect.shift(Offset(0, -logicalInset)),
+          );
+        }
+      } finally {
+        debugPrintLayouts = false;
+        debugPrint = previousDebugPrint;
+      }
+
+      expect(tester.getRect(appBar), initialAppBarRect);
+      expect(
+        tester.getRect(conversation),
+        initialConversationRect.shift(const Offset(0, -320)),
+      );
+      expect(
+        tester.getRect(composer),
+        initialComposerRect.shift(const Offset(0, -320)),
+      );
+      expect(MediaQuery.viewInsetsOf(tester.element(composer)).bottom, 0);
+      printOnFailure('Chat IME layout count: ${layoutLogs.length}');
+      expect(
+        layoutLogs.length,
+        lessThanOrEqualTo(450),
+        reason: '键盘过渡应更新对话 body 的图层变换，不能逐帧重排消息树。',
+      );
+
+      editable.focusNode.unfocus();
+      await tester.pump();
+      await tester.tap(input);
+      await tester.pump();
+      expect(editable.focusNode.hasFocus, isTrue);
     } finally {
       debugDefaultTargetPlatformOverride = null;
     }
@@ -72,3 +133,5 @@ void main() {
     }
   });
 }
+
+const _imeFrames = <double>[40, 80, 120, 160, 200, 240, 280, 320];

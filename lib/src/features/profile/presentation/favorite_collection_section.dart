@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/theme/spark_design_tokens.dart';
 import '../../../core/theme/spark_font_sizes.dart';
 import '../../../core/theme/spark_theme.dart';
 import '../../../core/widgets/surface_card.dart';
 import '../../papers/papers.dart';
 import 'profile_section_header.dart';
+import 'widgets/paper_mini_card.dart';
 
 class FavoriteCollectionSection extends StatefulWidget {
   const FavoriteCollectionSection({
@@ -131,7 +131,8 @@ class _FavoriteCollectionSectionState extends State<FavoriteCollectionSection> {
                 separatorBuilder: (_, __) => const SizedBox(width: 9),
                 itemBuilder: (context, index) {
                   final paper = papers[index];
-                  return _FavoritePaperTile(
+                  return PaperMiniCard(
+                    key: ValueKey('profile-saved-paper-${paper.id}'),
                     paper: paper,
                     onTap: widget.onOpenPaper == null
                         ? null
@@ -183,59 +184,6 @@ class _FavoriteCollectionSectionState extends State<FavoriteCollectionSection> {
         );
         if (confirmed == true) widget.onDeleteGroup?.call(group.id);
     }
-  }
-}
-
-class _FavoritePaperTile extends StatelessWidget {
-  const _FavoritePaperTile({required this.paper, required this.onTap});
-
-  final Paper paper;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      key: ValueKey('profile-saved-paper-${paper.id}'),
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(SparkDesignTokens.radiusLg),
-      child: Container(
-        width: 224,
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(SparkDesignTokens.radiusLg),
-          border: Border.all(color: SparkColors.line),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              paper.title,
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: SparkColors.ink,
-                fontSize: SparkFontSizes.bodySmall,
-                height: 1.3,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            const Spacer(),
-            Text(
-              paper.venue ??
-                  paper.journalReference ??
-                  (paper.source == 'arxiv' ? 'arXiv' : paper.source),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: SparkColors.muted,
-                fontSize: SparkFontSizes.caption,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 }
 

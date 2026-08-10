@@ -5,13 +5,13 @@
 ## 基本信息
 
 - 任务：`UI 设计系统收敛与结构调整（WS1）`
-- 关联发布或里程碑：无（后续 WS2 暗色模式 `feature/dark-mode`、WS3 桌面自适应 `feature/desktop-adaptive` 以本任务为链式基线）
+- 关联发布或里程碑：无（下游 WS2 暗色模式 `feature/dark-mode` 已随本任务之后合入 main；WS3 桌面自适应已由编排者于 2026-08-10 取消）
 - 分支：`refactor/ui-design-tokens`
 - Worktree：`../refactor--ui-design-tokens`
 - 基线提交：`4e44858`
 - 负责人：编排者 Fantasy；执行 Claude Code Agent
-- 状态：开发中
-- 最近更新：`2026-08-10 19:46`
+- 状态：已合并（归档）
+- 最近更新：`2026-08-10 23:45`
 
 ## 目标
 
@@ -26,13 +26,13 @@
 
 ## 验收标准
 
-- [ ] lib 内（community/messages 除外）无 `Color(0x...)` 危险色/遮罩/警告色重复硬编码，语义表面色统一走 SparkColors。
-- [ ] 字号字面量收敛为 `SparkTextStyles` 语义阶梯（tiny10~display24）。
-- [ ] 圆角按语义映射到 `SparkDesignTokens` 档位（pill 99 除外）。
-- [ ] 阅读/网格模式切换通过论文页顶栏按钮完成，底部导航论文 tab 标签固定为「论文」。
-- [ ] profile 横向论文小卡为单一公共组件。
-- [ ] chat 会话主页无网络图依赖，空列表有轻量空态。
-- [ ] `verify_changed_dart_format.ps1`、`flutter analyze`、`flutter test` 全部通过。
+- [x] lib 内（community/messages 除外）无 `Color(0x...)` 危险色/遮罩/警告色重复硬编码，语义表面色统一走 SparkColors。
+- [x] 字号字面量收敛为 `SparkTextStyles` 语义阶梯（tiny10~display24）。
+- [x] 圆角按语义映射到 `SparkDesignTokens` 档位（pill 99 除外）。
+- [x] 阅读/网格模式切换通过论文页顶栏按钮完成，底部导航论文 tab 标签固定为「论文」。
+- [x] profile 横向论文小卡为单一公共组件。
+- [x] chat 会话主页无网络图依赖，空列表有轻量空态。
+- [x] `verify_changed_dart_format.ps1`、`flutter analyze`、`flutter test` 全部通过。
 
 ## 写入范围
 
@@ -90,16 +90,20 @@
 | `tool\verify_changed_dart_format.ps1` | 通过（47 个文件） | 2026-08-10 |
 | `flutter analyze` | 通过，No issues found | 2026-08-10 |
 | `flutter test`（全量） | 通过，395 个用例全绿 | 2026-08-10 |
-| 用户 Windows 实机验收 | 待编排者在 /test 或合并前安排 | - |
+| 用户 Windows 实机验收 | 通过（合并前由编排者实机确认） | 2026-08-10 |
+| main 集成 `flutter analyze --no-pub` | 通过，No issues found | 2026-08-10 |
+| main 集成 `flutter test --no-pub`（全量） | 通过，400 个用例全绿（含 WS2 新增） | 2026-08-10 |
+| `flutter build apk --debug --flavor development --dart-define=SPARK_ENV=development` | 通过；产物 `build/app/outputs/flutter-apk/app-development-debug.apk`，164,808,420 B，SHA-256 `91e41af214d33de77476347ed3d6ec17a1b26fabbd822f59400da63f6659af86` | 2026-08-10 |
+| `flutter build windows --debug --dart-define=SPARK_ENV=development` | 通过；产物 `build/windows/x64/runner/Debug/spark.exe`，1,278,976 B，SHA-256 `7c27356b6774a41377fc9e5232f8cebe9a80f074415ababf2b39b6f5574f3214` | 2026-08-10 |
 
 ## 审查结论
 
 > 由 `/review` 填写摘要（阻断项、缺陷、结论）。
 
-- 审查日期：
-- 阻断项：
-- 缺陷：
-- 结论：可合并 / 需修复 / 需重新审查
+- 审查日期：2026-08-10
+- 阻断项：无
+- 缺陷：无
+- 结论：可合并（相对 merge-base 改动全部在写入范围内；与 main 并行推进的中文提交规范文档零重叠，合并无冲突）
 
 ## 检查点与提交
 
@@ -118,15 +122,15 @@
 
 ### 交付摘要
 
-说明用户可以观察到的结果，以及与原计划是否一致。
+用户可观察：全库视觉令牌统一（语义色、字号阶梯、圆角与间距刻度），界面观感一致；阅读/网格切换入口固定在论文页顶栏，底部导航标签固定为「论文」；chat 会话主页头像不再依赖网络图，空列表有空态提示。与原计划一致，无范围偏差。
 
 ### 实际变更
 
-- 领域与业务逻辑：
-- 数据与基础设施：
-- 界面与交互：
-- 测试与工具：
-- 文档：
+- 领域与业务逻辑：无（纯展示层收敛）。
+- 数据与基础设施：无。
+- 界面与交互：SparkColors 增补语义色、新建 SparkFontSizes 字号阶梯、圆角/间距对齐 SparkDesignTokens；新增 PaperMiniCard 公共组件；模式切换入口迁移；chat 头像本地化与空态。
+- 测试与工具：ui_preview 测试断言随入口迁移更新。
+- 文档：本台账。
 
 ### 兼容性与迁移
 
@@ -137,15 +141,15 @@
 ### 已知风险与回滚
 
 - 已知风险：无
-- 回滚方式：说明需要 revert 的提交及数据影响。
+- 回滚方式：`git revert -m 1 1fbcf5f`（合并提交），无数据影响。
 
 ### 文档更新建议
 
-- 需要编排者更新的开发计划；若关联发布，再列出发布资料更新建议。
+- `docs/development.md` §2.3 补充主题与设计令牌能力（已在合并归档提交中同步）。
 
 ### 未完成与后续工作
 
-- 无；如有，写明后续方向和依赖。
+- WS2 暗色模式（已随本任务之后合入 main）；WS3 桌面自适应已由编排者取消；约 106 个 short-style 遗留文件的全库 dart format 重排由编排者批准后在 main 单独执行。
 
 ## 合并归档（合并后在 main 补齐）
 
@@ -153,9 +157,9 @@
 
 - 最终状态：已合并
 - 合入分支：`main`
-- 最终集成提交：`<merge-sha-or-fast-forward-tip>`
-- Pull Request：无 / `<url-or-number>`
-- 合并时间：`YYYY-MM-DD HH:mm`
-- main 集成验证：`<commands-and-results>`
-- 开发计划更新：`<updated-sections-or-not-applicable-with-reason>`
-- 最终后续项：无 / `<remaining-work>`
+- 最终集成提交：`1fbcf5f`（合并提交）
+- Pull Request：无（本地 merge）
+- 合并时间：`2026-08-10 23:30`
+- main 集成验证：`flutter analyze --no-pub` No issues；`flutter test --no-pub` 400 用例全绿；development APK 与 Windows debug EXE 双构建成功（产物路径、大小、SHA-256 见「验证记录」）
+- 开发计划更新：`docs/development.md` §2.3（主题外观与设计令牌能力）
+- 最终后续项：WS2 已合并（`e6ba856`）；WS3 取消；全库 dart format 重排待执行

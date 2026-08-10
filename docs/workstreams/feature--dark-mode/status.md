@@ -10,8 +10,8 @@
 - Worktree：`../feature--dark-mode`
 - 基线提交：`e1459d2`（WS1 分支头）
 - 负责人：编排者 Fantasy；执行 Claude Code Agent
-- 状态：开发完成（用户实机验收已通过，待编排者触发 /test → /review → /finish）
-- 最近更新：`2026-08-10 23:18`
+- 状态：已合并（归档）
+- 最近更新：`2026-08-10 23:45`
 
 ## 目标
 
@@ -102,15 +102,19 @@
 | `flutter test`（全量） | 通过，400 个用例全绿（395 既有 + 5 新增） | 2026-08-10 |
 | `flutter test test/paper_ai_composer_test.dart`（ebf17c5/6661d3c/9e83562 验收修复定向） | 通过，6 例全绿；`spark_theme_test` 6 例全绿 | 2026-08-10 |
 | 用户 Windows 实机验收亮/暗切换 | 通过（含三处验收修复后的复核） | 2026-08-10 |
+| main 集成 `flutter analyze --no-pub` | 通过，No issues found | 2026-08-10 |
+| main 集成 `flutter test --no-pub`（全量） | 通过，400 个用例全绿 | 2026-08-10 |
+| `flutter build apk --debug --flavor development --dart-define=SPARK_ENV=development` | 通过；产物 `build/app/outputs/flutter-apk/app-development-debug.apk`，164,808,420 B，SHA-256 `91e41af214d33de77476347ed3d6ec17a1b26fabbd822f59400da63f6659af86` | 2026-08-10 |
+| `flutter build windows --debug --dart-define=SPARK_ENV=development` | 通过；产物 `build/windows/x64/runner/Debug/spark.exe`，1,278,976 B，SHA-256 `7c27356b6774a41377fc9e5232f8cebe9a80f074415ababf2b39b6f5574f3214` | 2026-08-10 |
 
 ## 审查结论
 
 > 由 `/review` 填写摘要（阻断项、缺陷、结论）。
 
-- 审查日期：
-- 阻断项：
-- 缺陷：
-- 结论：可合并 / 需修复 / 需重新审查
+- 审查日期：2026-08-10
+- 阻断项：无
+- 缺陷：无（用户实机验收发现的三处视觉问题已在合并前修复并复核通过：ebf17c5、6661d3c、9e83562）
+- 结论：可合并（改动全部在写入范围内；与 main 并行文档改动零重叠，合并无冲突）
 
 ## 检查点与提交
 
@@ -131,15 +135,15 @@
 
 ### 交付摘要
 
-说明用户可以观察到的结果，以及与原计划是否一致。
+用户可观察：主题设置新增「外观」三档（跟随系统/浅色/深色），选择后全应用切换亮/暗主题并持久化，重启保持；暗色下强调色联动派生容器色；splash、论文卡封面渐变等原白底界面随主题变化；ChatPaper 模型头像为内置 DeepSeek 透明底标识。与原计划一致；WS3 桌面自适应已由编排者取消，不构成本任务偏差。
 
 ### 实际变更
 
-- 领域与业务逻辑：
-- 数据与基础设施：
-- 界面与交互：
-- 测试与工具：
-- 文档：
+- 领域与业务逻辑：无。
+- 数据与基础设施：ThemePreferenceRepository（file/in-memory）追加 `mode` 键读写；旧数据缺省视为 system。
+- 界面与交互：新增 SparkPalette（ThemeExtension，light/dark 工厂），SparkColors 改 `of(context)` 门面并迁移全部调用点；SparkTheme.dark() 与 MaterialApp 接线；主题 sheet 外观三档；splash/渐变/杂项白底假设主题感知；PaperAiModelAvatar 内置 DeepSeek 标识。
+- 测试与工具：mode 持久化单测、主题切换 widget 测试、暗色冒烟测试；ThemeController.debugResetForTesting()。
+- 文档：本台账；`assets/images/deepseek_logo.png` 新增并注册。
 
 ### 兼容性与迁移
 
@@ -150,15 +154,15 @@
 ### 已知风险与回滚
 
 - 已知风险：无
-- 回滚方式：说明需要 revert 的提交及数据影响。
+- 回滚方式：`git revert -m 1 e6ba856`（合并提交）；theme 偏好 JSON 中的 `mode` 键被旧版本忽略，无数据影响。
 
 ### 文档更新建议
 
-- 需要编排者更新的开发计划；若关联发布，再列出发布资料更新建议。
+- `docs/development.md` §2.3 补充主题外观三档与暗色能力（已在合并归档提交中同步）。
 
 ### 未完成与后续工作
 
-- 无；如有，写明后续方向和依赖。
+- 约 106 个 short-style 遗留文件的全库 dart format 重排，由编排者批准后在 main 单独执行。
 
 ## 合并归档（合并后在 main 补齐）
 
@@ -166,9 +170,9 @@
 
 - 最终状态：已合并
 - 合入分支：`main`
-- 最终集成提交：`<merge-sha-or-fast-forward-tip>`
-- Pull Request：无 / `<url-or-number>`
-- 合并时间：`YYYY-MM-DD HH:mm`
-- main 集成验证：`<commands-and-results>`
-- 开发计划更新：`<updated-sections-or-not-applicable-with-reason>`
-- 最终后续项：无 / `<remaining-work>`
+- 最终集成提交：`e6ba856`（合并提交）
+- Pull Request：无（本地 merge）
+- 合并时间：`2026-08-10 23:32`
+- main 集成验证：`flutter analyze --no-pub` No issues；`flutter test --no-pub` 400 用例全绿；development APK 与 Windows debug EXE 双构建成功（产物路径、大小、SHA-256 见「验证记录」）
+- 开发计划更新：`docs/development.md` §2.3（主题外观三档、暗色主题与设计令牌能力）
+- 最终后续项：全库 dart format 重排待执行

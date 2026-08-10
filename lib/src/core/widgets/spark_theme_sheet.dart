@@ -6,6 +6,8 @@ import '../theme/spark_font_sizes.dart';
 import '../theme/spark_theme_color.dart';
 import '../theme/spark_theme.dart';
 import '../theme/theme_controller.dart';
+import '../theme/theme_preference_repository.dart';
+import 'spark_segmented_control.dart';
 import 'spark_sheet.dart';
 
 void showSparkThemeSheet(BuildContext context) {
@@ -37,6 +39,25 @@ void showSparkThemeSheet(BuildContext context) {
                 ),
               ),
               const SizedBox(height: 5),
+              Text(
+                '外观',
+                style: TextStyle(
+                  color: SparkColors.of(context).muted,
+                  fontSize: SparkFontSizes.footnote,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 8),
+              ListenableBuilder(
+                listenable: ThemeController.instance,
+                builder: (context, _) => SparkSegmentedControl(
+                  tabs: const ['跟随系统', '浅色', '深色'],
+                  selectedIndex: ThemeController.instance.mode.index,
+                  onSelected: (index) => ThemeController.instance
+                      .setMode(AppThemeMode.values[index]),
+                ),
+              ),
+              const SizedBox(height: 18),
               Text(
                 '强调色',
                 style: TextStyle(

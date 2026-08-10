@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/theme/spark_design_tokens.dart';
 import '../../../../core/theme/spark_font_sizes.dart';
 import '../../../../core/theme/spark_theme.dart';
 import '../../../../core/widgets/topic_chip.dart';
@@ -20,7 +21,7 @@ class PaperRelatedPapers extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.only(bottom: SparkDesignTokens.space3),
       children: [
         if (papers.isEmpty)
           const Padding(

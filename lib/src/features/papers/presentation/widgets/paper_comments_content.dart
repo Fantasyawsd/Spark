@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/theme/spark_design_tokens.dart';
 import '../../../../core/theme/spark_font_sizes.dart';
 import '../../../../core/theme/spark_theme.dart';
 import '../../../../core/widgets/spark_entry_animation.dart';
@@ -27,7 +28,11 @@ class PaperCommentsContent extends StatelessWidget {
   Widget build(BuildContext context) {
     final roots = comments.where((comment) => comment.parentId == null);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+      padding: const EdgeInsets.fromLTRB(
+          SparkDesignTokens.space4,
+          SparkDesignTokens.space1,
+          SparkDesignTokens.space4,
+          SparkDesignTokens.space4),
       child: Column(
         children: [
           for (final comment in roots) ...[
@@ -93,7 +98,9 @@ class _CommentTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: compact ? 8 : 12),
+      padding: EdgeInsets.symmetric(
+          vertical:
+              compact ? SparkDesignTokens.space2 : SparkDesignTokens.space3),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

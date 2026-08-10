@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/theme/spark_design_tokens.dart';
 import '../../../../core/theme/spark_font_sizes.dart';
 import '../../../../core/theme/spark_theme.dart';
 import '../../domain/arxiv_subject_catalog.dart';
@@ -112,7 +113,11 @@ class _PaperChannelManagerSheetState extends State<PaperChannelManagerSheet> {
                         children: [
                           SingleChildScrollView(
                             key: const ValueKey('paper-channel-subject-page'),
-                            padding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
+                            padding: const EdgeInsets.fromLTRB(
+                                SparkDesignTokens.space5,
+                                SparkDesignTokens.space1,
+                                SparkDesignTokens.space5,
+                                SparkDesignTokens.space5),
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -132,8 +137,11 @@ class _PaperChannelManagerSheetState extends State<PaperChannelManagerSheet> {
                               key: const ValueKey(
                                 'paper-channel-conference-page',
                               ),
-                              padding:
-                                  const EdgeInsets.fromLTRB(20, 16, 20, 20),
+                              padding: const EdgeInsets.fromLTRB(
+                                  SparkDesignTokens.space5,
+                                  SparkDesignTokens.space4,
+                                  SparkDesignTokens.space5,
+                                  SparkDesignTokens.space5),
                               child: const Column(
                                 mainAxisSize: MainAxisSize.min,
                                 crossAxisAlignment: CrossAxisAlignment.start,

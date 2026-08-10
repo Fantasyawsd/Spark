@@ -132,7 +132,11 @@ class _PaperFavoriteGroupSheetState extends State<_PaperFavoriteGroupSheet> {
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                padding: const EdgeInsets.fromLTRB(
+                    SparkDesignTokens.space4,
+                    SparkDesignTokens.space2,
+                    SparkDesignTokens.space4,
+                    SparkDesignTokens.space4),
                 child: SizedBox(
                   width: double.infinity,
                   child: OutlinedButton.icon(

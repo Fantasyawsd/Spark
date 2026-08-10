@@ -126,7 +126,8 @@ class PaperActionBar extends StatelessWidget {
                   PopupMenuItem(
                     value: _PaperMoreAction.read,
                     height: 46,
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: SparkDesignTokens.space2),
                     child: _PaperMoreMenuItem(
                       icon: read
                           ? Icons.mark_email_unread_outlined
@@ -137,7 +138,8 @@ class PaperActionBar extends StatelessWidget {
                   PopupMenuItem(
                     value: _PaperMoreAction.readLater,
                     height: 46,
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: SparkDesignTokens.space2),
                     child: _PaperMoreMenuItem(
                       icon: readLater
                           ? Icons.playlist_remove_rounded

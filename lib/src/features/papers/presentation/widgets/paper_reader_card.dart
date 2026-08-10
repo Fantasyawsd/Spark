@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/motion/motion_tokens.dart';
 import '../../../../core/platform/spark_clipboard.dart';
+import '../../../../core/theme/spark_design_tokens.dart';
 import '../../../../core/theme/spark_font_sizes.dart';
 import '../../../../core/theme/spark_theme.dart';
 import '../../../../core/widgets/spark_segmented_control.dart';
@@ -463,7 +464,7 @@ class _KeywordContent extends StatelessWidget {
         ),
         if (error != null)
           Padding(
-            padding: const EdgeInsets.only(bottom: 8),
+            padding: const EdgeInsets.only(bottom: SparkDesignTokens.space2),
             child: Text(
               error!,
               style: const TextStyle(
@@ -541,7 +542,7 @@ class _ReaderEmptyState extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(SparkDesignTokens.space6),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -579,7 +580,8 @@ class _AiInterpretButton extends StatelessWidget {
         backgroundColor: SparkColors.primary,
         foregroundColor: Colors.white,
         minimumSize: const Size(0, 34),
-        padding: const EdgeInsets.symmetric(horizontal: 12),
+        padding:
+            const EdgeInsets.symmetric(horizontal: SparkDesignTokens.space3),
         visualDensity: VisualDensity.compact,
         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
       ),

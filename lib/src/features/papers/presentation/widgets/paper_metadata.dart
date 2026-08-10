@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/theme/spark_design_tokens.dart';
 import '../../../../core/theme/spark_font_sizes.dart';
 import '../../../../core/theme/spark_theme.dart';
 import '../../domain/paper.dart';
@@ -52,7 +53,8 @@ class PaperMetadata extends StatelessWidget {
                       : SparkColors.line,
                 ),
                 minimumSize: const Size(0, 30),
-                padding: const EdgeInsets.symmetric(horizontal: 8),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: SparkDesignTokens.space2),
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 visualDensity: VisualDensity.compact,
               ),

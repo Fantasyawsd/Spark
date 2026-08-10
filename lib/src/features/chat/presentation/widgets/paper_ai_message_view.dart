@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/platform/spark_clipboard.dart';
+import '../../../../core/theme/spark_design_tokens.dart';
 import '../../../../core/theme/spark_font_sizes.dart';
 import '../../../../core/widgets/spark_markdown.dart';
 import '../../domain/chat_message.dart';
@@ -114,7 +115,8 @@ class _UserMessage extends StatelessWidget {
                     const EdgeInsets.symmetric(horizontal: 15, vertical: 9),
                 decoration: BoxDecoration(
                   color: PaperAiUiTokens.userBubble(context),
-                  borderRadius: BorderRadius.circular(18),
+                  borderRadius:
+                      BorderRadius.circular(SparkDesignTokens.radius2Xl),
                 ),
                 child: SparkMarkdown(
                   data: message.content,
@@ -285,11 +287,11 @@ class _SelectableMessage extends StatelessWidget {
                 selected ? PaperAiUiTokens.accent(context) : Colors.transparent,
             width: 1.2,
           ),
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(SparkDesignTokens.radius2Xl),
         ),
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(SparkDesignTokens.radiusLg),
           child: Stack(
             children: [
               child,
@@ -414,7 +416,8 @@ class _MessageActionRow extends StatelessWidget {
       context: context,
       backgroundColor: PaperAiUiTokens.canvas(context),
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
+        borderRadius: BorderRadius.vertical(
+            top: Radius.circular(SparkDesignTokens.radius3Xl)),
       ),
       clipBehavior: Clip.antiAlias,
       showDragHandle: true,
@@ -531,7 +534,7 @@ class _ReasoningPanelState extends State<_ReasoningPanel> {
       margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
         color: PaperAiUiTokens.assistantReasoning(context),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(SparkDesignTokens.radiusXl),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -539,7 +542,7 @@ class _ReasoningPanelState extends State<_ReasoningPanel> {
           InkWell(
             key: const ValueKey('paper-ai-reasoning-toggle'),
             onTap: () => setState(() => _expanded = !_expanded),
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(SparkDesignTokens.radiusXl),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
               child: Row(
@@ -705,7 +708,7 @@ class _SourcesPanelState extends State<_SourcesPanel> {
         color: PaperAiUiTokens.assistantReasoning(
           context,
         ).withValues(alpha: 0.64),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(SparkDesignTokens.radiusXl),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -713,7 +716,7 @@ class _SourcesPanelState extends State<_SourcesPanel> {
           InkWell(
             key: const ValueKey('paper-ai-sources-toggle'),
             onTap: () => setState(() => _expanded = !_expanded),
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(SparkDesignTokens.radiusLg),
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 2),
               child: Row(
@@ -812,7 +815,7 @@ class _SourceRow extends StatelessWidget {
         child: InkWell(
           key: ValueKey('paper-ai-source-$index'),
           onTap: uri == null ? null : () => _open(context, uri),
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(SparkDesignTokens.radiusLg),
           child: Padding(
             padding: const EdgeInsets.only(bottom: 7, top: 2),
             child: Row(
@@ -824,7 +827,8 @@ class _SourceRow extends StatelessWidget {
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
                     color: PaperAiUiTokens.canvas(context),
-                    borderRadius: BorderRadius.circular(7),
+                    borderRadius:
+                        BorderRadius.circular(SparkDesignTokens.radiusSm),
                   ),
                   child: Text(
                     '$index',

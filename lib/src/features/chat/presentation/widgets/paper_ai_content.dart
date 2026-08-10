@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/theme/spark_design_tokens.dart';
 import '../../../../core/theme/spark_font_sizes.dart';
 import '../../../../core/widgets/spark_entry_animation.dart';
 import '../../application/chat_conversation_controller.dart';
@@ -359,7 +360,7 @@ class _OutlineEmptyState extends StatelessWidget {
         color: PaperAiUiTokens.assistantReasoning(
           context,
         ).withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(SparkDesignTokens.radius2Xl),
       ),
       child: Text(
         '发送第一条消息后，这里会显示会话大纲。',
@@ -388,7 +389,7 @@ class _AiStoppedMessage extends StatelessWidget {
         color: PaperAiUiTokens.assistantReasoning(
           context,
         ).withValues(alpha: 0.68),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(SparkDesignTokens.radiusXl),
       ),
       child: Row(
         children: [
@@ -479,7 +480,7 @@ class _AiErrorMessage extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(12, 10, 8, 10),
       decoration: BoxDecoration(
         color: PaperAiUiTokens.errorSurface(context),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(SparkDesignTokens.radiusXl),
       ),
       child: Row(
         children: [

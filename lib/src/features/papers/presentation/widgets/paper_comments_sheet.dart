@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/motion/motion_tokens.dart';
+import '../../../../core/theme/spark_design_tokens.dart';
 import '../../../../core/theme/spark_font_sizes.dart';
 import '../../../../core/theme/spark_theme.dart';
 import '../../../../core/widgets/spark_sheet.dart';
@@ -119,7 +120,8 @@ class _PaperCommentsSheetState extends State<_PaperCommentsSheet> {
       clipBehavior: Clip.antiAlias,
       decoration: const BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        borderRadius: BorderRadius.vertical(
+            top: Radius.circular(SparkDesignTokens.radius3Xl)),
       ),
       child: Column(
         children: [

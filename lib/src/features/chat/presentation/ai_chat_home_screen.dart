@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/theme/spark_design_tokens.dart';
 import '../../../core/theme/spark_font_sizes.dart';
 import '../application/chat_session_controller.dart';
 import '../domain/chat_session_repository.dart';
@@ -197,11 +198,11 @@ class _AiSessionList extends StatelessWidget {
           onDelete: () => onDelete(entry),
           child: Material(
             color: Theme.of(context).colorScheme.surface,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(SparkDesignTokens.radius2Xl),
             child: InkWell(
               key: ValueKey('ai-session-$contextId'),
               onTap: () => onOpen(entry),
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(SparkDesignTokens.radius2Xl),
               child: Padding(
                 padding: const EdgeInsets.all(13),
                 child: Row(
@@ -318,11 +319,11 @@ class _MainAiChatCard extends StatelessWidget {
     final preview = currentSession?.preview.trim();
     return Material(
       color: Theme.of(context).colorScheme.primaryContainer,
-      borderRadius: BorderRadius.circular(18),
+      borderRadius: BorderRadius.circular(SparkDesignTokens.radius2Xl),
       child: InkWell(
         key: const ValueKey('main-ai-chat'),
         onTap: onTap,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(SparkDesignTokens.radius2Xl),
         child: Padding(
           padding: const EdgeInsets.all(13),
           child: Row(

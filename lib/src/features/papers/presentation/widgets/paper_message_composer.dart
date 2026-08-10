@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/theme/spark_design_tokens.dart';
 import '../../../../core/theme/spark_font_sizes.dart';
 import '../../../../core/theme/spark_theme.dart';
 
@@ -103,7 +104,8 @@ class PaperMessageComposer extends StatelessWidget {
                 vertical: 12,
               ),
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(24),
+                borderRadius:
+                    BorderRadius.circular(SparkDesignTokens.radius3Xl),
                 borderSide: BorderSide.none,
               ),
             ),

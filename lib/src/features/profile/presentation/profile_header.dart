@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/theme/spark_design_tokens.dart';
 import '../../../core/theme/spark_font_sizes.dart';
 import '../../../core/theme/spark_theme.dart';
 import '../../../core/widgets/spark_theme_sheet.dart';
@@ -98,7 +99,7 @@ class _ProfileStat extends StatelessWidget {
         color: Colors.transparent,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(SparkDesignTokens.radiusLg),
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 4),
             child: Column(

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/theme/spark_design_tokens.dart';
 import '../../../../core/theme/spark_font_sizes.dart';
 import '../../../../core/theme/spark_theme.dart';
 import '../../../../core/widgets/topic_chip.dart';
@@ -38,7 +39,7 @@ class PaperGridCard extends StatelessWidget {
         clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(17),
+          borderRadius: BorderRadius.circular(SparkDesignTokens.radius2Xl),
           border: Border.all(color: SparkColors.line),
           boxShadow: const [
             BoxShadow(

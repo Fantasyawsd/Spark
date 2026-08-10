@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../../core/theme/spark_design_tokens.dart';
 import '../../../core/theme/spark_font_sizes.dart';
 import '../../../core/theme/spark_theme.dart';
 import '../../../core/widgets/spark_sheet.dart';
@@ -32,7 +33,8 @@ class LocalDataSheet extends StatelessWidget {
       heightFactor: 0.72,
       child: Material(
         color: Colors.white,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: const BorderRadius.vertical(
+            top: Radius.circular(SparkDesignTokens.radius3Xl)),
         clipBehavior: Clip.antiAlias,
         child: SafeArea(
           top: false,
@@ -185,7 +187,7 @@ class _UsageSummary extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         color: SparkColors.canvas,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(SparkDesignTokens.radiusMd),
         border: Border.all(color: SparkColors.line),
       ),
       child: Padding(

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/theme/spark_design_tokens.dart';
 import '../../../../core/theme/spark_font_sizes.dart';
 import '../../domain/chat_ai_service.dart';
 import '../paper_ai_ui_tokens.dart';
@@ -153,10 +154,13 @@ class _PaperAiComposerState extends State<PaperAiComposer> {
                 decoration: BoxDecoration(
                   color: PaperAiUiTokens.composer(context),
                   borderRadius: BorderRadius.only(
-                    topLeft: const Radius.circular(22),
-                    topRight: const Radius.circular(22),
-                    bottomLeft: Radius.circular(keyboardVisible ? 0 : 22),
-                    bottomRight: Radius.circular(keyboardVisible ? 0 : 22),
+                    topLeft: const Radius.circular(SparkDesignTokens.radius3Xl),
+                    topRight:
+                        const Radius.circular(SparkDesignTokens.radius3Xl),
+                    bottomLeft: Radius.circular(
+                        keyboardVisible ? 0 : SparkDesignTokens.radius3Xl),
+                    bottomRight: Radius.circular(
+                        keyboardVisible ? 0 : SparkDesignTokens.radius3Xl),
                   ),
                   border: Border.all(
                     color: PaperAiUiTokens.composerBorder(context),
@@ -264,7 +268,8 @@ class _PaperAiComposerState extends State<PaperAiComposer> {
       context: context,
       backgroundColor: PaperAiUiTokens.canvas(context),
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
+        borderRadius: BorderRadius.vertical(
+            top: Radius.circular(SparkDesignTokens.radius3Xl)),
       ),
       clipBehavior: Clip.antiAlias,
       showDragHandle: true,
@@ -277,7 +282,7 @@ class _PaperAiComposerState extends State<PaperAiComposer> {
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
               color: PaperAiUiTokens.assistantReasoning(context),
-              borderRadius: BorderRadius.circular(18),
+              borderRadius: BorderRadius.circular(SparkDesignTokens.radius2Xl),
             ),
             child: Row(
               children: [

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/motion/motion_tokens.dart';
+import '../../../../core/theme/spark_design_tokens.dart';
 import '../../../../core/theme/spark_font_sizes.dart';
 import '../../../../core/theme/spark_theme.dart';
 import '../../domain/paper.dart';
@@ -105,7 +106,8 @@ class PaperActionBar extends StatelessWidget {
                 offset: const Offset(0, -4),
                 constraints: const BoxConstraints.tightFor(width: 174),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius:
+                      BorderRadius.circular(SparkDesignTokens.radiusXl),
                 ),
                 icon: const Icon(
                   Icons.more_horiz_rounded,
@@ -170,7 +172,7 @@ class _PaperMoreMenuItem extends StatelessWidget {
           height: 32,
           decoration: BoxDecoration(
             color: SparkColors.canvas,
-            borderRadius: BorderRadius.circular(9),
+            borderRadius: BorderRadius.circular(SparkDesignTokens.radiusMd),
           ),
           child: Icon(icon, size: 18, color: SparkColors.ink),
         ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/theme/spark_design_tokens.dart';
 import '../../../core/theme/spark_font_sizes.dart';
 import '../../../core/theme/spark_theme.dart';
 import '../../papers/papers.dart';
@@ -143,15 +144,15 @@ class _ShelfPaperRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: Colors.white,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(SparkDesignTokens.radiusLg),
       child: InkWell(
         key: ValueKey('paper-shelf-row-${paper.id}'),
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(SparkDesignTokens.radiusLg),
         child: Container(
           padding: const EdgeInsets.all(13),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(SparkDesignTokens.radiusLg),
             border: Border.all(color: SparkColors.line),
           ),
           child: Column(

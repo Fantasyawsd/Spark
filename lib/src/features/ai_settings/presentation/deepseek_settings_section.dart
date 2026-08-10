@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/theme/spark_design_tokens.dart';
 import '../../../core/theme/spark_font_sizes.dart';
 import '../../../core/theme/spark_theme.dart';
 import '../../../core/widgets/spark_sheet.dart';
@@ -30,7 +31,8 @@ class DeepSeekSettingsSection extends StatelessWidget {
                 decoration: BoxDecoration(
                   color:
                       configured ? SparkColors.primarySoft : SparkColors.canvas,
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius:
+                      BorderRadius.circular(SparkDesignTokens.radiusMd),
                 ),
                 child: Icon(
                   Icons.key_rounded,
@@ -124,7 +126,8 @@ class _DeepSeekCredentialSheetState extends State<_DeepSeekCredentialSheet> {
     final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
     return Material(
       color: Colors.white,
-      borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+      borderRadius: const BorderRadius.vertical(
+          top: Radius.circular(SparkDesignTokens.radius3Xl)),
       child: Padding(
         padding: EdgeInsets.fromLTRB(20, 0, 20, 20 + bottomInset),
         child: ListenableBuilder(

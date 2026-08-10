@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../../core/theme/spark_design_tokens.dart';
 import '../../../core/theme/spark_font_sizes.dart';
 import '../../../core/theme/spark_theme.dart';
 import '../../papers/papers.dart';
@@ -173,7 +174,8 @@ class _SearchHeader extends StatelessWidget {
                 fillColor: SparkColors.surfaceMuted,
                 contentPadding: const EdgeInsets.symmetric(vertical: 10),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius:
+                      BorderRadius.circular(SparkDesignTokens.radiusMd),
                   borderSide: BorderSide.none,
                 ),
               ),

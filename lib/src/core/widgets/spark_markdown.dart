@@ -5,6 +5,7 @@ import 'package:flutter_math_fork/flutter_math.dart';
 import 'package:markdown/markdown.dart' as md;
 
 import '../platform/spark_clipboard.dart';
+import '../theme/spark_design_tokens.dart';
 import '../theme/spark_font_sizes.dart';
 import '../theme/spark_theme.dart';
 
@@ -306,7 +307,7 @@ class _MarkdownCodeBlock extends StatelessWidget {
       margin: const EdgeInsets.symmetric(vertical: 7),
       decoration: BoxDecoration(
         color: const Color(0xFF172033),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(SparkDesignTokens.radiusLg),
       ),
       clipBehavior: Clip.antiAlias,
       child: Column(
@@ -378,7 +379,8 @@ MarkdownStyleSheet paperReaderMarkdownStyle() {
     codeblockPadding: const EdgeInsets.all(12),
     codeblockDecoration: BoxDecoration(
       color: Color(0xFF172033),
-      borderRadius: BorderRadius.all(Radius.circular(12)),
+      borderRadius:
+          BorderRadius.all(Radius.circular(SparkDesignTokens.radiusLg)),
     ),
     blockSpacing: 7,
     listIndent: 20,
@@ -413,7 +415,8 @@ MarkdownStyleSheet sparkMarkdownStyle({
     codeblockPadding: const EdgeInsets.all(12),
     codeblockDecoration: BoxDecoration(
       color: Color(0xFF172033),
-      borderRadius: BorderRadius.all(Radius.circular(12)),
+      borderRadius:
+          BorderRadius.all(Radius.circular(SparkDesignTokens.radiusLg)),
     ),
     blockSpacing: reasoning ? 4 : 9,
     listIndent: reasoning ? 16 : 20,

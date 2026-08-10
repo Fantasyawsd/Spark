@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/theme/spark_design_tokens.dart';
 import '../../../../core/theme/spark_font_sizes.dart';
 import '../../../../core/theme/spark_theme.dart';
 import '../../../../core/widgets/spark_sheet.dart';
@@ -61,7 +62,8 @@ class _PaperFavoriteGroupSheetState extends State<_PaperFavoriteGroupSheet> {
     final groups = widget.controller.favoriteGroups;
     return Material(
       color: Colors.white,
-      borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+      borderRadius: const BorderRadius.vertical(
+          top: Radius.circular(SparkDesignTokens.radius3Xl)),
       clipBehavior: Clip.antiAlias,
       child: SafeArea(
         top: false,

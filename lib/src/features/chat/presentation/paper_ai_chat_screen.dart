@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/theme/spark_design_tokens.dart';
 import '../../../core/theme/spark_font_sizes.dart';
 import '../application/chat_skills.dart';
 import '../application/chat_conversation_controller.dart';
@@ -549,7 +550,7 @@ class _MessageSelectionBar extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
           decoration: BoxDecoration(
             color: PaperAiUiTokens.composer(context),
-            borderRadius: BorderRadius.circular(22),
+            borderRadius: BorderRadius.circular(SparkDesignTokens.radius3Xl),
             border: Border.all(color: PaperAiUiTokens.composerBorder(context)),
           ),
           child: Row(

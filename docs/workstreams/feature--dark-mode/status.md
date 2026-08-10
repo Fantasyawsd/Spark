@@ -5,13 +5,13 @@
 ## 基本信息
 
 - 任务：`暗色模式（WS2）`
-- 关联发布或里程碑：无（上游 WS1 `refactor/ui-design-tokens` 已完成；下游 WS3 桌面自适应 `feature/desktop-adaptive` 以本任务为基线）
+- 关联发布或里程碑：无（上游 WS1 `refactor/ui-design-tokens` 已完成；下游 WS3 桌面自适应已由编排者于 2026-08-10 取消，不再以本任务为基线）
 - 分支：`feature/dark-mode`
 - Worktree：`../feature--dark-mode`
 - 基线提交：`e1459d2`（WS1 分支头）
 - 负责人：编排者 Fantasy；执行 Claude Code Agent
-- 状态：开发中（待用户实机验收）
-- 最近更新：`2026-08-10 22:20`
+- 状态：开发完成（用户实机验收已通过，待编排者触发 /test → /review → /finish）
+- 最近更新：`2026-08-10 23:18`
 
 ## 目标
 
@@ -36,7 +36,7 @@
 - [x] 主题设置 sheet 强调色上方有「外观」三档（跟随系统/浅色/深色）。
 - [x] splash 白底与 `paper_grid_card.dart` 封面渐变基色改为主题感知。
 - [x] `verify_changed_dart_format.ps1`、`flutter analyze`、`flutter test` 全部通过，含新增 mode 持久化单测、sheet widget 测试、暗色冒烟测试。
-- [ ] 用户 Windows 实机验收亮/暗切换。
+- [x] 用户 Windows 实机验收亮/暗切换（2026-08-10 通过；验收中修复三处：强调色选中态白底块 ebf17c5、模型头像改内置 DeepSeek 标识 6661d3c、头像去圆形底色 9e83562）。
 
 ## 写入范围
 
@@ -70,9 +70,9 @@
 
 ## 当前进度
 
-- 已完成：C1 SparkPalette 与全量迁移（1745e84）、C2 mode 持久化 + controller + dark() + MaterialApp 接线（ad4201c）、C3 主题 sheet 外观三档（d33ec18）、C4 splash/渐变/杂项主题感知（b6d466b）、C5 测试（698855e）、完整验证门禁（format 63 文件、analyze、test 400 全绿）。
-- 正在进行：等待用户 Windows 实机验收亮/暗切换（`flutter run -d windows`）。
-- 下一步：用户验收后由编排者触发 /test → /review → /finish；WS3 桌面自适应以本分支头为基线另行建流。
+- 已完成：C1 SparkPalette 与全量迁移（1745e84）、C2 mode 持久化 + controller + dark() + MaterialApp 接线（ad4201c）、C3 主题 sheet 外观三档（d33ec18）、C4 splash/渐变/杂项主题感知（b6d466b）、C5 测试（698855e）、完整验证门禁（format 64 文件、analyze、test 400 全绿）、用户 Windows 实机验收（含三处验收修复 ebf17c5 / 6661d3c / 9e83562）。
+- 正在进行：无（本任务开发范围内工作已全部完成）。
+- 下一步：由编排者触发 /test → /review → /finish 合入 main；WS3 桌面自适应已取消，无下游任务。
 - 阻塞项：无
 
 ## 决策记录
@@ -87,6 +87,9 @@
 | 2026-08-10 | FileThemePreferenceRepository 读-改-写单键；schema 校验 color/mode 双键可选 | 两键共存同一 JSON，旧数据无 mode 键视为 system | 存量数据零迁移 |
 | 2026-08-10 | SparkTheme 抽 _themeData(palette, brightness) 共享构建体，dark()/light() 委托 | 防止亮暗两套主题定义漂移 | 暗色差异点（secondary 派生、onError、shadow/scrim、surfaceContainer、SnackBar、弹窗阴影）集中 isDark 三元 |
 | 2026-08-10 | ThemeController 新增 debugResetForTesting() 处理 testWidgets 跨用例挂起 | 用例在 FakeAsync 中 setColor/setMode 后，写队列 Future 的完成 microtask 可能随 FakeAsync 丢弃而永不派送，下一用例真实事件循环 await flushPendingWrites 即挂起（两个 sheet 用例连跑时必现） | widget 测试 setUp 先重置单例；paper_ai_mobile_chat_ui_test 等直接 setColor 的既有用例目前未踩坑，保持不动，未来可用同一辅助方法 |
+| 2026-08-10 | 主题 sheet 强调色选中态的浅色底改由 palette.primaryPale/primarySoft 派生（ebf17c5） | 用户实机验收发现暗色下选中项仍是亮色白底块 | 选中态容器色随亮暗主题联动 |
+| 2026-08-10 | 模型头像使用内置 DeepSeek 标识且透明底、无圆形底色（6661d3c、9e83562） | 用户要求头像为模型提供方标识且背景透明；本地资源无网络依赖 | PaperAiModelAvatar 直接渲染 assets/images/deepseek_logo.png，尺寸契约不变 |
+| 2026-08-10 | WS3 桌面自适应取消 | 编排者决定不做 | 本任务无下游工作流，验收通过后直接进入 /test → /review → /finish |
 
 ## 验证记录
 
@@ -94,10 +97,11 @@
 
 | 命令或人工检查 | 结果 | 日期 |
 | --- | --- | --- |
-| `tool\verify_changed_dart_format.ps1` | 通过（63 个文件） | 2026-08-10 |
+| `tool\verify_changed_dart_format.ps1` | 通过（64 个文件） | 2026-08-10 |
 | `flutter analyze` | 通过，No issues found | 2026-08-10 |
 | `flutter test`（全量） | 通过，400 个用例全绿（395 既有 + 5 新增） | 2026-08-10 |
-| 用户 Windows 实机验收亮/暗切换 | 待用户验收 | - |
+| `flutter test test/paper_ai_composer_test.dart`（ebf17c5/6661d3c/9e83562 验收修复定向） | 通过，6 例全绿；`spark_theme_test` 6 例全绿 | 2026-08-10 |
+| 用户 Windows 实机验收亮/暗切换 | 通过（含三处验收修复后的复核） | 2026-08-10 |
 
 ## 审查结论
 
@@ -118,6 +122,10 @@
 | d33ec18 | 新增（core）：主题设置增加外观模式三档 | C3 | analyze 通过、sheet 既有 widget 测试通过 |
 | b6d466b | 修复（core）：表面白底假设改为主题感知 | C4 | analyze 通过、flutter test 395 全绿 |
 | 698855e | 测试（core）：外观模式持久化、主题切换与暗色冒烟用例 | C5 | format 63 文件、analyze、flutter test 400 全绿 |
+| 9a2f83e | 文档：归档 dark-mode 台账（门禁全过，待实机验收） | 台账中期归档 | - |
+| ebf17c5 | 修复（core）：主题 sheet 强调色选中态改为主题感知 | 验收修复① | analyze 通过、spark_theme_test 6 例全绿 |
+| 6661d3c | 修复（ChatPaper）：模型头像改为内置 DeepSeek 标识 | 验收修复② | analyze 通过、paper_ai_composer_test 6 例全绿 |
+| 9e83562 | 修复（聊天）：模型头像去除圆形底色 | 验收修复③ | format 64 文件、analyze 全量 No issues、flutter test 400 全绿、用户复核通过 |
 
 ## 交付准备（合并前收集）
 

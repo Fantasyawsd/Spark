@@ -51,6 +51,42 @@ void main() {
     expect(await repository().load(), SparkThemeColor.purple);
   });
 
+  test('persists and reloads the selected theme mode', () async {
+    final repository = InMemoryThemePreferenceRepository();
+    final controller = ThemeController.instance;
+    await controller.configure(repository);
+
+    controller.setMode(AppThemeMode.dark);
+    await controller.flushPendingWrites();
+    await controller.configure(InMemoryThemePreferenceRepository());
+    await controller.configure(repository);
+    await controller.reload();
+
+    expect(controller.mode, AppThemeMode.dark);
+
+    controller.setMode(AppThemeMode.system);
+    await controller.flushPendingWrites();
+  });
+
+  test('file repository keeps color and mode in one document', () async {
+    final directory = await Directory.systemTemp.createTemp(
+      'spark-theme-',
+    );
+    addTearDown(() => directory.delete(recursive: true));
+    final file = File(
+      '${directory.path}${Platform.pathSeparator}theme.json',
+    );
+    FileThemePreferenceRepository repository() => FileThemePreferenceRepository(
+          store: LocalJsonStore(fileName: 'unused.json', file: file),
+        );
+
+    await repository().save(SparkThemeColor.purple);
+    await repository().saveMode(AppThemeMode.dark);
+
+    expect(await repository().load(), SparkThemeColor.purple);
+    expect(await repository().loadMode(), AppThemeMode.dark);
+  });
+
   test('a failed theme write does not block later changes', () async {
     final repository = _FailsOnceThemePreferenceRepository();
     final controller = ThemeController.instance;

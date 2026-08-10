@@ -5,6 +5,7 @@ import 'package:spark/src/core/theme/in_memory_theme_preference_repository.dart'
 
 void main() {
   setUp(() async {
+    ThemeController.instance.debugResetForTesting();
     await ThemeController.instance.configure(
       InMemoryThemePreferenceRepository(),
     );
@@ -70,5 +71,64 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(ThemeController.instance.color, SparkThemeColor.green);
+  });
+
+  testWidgets('theme sheet switches the appearance mode', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(320, 640));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: SparkTheme.light(),
+        darkTheme: SparkTheme.dark(),
+        home: Builder(
+          builder: (context) => Scaffold(
+            body: Center(
+              child: TextButton(
+                onPressed: () => showSparkThemeSheet(context),
+                child: const Text('打开主题'),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('打开主题'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('外观'), findsOneWidget);
+    await tester.tap(find.text('深色'));
+    await tester.pumpAndSettle();
+
+    expect(ThemeController.instance.mode, AppThemeMode.dark);
+  });
+
+  test('dark theme carries the dark palette', () {
+    final theme = SparkTheme.dark();
+
+    final palette = theme.extension<SparkPalette>()!;
+    expect(palette.canvas, SparkPalette.dark().canvas);
+    expect(theme.scaffoldBackgroundColor, palette.canvas);
+    expect(theme.brightness, Brightness.dark);
+  });
+
+  testWidgets('dark mode paints the scaffold with the dark canvas',
+      (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: SparkTheme.light(),
+        darkTheme: SparkTheme.dark(),
+        themeMode: ThemeMode.dark,
+        home: const Scaffold(body: SizedBox()),
+      ),
+    );
+
+    final context = tester.element(find.byType(Scaffold));
+    expect(Theme.of(context).brightness, Brightness.dark);
+    expect(
+      Theme.of(context).scaffoldBackgroundColor,
+      SparkPalette.dark(ThemeController.instance.color).canvas,
+    );
   });
 }

@@ -122,10 +122,16 @@ class _ThemeColorOption extends StatelessWidget {
             curve: MotionTokens.pageCurve,
             padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 2),
             decoration: BoxDecoration(
-              color: selected ? color.pale : Colors.transparent,
+              // 选中态底/边用当前主题 palette 派生色（选中项即当前强调色），
+              // 暗色下自动获得 blend 变体，而非 SparkThemeColor 的亮色静态值。
+              color: selected
+                  ? SparkColors.of(context).primaryPale
+                  : Colors.transparent,
               borderRadius: BorderRadius.circular(SparkDesignTokens.radiusLg),
               border: Border.all(
-                color: selected ? color.soft : Colors.transparent,
+                color: selected
+                    ? SparkColors.of(context).primarySoft
+                    : Colors.transparent,
               ),
             ),
             child: Column(
@@ -138,7 +144,8 @@ class _ThemeColorOption extends StatelessWidget {
                     color: color.value,
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.9),
+                      color:
+                          SparkColors.of(context).card.withValues(alpha: 0.9),
                       width: 2,
                     ),
                   ),

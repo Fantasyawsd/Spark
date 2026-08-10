@@ -9,11 +9,11 @@
 - 基线提交：`a768f0a4003c7f84a99fb7674c48202961f9d584`
 - 负责人：Fantasy（编排者）；执行：Codex
 - 状态：开发中
-- 最近更新：2026-08-10 22:52
+- 最近更新：2026-08-10 23:19
 
 ## 目标
 
-让 Spark Android 客户端在输入框获取焦点、软键盘弹出或收起时保持流畅，避免昂贵内容区随每个 IME inset 帧重复构建，同时保持现有输入、发送和键盘贴合行为不变。
+让 Spark Android 客户端在输入框获取焦点、软键盘弹出或收起时保持流畅，避免昂贵内容区随每个 IME inset 帧重复构建；键盘出现时由 Android 将整个 Flutter 窗口作为静态画面统一上移，不再只移动或缩放局部面板。
 
 ## 非目标
 
@@ -24,7 +24,8 @@
 ## 验收标准
 
 - [x] 建立可重复的 IME inset 变化反馈环，能在修复前捕获面板追赶键盘与布局放大。
-- [x] 半屏键盘过渡只平移缓存后的面板图层，不再逐帧重排 Markdown/评论内容；全屏态同步 resize 并保持顶部栏可见。
+- [x] Android Activity 使用窗口级平移；Flutter 组件树不再消费 IME bottom inset 做局部移动或缩放。
+- [x] 键盘过渡时评论面板与其背后的页面保持相对位置不变，由系统统一移动整个窗口画面。
 - [x] 评论与 AI 输入、发送、键盘收起以及半屏/全屏交互不回归。
 - [x] 相关 Widget 回归测试、格式检查与 `flutter analyze` 通过。
 - [x] development debug APK 构建成功；Android 真机性能结论如实记录。
@@ -34,6 +35,9 @@
 ### 独占路径
 
 - `lib/src/features/papers/presentation/widgets/paper_comments_sheet.dart`
+- `lib/src/app/spark_app.dart`
+- `android/app/src/main/AndroidManifest.xml`
+- `test/android_keyboard_window_config_test.dart`
 - `test/paper_comments_keyboard_test.dart`
 - `docs/workstreams/fix--android-keyboard-jank/status.md`
 
@@ -55,9 +59,9 @@
 
 ## 当前进度
 
-- 已完成：必读文档、历史 ChatPaper 台账、基线与设备状态核对；建立实际评论面板的 IME 逐帧复现；确认二次 `AnimatedPadding` 是几何滞后根因；实现半屏图层平移与全屏同步 resize；新增回归测试；格式、定向测试、静态分析、全量测试和 Android development APK 构建通过。
-- 正在进行：本轮 `/develop` 最小闭环已提交，等待 Android 真机验收或编排者触发 `/test`。
-- 下一步：由编排者在 Android 真机安装 APK，复核键盘弹出/收起的 UI/Raster 帧时间与体感；之后按需触发 `/test`。
+- 已完成：必读文档、历史 ChatPaper 台账、基线与设备状态核对；建立实际评论面板的 IME 逐帧复现；第一轮移除二次动画后由编排者真机确认卡顿改善；第二轮根据反馈改为 Android 窗口级 `adjustPan`，Flutter Android 组件树不再消费 IME bottom inset；定向测试、格式、静态分析、401 项全量测试和 development APK 构建通过。
+- 正在进行：本轮 `/develop` 实现与静态验证已完成，等待 Android 真机验收或编排者触发 `/test`。
+- 下一步：由编排者安装新 APK，确认键盘出现时页面、遮罩和面板作为一个静态画面整体上移；之后按需触发 `/test`。
 - 阻塞项：无；本机没有 Android 真机，因此设备级帧时间尚未采集，自动证据不能替代最终真机验收。
 
 ## 决策记录
@@ -68,6 +72,7 @@
 | 2026-08-10 | 使用实际评论/AI 面板注入 8 个 IME inset 帧作为反馈环 | 本机无 Android 真机；该路径可确定性复现键盘边界滞后和布局次数，并直接覆盖真实 Widget 树 | 最终仍需编排者在 Android 真机确认 UI/Raster 帧时间 |
 | 2026-08-10 | 移除跟随 IME 的 180ms `AnimatedPadding` | Flutter 已逐帧更新 `viewInsets`；隐式补间会在每个新值到达时重新追赶，最小复现中最终位置比目标滞后约 259 logical px | 面板不再叠加第二段键盘动画 |
 | 2026-08-10 | 半屏使用 `Transform.translate` + `RepaintBoundary`，全屏保留同步 `Padding` | 半屏是主要输入场景，平移可保持内容布局稳定；全屏若整体平移会把顶部栏推出屏幕 | 半屏 8 帧布局事件由 504 降至 336（约 33%）；全屏顶部边缘保持固定 |
+| 2026-08-10 | 根据真机反馈改为 Android 窗口级 `adjustPan` | 第一轮已解决卡顿，但只移动面板；产品预期是页面、遮罩和面板作为同一静态画面统一上移 | Android 跳过面板级 inset follower，并在应用根部阻止 Flutter 组件消费 Android IME bottom inset，避免二次位移；其他平台保留原有避让 |
 
 ## 验证记录
 
@@ -83,6 +88,15 @@
 | `flutter test` | 通过；397 项全量测试 | 2026-08-10 |
 | `flutter build apk --debug --flavor development --dart-define=SPARK_ENV=development` | 通过；`build/app/outputs/flutter-apk/app-development-debug.apk`，164,784,217 字节（157.15 MiB），SHA-256 `8F61BFE538FAA91F2C0AF96FBC7CC6D300B87BF841C987C245433C7D622F508E` | 2026-08-10 |
 | `git diff --check` | 通过 | 2026-08-10 |
+| `flutter test test\android_keyboard_window_config_test.dart test\paper_comments_keyboard_test.dart --reporter expanded`（第二轮修复前） | 失败（预期红灯）；清单仍为 `adjustResize`，Android 根组件仍收到 320 logical px inset，半屏面板单独上移 320 px、全屏面板单独缩短 320 px | 2026-08-10 |
+| 同上（第二轮修复后） | 通过；Activity 配置为 `adjustPan`，Android 根组件收到的 IME bottom inset 为 0，半屏/全屏评论面板在 Flutter 坐标中保持静态；iOS 分支仍保留 inset 避让 | 2026-08-10 |
+| `flutter test test\android_keyboard_window_config_test.dart test\paper_comments_keyboard_test.dart test\ui_preview_test.dart test\paper_ai_mobile_chat_ui_test.dart test\paper_ai_composer_test.dart test\deepseek_settings_widget_test.dart test\tiktok_app_shell_test.dart test\widget_test.dart --reporter expanded` | 通过；55 项应用壳、评论、ChatPaper、输入和设置定向回归 | 2026-08-10 |
+| `.\tool\verify_changed_dart_format.ps1`（第二轮） | 通过；4 个变更 Dart 文件格式正确 | 2026-08-10 |
+| `flutter analyze`（第二轮） | 通过；No issues found | 2026-08-10 |
+| `flutter test`（第二轮） | 通过；401 项全量测试 | 2026-08-10 |
+| `flutter build apk --debug --flavor development --dart-define=SPARK_ENV=development`（第二轮） | 通过；`build/app/outputs/flutter-apk/app-development-debug.apk`，193,261,916 字节（184.31 MiB），SHA-256 `7AFE8C85ECBFD65A713529953BA9594A12AAE18A8BA9A729896CE0BADAEECC9F` | 2026-08-10 |
+| 检查 Gradle merged/packaged manifest | 通过；developmentDebug 最终清单均包含 `android:windowSoftInputMode="adjustPan"` | 2026-08-10 |
+| `git diff --check`（第二轮） | 通过 | 2026-08-10 |
 
 ## 审查结论
 
@@ -101,14 +115,14 @@
 
 ### 交付摘要
 
-Android 的评论/AI 半屏面板不再为系统键盘的每个 inset 帧重启一段 180ms 内部动画。面板现在与键盘逐帧同步，并把半屏过渡限制为缓存图层平移；全屏态保持顶部栏固定并同步缩小可用高度。
+Android 的评论/AI 面板不再为系统键盘的每个 inset 帧重启一段内部动画。根据真机反馈，最终交互改为窗口级平移：键盘出现时页面、遮罩和面板保持同一静态布局，由系统统一移动整个 Flutter 窗口；Flutter 内不再进行 Android IME 的局部 resize 或二次位移。
 
 ### 实际变更
 
 - 领域与业务逻辑：无计划变更。
 - 数据与基础设施：无计划变更。
-- 界面与交互：新增 `_KeyboardInsetFollower`；半屏使用可命中测试的图层平移，全屏使用同步底部 padding，移除二次隐式补间。
-- 测试与工具：新增真实评论面板的半屏/全屏 IME 逐帧测试，覆盖焦点、几何贴合、布局上限和顶部栏稳定性。
+- 界面与交互：Android Activity 从 `adjustResize` 改为 `adjustPan`；应用根部仅在 Android 移除传向组件树的 IME bottom inset；评论面板在 Android 跳过局部 follower，其他平台保留原有避让。
+- 测试与工具：新增最终 Android 清单配置、应用根部静态布局、半屏/全屏评论面板静态几何和非 Android 兼容回归；保留输入焦点与布局次数约束。
 - 文档：本任务台账。
 
 ### 兼容性与迁移
@@ -119,7 +133,7 @@ Android 的评论/AI 半屏面板不再为系统键盘的每个 inset 帧重启�
 
 ### 已知风险与回滚
 
-- 已知风险：当前无 Android 真机，自动测试能够锁定 inset 几何和布局放大器，但不能直接证明具体设备的 UI/Raster 帧均低于刷新预算。
+- 已知风险：当前无 Android 真机，自动测试能够锁定 Flutter 内部不再二次位移，且最终 APK 清单为 `adjustPan`，但不能模拟 Android 系统实际选取的窗口平移距离，也不能直接证明具体设备的 UI/Raster 帧均低于刷新预算。
 - 回滚方式：在合入后 revert 本任务修复提交；不涉及数据迁移或 API 兼容。
 
 ### 文档更新建议
@@ -128,7 +142,7 @@ Android 的评论/AI 半屏面板不再为系统键盘的每个 inset 帧重启�
 
 ### 未完成与后续工作
 
-- Android 真机安装后使用系统 Profile GPU Rendering 或 Flutter DevTools Performance 复核键盘弹出与收起帧时间。
+- Android 真机安装后先确认页面、遮罩和面板统一上移且输入框不被遮挡，再使用系统 Profile GPU Rendering 或 Flutter DevTools Performance 复核键盘弹出与收起帧时间。
 
 ## 合并归档（合并后在 main 补齐）
 

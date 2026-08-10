@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../core/motion/motion_tokens.dart';
@@ -398,10 +399,9 @@ class _KeyboardInsetFollower extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (defaultTargetPlatform == TargetPlatform.android) return child;
+
     final mediaQuery = MediaQuery.of(context);
-    // Android 会逐帧提供已经动画化的 IME inset。半屏态直接移动缓存图层，
-    // 避免重复启动补间并反复布局 Markdown/评论内容；全屏态仍同步缩放，
-    // 以保证顶部栏不会被推出屏幕。
     return Transform.translate(
       offset: Offset(
         0,

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -6,66 +7,93 @@ import 'package:spark/src/features/papers/data/demo_paper_repository.dart';
 import 'package:spark/src/features/papers/presentation/widgets/paper_comments_sheet.dart';
 
 void main() {
-  testWidgets(
-      'half-height comments sheet follows IME frames without relayout churn',
+  testWidgets('half-height comments sheet stays static during Android IME',
       (tester) async {
-    await _openCommentsSheet(tester);
-    final input = find.byKey(const ValueKey('paper-comment-input'));
-    await tester.tap(input);
-    await tester.pump();
-    final editable = tester.widget<EditableText>(
-      find.descendant(of: input, matching: find.byType(EditableText)),
-    );
-    expect(editable.focusNode.hasFocus, isTrue);
-
-    final sheet = find.byKey(const ValueKey('paper-comments-sheet'));
-    final initialRect = tester.getRect(sheet);
-    final layoutLogs = <String>[];
-    final previousDebugPrint = debugPrint;
-    debugPrint = (message, {wrapWidth}) {
-      if (message != null) layoutLogs.add(message);
-    };
-    debugPrintLayouts = true;
     try {
-      await _driveImeTransition(tester);
+      debugDefaultTargetPlatformOverride = TargetPlatform.android;
+      await _openCommentsSheet(tester);
+      final input = find.byKey(const ValueKey('paper-comment-input'));
+      await tester.tap(input);
+      await tester.pump();
+      final editable = tester.widget<EditableText>(
+        find.descendant(of: input, matching: find.byType(EditableText)),
+      );
+      expect(editable.focusNode.hasFocus, isTrue);
+
+      final sheet = find.byKey(const ValueKey('paper-comments-sheet'));
+      final initialRect = tester.getRect(sheet);
+      final layoutLogs = <String>[];
+      final previousDebugPrint = debugPrint;
+      debugPrint = (message, {wrapWidth}) {
+        if (message != null) layoutLogs.add(message);
+      };
+      debugPrintLayouts = true;
+      try {
+        await _driveImeTransition(tester);
+      } finally {
+        debugPrintLayouts = false;
+        debugPrint = previousDebugPrint;
+      }
+
+      final shiftedRect = tester.getRect(sheet);
+      printOnFailure('IME layout count: ${layoutLogs.length}');
+      expect(shiftedRect.top, closeTo(initialRect.top, 1));
+      expect(shiftedRect.bottom, closeTo(initialRect.bottom, 1));
+      expect(shiftedRect.height, closeTo(initialRect.height, 0.1));
+      expect(
+        layoutLogs.length,
+        lessThanOrEqualTo(400),
+        reason: 'Flutter 面板应保持静态，由 Android 统一平移整个窗口。',
+      );
+
+      editable.focusNode.unfocus();
+      await tester.pump();
+      await tester.tap(input);
+      await tester.pump();
+      expect(editable.focusNode.hasFocus, isTrue);
     } finally {
-      debugPrintLayouts = false;
-      debugPrint = previousDebugPrint;
+      debugDefaultTargetPlatformOverride = null;
     }
-
-    final keyboardInset = _keyboardInset;
-    final shiftedRect = tester.getRect(sheet);
-    printOnFailure('IME layout count: ${layoutLogs.length}');
-    expect(shiftedRect.top, closeTo(initialRect.top - keyboardInset, 1));
-    expect(shiftedRect.bottom, closeTo(initialRect.bottom - keyboardInset, 1));
-    expect(shiftedRect.height, closeTo(initialRect.height, 0.1));
-    expect(
-      layoutLogs.length,
-      lessThanOrEqualTo(400),
-      reason: 'IME 过渡应只平移缓存后的半屏面板，不能逐帧重排整张内容树。',
-    );
-
-    editable.focusNode.unfocus();
-    await tester.pump();
-    await tester.tap(input);
-    await tester.pump();
-    expect(editable.focusNode.hasFocus, isTrue);
   });
 
-  testWidgets('fullscreen comments sheet keeps its top edge during IME resize',
+  testWidgets('fullscreen comments sheet stays static during Android IME',
       (tester) async {
-    await _openCommentsSheet(tester);
-    await tester.tap(find.byTooltip('全屏'));
-    await tester.pumpAndSettle();
+    debugDefaultTargetPlatformOverride = TargetPlatform.android;
+    try {
+      await _openCommentsSheet(tester);
+      await tester.tap(find.byTooltip('全屏'));
+      await tester.pumpAndSettle();
 
-    final sheet = find.byKey(const ValueKey('paper-comments-sheet'));
-    final initialRect = tester.getRect(sheet);
-    await _driveImeTransition(tester);
-    final resizedRect = tester.getRect(sheet);
+      final sheet = find.byKey(const ValueKey('paper-comments-sheet'));
+      final initialRect = tester.getRect(sheet);
+      await _driveImeTransition(tester);
+      final staticRect = tester.getRect(sheet);
 
-    expect(resizedRect.top, closeTo(initialRect.top, 1));
-    expect(resizedRect.bottom, closeTo(initialRect.bottom - _keyboardInset, 1));
-    expect(resizedRect.height, closeTo(initialRect.height - _keyboardInset, 1));
+      expect(staticRect, initialRect);
+    } finally {
+      debugDefaultTargetPlatformOverride = null;
+    }
+  });
+
+  testWidgets('non-Android comments sheet keeps local inset avoidance', (
+    tester,
+  ) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+    try {
+      await _openCommentsSheet(tester);
+      final sheet = find.byKey(const ValueKey('paper-comments-sheet'));
+      final initialRect = tester.getRect(sheet);
+
+      await _driveImeTransition(tester);
+
+      final shiftedRect = tester.getRect(sheet);
+      expect(shiftedRect.top, closeTo(initialRect.top - _keyboardInset, 1));
+      expect(
+          shiftedRect.bottom, closeTo(initialRect.bottom - _keyboardInset, 1));
+      expect(shiftedRect.height, closeTo(initialRect.height, 0.1));
+    } finally {
+      debugDefaultTargetPlatformOverride = null;
+    }
   });
 }
 

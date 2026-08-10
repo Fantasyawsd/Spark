@@ -134,7 +134,7 @@ class _PapersScreenState extends State<PapersScreen> {
   Widget build(BuildContext context) {
     final papers = _feed.papers;
     return ColoredBox(
-      color: SparkColors.canvas,
+      color: SparkColors.of(context).canvas,
       child: Column(
         children: [
           SafeArea(

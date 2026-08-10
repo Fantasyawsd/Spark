@@ -63,10 +63,7 @@ class PaperTabBody extends StatelessWidget {
   static String _plainText(String markdown) {
     return markdown
         .replaceAll(RegExp(r'```[\s\S]*?```'), ' code ')
-        .replaceAllMapped(
-          RegExp(r'`([^`]*)`'),
-          (match) => match.group(1) ?? '',
-        )
+        .replaceAllMapped(RegExp(r'`([^`]*)`'), (match) => match.group(1) ?? '')
         .replaceAll(RegExp(r'!\[[^\]]*\]\([^)]*\)'), '')
         .replaceAllMapped(
           RegExp(r'\[([^\]]+)\]\([^)]*\)'),
@@ -105,7 +102,7 @@ class _CollapsedPaperContent extends StatelessWidget {
                     physics: const NeverScrollableScrollPhysics(),
                     child: SparkMarkdown(
                       data: text,
-                      styleSheet: paperReaderMarkdownStyle(),
+                      styleSheet: paperReaderMarkdownStyle(context),
                       stabilizeGeneratedSyntax: stabilizeGeneratedSyntax,
                     ),
                   ),
@@ -123,8 +120,8 @@ class _CollapsedPaperContent extends StatelessWidget {
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
-                          SparkColors.card.withValues(alpha: 0),
-                          SparkColors.card,
+                          SparkColors.of(context).card.withValues(alpha: 0),
+                          SparkColors.of(context).card,
                         ],
                       ),
                     ),
@@ -139,9 +136,10 @@ class _CollapsedPaperContent extends StatelessWidget {
           child: TextButton.icon(
             onPressed: onExpand,
             style: TextButton.styleFrom(
-              foregroundColor: SparkColors.ink,
+              foregroundColor: SparkColors.of(context).ink,
               padding: const EdgeInsets.symmetric(
-                  horizontal: SparkDesignTokens.space1),
+                horizontal: SparkDesignTokens.space1,
+              ),
               minimumSize: const Size(0, actionHeight),
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
@@ -173,7 +171,7 @@ class _StaticPaperContent extends StatelessWidget {
       alignment: Alignment.topLeft,
       child: SparkMarkdown(
         data: markdown,
-        styleSheet: paperReaderMarkdownStyle(),
+        styleSheet: paperReaderMarkdownStyle(context),
         stabilizeGeneratedSyntax: stabilizeGeneratedSyntax,
       ),
     );
@@ -202,7 +200,7 @@ class _ScrollablePaperContent extends StatelessWidget {
         children: [
           SparkMarkdown(
             data: markdown,
-            styleSheet: paperReaderMarkdownStyle(),
+            styleSheet: paperReaderMarkdownStyle(context),
             stabilizeGeneratedSyntax: stabilizeGeneratedSyntax,
           ),
           if (topics.isNotEmpty) ...[

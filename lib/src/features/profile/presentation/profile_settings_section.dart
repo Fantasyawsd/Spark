@@ -42,7 +42,7 @@ class ProfileSettingsSection extends StatelessWidget {
                 listenable: ThemeController.instance,
                 builder: (context, _) => Text(
                   ThemeController.instance.color.label,
-                  style: const TextStyle(color: SparkColors.muted),
+                  style: TextStyle(color: SparkColors.of(context).muted),
                 ),
               ),
               onTap: () => showSparkThemeSheet(context),
@@ -58,8 +58,8 @@ class ProfileSettingsSection extends StatelessWidget {
                   catalogStateLabel ?? '',
                   style: TextStyle(
                     color: catalogOffline
-                        ? SparkColors.warning
-                        : SparkColors.muted,
+                        ? SparkColors.of(context).warning
+                        : SparkColors.of(context).muted,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -103,7 +103,7 @@ class ProfileSettingsSection extends StatelessWidget {
               title: const Text('Spark'),
               trailing: Text(
                 AppVersion.current.display,
-                style: const TextStyle(color: SparkColors.muted),
+                style: TextStyle(color: SparkColors.of(context).muted),
               ),
             ),
           ],

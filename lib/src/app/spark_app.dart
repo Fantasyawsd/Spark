@@ -167,20 +167,19 @@ class _SparkBootstrapState extends State<_SparkBootstrap>
       duration: MotionTokens.splashDuration,
     );
     _opacity = TweenSequence<double>([
-      TweenSequenceItem(
-        tween: ConstantTween(1.0),
-        weight: 42,
-      ),
+      TweenSequenceItem(tween: ConstantTween(1.0), weight: 42),
       TweenSequenceItem<double>(
-        tween: Tween(begin: 1.0, end: 0.0).chain(
-          CurveTween(curve: Curves.easeInCubic),
-        ),
+        tween: Tween(
+          begin: 1.0,
+          end: 0.0,
+        ).chain(CurveTween(curve: Curves.easeInCubic)),
         weight: 58,
       ),
     ]).animate(_controller);
-    _scale = Tween(begin: 1.0, end: 1.035).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
-    );
+    _scale = Tween(
+      begin: 1.0,
+      end: 1.035,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
 
     if (widget.showSplash) {
       _controller.addStatusListener(_handleAnimationStatus);
@@ -388,7 +387,7 @@ class _SparkShellState extends State<SparkShell> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: SparkColors.canvas,
+      backgroundColor: SparkColors.of(context).canvas,
       body: Stack(
         children: [
           Positioned.fill(
@@ -499,9 +498,8 @@ class _SparkShellState extends State<SparkShell> {
   }
 
   Iterable<ChatContextSummary> get _paperChatContexts =>
-      _paperController.feed.allPapers.map(
-        (paper) => ChatContextSummary(id: paper.id, title: paper.title),
-      );
+      _paperController.feed.allPapers
+          .map((paper) => ChatContextSummary(id: paper.id, title: paper.title));
 
   Future<void> _initializePaperState() async {
     await _paperController.initialize();
@@ -640,10 +638,7 @@ class _SparkShellState extends State<SparkShell> {
           fullTextAvailable: widget.features.experimentalPdfAi &&
               validPaperUri(paper.pdfUrl) != null,
           onLoadFullText: widget.features.experimentalPdfAi
-              ? () => _paperChatContextLoader.load(
-                    paper,
-                    includeFullText: true,
-                  )
+              ? () => _paperChatContextLoader.load(paper, includeFullText: true)
               : null,
         ),
       ),

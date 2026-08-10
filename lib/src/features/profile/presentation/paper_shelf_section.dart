@@ -46,8 +46,8 @@ class PaperShelfSection extends StatelessWidget {
               child: Center(
                 child: Text(
                   emptyText,
-                  style: const TextStyle(
-                    color: SparkColors.muted,
+                  style: TextStyle(
+                    color: SparkColors.of(context).muted,
                     fontSize: SparkFontSizes.bodySmall,
                   ),
                 ),

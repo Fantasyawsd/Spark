@@ -27,7 +27,7 @@ Future<void> showPaperCommentsSheet(
     context: context,
     isScrollControlled: true,
     useSafeArea: true,
-    barrierColor: SparkColors.barrier,
+    barrierColor: SparkColors.of(context).barrier,
     builder: (context) => _PaperCommentsSheet(
       paper: paper,
       initialPage: initialPage,
@@ -111,17 +111,15 @@ class _PaperCommentsSheetState extends State<_PaperCommentsSheet> {
     );
   }
 
-  Widget _buildSheet(
-    BuildContext context,
-    ScrollController scrollController,
-  ) {
+  Widget _buildSheet(BuildContext context, ScrollController scrollController) {
     return Container(
       key: const ValueKey('paper-comments-sheet'),
       clipBehavior: Clip.antiAlias,
       decoration: const BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.vertical(
-            top: Radius.circular(SparkDesignTokens.radius3Xl)),
+          top: Radius.circular(SparkDesignTokens.radius3Xl),
+        ),
       ),
       child: Column(
         children: [
@@ -150,8 +148,10 @@ class _PaperCommentsSheetState extends State<_PaperCommentsSheet> {
                   children: [
                     _CommentSortMenu(
                       value: widget.commentController.sortFor(widget.paper.id),
-                      onSelected: (sort) => widget.commentController
-                          .setSort(widget.paper.id, sort),
+                      onSelected: (sort) => widget.commentController.setSort(
+                        widget.paper.id,
+                        sort,
+                      ),
                     ),
                     PaperCommentsContent(
                       comments: _commentsForDisplay,
@@ -171,8 +171,8 @@ class _PaperCommentsSheetState extends State<_PaperCommentsSheet> {
                           widget.commentController.persistenceErrorFor(
                             widget.paper.id,
                           )!,
-                          style: const TextStyle(
-                            color: SparkColors.danger,
+                          style: TextStyle(
+                            color: SparkColors.of(context).danger,
                             fontSize: SparkFontSizes.bodySmall,
                           ),
                         ),
@@ -231,7 +231,7 @@ class _PaperCommentsSheetState extends State<_PaperCommentsSheet> {
         body: comment.body,
         likes: comment.likes,
         replies: replies,
-        color: SparkColors.primary,
+        color: SparkColors.of(context).primary,
         parentId: comment.parentId,
         canDelete: comment.isLocalUser,
         liked: comment.likedByLocalUser,
@@ -357,14 +357,8 @@ class _CommentSortMenu extends StatelessWidget {
         initialValue: value,
         onSelected: onSelected,
         itemBuilder: (context) => const [
-          PopupMenuItem(
-            value: PaperCommentSort.newest,
-            child: Text('最新'),
-          ),
-          PopupMenuItem(
-            value: PaperCommentSort.hottest,
-            child: Text('最热'),
-          ),
+          PopupMenuItem(value: PaperCommentSort.newest, child: Text('最新')),
+          PopupMenuItem(value: PaperCommentSort.hottest, child: Text('最热')),
         ],
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 2, 16, 0),
@@ -373,16 +367,16 @@ class _CommentSortMenu extends StatelessWidget {
             children: [
               Text(
                 value == PaperCommentSort.newest ? '最新' : '最热',
-                style: const TextStyle(
-                  color: SparkColors.muted,
+                style: TextStyle(
+                  color: SparkColors.of(context).muted,
                   fontSize: SparkFontSizes.footnote,
                   fontWeight: FontWeight.w600,
                 ),
               ),
               const SizedBox(width: 2),
-              const Icon(
+              Icon(
                 Icons.keyboard_arrow_down_rounded,
-                color: SparkColors.muted,
+                color: SparkColors.of(context).muted,
                 size: 18,
               ),
             ],
@@ -445,16 +439,16 @@ class _SheetHeader extends StatelessWidget {
                     fullscreen
                         ? Icons.close_fullscreen_rounded
                         : Icons.open_in_full_rounded,
-                    color: SparkColors.muted,
+                    color: SparkColors.of(context).muted,
                     size: 20,
                   ),
                 ),
                 IconButton(
                   tooltip: '关闭',
                   onPressed: onClose,
-                  icon: const Icon(
+                  icon: Icon(
                     Icons.close_rounded,
-                    color: SparkColors.ink,
+                    color: SparkColors.of(context).ink,
                     size: 23,
                   ),
                 ),

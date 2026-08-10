@@ -35,17 +35,19 @@ class CherryButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final enabled = onPressed != null && !loading;
-    final colors = _colors;
+    final colors = _colors(context);
     final heights = switch (size) {
       CherryButtonSize.small => (height: 28.0, horizontal: 10.0),
       CherryButtonSize.medium => (height: 32.0, horizontal: 12.0),
       CherryButtonSize.large => (height: 38.0, horizontal: 16.0),
     };
     final textStyle = switch (size) {
-      CherryButtonSize.small =>
-        const TextStyle(fontSize: SparkFontSizes.footnote),
-      CherryButtonSize.medium =>
-        const TextStyle(fontSize: SparkFontSizes.bodySmall),
+      CherryButtonSize.small => const TextStyle(
+          fontSize: SparkFontSizes.footnote,
+        ),
+      CherryButtonSize.medium => const TextStyle(
+          fontSize: SparkFontSizes.bodySmall,
+        ),
       CherryButtonSize.large => const TextStyle(fontSize: SparkFontSizes.body),
     };
     final button = Semantics(
@@ -66,9 +68,7 @@ class CherryButton extends StatelessWidget {
             constraints: BoxConstraints(minHeight: heights.height),
             padding: EdgeInsets.symmetric(horizontal: heights.horizontal),
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(
-                SparkDesignTokens.radiusMd,
-              ),
+              borderRadius: BorderRadius.circular(SparkDesignTokens.radiusMd),
               border: Border.all(
                 color: colors.border,
                 width: SparkDesignTokens.borderWidth,
@@ -119,37 +119,37 @@ class CherryButton extends StatelessWidget {
     );
   }
 
-  _CherryButtonColors get _colors {
+  _CherryButtonColors _colors(BuildContext context) {
     switch (variant) {
       case CherryButtonVariant.primary:
         return _CherryButtonColors(
-          background: SparkColors.primary,
+          background: SparkColors.of(context).primary,
           foreground: Colors.white,
-          border: SparkColors.primary,
+          border: SparkColors.of(context).primary,
         );
       case CherryButtonVariant.outline:
-        return const _CherryButtonColors(
+        return _CherryButtonColors(
           background: Colors.transparent,
-          foreground: SparkColors.ink,
-          border: SparkColors.line,
+          foreground: SparkColors.of(context).ink,
+          border: SparkColors.of(context).line,
         );
       case CherryButtonVariant.secondary:
-        return const _CherryButtonColors(
-          background: SparkColors.surfaceMuted,
-          foreground: SparkColors.ink,
+        return _CherryButtonColors(
+          background: SparkColors.of(context).surfaceMuted,
+          foreground: SparkColors.of(context).ink,
           border: Colors.transparent,
         );
       case CherryButtonVariant.ghost:
-        return const _CherryButtonColors(
+        return _CherryButtonColors(
           background: Colors.transparent,
-          foreground: SparkColors.ink,
+          foreground: SparkColors.of(context).ink,
           border: Colors.transparent,
         );
       case CherryButtonVariant.destructive:
-        return const _CherryButtonColors(
-          background: SparkColors.danger,
+        return _CherryButtonColors(
+          background: SparkColors.of(context).danger,
           foreground: Colors.white,
-          border: SparkColors.danger,
+          border: SparkColors.of(context).danger,
         );
     }
   }
@@ -189,9 +189,11 @@ class CherryIconButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final background = selected ? SparkColors.accent : Colors.transparent;
-    final foreground =
-        selected ? SparkColors.accentForeground : SparkColors.muted;
+    final background =
+        selected ? SparkColors.of(context).accent : Colors.transparent;
+    final foreground = selected
+        ? SparkColors.of(context).accentForeground
+        : SparkColors.of(context).muted;
     return Tooltip(
       message: tooltip,
       child: Semantics(
@@ -204,8 +206,8 @@ class CherryIconButton extends StatelessWidget {
           child: InkWell(
             onTap: onPressed,
             borderRadius: BorderRadius.circular(SparkDesignTokens.radiusMd),
-            hoverColor: SparkColors.accent,
-            focusColor: SparkColors.accent,
+            hoverColor: SparkColors.of(context).accent,
+            focusColor: SparkColors.of(context).accent,
             child: SizedBox(
               width: size,
               height: size,
@@ -228,7 +230,7 @@ class CherrySurface extends StatelessWidget {
     required this.child,
     this.padding = const EdgeInsets.all(SparkDesignTokens.space4),
     this.margin,
-    this.color = SparkColors.card,
+    this.color,
     this.level = CherrySurfaceLevel.flat,
     this.radius = SparkDesignTokens.radiusLg,
     this.border,
@@ -237,7 +239,7 @@ class CherrySurface extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry padding;
   final EdgeInsetsGeometry? margin;
-  final Color color;
+  final Color? color;
   final CherrySurfaceLevel level;
   final double radius;
   final Border? border;
@@ -253,9 +255,9 @@ class CherrySurface extends StatelessWidget {
       margin: margin,
       padding: padding,
       decoration: BoxDecoration(
-        color: color,
+        color: color ?? SparkColors.of(context).card,
         borderRadius: BorderRadius.circular(radius),
-        border: border ?? Border.all(color: SparkColors.line),
+        border: border ?? Border.all(color: SparkColors.of(context).line),
         boxShadow: shadow,
       ),
       child: child,

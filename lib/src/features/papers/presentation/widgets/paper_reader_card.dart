@@ -91,14 +91,7 @@ class PaperReaderCard extends StatefulWidget {
 }
 
 class _PaperReaderCardState extends State<PaperReaderCard> {
-  static const _tabs = [
-    'Abstract',
-    '摘要',
-    '关键词',
-    '作者',
-    'AI 解读',
-    '相关论文',
-  ];
+  static const _tabs = ['Abstract', '摘要', '关键词', '作者', 'AI 解读', '相关论文'];
 
   late int _tabIndex;
   late final PageController _tabPageController;
@@ -132,11 +125,9 @@ class _PaperReaderCardState extends State<PaperReaderCard> {
         ..dispose();
       _createTranslationController();
     }
-    final keywordDependencyChanged = !identical(
-          oldWidget.keywordService,
-          widget.keywordService,
-        ) ||
-        !identical(oldWidget.keywordRepository, widget.keywordRepository);
+    final keywordDependencyChanged =
+        !identical(oldWidget.keywordService, widget.keywordService) ||
+            !identical(oldWidget.keywordRepository, widget.keywordRepository);
     if (paperChanged || keywordDependencyChanged) {
       _keywordController
         ..removeListener(_handleKeywordChanged)
@@ -179,7 +170,7 @@ class _PaperReaderCardState extends State<PaperReaderCard> {
         (validPaperUri(paper.pdfUrl) != null ||
             validPaperUri(paper.paperUrl) != null);
     return ColoredBox(
-      color: SparkColors.card,
+      color: SparkColors.of(context).card,
       child: Stack(
         children: [
           Positioned.fill(
@@ -199,8 +190,8 @@ class _PaperReaderCardState extends State<PaperReaderCard> {
                     maxLines: 3,
                     overflow: TextOverflow.ellipsis,
                     onTap: () => platformSparkClipboard.copyText(paper.title),
-                    style: const TextStyle(
-                      color: SparkColors.ink,
+                    style: TextStyle(
+                      color: SparkColors.of(context).ink,
                       fontSize: SparkFontSizes.headline,
                       height: 1.16,
                       fontWeight: FontWeight.w900,
@@ -214,10 +205,7 @@ class _PaperReaderCardState extends State<PaperReaderCard> {
                   ),
                   if (hasPaperLink) ...[
                     const SizedBox(height: 3),
-                    PaperPdfButton(
-                      paper: paper,
-                      onOpen: widget.onOpenPaper!,
-                    ),
+                    PaperPdfButton(paper: paper, onOpen: widget.onOpenPaper!),
                   ],
                   const SizedBox(height: 8),
                   SparkSegmentedControl(
@@ -369,11 +357,7 @@ class _PaperReaderCardState extends State<PaperReaderCard> {
     );
   }
 
-  void _openFullReader(
-    Paper paper,
-    String markdown, {
-    required String title,
-  }) {
+  void _openFullReader(Paper paper, String markdown, {required String title}) {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (context) => PaperFullReaderPage(
@@ -467,8 +451,10 @@ class _KeywordContent extends StatelessWidget {
             padding: const EdgeInsets.only(bottom: SparkDesignTokens.space2),
             child: Text(
               error!,
-              style: const TextStyle(
-                  color: SparkColors.danger, fontSize: SparkFontSizes.footnote),
+              style: TextStyle(
+                color: SparkColors.of(context).danger,
+                fontSize: SparkFontSizes.footnote,
+              ),
             ),
           ),
         Expanded(
@@ -546,14 +532,17 @@ class _ReaderEmptyState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, color: SparkColors.muted, size: 28),
+            Icon(icon, color: SparkColors.of(context).muted, size: 28),
             const SizedBox(height: 12),
             Text(title, style: const TextStyle(fontWeight: FontWeight.w800)),
             const SizedBox(height: 6),
             Text(
               message,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: SparkColors.muted, height: 1.5),
+              style: TextStyle(
+                color: SparkColors.of(context).muted,
+                height: 1.5,
+              ),
             ),
             if (actionLabel != null && onAction != null) ...[
               const SizedBox(height: 16),
@@ -577,11 +566,12 @@ class _AiInterpretButton extends StatelessWidget {
       key: const ValueKey('paper-ai-entry'),
       onPressed: onPressed,
       style: FilledButton.styleFrom(
-        backgroundColor: SparkColors.primary,
+        backgroundColor: SparkColors.of(context).primary,
         foregroundColor: Colors.white,
         minimumSize: const Size(0, 34),
-        padding:
-            const EdgeInsets.symmetric(horizontal: SparkDesignTokens.space3),
+        padding: const EdgeInsets.symmetric(
+          horizontal: SparkDesignTokens.space3,
+        ),
         visualDensity: VisualDensity.compact,
         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
       ),
@@ -589,7 +579,9 @@ class _AiInterpretButton extends StatelessWidget {
       label: const Text(
         'AI 解读',
         style: TextStyle(
-            fontSize: SparkFontSizes.footnote, fontWeight: FontWeight.w800),
+          fontSize: SparkFontSizes.footnote,
+          fontWeight: FontWeight.w800,
+        ),
       ),
     );
   }

@@ -12,10 +12,11 @@ void showSparkThemeSheet(BuildContext context) {
   showSparkSheet<void>(
     context: context,
     builder: (context) => Container(
-      decoration: const BoxDecoration(
-        color: SparkColors.card,
+      decoration: BoxDecoration(
+        color: SparkColors.of(context).card,
         borderRadius: BorderRadius.vertical(
-            top: Radius.circular(SparkDesignTokens.radius3Xl)),
+          top: Radius.circular(SparkDesignTokens.radius3Xl),
+        ),
       ),
       child: SafeArea(
         top: false,
@@ -27,19 +28,19 @@ void showSparkThemeSheet(BuildContext context) {
             children: [
               const SparkSheetHandle(height: 20),
               const SizedBox(height: 4),
-              const Text(
+              Text(
                 '主题与配色',
                 style: TextStyle(
-                  color: SparkColors.ink,
+                  color: SparkColors.of(context).ink,
                   fontSize: SparkFontSizes.titleLarge,
                   fontWeight: FontWeight.w800,
                 ),
               ),
               const SizedBox(height: 5),
-              const Text(
+              Text(
                 '强调色',
                 style: TextStyle(
-                  color: SparkColors.muted,
+                  color: SparkColors.of(context).muted,
                   fontSize: SparkFontSizes.footnote,
                   fontWeight: FontWeight.w500,
                 ),
@@ -96,10 +97,7 @@ class _ThemeColorOption extends StatelessWidget {
           onTap: onTap,
           borderRadius: BorderRadius.circular(SparkDesignTokens.radiusLg),
           child: AnimatedContainer(
-            duration: MotionTokens.duration(
-              context,
-              MotionTokens.tabDuration,
-            ),
+            duration: MotionTokens.duration(context, MotionTokens.tabDuration),
             curve: MotionTokens.pageCurve,
             padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 2),
             decoration: BoxDecoration(
@@ -137,7 +135,9 @@ class _ThemeColorOption extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    color: selected ? SparkColors.ink : SparkColors.muted,
+                    color: selected
+                        ? SparkColors.of(context).ink
+                        : SparkColors.of(context).muted,
                     fontSize: SparkFontSizes.caption,
                     fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
                   ),

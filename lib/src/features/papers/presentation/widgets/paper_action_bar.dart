@@ -99,19 +99,22 @@ class PaperActionBar extends StatelessWidget {
               child: PopupMenuButton<_PaperMoreAction>(
                 key: const ValueKey('paper-action-more'),
                 tooltip: '更多',
-                color: SparkColors.card,
+                color: SparkColors.of(context).card,
                 surfaceTintColor: Colors.transparent,
                 elevation: 8,
-                shadowColor: SparkColors.ink.withValues(alpha: 0.14),
+                shadowColor: SparkColors.of(
+                  context,
+                ).ink.withValues(alpha: 0.14),
                 offset: const Offset(0, -4),
                 constraints: const BoxConstraints.tightFor(width: 174),
                 shape: RoundedRectangleBorder(
-                  borderRadius:
-                      BorderRadius.circular(SparkDesignTokens.radiusXl),
+                  borderRadius: BorderRadius.circular(
+                    SparkDesignTokens.radiusXl,
+                  ),
                 ),
-                icon: const Icon(
+                icon: Icon(
                   Icons.more_horiz_rounded,
-                  color: SparkColors.ink,
+                  color: SparkColors.of(context).ink,
                   size: 23,
                 ),
                 onSelected: (action) {
@@ -127,7 +130,8 @@ class PaperActionBar extends StatelessWidget {
                     value: _PaperMoreAction.read,
                     height: 46,
                     padding: const EdgeInsets.symmetric(
-                        horizontal: SparkDesignTokens.space2),
+                      horizontal: SparkDesignTokens.space2,
+                    ),
                     child: _PaperMoreMenuItem(
                       icon: read
                           ? Icons.mark_email_unread_outlined
@@ -139,7 +143,8 @@ class PaperActionBar extends StatelessWidget {
                     value: _PaperMoreAction.readLater,
                     height: 46,
                     padding: const EdgeInsets.symmetric(
-                        horizontal: SparkDesignTokens.space2),
+                      horizontal: SparkDesignTokens.space2,
+                    ),
                     child: _PaperMoreMenuItem(
                       icon: readLater
                           ? Icons.playlist_remove_rounded
@@ -173,10 +178,10 @@ class _PaperMoreMenuItem extends StatelessWidget {
           width: 32,
           height: 32,
           decoration: BoxDecoration(
-            color: SparkColors.canvas,
+            color: SparkColors.of(context).canvas,
             borderRadius: BorderRadius.circular(SparkDesignTokens.radiusMd),
           ),
-          child: Icon(icon, size: 18, color: SparkColors.ink),
+          child: Icon(icon, size: 18, color: SparkColors.of(context).ink),
         ),
         const SizedBox(width: 10),
         Expanded(
@@ -184,8 +189,8 @@ class _PaperMoreMenuItem extends StatelessWidget {
             label,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: SparkColors.ink,
+            style: TextStyle(
+              color: SparkColors.of(context).ink,
               fontSize: SparkFontSizes.bodySmall,
               fontWeight: FontWeight.w600,
             ),
@@ -223,7 +228,9 @@ class _PaperActionButtonState extends State<_PaperActionButton> {
 
   @override
   Widget build(BuildContext context) {
-    final color = widget.active ? SparkColors.primary : SparkColors.ink;
+    final color = widget.active
+        ? SparkColors.of(context).primary
+        : SparkColors.of(context).ink;
     return Expanded(
       child: Tooltip(
         message: widget.tooltip,

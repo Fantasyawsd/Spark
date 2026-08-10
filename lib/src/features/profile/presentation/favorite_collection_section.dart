@@ -115,8 +115,8 @@ class _FavoriteCollectionSectionState extends State<FavoriteCollectionSection> {
               child: Center(
                 child: Text(
                   selectedGroup.isDefault ? '还没有收藏论文' : '这个分组还是空的',
-                  style: const TextStyle(
-                    color: SparkColors.muted,
+                  style: TextStyle(
+                    color: SparkColors.of(context).muted,
                     fontSize: SparkFontSizes.bodySmall,
                   ),
                 ),

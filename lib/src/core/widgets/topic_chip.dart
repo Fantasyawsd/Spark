@@ -19,7 +19,7 @@ class TopicChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final accent = color ?? SparkColors.primary;
+    final accent = color ?? SparkColors.of(context).primary;
     return Container(
       padding: EdgeInsets.symmetric(
         horizontal: compact ? 10 : 13,
@@ -28,7 +28,7 @@ class TopicChip extends StatelessWidget {
       decoration: BoxDecoration(
         color: selected
             ? accent.withValues(alpha: 0.09)
-            : SparkColors.surfaceMuted,
+            : SparkColors.of(context).surfaceMuted,
         borderRadius: BorderRadius.circular(SparkDesignTokens.radiusSm),
         border:
             selected ? Border.all(color: accent.withValues(alpha: 0.55)) : null,
@@ -38,7 +38,7 @@ class TopicChip extends StatelessWidget {
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
         style: TextStyle(
-          color: selected ? accent : SparkColors.ink,
+          color: selected ? accent : SparkColors.of(context).ink,
           fontSize: compact ? 11 : 12,
           fontWeight: FontWeight.w500,
         ),

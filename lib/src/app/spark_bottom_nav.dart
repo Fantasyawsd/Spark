@@ -54,9 +54,9 @@ class SparkBottomNav extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(
-              color: SparkColors.popover.withValues(alpha: 0.96),
+              color: SparkColors.of(context).popover.withValues(alpha: 0.96),
               borderRadius: BorderRadius.circular(SparkDesignTokens.radiusXl),
-              border: Border.all(color: SparkColors.line),
+              border: Border.all(color: SparkColors.of(context).line),
               boxShadow: SparkDesignTokens.floatingShadow,
             ),
             child: SafeArea(
@@ -112,7 +112,8 @@ class _NavItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final selected = index == selectedIndex;
-    final color = selected ? SparkColors.ink : SparkColors.muted;
+    final color =
+        selected ? SparkColors.of(context).ink : SparkColors.of(context).muted;
     return Expanded(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 2),
@@ -130,10 +131,10 @@ class _NavItem extends StatelessWidget {
               ),
               curve: MotionTokens.enterCurve,
               decoration: BoxDecoration(
-                color: selected ? SparkColors.accent : Colors.transparent,
-                borderRadius: BorderRadius.circular(
-                  SparkDesignTokens.radiusMd,
-                ),
+                color: selected
+                    ? SparkColors.of(context).accent
+                    : Colors.transparent,
+                borderRadius: BorderRadius.circular(SparkDesignTokens.radiusMd),
               ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,

@@ -73,10 +73,7 @@ class SparkLatexInlineSyntax extends md.InlineSyntax {
 /// flow. Returning a [Text] with a [WidgetSpan] lets flutter_markdown_plus merge
 /// the formula with the surrounding [TextSpan]s into one paragraph.
 class SparkLatexElementBuilder extends MarkdownElementBuilder {
-  SparkLatexElementBuilder({
-    this.textStyle,
-    this.textScaleFactor,
-  });
+  SparkLatexElementBuilder({this.textStyle, this.textScaleFactor});
 
   /// The style to apply to the formula text.
   final TextStyle? textStyle;
@@ -352,22 +349,31 @@ class _MarkdownCodeBlock extends StatelessWidget {
   }
 }
 
+/// 阅读正文测量样式。颜色对排版测量无影响，故不含颜色；
+/// 展示路径由 [paperReaderMarkdownStyle] 按主题补色。
 const paperReaderBodyTextStyle = TextStyle(
-  color: SparkColors.ink,
   fontSize: SparkFontSizes.title,
   height: 1.28,
 );
 
-MarkdownStyleSheet paperReaderMarkdownStyle() {
-  const body = paperReaderBodyTextStyle;
+MarkdownStyleSheet paperReaderMarkdownStyle(BuildContext context) {
+  final body = paperReaderBodyTextStyle.copyWith(
+    color: SparkColors.of(context).ink,
+  );
   return MarkdownStyleSheet(
     p: body,
     h1: body.copyWith(
-        fontSize: SparkFontSizes.headline, fontWeight: FontWeight.w800),
+      fontSize: SparkFontSizes.headline,
+      fontWeight: FontWeight.w800,
+    ),
     h2: body.copyWith(
-        fontSize: SparkFontSizes.headlineSmall, fontWeight: FontWeight.w800),
+      fontSize: SparkFontSizes.headlineSmall,
+      fontWeight: FontWeight.w800,
+    ),
     h3: body.copyWith(
-        fontSize: SparkFontSizes.titleLarge, fontWeight: FontWeight.w700),
+      fontSize: SparkFontSizes.titleLarge,
+      fontWeight: FontWeight.w700,
+    ),
     listBullet: body,
     strong: const TextStyle(fontWeight: FontWeight.w700),
     code: const TextStyle(
@@ -379,35 +385,45 @@ MarkdownStyleSheet paperReaderMarkdownStyle() {
     codeblockPadding: const EdgeInsets.all(12),
     codeblockDecoration: BoxDecoration(
       color: Color(0xFF172033),
-      borderRadius:
-          BorderRadius.all(Radius.circular(SparkDesignTokens.radiusLg)),
+      borderRadius: BorderRadius.all(
+        Radius.circular(SparkDesignTokens.radiusLg),
+      ),
     ),
     blockSpacing: 7,
     listIndent: 20,
   );
 }
 
-MarkdownStyleSheet sparkMarkdownStyle({
-  Color color = SparkColors.ink,
+MarkdownStyleSheet sparkMarkdownStyle(
+  BuildContext context, {
+  Color? color,
   bool reasoning = false,
 }) {
+  final palette = SparkColors.of(context);
+  final effectiveColor = color ?? palette.ink;
   final body = TextStyle(
-    color: color,
+    color: effectiveColor,
     fontSize: reasoning ? 12 : 14.2,
     height: reasoning ? 1.4 : 1.5,
   );
   return MarkdownStyleSheet(
     p: body,
     h1: body.copyWith(
-        fontSize: SparkFontSizes.titleLarge, fontWeight: FontWeight.w800),
+      fontSize: SparkFontSizes.titleLarge,
+      fontWeight: FontWeight.w800,
+    ),
     h2: body.copyWith(
-        fontSize: SparkFontSizes.titleSmall, fontWeight: FontWeight.w800),
+      fontSize: SparkFontSizes.titleSmall,
+      fontWeight: FontWeight.w800,
+    ),
     h3: body.copyWith(
-        fontSize: SparkFontSizes.body, fontWeight: FontWeight.w700),
+      fontSize: SparkFontSizes.body,
+      fontWeight: FontWeight.w700,
+    ),
     listBullet: body,
-    strong: TextStyle(color: color, fontWeight: FontWeight.w700),
+    strong: TextStyle(color: effectiveColor, fontWeight: FontWeight.w700),
     code: TextStyle(
-      color: reasoning ? SparkColors.muted : const Color(0xFFE9EDF5),
+      color: reasoning ? palette.muted : const Color(0xFFE9EDF5),
       fontFamily: 'monospace',
       fontSize: reasoning ? 11 : 12.8,
       height: 1.5,
@@ -415,8 +431,9 @@ MarkdownStyleSheet sparkMarkdownStyle({
     codeblockPadding: const EdgeInsets.all(12),
     codeblockDecoration: BoxDecoration(
       color: Color(0xFF172033),
-      borderRadius:
-          BorderRadius.all(Radius.circular(SparkDesignTokens.radiusLg)),
+      borderRadius: BorderRadius.all(
+        Radius.circular(SparkDesignTokens.radiusLg),
+      ),
     ),
     blockSpacing: reasoning ? 4 : 9,
     listIndent: reasoning ? 16 : 20,
@@ -438,14 +455,13 @@ class SparkMarkdownPreprocessor {
   }) {
     if (source.isEmpty) return source;
     final codeBlocks = <String>[];
-    var normalized = source.replaceAllMapped(
-      RegExp(r'```[\s\S]*?```'),
-      (match) {
-        final token = '\u0000SPARK_CODE_${codeBlocks.length}\u0000';
-        codeBlocks.add(match.group(0)!);
-        return token;
-      },
-    );
+    var normalized = source.replaceAllMapped(RegExp(r'```[\s\S]*?```'), (
+      match,
+    ) {
+      final token = '\u0000SPARK_CODE_${codeBlocks.length}\u0000';
+      codeBlocks.add(match.group(0)!);
+      return token;
+    });
     normalized = normalized
         .replaceAll(r'\[', r'$$')
         .replaceAll(r'\]', r'$$')
@@ -553,7 +569,8 @@ class SparkMarkdownPreprocessor {
     };
     return source.replaceAllMapped(
       RegExp(
-          r'(?<!\$)\$\s*\\(epsilon|varepsilon|theta|infty|alpha|beta|gamma|lambda|mu|pi)\s*\$(?!\$)'),
+        r'(?<!\$)\$\s*\\(epsilon|varepsilon|theta|infty|alpha|beta|gamma|lambda|mu|pi)\s*\$(?!\$)',
+      ),
       (match) => symbols[match.group(1)] ?? match.group(0)!,
     );
   }
@@ -603,10 +620,7 @@ class GeneratedMarkdownStabilizer {
     ).allMatches(source).length;
     if (fenceMatches.isOdd) return '$source\n```';
 
-    final visible = source.replaceAll(
-      RegExp(r'```[\s\S]*?```'),
-      '',
-    );
+    final visible = source.replaceAll(RegExp(r'```[\s\S]*?```'), '');
     final pendingClosers = <_PendingCloser>[];
 
     _collectPairedDelimiter(visible, r'\[', r'\]', pendingClosers);
@@ -707,16 +721,13 @@ class GeneratedMarkdownStabilizer {
 
     final opening = positions.last;
     final fragment = source.substring(opening + 1);
-    final looksLikeMath =
-        RegExp(r'[\\^_={}+*/]|[A-Za-z]\s*\(').hasMatch(fragment);
+    final looksLikeMath = RegExp(
+      r'[\\^_={}+*/]|[A-Za-z]\s*\(',
+    ).hasMatch(fragment);
     if (looksLikeMath) pending.add(_PendingCloser(opening, r'$'));
   }
 
-  static bool _startsWithUnescaped(
-    String source,
-    String delimiter,
-    int index,
-  ) {
+  static bool _startsWithUnescaped(String source, String delimiter, int index) {
     return source.startsWith(delimiter, index) && !_isEscaped(source, index);
   }
 

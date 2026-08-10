@@ -15,16 +15,14 @@ void main() {
 
     final theme = SparkTheme.light();
 
+    final palette = SparkPalette.light(ThemeController.instance.color);
     expect(theme.colorScheme.primary, SparkThemeColor.blue.value);
     expect(theme.colorScheme.primaryContainer, SparkThemeColor.blue.soft);
-    expect(theme.colorScheme.surface, SparkColors.card);
-    expect(theme.colorScheme.onSurface, SparkColors.ink);
-    expect(theme.colorScheme.error, SparkColors.danger);
-    expect(
-      theme.inputDecorationTheme.fillColor,
-      SparkColors.surfaceMuted,
-    );
-    expect(theme.scaffoldBackgroundColor, SparkColors.canvas);
+    expect(theme.colorScheme.surface, palette.card);
+    expect(theme.colorScheme.onSurface, palette.ink);
+    expect(theme.colorScheme.error, palette.danger);
+    expect(theme.inputDecorationTheme.fillColor, palette.surfaceMuted);
+    expect(theme.scaffoldBackgroundColor, palette.canvas);
   });
 
   test('theme accents keep readable contrast with white content', () {
@@ -38,8 +36,9 @@ void main() {
     }
   });
 
-  testWidgets('theme sheet shows all palettes and updates the accent',
-      (tester) async {
+  testWidgets('theme sheet shows all palettes and updates the accent', (
+    tester,
+  ) async {
     await tester.binding.setSurfaceSize(const Size(320, 640));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 

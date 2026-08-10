@@ -185,9 +185,11 @@ void main() {
         home: Scaffold(
           body: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 18),
-            child: SparkMarkdown(
-              data: '回复中使用 \$$formula\$ 进行归一化。',
-              styleSheet: paperReaderMarkdownStyle(),
+            child: Builder(
+              builder: (context) => SparkMarkdown(
+                data: '回复中使用 \$$formula\$ 进行归一化。',
+                styleSheet: paperReaderMarkdownStyle(context),
+              ),
             ),
           ),
         ),
@@ -204,9 +206,11 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
-          body: SparkMarkdown(
-            data: r'行内公式 $E=mc^2$ 与文本同行。',
-            styleSheet: paperReaderMarkdownStyle(),
+          body: Builder(
+            builder: (context) => SparkMarkdown(
+              data: r'行内公式 $E=mc^2$ 与文本同行。',
+              styleSheet: paperReaderMarkdownStyle(context),
+            ),
           ),
         ),
       ),
@@ -236,10 +240,12 @@ void main() {
           home: Scaffold(
             body: SizedBox(
               width: 320,
-              child: SparkMarkdown(
-                data:
-                    r'The density belongs to a smooth class $\beta > 2$, after',
-                styleSheet: paperReaderMarkdownStyle(),
+              child: Builder(
+                builder: (context) => SparkMarkdown(
+                  data:
+                      r'The density belongs to a smooth class $\beta > 2$, after',
+                  styleSheet: paperReaderMarkdownStyle(context),
+                ),
               ),
             ),
           ),
@@ -317,11 +323,13 @@ void main() {
       MaterialApp(
         home: Scaffold(
           body: SingleChildScrollView(
-            child: SparkMarkdown(
-              data: r'行内公式 $E=mc^2$。'
-                  '\n\n'
-                  r'$$\frac{a}{b}$$',
-              styleSheet: paperReaderMarkdownStyle(),
+            child: Builder(
+              builder: (context) => SparkMarkdown(
+                data: r'行内公式 $E=mc^2$。'
+                    '\n\n'
+                    r'$$\frac{a}{b}$$',
+                styleSheet: paperReaderMarkdownStyle(context),
+              ),
             ),
           ),
         ),
@@ -352,7 +360,12 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
-          body: SparkMarkdown(data: code, styleSheet: sparkMarkdownStyle()),
+          body: Builder(
+            builder: (context) => SparkMarkdown(
+              data: code,
+              styleSheet: sparkMarkdownStyle(context),
+            ),
+          ),
         ),
       ),
     );

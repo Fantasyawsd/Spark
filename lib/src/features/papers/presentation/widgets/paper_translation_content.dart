@@ -46,7 +46,7 @@ class PaperTranslationContent extends StatelessWidget {
       return _TranslationStatus(
         icon: Icon(
           Icons.error_outline_rounded,
-          color: SparkColors.danger,
+          color: SparkColors.of(context).danger,
         ),
         title: '生成失败，点击重试',
         actionLabel: '重试',
@@ -57,7 +57,7 @@ class PaperTranslationContent extends StatelessWidget {
       return _TranslationStatus(
         icon: Icon(
           Icons.translate_rounded,
-          color: SparkColors.primary,
+          color: SparkColors.of(context).primary,
         ),
         title: '生成中文摘要',
         actionLabel: '生成',
@@ -79,10 +79,10 @@ class PaperTranslationContent extends StatelessWidget {
                   child: CircularProgressIndicator(strokeWidth: 1.6),
                 ),
                 const SizedBox(width: 7),
-                const Text(
+                Text(
                   '正在生成…',
                   style: TextStyle(
-                    color: SparkColors.muted,
+                    color: SparkColors.of(context).muted,
                     fontSize: SparkFontSizes.caption,
                   ),
                 ),
@@ -106,8 +106,10 @@ class PaperTranslationContent extends StatelessWidget {
             padding: const EdgeInsets.only(bottom: 6),
             child: Text(
               error!,
-              style: const TextStyle(
-                  color: SparkColors.danger, fontSize: SparkFontSizes.caption),
+              style: TextStyle(
+                color: SparkColors.of(context).danger,
+                fontSize: SparkFontSizes.caption,
+              ),
             ),
           ),
         Expanded(
@@ -149,8 +151,8 @@ class _TranslationStatus extends StatelessWidget {
             Text(
               title,
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: SparkColors.muted,
+              style: TextStyle(
+                color: SparkColors.of(context).muted,
                 fontSize: SparkFontSizes.bodySmall,
                 height: 1.4,
               ),

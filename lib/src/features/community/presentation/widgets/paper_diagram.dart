@@ -14,10 +14,10 @@ class PaperDiagram extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: SparkColors.line),
+        border: Border.all(color: SparkColors.of(context).line),
       ),
       child: CustomPaint(
-        painter: _PaperDiagramPainter(accent),
+        painter: _PaperDiagramPainter(accent, SparkColors.of(context).ink),
         child: const SizedBox.expand(),
       ),
     );
@@ -25,14 +25,15 @@ class PaperDiagram extends StatelessWidget {
 }
 
 class _PaperDiagramPainter extends CustomPainter {
-  const _PaperDiagramPainter(this.accent);
+  const _PaperDiagramPainter(this.accent, this.ink);
 
   final Color accent;
+  final Color ink;
 
   @override
   void paint(Canvas canvas, Size size) {
     final line = Paint()
-      ..color = SparkColors.ink.withValues(alpha: 0.8)
+      ..color = ink.withValues(alpha: 0.8)
       ..strokeWidth = 1.5
       ..style = PaintingStyle.stroke;
     final fill = Paint()..color = accent.withValues(alpha: 0.28);
@@ -42,17 +43,29 @@ class _PaperDiagramPainter extends CustomPainter {
     final rightA = Rect.fromLTWH(size.width - 132, 30, 44, 28);
     final rightB = Rect.fromLTWH(size.width - 61, 30, 36, 28);
     canvas.drawRRect(
-        RRect.fromRectAndRadius(left, const Radius.circular(7)), nodeFill);
+      RRect.fromRectAndRadius(left, const Radius.circular(7)),
+      nodeFill,
+    );
     canvas.drawRRect(
-        RRect.fromRectAndRadius(left, const Radius.circular(7)), line);
+      RRect.fromRectAndRadius(left, const Radius.circular(7)),
+      line,
+    );
     canvas.drawRRect(
-        RRect.fromRectAndRadius(rightA, const Radius.circular(7)), nodeFill);
+      RRect.fromRectAndRadius(rightA, const Radius.circular(7)),
+      nodeFill,
+    );
     canvas.drawRRect(
-        RRect.fromRectAndRadius(rightA, const Radius.circular(7)), line);
+      RRect.fromRectAndRadius(rightA, const Radius.circular(7)),
+      line,
+    );
     canvas.drawRRect(
-        RRect.fromRectAndRadius(rightB, const Radius.circular(7)), nodeFill);
+      RRect.fromRectAndRadius(rightB, const Radius.circular(7)),
+      nodeFill,
+    );
     canvas.drawRRect(
-        RRect.fromRectAndRadius(rightB, const Radius.circular(7)), line);
+      RRect.fromRectAndRadius(rightB, const Radius.circular(7)),
+      line,
+    );
 
     final centerX = size.width * 0.47;
     final top = Path()
@@ -84,12 +97,19 @@ class _PaperDiagramPainter extends CustomPainter {
     arrow(rightA.right + 8, rightB.left - 8);
 
     final textPainter = TextPainter(textDirection: TextDirection.ltr);
-    void label(String text, Offset offset,
-        {double size = 10, FontWeight weight = FontWeight.w600}) {
+    void label(
+      String text,
+      Offset offset, {
+      double size = 10,
+      FontWeight weight = FontWeight.w600,
+    }) {
       textPainter.text = TextSpan(
         text: text,
         style: TextStyle(
-            color: SparkColors.ink, fontSize: size, fontWeight: weight),
+          color: ink,
+          fontSize: size,
+          fontWeight: weight,
+        ),
       );
       textPainter.layout();
       textPainter.paint(canvas, offset);
@@ -106,5 +126,5 @@ class _PaperDiagramPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _PaperDiagramPainter oldDelegate) =>
-      oldDelegate.accent != accent;
+      oldDelegate.accent != accent || oldDelegate.ink != ink;
 }

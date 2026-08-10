@@ -28,8 +28,10 @@ class SparkSegmentedControl extends StatelessWidget {
     return Align(
       alignment: Alignment.centerLeft,
       child: DecoratedBox(
-        decoration: const BoxDecoration(
-          border: Border(bottom: BorderSide(color: SparkColors.line)),
+        decoration: BoxDecoration(
+          border: Border(
+            bottom: BorderSide(color: SparkColors.of(context).line),
+          ),
         ),
         child: SizedBox(
           height: height,
@@ -81,7 +83,8 @@ class _ContentTab extends StatelessWidget {
           decoration: BoxDecoration(
             border: Border(
               bottom: BorderSide(
-                color: selected ? SparkColors.ink : Colors.transparent,
+                color:
+                    selected ? SparkColors.of(context).ink : Colors.transparent,
                 width: 2.5,
               ),
             ),
@@ -89,7 +92,9 @@ class _ContentTab extends StatelessWidget {
           child: Text(
             label,
             style: TextStyle(
-              color: selected ? SparkColors.ink : SparkColors.muted,
+              color: selected
+                  ? SparkColors.of(context).ink
+                  : SparkColors.of(context).muted,
               fontSize: SparkFontSizes.bodySmall,
               fontFamily: SparkTheme.platformCjkFontFamily(),
               fontWeight: selected ? FontWeight.w700 : FontWeight.w500,

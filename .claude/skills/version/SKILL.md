@@ -27,5 +27,5 @@ disable-model-invocation: true
    - 完成标准：校验通过；如需指定基线再带对应参数。
 
 5. **提交**
-   - 单独 `chore:` 或 `docs:` 提交版本变更与 CHANGELOG；提交规则见 `docs/standards/version-control.md`「提交原则」。
+   - 按职责分别提交版本文件与 CHANGELOG，使用中文 `构建（版本）：...` 或 `文档（版本）：...` 格式；提交规则见 `docs/standards/version-control.md`「提交原则」。
    - 完成标准：提交职责单一，含工具变更与 CHANGELOG。

@@ -476,7 +476,6 @@ class _SparkShellState extends State<SparkShell> {
             alignment: Alignment.bottomCenter,
             child: SparkBottomNav(
               selectedIndex: _selectedIndex,
-              papersGridMode: _paperController.gridMode,
               showCommunity: widget.features.experimentalCommunity,
               onSelected: _handleNavigation,
             ),
@@ -487,10 +486,6 @@ class _SparkShellState extends State<SparkShell> {
   }
 
   void _handleNavigation(int index) {
-    if (index == 0 && _selectedIndex == 0) {
-      _paperController.toggleGridMode();
-      return;
-    }
     setState(() => _selectedIndex = index);
   }
 

@@ -12,26 +12,20 @@ class SparkBottomNav extends StatelessWidget {
     super.key,
     required this.selectedIndex,
     required this.onSelected,
-    this.papersGridMode = false,
     this.showCommunity = false,
   });
 
   final int selectedIndex;
   final ValueChanged<int> onSelected;
-  final bool papersGridMode;
   final bool showCommunity;
 
   @override
   Widget build(BuildContext context) {
     final items = <_NavigationItem>[
-      _NavigationItem(
-        label: papersGridMode ? '‹ 返回' : '论文 ⇄',
-        icon: papersGridMode
-            ? Icons.arrow_back_ios_new_rounded
-            : Icons.description_outlined,
-        selectedIcon: papersGridMode
-            ? Icons.arrow_back_ios_new_rounded
-            : Icons.description_rounded,
+      const _NavigationItem(
+        label: '论文',
+        icon: Icons.description_outlined,
+        selectedIcon: Icons.description_rounded,
       ),
       const _NavigationItem(
         label: 'ChatPaper',

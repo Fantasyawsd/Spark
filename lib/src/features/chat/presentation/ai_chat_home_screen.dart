@@ -174,9 +174,10 @@ class _AiSessionList extends StatelessWidget {
     if (loading && sessions.isEmpty) {
       return const Center(child: CircularProgressIndicator(strokeWidth: 2));
     }
+    final showEmptyHint = sessions.isEmpty;
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(14, 10, 14, 92),
-      itemCount: sessions.length + 1,
+      itemCount: sessions.length + 1 + (showEmptyHint ? 1 : 0),
       separatorBuilder: (_, __) => const SizedBox(height: 8),
       itemBuilder: (context, index) {
         if (index == 0) {
@@ -184,6 +185,9 @@ class _AiSessionList extends StatelessWidget {
             session: mainSession,
             onTap: onOpenMain,
           );
+        }
+        if (showEmptyHint && index == 1) {
+          return const _NoPaperSessionsHint();
         }
         final entry = sessions[index - 1];
         final session = entry.session;
@@ -441,6 +445,36 @@ class _MainAiChatCard extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _NoPaperSessionsHint extends StatelessWidget {
+  const _NoPaperSessionsHint();
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Padding(
+      key: const ValueKey('ai-chat-empty-hint'),
+      padding: const EdgeInsets.symmetric(vertical: 36),
+      child: Column(
+        children: [
+          Icon(
+            Icons.forum_outlined,
+            size: 30,
+            color: scheme.onSurfaceVariant,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '暂无论文解读会话，从论文页打开「AI 解读」开始',
+            style: TextStyle(
+              color: scheme.onSurfaceVariant,
+              fontSize: SparkFontSizes.footnote,
+            ),
+          ),
+        ],
       ),
     );
   }

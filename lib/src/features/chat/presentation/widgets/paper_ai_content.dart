@@ -8,6 +8,7 @@ import '../../domain/chat_context.dart';
 import '../../domain/chat_message.dart';
 import '../paper_ai_ui_tokens.dart';
 import 'paper_ai_message_view.dart';
+import 'paper_ai_model_avatar.dart';
 
 class PaperAiContent extends StatelessWidget {
   const PaperAiContent({
@@ -561,31 +562,6 @@ class _AssistantAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: size,
-      height: size,
-      child: ClipOval(
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            Center(
-              child: Icon(
-                Icons.auto_awesome_rounded,
-                size: size * 0.5,
-                color: PaperAiUiTokens.accent(context),
-              ),
-            ),
-            Image.network(
-              'https://www.deepseek.com/favicon.ico',
-              fit: BoxFit.cover,
-              loadingBuilder: (context, child, progress) =>
-                  progress == null ? child : const SizedBox.shrink(),
-              errorBuilder: (context, error, stackTrace) =>
-                  const SizedBox.shrink(),
-            ),
-          ],
-        ),
-      ),
-    );
+    return PaperAiModelAvatar(size: size);
   }
 }

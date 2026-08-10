@@ -4,9 +4,8 @@ import '../paper_ai_ui_tokens.dart';
 
 /// Shared model avatar used by the message header and Composer model selector.
 ///
-/// The avatar has a transparent background: the network image (when loaded) is
-/// the only visual, and the built-in icon is used as a fallback while loading
-/// or when the network image fails.
+/// Local-only visual: a tinted circle with the built-in spark icon. No network
+/// dependency, so it renders identically offline and online.
 class PaperAiModelAvatar extends StatelessWidget {
   const PaperAiModelAvatar({
     super.key,
@@ -17,29 +16,18 @@ class PaperAiModelAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
+    return Container(
       width: size,
       height: size,
-      child: ClipOval(
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            Center(
-              child: Icon(
-                Icons.auto_awesome_rounded,
-                size: size * 0.5,
-                color: PaperAiUiTokens.accent(context),
-              ),
-            ),
-            Image.network(
-              'https://www.deepseek.com/favicon.ico',
-              fit: BoxFit.cover,
-              loadingBuilder: (context, child, progress) =>
-                  progress == null ? child : const SizedBox.shrink(),
-              errorBuilder: (context, error, stackTrace) =>
-                  const SizedBox.shrink(),
-            ),
-          ],
+      decoration: BoxDecoration(
+        color: PaperAiUiTokens.userBubble(context),
+        shape: BoxShape.circle,
+      ),
+      child: Center(
+        child: Icon(
+          Icons.auto_awesome_rounded,
+          size: size * 0.5,
+          color: PaperAiUiTokens.accent(context),
         ),
       ),
     );

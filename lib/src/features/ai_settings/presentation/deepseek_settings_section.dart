@@ -173,7 +173,7 @@ class _DeepSeekCredentialSheetState extends State<_DeepSeekCredentialSheet> {
                   Text(
                     error,
                     style: const TextStyle(
-                      color: Colors.redAccent,
+                      color: SparkColors.danger,
                       fontSize: 12,
                     ),
                   ),

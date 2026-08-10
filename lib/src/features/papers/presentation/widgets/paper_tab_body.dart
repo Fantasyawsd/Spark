@@ -110,7 +110,7 @@ class _CollapsedPaperContent extends StatelessWidget {
                   ),
                 ),
               ),
-              const Positioned(
+              Positioned(
                 left: 0,
                 right: 0,
                 bottom: 0,
@@ -121,7 +121,10 @@ class _CollapsedPaperContent extends StatelessWidget {
                       gradient: LinearGradient(
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
-                        colors: [Color(0x00FFFFFF), Colors.white],
+                        colors: [
+                          SparkColors.card.withValues(alpha: 0),
+                          SparkColors.card,
+                        ],
                       ),
                     ),
                   ),

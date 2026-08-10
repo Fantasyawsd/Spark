@@ -39,7 +39,7 @@ class _PaperSearchScreenState extends State<PaperSearchScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: SparkColors.card,
       body: SafeArea(
         child: Column(
           children: [

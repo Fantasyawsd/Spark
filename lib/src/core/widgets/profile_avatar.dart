@@ -28,12 +28,12 @@ class ProfileAvatar extends StatelessWidget {
             width: radius * 2,
             height: radius * 2,
             padding: const EdgeInsets.all(2),
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               color: Colors.white,
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: Color(0x1A10182B),
+                  color: SparkColors.ink.withValues(alpha: 0.1),
                   blurRadius: 12,
                   offset: Offset(0, 4),
                 ),
@@ -44,7 +44,7 @@ class ProfileAvatar extends StatelessWidget {
                 imageUrl,
                 fit: BoxFit.cover,
                 errorBuilder: (context, error, stackTrace) => const ColoredBox(
-                  color: Color(0xFFF0F1F5),
+                  color: SparkColors.surfaceMuted,
                   child:
                       Icon(Icons.person_rounded, color: SparkColors.muted),
                 ),

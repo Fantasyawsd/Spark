@@ -45,7 +45,7 @@ class PaperTranslationContent extends StatelessWidget {
       return _TranslationStatus(
         icon: Icon(
           Icons.error_outline_rounded,
-          color: Color(0xFFB42318),
+          color: SparkColors.danger,
         ),
         title: '生成失败，点击重试',
         actionLabel: '重试',
@@ -105,7 +105,7 @@ class PaperTranslationContent extends StatelessWidget {
             padding: const EdgeInsets.only(bottom: 6),
             child: Text(
               error!,
-              style: const TextStyle(color: Color(0xFFB42318), fontSize: 11.5),
+              style: const TextStyle(color: SparkColors.danger, fontSize: 11.5),
             ),
           ),
         Expanded(

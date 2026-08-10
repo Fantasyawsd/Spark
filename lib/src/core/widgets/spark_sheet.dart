@@ -7,7 +7,7 @@ Future<T?> showSparkSheet<T>({
   required WidgetBuilder builder,
   bool isScrollControlled = false,
   bool useSafeArea = false,
-  Color barrierColor = const Color(0x660B1020),
+  Color barrierColor = SparkColors.barrier,
 }) {
   return showModalBottomSheet<T>(
     context: context,

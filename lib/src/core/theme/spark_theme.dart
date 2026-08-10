@@ -29,6 +29,9 @@ abstract final class SparkColors {
   static const orange = Color(0xFFAD5A17);
   static const danger = Color(0xFFB42318);
   static const dangerSoft = Color(0xFFFEF3F2);
+  static const dangerBorder = Color(0xFFF0B4AE);
+  static const warning = Color(0xFFB54708);
+  static const barrier = Color(0x66182230);
 }
 
 abstract final class SparkTheme {
@@ -113,7 +116,7 @@ abstract final class SparkTheme {
         backgroundColor: SparkColors.card,
         surfaceTintColor: Colors.transparent,
         modalBackgroundColor: SparkColors.card,
-        modalBarrierColor: Color(0x66182230),
+        modalBarrierColor: SparkColors.barrier,
         elevation: 0,
         modalElevation: 0,
       ),

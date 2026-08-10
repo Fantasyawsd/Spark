@@ -113,8 +113,8 @@ class LocalDataSheet extends StatelessWidget {
                                   target: LocalDataClearTarget.allBusinessData,
                                 ),
                         style: OutlinedButton.styleFrom(
-                          foregroundColor: const Color(0xFFB42318),
-                          side: const BorderSide(color: Color(0xFFF0B4AE)),
+                          foregroundColor: SparkColors.danger,
+                          side: const BorderSide(color: SparkColors.dangerBorder),
                           minimumSize: const Size.fromHeight(48),
                         ),
                         icon: const Icon(Icons.delete_sweep_outlined),
@@ -129,7 +129,7 @@ class LocalDataSheet extends StatelessWidget {
                         Text(
                           error,
                           style: const TextStyle(
-                            color: Color(0xFFB42318),
+                            color: SparkColors.danger,
                             fontSize: 12.5,
                           ),
                         ),
@@ -303,7 +303,7 @@ class _ClearConfirmationDialog extends StatelessWidget {
           onPressed: () => Navigator.pop(context, true),
           style: target == LocalDataClearTarget.allBusinessData
               ? FilledButton.styleFrom(
-                  backgroundColor: const Color(0xFFB42318),
+                  backgroundColor: SparkColors.danger,
                 )
               : null,
           child: Text(action),

@@ -25,7 +25,7 @@ Future<void> showPaperCommentsSheet(
     context: context,
     isScrollControlled: true,
     useSafeArea: true,
-    barrierColor: const Color(0x660B1020),
+    barrierColor: SparkColors.barrier,
     builder: (context) => _PaperCommentsSheet(
       paper: paper,
       initialPage: initialPage,
@@ -169,7 +169,7 @@ class _PaperCommentsSheetState extends State<_PaperCommentsSheet> {
                             widget.paper.id,
                           )!,
                           style: const TextStyle(
-                            color: Color(0xFFB42318),
+                            color: SparkColors.danger,
                             fontSize: 12.5,
                           ),
                         ),

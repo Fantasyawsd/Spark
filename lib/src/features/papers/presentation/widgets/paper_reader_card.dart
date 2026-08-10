@@ -177,7 +177,7 @@ class _PaperReaderCardState extends State<PaperReaderCard> {
         (validPaperUri(paper.pdfUrl) != null ||
             validPaperUri(paper.paperUrl) != null);
     return ColoredBox(
-      color: Colors.white,
+      color: SparkColors.card,
       child: Stack(
         children: [
           Positioned.fill(
@@ -465,7 +465,7 @@ class _KeywordContent extends StatelessWidget {
             padding: const EdgeInsets.only(bottom: 8),
             child: Text(
               error!,
-              style: const TextStyle(color: Color(0xFFB42318), fontSize: 12),
+              style: const TextStyle(color: SparkColors.danger, fontSize: 12),
             ),
           ),
         Expanded(

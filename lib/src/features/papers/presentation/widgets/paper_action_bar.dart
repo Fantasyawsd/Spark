@@ -100,7 +100,7 @@ class PaperActionBar extends StatelessWidget {
                 color: SparkColors.card,
                 surfaceTintColor: Colors.transparent,
                 elevation: 8,
-                shadowColor: const Color(0x2410182B),
+                shadowColor: SparkColors.ink.withValues(alpha: 0.14),
                 offset: const Offset(0, -4),
                 constraints: const BoxConstraints.tightFor(width: 174),
                 shape: RoundedRectangleBorder(

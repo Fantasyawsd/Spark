@@ -58,7 +58,7 @@ class ProfileSettingsSection extends StatelessWidget {
                   catalogStateLabel ?? '',
                   style: TextStyle(
                     color: catalogOffline
-                        ? const Color(0xFFB54708)
+                        ? SparkColors.warning
                         : SparkColors.muted,
                     fontWeight: FontWeight.w600,
                   ),

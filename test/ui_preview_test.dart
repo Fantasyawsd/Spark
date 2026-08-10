@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:spark/spark.dart';
+import 'package:spark/src/core/theme/spark_design_tokens.dart';
 import 'package:spark/src/features/chat/data/in_memory_chat_session_repository.dart';
 import 'package:spark/src/features/chat/presentation/paper_ai_discussion_view.dart';
 import 'package:spark/src/features/papers/application/paper_chat_context.dart';
@@ -1151,7 +1152,7 @@ void main() {
     );
     expect(
       actionsClip.borderRadius,
-      const BorderRadius.all(Radius.circular(16)),
+      const BorderRadius.all(Radius.circular(SparkDesignTokens.radius2Xl)),
     );
 
     await tester.tap(find.byKey(ValueKey('ai-session-pin-${paper.id}')));

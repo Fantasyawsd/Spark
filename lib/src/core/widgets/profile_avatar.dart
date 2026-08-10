@@ -45,8 +45,7 @@ class ProfileAvatar extends StatelessWidget {
                 fit: BoxFit.cover,
                 errorBuilder: (context, error, stackTrace) => const ColoredBox(
                   color: SparkColors.surfaceMuted,
-                  child:
-                      Icon(Icons.person_rounded, color: SparkColors.muted),
+                  child: Icon(Icons.person_rounded, color: SparkColors.muted),
                 ),
               ),
             ),

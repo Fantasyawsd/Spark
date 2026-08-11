@@ -23,13 +23,13 @@
 
 ## 验收标准
 
-- [ ] Paper schema、来源字段、时间语义、可空值、版本与 provenance 可由 fixture 验证。
-- [ ] HF/arXiv/外部增强适配器支持原始快照、游标/ETag、幂等重跑和失败保留最后成功快照。
-- [ ] 稳定 `paper_id`、精确身份合并、低置信度匹配隔离和 AI 准入规则可审计。
-- [ ] SQLite Paper Database 保存规范论文、来源观测、快照、匹配队列和推荐批次。
-- [ ] `/api/v1` 提供详情、最新、主题、关注和推荐查询，支持版本、游标、时间筛选和已读过滤。
-- [ ] 推荐实现 High Impact / Trending、质量/趋势分、年龄桶、无放回概率抽样和候选不足回补。
-- [ ] 服务端单元/集成测试与 Flutter 现有静态检查均通过。
+- [x] Paper schema、来源字段、时间语义、可空值、版本与 provenance 可由 fixture 验证。
+- [x] HF/arXiv/外部增强适配器支持原始快照、游标/ETag、幂等重跑和失败保留最后成功快照。
+- [x] 稳定 `paper_id`、精确身份合并、低置信度匹配隔离和 AI 准入规则可审计。
+- [x] SQLite Paper Database 保存规范论文、来源观测、快照、匹配队列和推荐批次。
+- [x] `/api/v1` 提供详情、最新、主题、关注和推荐查询，支持版本、游标、时间筛选和已读过滤。
+- [x] 推荐实现 High Impact / Trending、质量/趋势分、年龄桶、无放回概率抽样和候选不足回补。
+- [x] 服务端单元/集成测试与 Flutter 现有静态检查均通过。
 
 ## 写入范围
 
@@ -84,8 +84,8 @@
 | `git diff --check` | 通过 | 2026-08-11 |
 | `flutter analyze` | No issues found | 2026-08-11 |
 | `flutter test` | 407 项通过 | 2026-08-11 |
-| `flutter build apk --debug --flavor development --dart-define=SPARK_ENV=development` | 通过；`build/app/outputs/flutter-apk/app-development-debug.apk`；164,811,140 bytes；SHA-256 `9726F13C3465E2EA2366688477AB84D2BD34610527AA7C558729A7878687474F` | 2026-08-11 |
-| `flutter build windows --debug --dart-define=SPARK_ENV=development` | 通过；`build/windows/x64/runner/Debug/spark.exe`；1,279,488 bytes；SHA-256 `BCA00A3389F00027B4EABACE9616ED415DB560B933338E7162A3BFA812C13F30` | 2026-08-11 |
+| `flutter build apk --debug --flavor development --dart-define=SPARK_ENV=development` | 通过；`build/app/outputs/flutter-apk/app-development-debug.apk`；193,305,007 bytes；SHA-256 `FD3CF5838347BF7A5CF191778F72356966C4B85FD4C548143A90F0FB135EFF83` | 2026-08-11 |
+| `flutter build windows --debug --dart-define=SPARK_ENV=development` | 通过；`build/windows/x64/runner/Debug/spark.exe`；1,278,976 bytes；SHA-256 `7C27356B6774A41377FC9E5232F8CEBE9A80F074415ABABF2B39B6F5574F3214` | 2026-08-11 |
 | `ssh a100 ... curl -sI https://pypi.org` | 服务器 `PR4910W` 可访问；网络 `OFFLINE`；`/data2/fanjiahao` 存在 | 2026-08-11 |
 | A100 `/data2/fanjiahao/anaconda3/envs/torch/bin/python -m unittest discover -s server/tests -v` | 12 项通过；Python 3.10 兼容性验证 | 2026-08-11 |
 
@@ -130,7 +130,7 @@
 
 ### 文档更新建议
 
-- 合入后将 `docs/development.md` 中 Phase 1/2 状态更新为“服务端实现完成、待 A100 数据回放/部署验收”，不把 fixture 测试误记为生产数据已上线。
+- 已完成：`docs/development.md` 已将 Phase 1/2 标记为服务端实现完成，并保留 A100 真实外部回放/部署验收风险；fixture 测试未被记为生产数据上线。
 
 ### 未完成与后续工作
 

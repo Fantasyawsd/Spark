@@ -10,8 +10,8 @@
 - Worktree：`C:\Users\Fantasy\Desktop\Spark-worktrees\fix--summary-translation-action-layout`
 - 基线提交：`75dc0aa4c89048401ad3a8f98ae68f95c6ec54a1`
 - 负责人：Codex
-- 状态：待合并
-- 最近更新：`2026-08-12 00:46`
+- 状态：已合并
+- 最近更新：`2026-08-12 00:56`
 
 ## 目标
 
@@ -56,9 +56,9 @@
 
 ## 当前进度
 
-- 已完成：完成两轮 TDD 红绿循环、双轴审查修复、短摘要与刷新等待态覆盖；编排者已在 Windows 应用中人工验收通过。
+- 已完成：完成两轮 TDD 红绿循环、双轴审查修复、短摘要与刷新等待态覆盖、Windows 人工验收、合入 `main` 及双目标发布构建验证。
 - 正在进行：无。
-- 下一步：合入 `main` 后执行发布版集成验证并完成归档。
+- 下一步：无；台账归档后只补勘误。
 - 阻塞项：无。
 
 ## 决策记录
@@ -92,6 +92,12 @@
 | 合并前发布版 APK 与 Windows 构建 | 当前 `/develop` 阶段未运行；由后续 `/test`、`/finish` 按 AGENTS.md §10 执行 | 2026-08-11 |
 | `flutter pub get` + `flutter run -d windows --dart-define=SPARK_ENV=development` | 依赖获取通过；经临时短路径目录联接成功构建并启动 `Spark` Windows 应用，编排者人工检查重新翻译/停止位置及展开全文后确认通过 | 2026-08-12 |
 | 验收环境清理 | 已关闭本次 `spark.exe` 进程并删除 `accept-link` 目录联接；真实任务 worktree 存在且 Git 状态干净 | 2026-08-12 |
+| `git merge-base --is-ancestor 515d65c main` | 通过，任务分支 tip 已真实合入 `main` | 2026-08-12 |
+| `.\tool\verify_changed_dart_format.ps1` + 相关文件 `dart format --output=none --set-exit-if-changed` | 合并后工作区无未提交 Dart 文件；3 个本任务相关 Dart 文件格式无变化 | 2026-08-12 |
+| `flutter analyze`（main 集成） | 通过，No issues found | 2026-08-12 |
+| `flutter test`（main 集成） | 411 项完整测试通过 | 2026-08-12 |
+| `flutter build apk --profile --flavor development --dart-define=SPARK_ENV=development` | 通过；无 `android/key.properties`，按规范生成 profile AOT APK：`build/app/outputs/flutter-apk/app-development-profile.apk`，119278268 字节，SHA-256 `B86FBD3AD8C01253DEB2601449E0F8DFFD8B1449640EDF56E8656B9280874DFD` | 2026-08-12 |
+| `flutter build windows --release --dart-define=SPARK_ENV=development` | 通过；`build/windows/x64/runner/Release/spark.exe`，101888 字节，SHA-256 `CDFCDE6D1129AA3B01FAF6DDCBC8FEAAB9D92B647A6B7BD00B9C712E579BA28A` | 2026-08-12 |
 
 ## 审查结论
 
@@ -146,13 +152,13 @@
 
 ## 合并归档（合并后在 main 补齐）
 
-> 任务尚未合入 `main`；最终集成提交、时间和集成验证由 `/finish` 在合并后填写。
+> 任务已合入 `main` 并完成最终集成验证；本页转为只读归档，后续仅补勘误。
 
-- 最终状态：待合并后填写
+- 最终状态：已合并
 - 合入分支：`main`
-- 最终集成提交：待合并后填写
+- 最终集成提交：`6b8eee240feef13b33527ef55a48b8c28b4622dc`（`杂项（合并）：合入摘要布局任务`）
 - Pull Request：无
-- 合并时间：待合并后填写
-- main 集成验证：待合并后填写
-- 开发计划更新：本任务不改变开发计划中的能力状态
+- 合并时间：2026-08-12 00:48:10（+08:00）
+- main 集成验证：格式检查通过、`flutter analyze` 通过、411 项完整测试通过、development profile APK 与 Windows release EXE 构建成功且已记录大小和 SHA-256
+- 开发计划更新：不适用；本任务仅调整既有中文摘要操作布局，不新增或改变 `docs/development.md` 中的产品能力状态
 - 最终后续项：无

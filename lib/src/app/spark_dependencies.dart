@@ -1,4 +1,5 @@
 import '../core/storage/local_json_store.dart';
+import '../core/config/app_config.dart';
 import '../core/theme/file_theme_preference_repository.dart';
 import '../core/theme/in_memory_theme_preference_repository.dart';
 import '../core/theme/theme_preference_repository.dart';
@@ -44,9 +45,11 @@ import '../features/papers/data/in_memory_paper_preference_repository.dart';
 import '../features/papers/data/in_memory_paper_reading_repository.dart';
 import '../features/papers/data/in_memory_paper_translation_repository.dart';
 import '../features/papers/data/offline_first_paper_catalog_repository.dart';
+import '../features/papers/data/paper_api_catalog_repository.dart';
 import '../features/papers/data/platform_paper_link_service.dart';
 import '../features/papers/data/platform_paper_share_service.dart';
 import '../features/papers/data/providers/arxiv/arxiv_atom_client.dart';
+import '../features/papers/data/providers/paper_api/paper_api_client.dart';
 import '../features/papers/domain/paper_catalog.dart';
 import '../features/papers/domain/paper_channel_preference_repository.dart';
 import '../features/papers/domain/paper_comment_repository.dart';
@@ -90,7 +93,12 @@ class SparkDependencies {
     required this.themePreferenceRepository,
   });
 
-  factory SparkDependencies.production() {
+  factory SparkDependencies.production() => _persistent();
+
+  factory SparkDependencies.forConfig(AppConfig config) =>
+      _persistent(paperApiBaseUrl: config.paperApiBaseUrl);
+
+  static SparkDependencies _persistent({String? paperApiBaseUrl}) {
     const seedRepository = ArxivSeedRepository();
     final credentialRepository = SecureDeepSeekCredentialRepository();
     final paperCacheStore = LocalJsonStore(
@@ -111,9 +119,7 @@ class SparkDependencies {
       fileName: 'paper_translations.json',
     );
     final keywordStore = LocalJsonStore(fileName: 'paper_keywords.json');
-    final pdfExtractStore = LocalJsonStore(
-      fileName: 'paper_pdf_extracts.json',
-    );
+    final pdfExtractStore = LocalJsonStore(fileName: 'paper_pdf_extracts.json');
     final themeStore = LocalJsonStore(fileName: 'theme_preferences.json');
     final aiSessionSettingsStore = LocalJsonStore(
       fileName: 'chat_session_settings.json',
@@ -121,26 +127,36 @@ class SparkDependencies {
     final keywordRepository = FilePaperKeywordRepository(store: keywordStore);
     final pdfRepository = FilePaperPdfRepository(store: pdfExtractStore);
     final pdfExtractionService = PaperPdfExtractionService();
+    final fallbackPaperCatalog = OfflineFirstPaperCatalogRepository(
+      remoteSource: ArxivAtomClient(),
+      cacheStore: FilePaperCacheStore(store: paperCacheStore),
+      seedRepository: seedRepository,
+    );
+    final paperCatalogRepository = paperApiBaseUrl == null
+        ? fallbackPaperCatalog
+        : PaperApiCatalogRepository(
+            remoteSource: PaperApiClient(baseUrl: paperApiBaseUrl),
+            fallbackRepository: fallbackPaperCatalog,
+          );
     return SparkDependencies(
       paperRepository: seedRepository,
-      paperCatalogRepository: OfflineFirstPaperCatalogRepository(
-        remoteSource: ArxivAtomClient(),
-        cacheStore: FilePaperCacheStore(store: paperCacheStore),
-        seedRepository: seedRepository,
-      ),
+      paperCatalogRepository: paperCatalogRepository,
       deepSeekCredentialRepository: credentialRepository,
       deepSeekCredentialValidator: DeepSeekApiCredentialValidator(),
       commentRepository: FilePaperCommentRepository(store: commentStore),
-      interactionRepository:
-          FilePaperInteractionRepository(store: interactionStore),
-      preferenceRepository:
-          FilePaperPreferenceRepository(store: preferenceStore),
+      interactionRepository: FilePaperInteractionRepository(
+        store: interactionStore,
+      ),
+      preferenceRepository: FilePaperPreferenceRepository(
+        store: preferenceStore,
+      ),
       channelPreferenceRepository: FilePaperChannelPreferenceRepository(
         store: channelPreferenceStore,
       ),
       readingRepository: FilePaperReadingRepository(store: readingStore),
-      searchHistoryRepository:
-          FilePaperSearchHistoryRepository(store: searchHistoryStore),
+      searchHistoryRepository: FilePaperSearchHistoryRepository(
+        store: searchHistoryStore,
+      ),
       shareService: const PlatformPaperShareService(),
       linkService: const PlatformPaperLinkService(),
       aiService: DeepSeekChatAiService(
@@ -159,8 +175,9 @@ class SparkDependencies {
           thinkingEnabled: false,
         ),
       ),
-      translationRepository:
-          FilePaperTranslationRepository(store: translationStore),
+      translationRepository: FilePaperTranslationRepository(
+        store: translationStore,
+      ),
       keywordRepository: keywordRepository,
       paperChatContextLoader: PaperChatContextLoader(
         keywordRepository: keywordRepository,
@@ -230,11 +247,13 @@ class SparkDependencies {
   }) {
     final resolvedCredentialRepository =
         deepSeekCredentialRepository ?? InMemoryDeepSeekCredentialRepository();
-    final resolvedAiService = aiService ??
+    final resolvedAiService =
+        aiService ??
         DeepSeekChatAiService(
           credentialRepository: resolvedCredentialRepository,
         );
-    final resolvedWebSearchService = webSearchAiService ??
+    final resolvedWebSearchService =
+        webSearchAiService ??
         DeepSeekWebSearchChatAiService(
           credentialRepository: resolvedCredentialRepository,
         );
@@ -243,7 +262,8 @@ class SparkDependencies {
     final resolvedPdfRepository = pdfRepository ?? InMemoryPaperPdfRepository();
     final resolvedPdfExtractionService =
         pdfExtractionService ?? PaperPdfExtractionService();
-    final resolvedPdfContentProvider = pdfContentProvider ??
+    final resolvedPdfContentProvider =
+        pdfContentProvider ??
         CachedPaperPdfContentProvider(
           repository: resolvedPdfRepository,
           extractionService: resolvedPdfExtractionService,
@@ -258,7 +278,8 @@ class SparkDependencies {
           interactionRepository ?? InMemoryPaperInteractionRepository(),
       preferenceRepository:
           preferenceRepository ?? InMemoryPaperPreferenceRepository(),
-      channelPreferenceRepository: channelPreferenceRepository ??
+      channelPreferenceRepository:
+          channelPreferenceRepository ??
           InMemoryPaperChannelPreferenceRepository(),
       readingRepository: readingRepository ?? InMemoryPaperReadingRepository(),
       searchHistoryRepository:
@@ -269,9 +290,11 @@ class SparkDependencies {
       webSearchAiService: resolvedWebSearchService,
       aiSessionRepository:
           aiSessionRepository ?? InMemoryChatSessionRepository(),
-      chatSessionSettingsRepository: chatSessionSettingsRepository ??
+      chatSessionSettingsRepository:
+          chatSessionSettingsRepository ??
           InMemoryChatSessionSettingsRepository(),
-      translationServiceFactory: translationServiceFactory ??
+      translationServiceFactory:
+          translationServiceFactory ??
           DeepSeekPaperTranslationServiceFactory(
             chatClientFactory: () => DeepSeekChatAiService(
               credentialRepository: resolvedCredentialRepository,
@@ -281,7 +304,8 @@ class SparkDependencies {
       translationRepository:
           translationRepository ?? InMemoryPaperTranslationRepository(),
       keywordRepository: resolvedKeywordRepository,
-      paperChatContextLoader: paperChatContextLoader ??
+      paperChatContextLoader:
+          paperChatContextLoader ??
           PaperChatContextLoader(
             keywordRepository: resolvedKeywordRepository,
             pdfContentProvider: resolvedPdfContentProvider,

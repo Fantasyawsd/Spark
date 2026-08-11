@@ -19,13 +19,13 @@ class OfflineFirstPaperCatalogRepository implements PaperCatalogRepository {
     PaperCacheMapper cacheMapper = const PaperCacheMapper(),
     PaperCachePolicy cachePolicy = const PaperCachePolicy(),
     DateTime Function()? clock,
-  })  : _remoteSource = remoteSource,
-        _cacheStore = cacheStore,
-        _seedRepository = seedRepository,
-        _mapper = mapper,
-        _cacheMapper = cacheMapper,
-        _cachePolicy = cachePolicy,
-        _clock = clock ?? DateTime.now;
+  }) : _remoteSource = remoteSource,
+       _cacheStore = cacheStore,
+       _seedRepository = seedRepository,
+       _mapper = mapper,
+       _cacheMapper = cacheMapper,
+       _cachePolicy = cachePolicy,
+       _clock = clock ?? DateTime.now;
 
   final ArxivCatalogSource _remoteSource;
   final PaperCacheStore _cacheStore;
@@ -47,8 +47,9 @@ class OfflineFirstPaperCatalogRepository implements PaperCatalogRepository {
         offset: query.offset,
         limit: query.limit,
       );
-      final papers =
-          remote.entries.map(_mapper.toDomain).toList(growable: false);
+      final papers = remote.entries
+          .map(_mapper.toDomain)
+          .toList(growable: false);
       final fetchedAt = _clock().toUtc();
       final result = PaperPage(
         papers: papers,
@@ -85,8 +86,9 @@ class OfflineFirstPaperCatalogRepository implements PaperCatalogRepository {
         offset: query.offset,
         limit: query.limit,
       );
-      final papers =
-          remote.entries.map(_mapper.toDomain).toList(growable: false);
+      final papers = remote.entries
+          .map(_mapper.toDomain)
+          .toList(growable: false);
       final fetchedAt = _clock().toUtc();
       final result = PaperPage(
         papers: papers,
@@ -186,8 +188,9 @@ class OfflineFirstPaperCatalogRepository implements PaperCatalogRepository {
   }
 
   PaperPage _stalePage(CachedPaperPageRecord cached, Object error) {
-    final papers =
-        cached.papers.map(_cacheMapper.toDomain).toList(growable: false);
+    final papers = cached.papers
+        .map(_cacheMapper.toDomain)
+        .toList(growable: false);
     return PaperPage(
       papers: papers,
       source: PaperPageSource.cache,
@@ -209,18 +212,21 @@ class OfflineFirstPaperCatalogRepository implements PaperCatalogRepository {
 
   PaperPage _seedSearchPage(String term, PaperSearchQuery query, Object error) {
     final normalized = term.toLowerCase();
-    final matches = _seedRepository.getAll().where((paper) {
-      final text = [
-        paper.title,
-        paper.content.originalAbstractMarkdown,
-        paper.venue ?? '',
-        paper.journalReference ?? '',
-        ...paper.authors,
-        ...paper.contentKeywords,
-        ...paper.subjects,
-      ].join(' ').toLowerCase();
-      return text.contains(normalized);
-    }).toList(growable: false);
+    final matches = _seedRepository
+        .getAll()
+        .where((paper) {
+          final text = [
+            paper.title,
+            paper.content.originalAbstractMarkdown,
+            paper.venue ?? '',
+            paper.journalReference ?? '',
+            ...paper.authors,
+            ...paper.contentKeywords,
+            ...paper.subjects,
+          ].join(' ').toLowerCase();
+          return text.contains(normalized);
+        })
+        .toList(growable: false);
     return _sliceSeed(matches, query.offset, query.limit, error);
   }
 
@@ -252,16 +258,18 @@ class OfflineFirstPaperCatalogRepository implements PaperCatalogRepository {
     if (normalized == null || normalized.isEmpty || normalized == '全部') {
       return papers;
     }
-    return papers.where((paper) {
-      final text = [
-        paper.title,
-        paper.venue ?? '',
-        paper.journalReference ?? '',
-        ...paper.contentKeywords,
-        ...paper.subjects,
-      ].join(' ').toLowerCase();
-      return text.contains(normalized.toLowerCase());
-    }).toList(growable: false);
+    return papers
+        .where((paper) {
+          final text = [
+            paper.title,
+            paper.venue ?? '',
+            paper.journalReference ?? '',
+            ...paper.contentKeywords,
+            ...paper.subjects,
+          ].join(' ').toLowerCase();
+          return text.contains(normalized.toLowerCase());
+        })
+        .toList(growable: false);
   }
 
   Paper? _seedById(String paperId) {

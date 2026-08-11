@@ -61,12 +61,34 @@ void main() {
     );
 
     expect(development.environment, AppEnvironment.development);
+    expect(development.paperApiBaseUrl, 'http://127.0.0.1:8000/api/v1');
     expect(
       () => AppConfig.resolve(
         platformFlavor: 'production',
         requestedEnvironment: 'development',
       ),
       throwsStateError,
+    );
+  });
+
+  test('Paper API is development-only and supports an explicit base URL', () {
+    final development = AppConfig.resolve(
+      requestedEnvironment: 'development',
+      requestedPaperApiBaseUrl: 'http://localhost:9000/api/v1/',
+    );
+    final staging = AppConfig.resolve(
+      requestedEnvironment: 'staging',
+      requestedPaperApiBaseUrl: 'http://localhost:9000/api/v1',
+    );
+
+    expect(development.paperApiBaseUrl, 'http://localhost:9000/api/v1');
+    expect(staging.paperApiBaseUrl, isNull);
+    expect(
+      () => AppConfig.resolve(
+        requestedEnvironment: 'development',
+        requestedPaperApiBaseUrl: 'localhost:8000',
+      ),
+      throwsArgumentError,
     );
   });
 }

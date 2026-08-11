@@ -40,7 +40,7 @@ fix/pdf-cache
 
 每个独立任务使用独立 worktree；即使当前只有一个 Agent，也不直接把新任务叠加到控制工作树。
 
-**唯一合法位置**：所有任务 worktree 必须与控制工作树同级，即 `<控制工作树根>\..\<branch-slug>`（本仓库即 `%USERPROFILE%\Desktop\Spark-worktrees\<branch-slug>`）。
+**唯一合法位置**：所有任务 worktree 必须与控制工作树同级，即 `<控制工作树根>\..\agent-<n>`（本仓库即 `%USERPROFILE%\Desktop\Spark-worktrees\agent-<n>`）。短目录名用于降低 Windows 路径长度；它不承担任务语义，任务语义继续由分支名和台账表达。
 
 **执行前提**：`git worktree` 命令必须在控制工作树（仓库根目录）内执行；执行前先确认当前目录：
 
@@ -51,9 +51,16 @@ git rev-parse --show-toplevel
 确保输出为控制工作树根路径（本仓库为 `%USERPROFILE%\Desktop\Spark-worktrees\Spark`），再执行创建：
 
 ```powershell
-git worktree add ..\feature--paper-channels `
+$taskWorktreeCount =
+  (git worktree list --porcelain | Select-String '^worktree ' | Measure-Object).Count - 1
+$agentIndex = $taskWorktreeCount + 1
+while (Test-Path "..\agent-$agentIndex") { $agentIndex++ }
+
+git worktree add "..\agent-$agentIndex" `
   -b feature/paper-channels <approved-base>
 ```
+
+`agentIndex` 的起始值为当前已注册任务 worktree 数量加一；控制工作树 `Spark` 不计数。若短目录仍被旧目录或其他任务占用，继续递增直到目录可用。创建和清理时均以 `git worktree list` 中记录的真实路径为准，不根据分支名反推目录。
 
 创建前检查：
 
@@ -73,7 +80,9 @@ git worktree list
 - 不通过复制未提交文件、共享暂存区或压缩工作目录协作。
 - 不从脏工作区创建无法追溯的任务基线。
 - worktree 路径不得位于仓库内部。
-- worktree 目录名固定为 `<branch-slug>`（分支名中 `/` 替换为 `--`），不得使用 `Spark-worktree`（单数）、`Spark-worktrees\Spark-worktrees`（嵌套）等变体。
+- 新建 worktree 的目录名固定为 `agent-<n>`；现有旧命名 worktree 不强制迁移。
+- 分支继续使用 `<type>/<slug>`；任务台账继续使用 `<branch-slug>`（分支名中 `/` 替换为 `--`），两者均不改为 `agent-<n>`。
+- 不得使用 `Spark-worktree`（单数）、`Spark-worktrees\Spark-worktrees`（嵌套）等变体。
 - 禁止在以下位置创建 worktree：仓库内部（含 `.slim/worktrees/`、`.claude/`、`~/.claude/` 等任何隐藏目录）、仓库的上级目录以外的其他位置。
 
 ## 4. 任务台账

@@ -15,7 +15,7 @@ disable-model-invocation: true
    - 完成标准：明确本次要跑的验证与不跑的项及原因。
 
 2. **运行门禁**
-   - 按顺序运行格式检查、`flutter analyze`、`flutter test` 和目标构建；命令清单见 `docs/standards/version-control.md`「验证门禁」。合并后的双目标构建由 `/finish` 按同一门禁确认。
+   - 按顺序运行格式检查、`flutter analyze`、`flutter test`；命令清单见 `docs/standards/version-control.md`「验证门禁」。两个目标（development APK、Windows EXE）的发布版构建不在此阶段重复执行，由 `/finish` 合入 `main` 后统一构建并记录证据。
    - 完成标准：每个命令有明确成功/失败输出；失败时区分本次引入 / 基线已有 / 环境缺失 / 外部服务不可用。
 
 3. **验收运行（用户要求检验时）**

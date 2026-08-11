@@ -210,7 +210,7 @@ docs/workstreams/<branch-slug>/
 
 ## 10. 验证与界面约束
 
-每个任务分支按风险运行定向验证，并在台账中记录。无测试的功能视为不存在——新增业务行为必须伴随可独立验证的测试。合并前后默认执行完整验证：
+每个任务分支按风险运行定向验证，并在台账中记录。无测试的功能视为不存在——新增业务行为必须伴随可独立验证的测试。完整验证门禁如下：
 
 ```powershell
 .\tool\verify_changed_dart_format.ps1
@@ -220,7 +220,7 @@ flutter build apk --release --flavor development --dart-define=SPARK_ENV=develop
 flutter build windows --release --dart-define=SPARK_ENV=development
 ```
 
-纯文档任务至少执行 Markdown 链接检查和 `git diff --check`，不需要无意义地运行 Flutter 构建。
+门禁分工：`/test` 阶段执行格式检查、`flutter analyze`、`flutter test` 三项，不重复执行目标构建；两个目标的发布版构建由 `/finish` 合入 `main` 后统一执行并记录证据（见下方 `/finish` 条目）。纯文档任务至少执行 Markdown 链接检查和 `git diff --check`，不需要无意义地运行 Flutter 构建。
 
 - 不启动 Android 模拟器。
 - 构建一律发布版（2026-08-11 编排者指示）：debug 构建的 JIT/断言开销会造成性能假象（如键盘动画卡顿），不得用于验收或交付。Android release 受签名门控：无 `android/key.properties` 时 Gradle 拒绝 release 构建，签名配置前 APK 构建改用 `--profile` 代替（AOT 编译，性能等同发布版，debug 签名可直接安装），台账必须注明产物类型为 profile。

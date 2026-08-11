@@ -89,11 +89,8 @@ class _PaperCommentsSheetState extends State<_PaperCommentsSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final keyboardInset = MediaQuery.viewInsetsOf(context).bottom;
-    return AnimatedPadding(
-      duration: const Duration(milliseconds: 180),
-      curve: Curves.easeOut,
-      padding: EdgeInsets.only(bottom: keyboardInset),
+    return _KeyboardInsetFollower(
+      preserveTopEdge: _fullscreen,
       child: NotificationListener<DraggableScrollableNotification>(
         onNotification: _handleSheetNotification,
         child: DraggableScrollableSheet(
@@ -380,6 +377,38 @@ class _CommentSortMenu extends StatelessWidget {
                 size: 18,
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _KeyboardInsetFollower extends StatelessWidget {
+  const _KeyboardInsetFollower({
+    required this.preserveTopEdge,
+    required this.child,
+  });
+
+  final bool preserveTopEdge;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final mediaQuery = MediaQuery.of(context);
+    return Transform.translate(
+      offset: Offset(
+        0,
+        preserveTopEdge ? 0 : -mediaQuery.viewInsets.bottom,
+      ),
+      child: MediaQuery(
+        data: mediaQuery.removeViewInsets(removeBottom: true),
+        child: RepaintBoundary(
+          child: Padding(
+            padding: EdgeInsets.only(
+              bottom: preserveTopEdge ? mediaQuery.viewInsets.bottom : 0,
+            ),
+            child: child,
           ),
         ),
       ),

@@ -394,6 +394,7 @@ class _SparkShellState extends State<SparkShell> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       backgroundColor: SparkColors.of(context).canvas,
       body: Stack(
         children: [

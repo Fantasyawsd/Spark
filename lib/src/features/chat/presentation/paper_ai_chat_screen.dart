@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../../core/theme/spark_design_tokens.dart';
 import '../../../core/theme/spark_font_sizes.dart';
@@ -69,6 +70,14 @@ class _PaperAiChatScreenState extends State<PaperAiChatScreen> {
 
   String get _conversationSubtitle =>
       widget.screenSubtitle ?? widget.chatContext.title;
+
+  bool get _isDesktopPlatform => switch (defaultTargetPlatform) {
+        TargetPlatform.windows ||
+        TargetPlatform.macOS ||
+        TargetPlatform.linux =>
+          true,
+        _ => false,
+      };
 
   @override
   void initState() {
@@ -185,8 +194,13 @@ class _PaperAiChatScreenState extends State<PaperAiChatScreen> {
 
     final editingLatestPrompt = _editingLatestPrompt;
     _editingLatestPrompt = false;
-    // 发送即收起键盘；AI 回复期间与完成后保持收起，用户需要时再点按输入区。
-    _composerFocusNode.unfocus();
+    // 移动端发送即收起键盘，AI 回复期间与完成后保持收起，用户需要时再点按输入区；
+    // 桌面端保持输入框焦点，便于连续输入（点按发送按钮会夺走焦点，需显式要回）。
+    if (_isDesktopPlatform) {
+      _composerFocusNode.requestFocus();
+    } else {
+      _composerFocusNode.unfocus();
+    }
     _composer.clear();
     setState(() {});
     if (editingLatestPrompt) {
@@ -305,6 +319,14 @@ class _PaperAiChatScreenState extends State<PaperAiChatScreen> {
     });
   }
 
+  void _dismissKeyboard() {
+    _composerFocusNode.unfocus();
+    FocusManager.instance.primaryFocus?.unfocus();
+    // Android 上焦点转移后系统输入法偶发残留，兜底显式关闭；
+    // 无平台通道的环境（如测试）由 ignore 吞掉错误。
+    SystemChannels.textInput.invokeMethod<void>('TextInput.hide').ignore();
+  }
+
   void _deleteMessage(int index) {
     if (_conversation.sending ||
         index < 0 ||
@@ -326,6 +348,8 @@ class _PaperAiChatScreenState extends State<PaperAiChatScreen> {
         ..clear()
         ..addAll(selected);
     });
+    // 多选以底部操作栏替换输入区，键盘留着只会遮挡内容。
+    _dismissKeyboard();
   }
 
   void _toggleMessageSelection(int index) {

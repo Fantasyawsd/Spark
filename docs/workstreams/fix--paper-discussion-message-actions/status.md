@@ -23,10 +23,10 @@
 
 ## 验收标准
 
-- [ ] 内嵌讨论视图：用户消息不显示「修改」按钮；AI 消息不显示「更多」按钮（删除消息入口消失）；复制、重新生成按钮保留。
-- [ ] 全屏聊天页：修改按钮、「更多 → 删除消息」、多选删除行为与现状一致。
-- [ ] 新增 Widget 测试覆盖上述两条。
-- [ ] `tool/verify_changed_dart_format.ps1`、`flutter analyze`、`flutter test` 全量通过。
+- [x] 内嵌讨论视图：用户消息不显示「修改」按钮；AI 消息不显示「更多」按钮（删除消息入口消失）；复制、重新生成按钮保留。
+- [x] 全屏聊天页：修改按钮、「更多 → 删除消息」、多选删除行为与现状一致。
+- [x] 新增 Widget 测试覆盖上述两条。
+- [x] `tool/verify_changed_dart_format.ps1`、`flutter analyze`、`flutter test` 全量通过。
 
 ## 写入范围
 
@@ -55,9 +55,9 @@
 
 ## 当前进度
 
-- 已完成：任务边界确认（编排者拍板隐藏方案）；必读文档与并行任务核对；worktree 与分支创建；台账初始化。
-- 正在进行：等待编码。
-- 下一步：实施计划第 1 步。
+- 已完成：任务边界确认（编排者拍板隐藏方案）；必读文档与并行任务核对；worktree 与分支创建；台账初始化；`paper_ai_content.dart` 可空透传；`paper_ai_message_view.dart` 「更多」按钮条件渲染；2 个新 Widget 测试；定向验证（格式门禁、analyze、全量 test 413 通过）。
+- 正在进行：无（等待编排者触发 /test 或验收）。
+- 下一步：/test 完整验证门禁。
 - 阻塞项：无
 
 ## 决策记录
@@ -72,6 +72,11 @@
 
 | 命令或人工检查 | 结果 | 日期 |
 | --- | --- | --- |
+| `flutter test test/paper_ai_discussion_view_test.dart` | 2 通过 | 2026-08-12 |
+| `flutter test test/paper_ai_mobile_chat_ui_test.dart test/paper_ai_chat_keyboard_interactions_test.dart test/ui_preview_test.dart` | 40 通过，无回归 | 2026-08-12 |
+| `tool/verify_changed_dart_format.ps1` | 通过（3 文件） | 2026-08-12 |
+| `flutter analyze` | No issues found | 2026-08-12 |
+| `flutter test`（全量） | 413 全过 | 2026-08-12 |
 
 ## 审查结论
 
@@ -86,6 +91,8 @@
 
 | SHA | 提交信息 | 对应阶段 | 验证摘要 |
 | --- | --- | --- | --- |
+| 968c624 | 文档（台账）：创建论文讨论消息操作任务台账 | /start | 无（纯文档） |
+| ab37e6b | 修复（ChatPaper）：隐藏论文内嵌讨论中无效的消息操作入口 | /develop | 格式门禁、analyze、test 全量 413 通过 |
 
 ## 交付准备（合并前收集）
 

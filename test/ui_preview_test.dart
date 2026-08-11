@@ -653,7 +653,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('评论 0'), findsOneWidget);
-    expect(find.text('AI 解析'), findsOneWidget);
+    expect(find.text('AI'), findsOneWidget);
     expect(find.text('还没有评论，来发表第一条看法吧'), findsOneWidget);
 
     final halfHeight = tester
@@ -687,7 +687,7 @@ void main() {
     await tester.tap(find.byTooltip('恢复半屏'));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('AI 解析'));
+    await tester.tap(find.text('AI'));
     await tester.pumpAndSettle();
 
     final aiContentSize = tester.getSize(
@@ -733,7 +733,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('这是一条本地评论'), findsOneWidget);
 
-    await tester.tap(find.text('AI 解析'));
+    await tester.tap(find.text('AI'));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField), '总结实验效果');
     await tester.pump();
@@ -782,7 +782,7 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('paper-comment-send')));
     await tester.pump();
 
-    await tester.tap(find.text('AI 解析'));
+    await tester.tap(find.text('AI'));
     await tester.pumpAndSettle();
     repository.failSave();
     await tester.pumpAndSettle();

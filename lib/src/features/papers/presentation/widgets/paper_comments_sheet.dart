@@ -447,7 +447,7 @@ class _SheetHeader extends StatelessWidget {
           SizedBox(
             width: 170,
             child: SparkTabBar(
-              tabs: ['评论 $commentCount', 'AI 解析'],
+              tabs: ['评论 $commentCount', 'AI'],
               selectedIndex: pageIndex,
               pageController: pageController,
               height: 44,

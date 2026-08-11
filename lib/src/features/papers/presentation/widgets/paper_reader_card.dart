@@ -91,7 +91,7 @@ class PaperReaderCard extends StatefulWidget {
 }
 
 class _PaperReaderCardState extends State<PaperReaderCard> {
-  static const _tabs = ['Abstract', '摘要', '关键词', '作者', 'AI 解读', '相关论文'];
+  static const _tabs = ['Abstract', '摘要', '关键词', '作者', '论文解读', '相关论文'];
 
   late int _tabIndex;
   late final PageController _tabPageController;

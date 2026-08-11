@@ -28,6 +28,16 @@ class PaperTranslationContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final translationAction = TextButton(
+      key: const ValueKey('paper-translation-refresh'),
+      onPressed: translating ? onCancel : onRefresh,
+      style: TextButton.styleFrom(
+        minimumSize: const Size(0, 28),
+        padding: const EdgeInsets.symmetric(horizontal: 6),
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      ),
+      child: Text(translating ? '停止' : '重新翻译'),
+    );
     if (loadingCache && markdown.isEmpty) {
       return const _TranslationStatus(
         icon: CircularProgressIndicator(strokeWidth: 2),
@@ -35,11 +45,23 @@ class PaperTranslationContent extends StatelessWidget {
       );
     }
     if (translating && markdown.isEmpty) {
-      return _TranslationStatus(
-        icon: const CircularProgressIndicator(strokeWidth: 2),
-        title: '正在生成…',
-        actionLabel: '停止',
-        onAction: onCancel,
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Expanded(
+            child: _TranslationStatus(
+              icon: CircularProgressIndicator(strokeWidth: 2),
+              title: '正在生成…',
+            ),
+          ),
+          SizedBox(
+            height: PaperTabBody.bottomActionHeight,
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: translationAction,
+            ),
+          ),
+        ],
       );
     }
     if (error != null && markdown.isEmpty) {
@@ -68,11 +90,11 @@ class PaperTranslationContent extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        SizedBox(
-          height: 30,
-          child: Row(
-            children: [
-              if (translating) ...[
+        if (translating)
+          SizedBox(
+            height: 30,
+            child: Row(
+              children: [
                 const SizedBox(
                   width: 13,
                   height: 13,
@@ -87,20 +109,8 @@ class PaperTranslationContent extends StatelessWidget {
                   ),
                 ),
               ],
-              const Spacer(),
-              TextButton(
-                key: const ValueKey('paper-translation-refresh'),
-                onPressed: translating ? onCancel : onRefresh,
-                style: TextButton.styleFrom(
-                  minimumSize: const Size(0, 28),
-                  padding: const EdgeInsets.symmetric(horizontal: 6),
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-                child: Text(translating ? '停止' : '重新翻译'),
-              ),
-            ],
+            ),
           ),
-        ),
         if (error != null)
           Padding(
             padding: const EdgeInsets.only(bottom: 6),
@@ -117,6 +127,7 @@ class PaperTranslationContent extends StatelessWidget {
             text: markdown,
             expandable: true,
             stabilizeGeneratedSyntax: true,
+            bottomLeadingAction: translationAction,
             onExpand: onExpand,
           ),
         ),

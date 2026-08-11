@@ -209,16 +209,16 @@ docs/workstreams/<branch-slug>/
 .\tool\verify_changed_dart_format.ps1
 flutter analyze
 flutter test
-flutter build apk --debug --flavor development --dart-define=SPARK_ENV=development
-flutter build windows --debug --dart-define=SPARK_ENV=development
+flutter build apk --release --flavor development --dart-define=SPARK_ENV=development
+flutter build windows --release --dart-define=SPARK_ENV=development
 ```
 
 纯文档任务至少执行 Markdown 链接检查和 `git diff --check`，不需要无意义地运行 Flutter 构建。
 
 - 不启动 Android 模拟器。
-- `/finish` 合入 `main` 后必须在同一次收尾流程中完成 development APK 和 Windows debug EXE 两个目标构建，并在 `status.md` 记录产物路径、大小和 SHA-256；任一构建失败不得完成归档或清理。
+- 构建一律发布版（2026-08-11 编排者指示）：debug 构建的 JIT/断言开销会造成性能假象（如键盘动画卡顿），不得用于验收或交付。Android release 受签名门控：无 `android/key.properties` 时 Gradle 拒绝 release 构建，签名配置前 APK 构建改用 `--profile` 代替（AOT 编译，性能等同发布版，debug 签名可直接安装），台账必须注明产物类型为 profile。
+- `/finish` 合入 `main` 后必须在同一次收尾流程中完成 development APK 和 Windows EXE 两个目标的发布版构建，并在 `status.md` 记录产物路径、大小和 SHA-256；任一构建失败不得完成归档或清理。
 - 开发验收（用户要求检验时）：执行 `flutter pub get` + `flutter run -d windows` 启动 Windows 桌面应用，等待用户操作检验；不自行替代为 APK、模拟器或其他平台。运行前先与用户确认。
-- Windows release 只在任务涉及 Windows 发布或回归时执行。
 - UI 修改使用 Widget 测试、静态检查和构建验证；不使用浏览器自动化验证 Flutter 应用。
 - 无法执行某项验证时必须在台账中说明原因，不能声称已经通过。
 

@@ -4,8 +4,8 @@
 
 - 任务：论文内嵌 AI 讨论隐藏无效的消息修改/删除入口
 - 关联发布或里程碑：不关联发布
-- 分支：`fix/paper-discussion-message-actions`
-- Worktree：`C:\Users\Fantasy\Desktop\Spark-worktrees\fix--paper-discussion-message-actions`
+- 分支：`fix/chat-message-actions`
+- Worktree：`C:\Users\Fantasy\Desktop\Spark-worktrees\fix--chat-message-actions`
 - 基线提交：`f8932a5c06d95102a7c22aa6077f77af2dbf8f51`（main HEAD）
 - 负责人：Fantasy（编排者）；执行：Claude
 - 状态：开发中
@@ -35,7 +35,7 @@
 - `lib/src/features/chat/presentation/widgets/paper_ai_content.dart`
 - `lib/src/features/chat/presentation/widgets/paper_ai_message_view.dart`
 - `test/paper_ai_discussion_view_test.dart`（新增）
-- `docs/workstreams/fix--paper-discussion-message-actions/`
+- `docs/workstreams/fix--chat-message-actions/`
 
 ### 共享路径
 
@@ -65,6 +65,7 @@
 | 日期 | 决策 | 原因 | 影响 |
 | --- | --- | --- | --- |
 | 2026-08-12 | 内嵌视图隐藏入口而非接线功能 | 编排者决策；内嵌视图保持轻量，全屏页已提供完整能力 | 只动 presentation 层两个共享组件与新增测试 |
+| 2026-08-12 | 分支 slug 由 `fix--paper-discussion-message-actions` 缩短为 `fix--chat-message-actions` | 原 slug 下 Windows 插件构建路径达 262 字符超 MAX_PATH 260，MSBuild MSB3491 无法编译；subst 短盘符又使 flutter_assemble 退出 255 | worktree、分支与台账目录同步重命名，提交历史不变 |
 
 ## 验证记录
 

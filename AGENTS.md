@@ -113,10 +113,10 @@ fix/pdf-cache
 worktree 位置（与控制工作树同级）：
 
 ```text
-../<branch-slug>
+../agent-<n>
 ```
 
-本仓库的控制工作树为 `%USERPROFILE%\Desktop\Spark-worktrees\Spark`，任务 worktree 位于其父目录 `%USERPROFILE%\Desktop\Spark-worktrees\<branch-slug>`。所有 `git worktree` 命令必须在控制工作树根目录内执行，执行前用 `git rev-parse --show-toplevel` 确认当前目录。禁止在仓库内部（含 `.slim/worktrees/`、`.claude/`）、嵌套的 `Spark-worktrees\Spark-worktrees\` 或其他变体位置创建。
+本仓库的控制工作树为 `%USERPROFILE%\Desktop\Spark-worktrees\Spark`，任务 worktree 位于其父目录 `%USERPROFILE%\Desktop\Spark-worktrees\agent-<n>`。`n` 从当前已注册的任务 worktree 数量加一开始（控制工作树不计数）；如对应目录已存在则继续递增，直到找到未占用的短目录名。worktree 目录名与分支名解耦，分支仍使用可读的 `<type>/<slug>`。所有 `git worktree` 命令必须在控制工作树根目录内执行，执行前用 `git rev-parse --show-toplevel` 确认当前目录。禁止在仓库内部（含 `.slim/worktrees/`、`.claude/`）、嵌套的 `Spark-worktrees\Spark-worktrees\` 或其他变体位置创建。
 
 创建前必须确认基线分支、任务范围和工作区状态：
 
@@ -132,13 +132,20 @@ git worktree list
 由控制工作树创建：
 
 ```powershell
-git worktree add ..\feature--paper-channels `
+$taskWorktreeCount =
+  (git worktree list --porcelain | Select-String '^worktree ' | Measure-Object).Count - 1
+$agentIndex = $taskWorktreeCount + 1
+while (Test-Path "..\agent-$agentIndex") { $agentIndex++ }
+
+git worktree add "..\agent-$agentIndex" `
   -b feature/paper-channels <approved-base>
 ```
 
 约束：
 
 - 一个 worktree 同时只允许一个任务写入。
+- 新任务只使用 `agent-<n>` 短目录名；现有旧命名 worktree 不强制迁移。
+- 台账目录仍按分支名中 `/` 替换为 `--` 的 `<branch-slug>` 命名，不使用 `agent-<n>`。
 - 不在 worktree 内切换到其他任务分支。
 - 不从脏工作区复制整个目录作为并行方案。
 - 不使用 `git reset --hard`、`git clean`、强制 checkout 或其他破坏性命令处理冲突。

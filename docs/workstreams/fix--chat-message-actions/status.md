@@ -8,8 +8,8 @@
 - Worktree：`C:\Users\Fantasy\Desktop\Spark-worktrees\fix--chat-message-actions`
 - 基线提交：`f8932a5c06d95102a7c22aa6077f77af2dbf8f51`（main HEAD）
 - 负责人：Fantasy（编排者）；执行：Claude
-- 状态：待合并
-- 最近更新：2026-08-12 02:15
+- 状态：已合并
+- 最近更新：2026-08-12 02:25
 
 ## 目标
 
@@ -80,6 +80,9 @@
 | `flutter test`（全量） | 413 全过 | 2026-08-12 |
 | Windows 桌面发布版 `flutter run --release` 实测：内嵌讨论无修改/更多按钮、复制/重试保留；全屏聊天修改/删除入口可用 | 通过（编排者验收） | 2026-08-12 |
 | 长 slug worktree `flutter build windows --release` | 失败：MSB3491 路径超 MAX_PATH 260；已通过缩短 slug 根治（见决策记录） | 2026-08-12 |
+| main 集成回归（合并后）：`tool/verify_changed_dart_format.ps1 -BaseRevision 85e3b23` + `flutter analyze` + `flutter test` 全量 | 全过（421 项） | 2026-08-12 |
+| main 集成构建（合并后）：`flutter build apk --profile --flavor development --dart-define=SPARK_ENV=development`（Android release 签名未配置，按 AGENTS.md §10 以 profile 代替，产物类型 profile） | 通过（128.6s）；产物 `build/app/outputs/flutter-apk/app-development-profile.apk`，119,278,476 B（113.8 MB），SHA-256 `851f783a7ba483d0c26640307995ffadbca8199438d70c1c5b993bee4713e06b` | 2026-08-12 |
+| main 集成构建（合并后）：`flutter build windows --release --dart-define=SPARK_ENV=development` | 通过（128.9s）；产物 `build/windows/x64/runner/Release/spark.exe`，101,888 B，SHA-256 `cdfcde6d1129aa3b01faf6ddcbc8feaab9d92b647a6b7bd00b9c712e579ba28a` | 2026-08-12 |
 
 ## 审查结论
 
@@ -136,11 +139,11 @@
 
 > 只有任务提交已真实进入 `main` 后才能填写。本节与 `docs/development.md` 的真实状态更新一并提交；完成后台账转为只读归档。
 
-- 最终状态：
+- 最终状态：已合并
 - 合入分支：`main`
-- 最终集成提交：
+- 最终集成提交：`929e3df`（`杂项（合并）：合入消息操作隐藏任务`）
 - Pull Request：无
-- 合并时间：
-- main 集成验证：
-- 开发计划更新：
-- 最终后续项：
+- 合并时间：2026-08-12 02:24:59 +08:00
+- main 集成验证：格式门禁（基线 `85e3b23`，3 文件）、`flutter analyze`、`flutter test` 全量 421 项、development APK（profile，按 AGENTS.md §10 代替 release）与 Windows release EXE 双目标发布版构建全部通过；产物路径、大小与 SHA-256 见上方验证记录。
+- 开发计划更新：不适用；消息操作入口显隐不改变 `docs/development.md` 的功能能力状态（同 `feature/chat-keyboard-interactions` 先例）。
+- 最终后续项：若后续为内嵌讨论视图接线删除/修改功能，底层 controller 能力已具备，仅需 presentation 层接线。本台账转为只读归档，除勘误外不再更新。

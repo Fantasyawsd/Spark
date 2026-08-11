@@ -24,6 +24,7 @@ class PaperTabBody extends StatelessWidget {
   final VoidCallback onExpand;
 
   static const textStyle = paperReaderBodyTextStyle;
+  static const bottomActionHeight = 36.0;
 
   @override
   Widget build(BuildContext context) {
@@ -34,8 +35,7 @@ class PaperTabBody extends StatelessWidget {
           textDirection: Directionality.of(context),
         )..layout(maxWidth: constraints.maxWidth);
         final hasOverflow = expandable &&
-            painter.height >
-                (constraints.maxHeight - _CollapsedPaperContent.actionHeight);
+            painter.height > (constraints.maxHeight - bottomActionHeight);
 
         if (expandable && !hasOverflow) {
           if (bottomLeadingAction != null) {
@@ -49,7 +49,7 @@ class PaperTabBody extends StatelessWidget {
                   ),
                 ),
                 SizedBox(
-                  height: _CollapsedPaperContent.actionHeight,
+                  height: bottomActionHeight,
                   child: Align(
                     alignment: Alignment.centerLeft,
                     child: bottomLeadingAction,
@@ -105,7 +105,6 @@ class _CollapsedPaperContent extends StatelessWidget {
     required this.onExpand,
   });
 
-  static const actionHeight = 36.0;
   static const fadeHeight = 40.0;
 
   final String text;
@@ -157,7 +156,7 @@ class _CollapsedPaperContent extends StatelessWidget {
           ),
         ),
         SizedBox(
-          height: actionHeight,
+          height: PaperTabBody.bottomActionHeight,
           child: Row(
             children: [
               if (bottomLeadingAction != null) bottomLeadingAction!,
@@ -169,7 +168,10 @@ class _CollapsedPaperContent extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(
                     horizontal: SparkDesignTokens.space1,
                   ),
-                  minimumSize: const Size(0, actionHeight),
+                  minimumSize: const Size(
+                    0,
+                    PaperTabBody.bottomActionHeight,
+                  ),
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
                 iconAlignment: IconAlignment.end,

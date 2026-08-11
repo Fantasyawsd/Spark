@@ -479,6 +479,52 @@ void main() {
     expect(find.text('摘要'), findsOneWidget);
   });
 
+  testWidgets('translation action stays bottom-left while refreshing',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(378, 810));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(
+      const SparkApp(
+        showSplash: false,
+        translationServiceFactory: _FakePaperTranslationServiceFactory(
+          content: '简短中文摘要',
+          delay: Duration(seconds: 1),
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.tap(find.text('摘要').first);
+    await tester.pumpAndSettle(const Duration(seconds: 1));
+
+    expect(find.text('展开全文'), findsNothing);
+    final pagesBottom = tester
+        .getRect(find.byKey(const ValueKey('paper-tab-pages')).first)
+        .bottom;
+    var actionBounds = tester.getRect(
+      find.byKey(const ValueKey('paper-translation-refresh')),
+    );
+    expect(pagesBottom - actionBounds.center.dy, closeTo(18, 0.1));
+
+    await tester.tap(
+      find.byKey(const ValueKey('paper-translation-refresh')),
+    );
+    await tester.pump();
+
+    expect(find.text('停止'), findsOneWidget);
+    actionBounds = tester.getRect(
+      find.byKey(const ValueKey('paper-translation-refresh')),
+    );
+    expect(pagesBottom - actionBounds.center.dy, closeTo(18, 0.1));
+
+    await tester.tap(
+      find.byKey(const ValueKey('paper-translation-refresh')),
+    );
+    await tester.pump();
+    expect(find.text('停止'), findsNothing);
+    await tester.pump(const Duration(seconds: 1));
+  });
+
   testWidgets('abstract expansion appears only when text exceeds its viewport',
       (tester) async {
     await tester.binding.setSurfaceSize(const Size(378, 810));
@@ -1309,21 +1355,31 @@ class _FakePaperTranslationServiceFactory
     implements PaperTranslationServiceFactory {
   const _FakePaperTranslationServiceFactory({
     this.content = '**中文摘要内容**',
+    this.delay = Duration.zero,
   });
 
   final String content;
+  final Duration delay;
 
   @override
-  PaperTranslationService create() => _FakePaperTranslationService(content);
+  PaperTranslationService create() => _FakePaperTranslationService(
+        content,
+        delay: delay,
+      );
 }
 
 class _FakePaperTranslationService implements PaperTranslationService {
-  const _FakePaperTranslationService(this.content);
+  const _FakePaperTranslationService(
+    this.content, {
+    required this.delay,
+  });
 
   final String content;
+  final Duration delay;
 
   @override
   Stream<String> translateAbstract(Paper paper) async* {
+    await Future<void>.delayed(delay);
     yield content;
   }
 

@@ -8,8 +8,8 @@
 - Worktree：`C:\Users\Fantasy\Desktop\Spark-worktrees\codex--research-huggingface-daily-papers`
 - 基线提交：`009e36527885af637d65b58db0a69721526e6e03`
 - 负责人：Fantasy（编排者）
-- 状态：待合并
-- 最近更新：2026-08-11 19:31
+- 状态：已合并
+- 最近更新：2026-08-11 19:36
 
 ## 目标
 
@@ -59,9 +59,9 @@
 
 ## 当前进度
 
-- 已完成：规划、术语、索引和研究内容已收敛；合并前文档门禁通过；控制工作树重叠改动已按编排者决定整合；主要文档提交已创建。
-- 正在进行：补齐合并准入台账并执行 `/finish` 合并。
-- 下一步：合入 `main`，执行集成构建，补齐最终归档。
+- 已完成：任务提交已合入 `main`；规划、术语、索引和研究内容已收敛；合并前文档门禁与合并后完整集成验证均通过；双目标构建产物已记录。
+- 正在进行：无，任务已完成归档。
+- 下一步：按开发计划启动 Phase 1 论文数据底座实现任务。
 - 阻塞项：无
 
 ## 决策记录
@@ -82,6 +82,11 @@
 | 尾随空格检查 | 0 个问题 | 2026-08-11 |
 | `git diff --check` | 通过 | 2026-08-11 |
 | 研究目录与引用检查 | `docs/research/` 不存在，无残留引用 | 2026-08-11 |
+| `tool/verify_changed_dart_format.ps1` | 通过；本任务无 Dart 文件变更 | 2026-08-11 |
+| `flutter analyze` | 通过；No issues found | 2026-08-11 |
+| `flutter test` | 通过；407 项测试全部成功 | 2026-08-11 |
+| `flutter build apk --debug --flavor development --dart-define=SPARK_ENV=development` | 通过 | 2026-08-11 |
+| `flutter build windows --debug --dart-define=SPARK_ENV=development` | 通过 | 2026-08-11 |
 
 ## 审查结论
 
@@ -95,6 +100,7 @@
 | SHA | 提交信息 | 对应阶段 | 验证摘要 |
 | --- | --- | --- | --- |
 | `a83b248` | `文档（论文）：规划数据服务与推荐系统` | 规划收敛 | Markdown 链接、尾随空格与 `git diff --check` 通过 |
+| `7fbb2b4` | `文档（台账）：补齐论文规划合并准入` | 合并准入 | 任务与控制工作树干净，`main...HEAD` diff 检查通过 |
 
 ## 交付准备（合并前收集）
 
@@ -131,4 +137,12 @@ Spark 的论文发现规划已收敛为单一开发主线：Phase 1 建立 AI �
 
 ## 合并归档（合并后在 main 补齐）
 
-待任务提交真实进入 `main` 后补齐最终集成提交、合并时间、双目标构建证据和后续项。
+- 最终状态：已合并并完成归档
+- 集成提交：`d98d13cb51f131b04a6fa95aa31c88456b98b390`
+- Pull Request：无；经编排者明确批准后执行本地非快进合并
+- 合并时间：2026-08-11 19:32（Asia/Shanghai）
+- 集成验证：格式门禁、`flutter analyze`、407 项 `flutter test`、development APK 与 Windows debug 构建全部通过
+- APK：`C:\Users\Fantasy\Desktop\Spark-worktrees\Spark\build\app\outputs\flutter-apk\app-development-debug.apk`；193,305,007 bytes（184.35 MiB）；SHA-256 `FD3CF5838347BF7A5CF191778F72356966C4B85FD4C548143A90F0FB135EFF83`
+- Windows EXE：`C:\Users\Fantasy\Desktop\Spark-worktrees\Spark\build\windows\x64\runner\Debug\spark.exe`；1,278,976 bytes（1.22 MiB）；SHA-256 `7C27356B6774A41377FC9E5232F8CEBE9A80F074415ABABF2B39B6F5574F3214`
+- 开发计划：已在 `docs/development.md` 记录 OpenAlex、Semantic Scholar、HF Daily Papers、GitHub、频道与推荐系统 Phase 1–5 主线，并保留 PDF 暂缓和 side chat 规格
+- 后续项：另立任务实施 Phase 1；本台账转为只读归档，除勘误外不再更新

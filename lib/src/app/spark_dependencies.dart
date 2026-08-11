@@ -247,13 +247,11 @@ class SparkDependencies {
   }) {
     final resolvedCredentialRepository =
         deepSeekCredentialRepository ?? InMemoryDeepSeekCredentialRepository();
-    final resolvedAiService =
-        aiService ??
+    final resolvedAiService = aiService ??
         DeepSeekChatAiService(
           credentialRepository: resolvedCredentialRepository,
         );
-    final resolvedWebSearchService =
-        webSearchAiService ??
+    final resolvedWebSearchService = webSearchAiService ??
         DeepSeekWebSearchChatAiService(
           credentialRepository: resolvedCredentialRepository,
         );
@@ -262,8 +260,7 @@ class SparkDependencies {
     final resolvedPdfRepository = pdfRepository ?? InMemoryPaperPdfRepository();
     final resolvedPdfExtractionService =
         pdfExtractionService ?? PaperPdfExtractionService();
-    final resolvedPdfContentProvider =
-        pdfContentProvider ??
+    final resolvedPdfContentProvider = pdfContentProvider ??
         CachedPaperPdfContentProvider(
           repository: resolvedPdfRepository,
           extractionService: resolvedPdfExtractionService,
@@ -278,8 +275,7 @@ class SparkDependencies {
           interactionRepository ?? InMemoryPaperInteractionRepository(),
       preferenceRepository:
           preferenceRepository ?? InMemoryPaperPreferenceRepository(),
-      channelPreferenceRepository:
-          channelPreferenceRepository ??
+      channelPreferenceRepository: channelPreferenceRepository ??
           InMemoryPaperChannelPreferenceRepository(),
       readingRepository: readingRepository ?? InMemoryPaperReadingRepository(),
       searchHistoryRepository:
@@ -290,11 +286,9 @@ class SparkDependencies {
       webSearchAiService: resolvedWebSearchService,
       aiSessionRepository:
           aiSessionRepository ?? InMemoryChatSessionRepository(),
-      chatSessionSettingsRepository:
-          chatSessionSettingsRepository ??
+      chatSessionSettingsRepository: chatSessionSettingsRepository ??
           InMemoryChatSessionSettingsRepository(),
-      translationServiceFactory:
-          translationServiceFactory ??
+      translationServiceFactory: translationServiceFactory ??
           DeepSeekPaperTranslationServiceFactory(
             chatClientFactory: () => DeepSeekChatAiService(
               credentialRepository: resolvedCredentialRepository,
@@ -304,8 +298,7 @@ class SparkDependencies {
       translationRepository:
           translationRepository ?? InMemoryPaperTranslationRepository(),
       keywordRepository: resolvedKeywordRepository,
-      paperChatContextLoader:
-          paperChatContextLoader ??
+      paperChatContextLoader: paperChatContextLoader ??
           PaperChatContextLoader(
             keywordRepository: resolvedKeywordRepository,
             pdfContentProvider: resolvedPdfContentProvider,

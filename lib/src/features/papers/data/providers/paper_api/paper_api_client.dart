@@ -30,12 +30,15 @@ final class PaperApiClient implements PaperApiSource {
     required String baseUrl,
     http.Client? client,
     this.timeout = const Duration(seconds: 8),
+    int Function()? seedGenerator,
   })  : _baseUri = Uri.parse(baseUrl),
-        _client = client ?? http.Client();
+        _client = client ?? http.Client(),
+        _seedGenerator = seedGenerator ?? _defaultSeedGenerator;
 
   final Uri _baseUri;
   final http.Client _client;
   final Duration timeout;
+  final int Function() _seedGenerator;
 
   @override
   Future<PaperApiPageDto> loadFeed(PaperFeedQuery query) async {
@@ -86,6 +89,9 @@ final class PaperApiClient implements PaperApiSource {
         if (query.readPaperIds.isNotEmpty) {
           parameters['read_ids'] = query.readPaperIds.join(',');
         }
+        if (query.forceRefresh) {
+          parameters['seed'] = '${_seedGenerator()}';
+        }
         return (
           uri: _uri(['feed', 'recommended'], parameters),
           expectedChannel: 'recommended',
@@ -122,6 +128,8 @@ final class PaperApiClient implements PaperApiSource {
         );
     }
   }
+
+  static int _defaultSeedGenerator() => DateTime.now().microsecondsSinceEpoch;
 
   void _addDateBounds(Map<String, String> parameters, PaperFeedQuery query) {
     final bounds = query.timeRange.bounds(now: DateTime.now());

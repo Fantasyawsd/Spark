@@ -37,9 +37,55 @@
     },
     "signals": {
       "type": "object",
+      "properties": {
+        "openalex": {
+          "type": "object",
+          "properties": {
+            "citation_count": {"type": ["integer", "null"], "minimum": 0},
+            "fwci": {"type": ["number", "null"]},
+            "match_method": {"type": ["string", "null"]},
+            "citation_count_outlier": {"type": "boolean"}
+          },
+          "additionalProperties": true
+        }
+      },
       "additionalProperties": {"type": "object"}
     },
-    "metadata": {"type": "object"},
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "venue_name": {"type": ["string", "null"]},
+        "venue_type": {"type": ["string", "null"]},
+        "venue_year": {"type": ["integer", "null"]},
+        "venue_url": {"type": ["string", "null"]},
+        "venue_matches": {"type": "array", "items": {"type": "string"}},
+        "venue_label": {"type": ["string", "null"]},
+        "track": {"type": ["string", "null"]},
+        "pdf_url": {"type": ["string", "null"]},
+        "abs_url": {"type": ["string", "null"]},
+        "arxiv": {
+          "type": "object",
+          "properties": {
+            "authors_parsed": {"type": "array"},
+            "comments": {"type": ["string", "null"]},
+            "journal_ref": {"type": ["string", "null"]},
+            "report_no": {"type": ["string", "null"]},
+            "license": {"type": ["string", "null"]},
+            "versions": {"type": "array"},
+            "submitter": {"type": ["string", "null"]}
+          },
+          "additionalProperties": true
+        },
+        "openalex": {
+          "type": "object",
+          "properties": {
+            "publication_year": {"type": ["integer", "null"]}
+          },
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": true
+    },
     "admitted": {"type": "boolean"},
     "admission_reason": {"type": "string"},
     "withdrawn": {"type": "boolean"},

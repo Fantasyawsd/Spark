@@ -25,8 +25,8 @@ class PaperFeedQuery {
     this.cursor,
     this.limit = 20,
     this.forceRefresh = false,
-  }) : assert(offset >= 0),
-       assert(limit > 0);
+  })  : assert(offset >= 0),
+        assert(limit > 0);
 
   final PaperFeedChannel channel;
   final String? category;
@@ -71,8 +71,8 @@ class PaperSearchQuery {
     this.offset = 0,
     this.limit = 20,
     this.forceRefresh = false,
-  }) : assert(offset >= 0),
-       assert(limit > 0);
+  })  : assert(offset >= 0),
+        assert(limit > 0);
 
   final String term;
   final int offset;

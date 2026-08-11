@@ -50,7 +50,7 @@ def _number(value: Any) -> float | None:
     return number if math.isfinite(number) and number >= 0 else None
 
 
-def _signal(paper: PaperRecord, name: str) -> float | None:
+def _signal(paper: PaperRecord, name: str, as_of: datetime | None = None) -> float | None:
     openalex = paper.signals.get("openalex", {})
     semantic = paper.signals.get("semantic_scholar", {})
     github = paper.signals.get("github", {})
@@ -65,7 +65,7 @@ def _signal(paper: PaperRecord, name: str) -> float | None:
         "short_citation_velocity": _first_number(openalex.get("short_citation_velocity"), semantic.get("short_citation_velocity")),
     }
     if name == "freshness":
-        age_days = max((datetime.now(UTC) - paper.published_at).total_seconds() / 86400, 0)
+        age_days = max(((as_of or datetime.now(UTC)) - paper.published_at).total_seconds() / 86400, 0)
         values[name] = math.exp(-age_days / 365.0)
     return values.get(name)
 
@@ -79,7 +79,7 @@ def _first_number(*values: Any) -> float | None:
 
 
 def _normalized_signal(paper: PaperRecord, name: str, candidates: Iterable[PaperRecord], as_of: datetime) -> float | None:
-    value = _signal(paper, name)
+    value = _signal(paper, name, as_of)
     if value is None:
         return None
     comparison = tuple(candidates)
@@ -88,7 +88,11 @@ def _normalized_signal(paper: PaperRecord, name: str, candidates: Iterable[Paper
         bucket_values = tuple(candidate for candidate in comparison if age_bucket(candidate.published_at, as_of) == bucket)
         if bucket_values:
             comparison = bucket_values
-    all_values = [candidate_value for candidate_value in (_signal(candidate, name) for candidate in comparison) if candidate_value is not None]
+    all_values = [
+        candidate_value
+        for candidate_value in (_signal(candidate, name, as_of) for candidate in comparison)
+        if candidate_value is not None
+    ]
     if not all_values:
         return None
     # Log scaling prevents one extreme paper from consuming the whole pool.
@@ -124,6 +128,70 @@ def score_paper(paper: PaperRecord, candidates: Iterable[PaperRecord], config: S
     return quality, trend, signals
 
 
+def _score_candidates(
+    candidates: list[PaperRecord],
+    config: ScoreConfig,
+    as_of: datetime,
+) -> list[tuple[PaperRecord, float, float, dict[str, float]]]:
+    signal_names = tuple(dict.fromkeys(name for name, _ in (*config.quality_weights, *config.trend_weights)))
+    distributions: dict[tuple[str, str], list[float]] = {}
+    for candidate in candidates:
+        for name in signal_names:
+            value = _signal(candidate, name, as_of)
+            if value is None:
+                continue
+            bucket = "all" if name == "freshness" else age_bucket(candidate.published_at, as_of)
+            distributions.setdefault((name, bucket), []).append(value)
+    caps: dict[tuple[str, str], float] = {}
+    for key, values in distributions.items():
+        values.sort()
+        p99_index = max(0, min(len(values) - 1, math.ceil(len(values) * 0.99) - 1))
+        caps[key] = values[p99_index]
+
+    def normalized(paper: PaperRecord, name: str) -> float | None:
+        value = _signal(paper, name, as_of)
+        if value is None:
+            return None
+        bucket = "all" if name == "freshness" else age_bucket(paper.published_at, as_of)
+        cap = caps.get((name, bucket))
+        if cap is None:
+            return None
+        transformed = math.log1p(min(value, cap))
+        maximum = math.log1p(cap)
+        return transformed / maximum if maximum > 0 else 0.0
+
+    scored: list[tuple[PaperRecord, float, float, dict[str, float]]] = []
+    for paper in candidates:
+        quality_values = {
+            name: value
+            for name, _ in config.quality_weights
+            if (value := normalized(paper, name)) is not None
+        }
+        trend_values = {
+            name: value
+            for name, _ in config.trend_weights
+            if (value := normalized(paper, name)) is not None
+        }
+        quality_weight = sum(weight for name, weight in config.quality_weights if name in quality_values)
+        trend_weight = sum(weight for name, weight in config.trend_weights if name in trend_values)
+        quality = (
+            sum(quality_values[name] * weight for name, weight in config.quality_weights if name in quality_values)
+            / quality_weight
+            if quality_weight
+            else 0.0
+        )
+        trend = (
+            sum(trend_values[name] * weight for name, weight in config.trend_weights if name in trend_values)
+            / trend_weight
+            if trend_weight
+            else 0.0
+        )
+        signals = {f"quality.{name}": value for name, value in quality_values.items()}
+        signals.update({f"trend.{name}": value for name, value in trend_values.items()})
+        scored.append((paper, quality, trend, signals))
+    return scored
+
+
 def age_bucket(published_at: datetime, as_of: datetime) -> str:
     years = max((as_of - published_at).total_seconds() / (365.25 * 86400), 0)
     if years <= 1:
@@ -152,25 +220,27 @@ class RecommendationEngine:
         if as_of is None:
             as_of = utc_now()
             if seed is not None:
-                as_of = as_of.replace(hour=0, minute=0, second=0)
+                as_of = as_of.replace(hour=23, minute=59, second=59)
         as_of = as_of.astimezone(UTC)
         read = set(list(read_ids)[:5000])
-        candidates = [paper for paper in self.store.all_candidates() if paper.paper_id not in read]
+        candidates = self.store.recommendation_candidates(
+            read_ids=read,
+            per_pool_limit=max(limit * 50, 500),
+            as_of=as_of,
+        )
         if not candidates:
             return self._batch_id(seed or 0, as_of), []
-        scored: list[tuple[PaperRecord, float, float, dict[str, float]]] = []
-        for paper in candidates:
-            quality, trend, signals = score_paper(paper, candidates, self.config, as_of)
-            scored.append((paper, quality, trend, signals))
+        scored = _score_candidates(candidates, self.config, as_of)
         quality_pool = sorted(scored, key=lambda item: (item[1], item[0].published_at, item[0].paper_id), reverse=True)[: max(limit * 8, 20)]
         trend_pool = sorted(scored, key=lambda item: (item[2], item[0].published_at, item[0].paper_id), reverse=True)[: max(limit * 8, 20)]
+        quality_ids = {item[0].paper_id for item in quality_pool}
+        trend_ids = {item[0].paper_id for item in trend_pool}
         by_id = {paper.paper_id: (paper, quality, trend, signals) for paper, quality, trend, signals in scored}
         rng = random.Random(seed if seed is not None else int(as_of.timestamp()))
         quotas = _allocate_quotas(limit, self.config.age_bucket_targets, candidates, as_of)
         selected: list[RecommendationItem] = []
         remaining = set(by_id)
         high_target = round(limit * self.config.quality_pool_ratio)
-        trend_target = limit - high_target
         high_count = 0
         trend_count = 0
         last_author: str | None = None
@@ -183,8 +253,8 @@ class RecommendationEngine:
                     paper, quality, trend, signals = by_id[paper_id]
                     if age_bucket(paper.published_at, as_of) != bucket:
                         continue
-                    in_quality = any(item[0].paper_id == paper_id for item in quality_pool)
-                    in_trend = any(item[0].paper_id == paper_id for item in trend_pool)
+                    in_quality = paper_id in quality_ids
+                    in_trend = paper_id in trend_ids
                     if not in_quality and not in_trend:
                         continue
                     if desired_pool == "high_impact" and not in_quality:
@@ -221,6 +291,18 @@ class RecommendationEngine:
             paper, quality, trend, signals, pool, weight = _weighted_choice(options, rng)
             remaining.remove(paper.paper_id)
             selected.append(RecommendationItem(paper, pool, age_bucket(paper.published_at, as_of), quality, trend, weight, signals))
+        selected = [
+            RecommendationItem(
+                self.store.get(item.paper.paper_id) or item.paper,
+                item.pool,
+                item.age_bucket,
+                item.quality_score,
+                item.trend_score,
+                item.recommendation_weight,
+                item.signals,
+            )
+            for item in selected
+        ]
         batch_id = self._batch_id(seed if seed is not None else int(as_of.timestamp()), as_of)
         self.store.record_batch(batch_id, as_of, self.config.version, seed if seed is not None else int(as_of.timestamp()), {item.paper.paper_id: recommendation_to_api(item) for item in selected}, [item.paper.paper_id for item in selected])
         return batch_id, selected

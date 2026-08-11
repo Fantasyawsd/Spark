@@ -6,44 +6,46 @@ import 'package:spark/src/features/papers/domain/paper_catalog.dart';
 import 'package:spark/src/features/papers/domain/paper_channel.dart';
 
 void main() {
-  test('fixed and user channels carry their server-side channel semantics',
-      () async {
-    final catalog = _RecordingCatalog();
-    final controller = PaperController(
-      const ArxivSeedRepository(),
-      catalogRepository: catalog,
-    );
-    addTearDown(controller.dispose);
+  test(
+    'fixed and user channels carry their server-side channel semantics',
+    () async {
+      final catalog = _RecordingCatalog();
+      final controller = PaperController(
+        const ArxivSeedRepository(),
+        catalogRepository: catalog,
+      );
+      addTearDown(controller.dispose);
 
-    await controller.initialize();
-    expect(catalog.queries.single.channel, PaperFeedChannel.recommended);
+      await controller.initialize();
+      expect(catalog.queries.single.channel, PaperFeedChannel.recommended);
 
-    controller.selectChannel(FixedPaperChannel.latest.index);
-    await controller.feed.flushCatalogOperations();
-    expect(catalog.queries.last.channel, PaperFeedChannel.latest);
+      controller.selectChannel(FixedPaperChannel.latest.index);
+      await controller.feed.flushCatalogOperations();
+      expect(catalog.queries.last.channel, PaperFeedChannel.latest);
 
-    await controller.saveUserChannels(const [
-      UserPaperChannel(
-        kind: PaperChannelKind.subject,
-        id: 'cs.AI',
-        displayName: '人工智能',
-      ),
-      UserPaperChannel(
-        kind: PaperChannelKind.conference,
-        id: 'ICML',
-        displayName: 'ICML',
-      ),
-    ]);
-    controller.selectChannel(3);
-    await controller.feed.flushCatalogOperations();
-    expect(catalog.queries.last.channel, PaperFeedChannel.subject);
-    expect(catalog.queries.last.category, 'cs.AI');
+      await controller.saveUserChannels(const [
+        UserPaperChannel(
+          kind: PaperChannelKind.subject,
+          id: 'cs.AI',
+          displayName: '人工智能',
+        ),
+        UserPaperChannel(
+          kind: PaperChannelKind.conference,
+          id: 'ICML',
+          displayName: 'ICML',
+        ),
+      ]);
+      controller.selectChannel(3);
+      await controller.feed.flushCatalogOperations();
+      expect(catalog.queries.last.channel, PaperFeedChannel.subject);
+      expect(catalog.queries.last.category, 'cs.AI');
 
-    controller.selectChannel(4);
-    await controller.feed.flushCatalogOperations();
-    expect(catalog.queries.last.channel, PaperFeedChannel.conference);
-    expect(catalog.queries.last.category, 'ICML');
-  });
+      controller.selectChannel(4);
+      await controller.feed.flushCatalogOperations();
+      expect(catalog.queries.last.channel, PaperFeedChannel.conference);
+      expect(catalog.queries.last.category, 'ICML');
+    },
+  );
 
   test('following channel sends followed author identities', () async {
     final catalog = _RecordingCatalog();
@@ -102,8 +104,6 @@ final class _RecordingCatalog implements PaperCatalogRepository {
   }
 
   @override
-  Future<PaperPage> search(PaperSearchQuery query) async => PaperPage(
-        papers: const [],
-        source: PaperPageSource.remote,
-      );
+  Future<PaperPage> search(PaperSearchQuery query) async =>
+      PaperPage(papers: const [], source: PaperPageSource.remote);
 }

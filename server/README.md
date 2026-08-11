@@ -15,6 +15,30 @@ python -m spark_papers.cli --db data/papers.sqlite3 --snapshots data/snapshots s
 python -m spark_papers.cli --db data/papers.sqlite3 serve --port 8000
 ```
 
+To deploy the local Spark arXiv dataset, use the resumable batch importer. The
+large `spark-arxiv-ai-full.jsonl` file is the canonical 674,969-paper source;
+the `by-year-venue-label` tree is a 99,577-paper conference/label enrichment
+subset, not a replacement for the canonical file. OpenAlex enrichment is
+matched by arXiv ID and never creates a paper without an existing base record.
+
+```powershell
+$dataset = "C:\Users\Fantasy\Desktop\Spark-worktrees\Spark-arxiv-dataset"
+$db = "C:\Users\Fantasy\AppData\Local\Spark\paper-api\dataset-v1\papers.sqlite3"
+$snapshots = "C:\Users\Fantasy\AppData\Local\Spark\paper-api\dataset-v1\snapshots"
+$env:PYTHONPATH = (Resolve-Path server).Path
+python -m spark_papers.cli --db $db --snapshots $snapshots import-dataset `
+  --arxiv-file "$dataset\spark-arxiv-ai-full.jsonl" `
+  --venue-dir "$dataset\by-year-venue-label" `
+  --openalex-file "$dataset\openalex-ai-top.jsonl" `
+  --batch-size 1000
+```
+
+The importer stores byte offsets, line numbers, source signatures, rejected
+line excerpts and a short-lived single-run lease in SQLite. Re-running the
+same command resumes incomplete work or verifies a completed import. It also
+rebuilds Latest, subject/author/venue and bounded recommendation indexes only
+when they are stale.
+
 The service exposes:
 
 - `GET /api/v1/health`

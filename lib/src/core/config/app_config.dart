@@ -7,13 +7,13 @@ final class AppConfig {
     required FeatureFlags features,
     this.paperApiBaseUrl,
   }) : features = environment == AppEnvironment.production
-           ? const FeatureFlags()
-           : features;
+            ? const FeatureFlags()
+            : features;
 
   const AppConfig.production()
-    : environment = AppEnvironment.production,
-      features = const FeatureFlags(),
-      paperApiBaseUrl = null;
+      : environment = AppEnvironment.production,
+        features = const FeatureFlags(),
+        paperApiBaseUrl = null;
 
   factory AppConfig.fromEnvironment({String? platformFlavor}) {
     return AppConfig.resolve(
@@ -36,8 +36,8 @@ final class AppConfig {
       flavor?.isNotEmpty == true
           ? flavor!
           : requested?.isNotEmpty == true
-          ? requested!
-          : 'production',
+              ? requested!
+              : 'production',
     );
 
     if (flavor?.isNotEmpty == true && requested?.isNotEmpty == true) {
@@ -70,9 +70,8 @@ final class AppConfig {
 
 String _resolvePaperApiBaseUrl(String? requested) {
   final value = requested?.trim();
-  final resolved = value?.isNotEmpty == true
-      ? value!
-      : 'http://127.0.0.1:8000/api/v1';
+  final resolved =
+      value?.isNotEmpty == true ? value! : 'http://127.0.0.1:8000/api/v1';
   final uri = Uri.tryParse(resolved);
   if (uri == null ||
       (uri.scheme != 'http' && uri.scheme != 'https') ||

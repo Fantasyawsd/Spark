@@ -20,79 +20,87 @@ void main() {
     );
   });
 
-  test('maps API data without combining independent citation sources',
-      () async {
-    source.page = PaperApiPageDto(
-      channel: 'latest',
-      items: [_paperDto()],
-      nextCursor: 'next-page',
-    );
+  test(
+    'maps API data without combining independent citation sources',
+    () async {
+      source.page = PaperApiPageDto(
+        channel: 'latest',
+        items: [_paperDto()],
+        nextCursor: 'next-page',
+      );
 
-    final page = await repository.loadFeed(const PaperFeedQuery(limit: 10));
-    final paper = page.papers.single;
+      final page = await repository.loadFeed(const PaperFeedQuery(limit: 10));
+      final paper = page.papers.single;
 
-    expect(page.source, PaperPageSource.paperApi);
-    expect(page.nextCursor, 'next-page');
-    expect(page.nextOffset, 1);
-    expect(paper.id, 'paper_fixture');
-    expect(paper.title, 'Fixture AI Paper');
-    expect(paper.metrics.citations, 4);
-    expect(paper.venue, isNull);
-    expect(paper.paperUrl, 'https://arxiv.org/abs/2401.99999');
-    expect(fallback.loadFeedCalls, 0);
-  });
+      expect(page.source, PaperPageSource.paperApi);
+      expect(page.nextCursor, 'next-page');
+      expect(page.nextOffset, 1);
+      expect(paper.id, 'paper_fixture');
+      expect(paper.title, 'Fixture AI Paper');
+      expect(paper.metrics.citations, 4);
+      expect(paper.venue, isNull);
+      expect(paper.paperUrl, 'https://arxiv.org/abs/2401.99999');
+      expect(fallback.loadFeedCalls, 0);
+    },
+  );
 
-  test('a valid empty API page remains empty instead of using unrelated data',
-      () async {
-    source.page = const PaperApiPageDto(
-      channel: 'latest',
-      items: [],
-      nextCursor: null,
-    );
+  test(
+    'a valid empty API page remains empty instead of using unrelated data',
+    () async {
+      source.page = const PaperApiPageDto(
+        channel: 'latest',
+        items: [],
+        nextCursor: null,
+      );
 
-    final page = await repository.loadFeed(const PaperFeedQuery());
+      final page = await repository.loadFeed(const PaperFeedQuery());
 
-    expect(page.papers, isEmpty);
-    expect(page.source, PaperPageSource.paperApi);
-    expect(fallback.loadFeedCalls, 0);
-  });
+      expect(page.papers, isEmpty);
+      expect(page.source, PaperPageSource.paperApi);
+      expect(fallback.loadFeedCalls, 0);
+    },
+  );
 
-  test('API failures retain the existing catalog fallback and explain it',
-      () async {
-    source.error = const PaperApiException(
-      PaperApiErrorKind.network,
-      'offline',
-    );
-    fallback.page = PaperPage(
-      papers: [_fallbackPaper],
-      source: PaperPageSource.remote,
-      nextOffset: 20,
-    );
+  test(
+    'API failures retain the existing catalog fallback and explain it',
+    () async {
+      source.error = const PaperApiException(
+        PaperApiErrorKind.network,
+        'offline',
+      );
+      fallback.page = PaperPage(
+        papers: [_fallbackPaper],
+        source: PaperPageSource.remote,
+        nextOffset: 20,
+      );
 
-    final page = await repository.loadFeed(const PaperFeedQuery());
+      final page = await repository.loadFeed(const PaperFeedQuery());
 
-    expect(page.papers.single.id, _fallbackPaper.id);
-    expect(page.source, PaperPageSource.remote);
-    expect(page.nextOffset, 20);
-    expect(page.error?.kind, PaperCatalogErrorKind.network);
-    expect(page.error?.message, contains('Paper API'));
-    expect(fallback.loadFeedCalls, 1);
-  });
+      expect(page.papers.single.id, _fallbackPaper.id);
+      expect(page.source, PaperPageSource.remote);
+      expect(page.nextOffset, 20);
+      expect(page.error?.kind, PaperCatalogErrorKind.network);
+      expect(page.error?.message, contains('Paper API'));
+      expect(fallback.loadFeedCalls, 1);
+    },
+  );
 
-  test('search remains on the existing catalog and missing details fall back',
-      () async {
-    source.detail = null;
+  test(
+    'search remains on the existing catalog and missing details fall back',
+    () async {
+      source.detail = null;
 
-    final search = await repository.search(
-      const PaperSearchQuery(term: 'fixture'),
-    );
-    final detail = await repository.findById(_fallbackPaper.id);
+      final search = await repository.search(
+        const PaperSearchQuery(term: 'fixture'),
+      );
+      final detail = await repository.findById(_fallbackPaper.id);
 
-    expect(search.papers.single.id, _fallbackPaper.id);
-    expect(detail?.id, _fallbackPaper.id);
-    expect(fallback.searchCalls, 1);
-    expect(fallback.findByIdCalls, 1);
-  });
+      expect(search.papers.single.id, _fallbackPaper.id);
+      expect(detail?.id, _fallbackPaper.id);
+      expect(fallback.searchCalls, 1);
+      expect(fallback.findByIdCalls, 1);
+    },
+  );
 }
 
 final class _FakePaperApiSource implements PaperApiSource {

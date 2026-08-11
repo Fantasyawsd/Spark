@@ -5,7 +5,18 @@ from typing import Iterable, Mapping
 
 
 POLICY_VERSION = "ai-admission.v1"
-DEFAULT_AI_SUBJECT_PREFIXES = ("cs.AI", "cs.LG", "cs.CL", "cs.CV", "cs.RO", "stat.ML")
+DEFAULT_AI_SUBJECT_PREFIXES = (
+    "cs.AI",
+    "cs.LG",
+    "stat.ML",
+    "cs.CL",
+    "cs.CV",
+    "cs.NE",
+    "cs.RO",
+    "cs.MA",
+    "cs.IR",
+    "eess.SY",
+)
 
 
 @dataclass(frozen=True)

@@ -10,6 +10,13 @@ class PaperRepository(Protocol):
     def get(self, paper_id: str) -> PaperRecord | None: ...
     def count(self) -> int: ...
     def all_candidates(self) -> list[PaperRecord]: ...
+    def recommendation_candidates(
+        self,
+        *,
+        read_ids: Iterable[str] = (),
+        per_pool_limit: int = 500,
+        as_of: datetime | None = None,
+    ) -> list[PaperRecord]: ...
 
     def list_papers(
         self,

@@ -95,8 +95,7 @@ class _SparkAppState extends State<SparkApp> {
   @override
   void initState() {
     super.initState();
-    _dependencies =
-        widget.dependencies ??
+    _dependencies = widget.dependencies ??
         SparkDependencies.preview(
           commentRepository: widget.commentRepository,
           interactionRepository: widget.interactionRepository,
@@ -319,8 +318,7 @@ class _SparkShellState extends State<SparkShell> {
   @override
   void initState() {
     super.initState();
-    _dependencies =
-        widget.dependencies ??
+    _dependencies = widget.dependencies ??
         SparkDependencies.preview(
           commentRepository: widget.commentRepository,
           interactionRepository: widget.interactionRepository,
@@ -340,6 +338,7 @@ class _SparkShellState extends State<SparkShell> {
       interactionRepository: _dependencies.interactionRepository,
       preferenceRepository: _dependencies.preferenceRepository,
       catalogRepository: _dependencies.paperCatalogRepository,
+      readPaperIdsProvider: () => _readingController.readPaperIds,
     )..addListener(_handlePaperStateChanged);
     _readingController = PaperReadingController(
       repository: _dependencies.readingRepository,
@@ -510,10 +509,9 @@ class _SparkShellState extends State<SparkShell> {
     if (mounted) setState(() {});
   }
 
-  Iterable<ChatContextSummary> get _paperChatContexts => _paperController
-      .feed
-      .allPapers
-      .map((paper) => ChatContextSummary(id: paper.id, title: paper.title));
+  Iterable<ChatContextSummary> get _paperChatContexts =>
+      _paperController.feed.allPapers
+          .map((paper) => ChatContextSummary(id: paper.id, title: paper.title));
 
   Future<void> _initializePaperState() async {
     await _paperController.initialize();
@@ -570,11 +568,11 @@ class _SparkShellState extends State<SparkShell> {
   }
 
   Map<String, List<Paper>> get _favoritePapersByGroup => {
-    for (final group in _paperController.interactions.favoriteGroups)
-      group.id: _papersForIds(
-        _paperController.interactions.favoritePaperIds(group.id),
-      ),
-  };
+        for (final group in _paperController.interactions.favoriteGroups)
+          group.id: _papersForIds(
+            _paperController.interactions.favoritePaperIds(group.id),
+          ),
+      };
 
   Future<void> _openFavoriteCollection() {
     return _pushCoveredRoute<void>(
@@ -649,8 +647,7 @@ class _SparkShellState extends State<SparkShell> {
           webSearchAiService: _webSearchAiService,
           sessionRepository: _aiSessionRepository,
           settingsRepository: _dependencies.chatSessionSettingsRepository,
-          fullTextAvailable:
-              widget.features.experimentalPdfAi &&
+          fullTextAvailable: widget.features.experimentalPdfAi &&
               validPaperUri(paper.pdfUrl) != null,
           onLoadFullText: widget.features.experimentalPdfAi
               ? () => _paperChatContextLoader.load(paper, includeFullText: true)

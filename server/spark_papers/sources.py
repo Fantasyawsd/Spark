@@ -72,7 +72,11 @@ class JsonFileSource:
 
 
 class JsonLinesFileSource(JsonFileSource):
-    """Imports a local arXiv-style JSONL dump without loading it as one object."""
+    """Legacy adapter for small JSONL fixtures.
+
+    The production-sized Spark arXiv dataset must use ``DatasetImporter`` so
+    records are checkpointed and written in bounded batches.
+    """
 
     def fetch(self, *, etag: str | None = None, cursor: str | None = None) -> FetchResult:
         with open(self.path, encoding="utf-8") as handle:

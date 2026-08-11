@@ -670,6 +670,54 @@ void main() {
       );
     });
 
+    test('recommended requests include a bounded live read-id set', () async {
+      final readIds = <String>{
+        for (var index = 0; index < 205; index++) 'read-$index',
+      };
+      final catalog = _PagedPaperCatalogRepository(firstPage: const []);
+      final feed = PaperFeedController.fromPapers(
+        const [],
+        catalogRepository: catalog,
+        readPaperIdsProvider: () => readIds,
+      );
+      addTearDown(feed.dispose);
+
+      await feed.initializeCatalog();
+
+      final expectedReadIds = readIds.toList()..sort();
+      expect(catalog.queries.single.channel, PaperFeedChannel.recommended);
+      expect(catalog.queries.single.readPaperIds, hasLength(200));
+      expect(
+        catalog.queries.single.readPaperIds,
+        orderedEquals(expectedReadIds.take(200)),
+      );
+
+      readIds
+        ..clear()
+        ..addAll({'read-new', 'read-second'});
+      await feed.refreshCatalog();
+
+      expect(
+        catalog.queries.last.readPaperIds,
+        orderedEquals(['read-new', 'read-second']),
+      );
+    });
+
+    test('first successful catalog page replaces fallback papers', () async {
+      final catalog = _PagedPaperCatalogRepository(
+        firstPage: [_catalogPaper('remote-paper')],
+      );
+      final feed = PaperFeedController.fromPapers(
+        [_catalogPaper('seed-paper')],
+        catalogRepository: catalog,
+      );
+      addTearDown(feed.dispose);
+
+      await feed.initializeCatalog();
+
+      expect(feed.papers.map((paper) => paper.id), ['remote-paper']);
+    });
+
     test('an empty first page clears papers from the previous refresh',
         () async {
       final catalog = _PagedPaperCatalogRepository(

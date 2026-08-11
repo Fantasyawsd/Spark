@@ -30,3 +30,8 @@ flutter:
   assets:
     - assets/images/spark_logo.png
     - assets/images/deepseek_logo.png
+    - assets/fonts/JetBrainsMono-OFL.txt
+  fonts:
+    - family: JetBrainsMono
+      fonts:
+        - asset: assets/fonts/JetBrainsMono-Regular.ttf

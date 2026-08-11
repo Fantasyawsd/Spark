@@ -4,10 +4,9 @@ import 'package:flutter_markdown_plus_latex/flutter_markdown_plus_latex.dart';
 import 'package:flutter_math_fork/flutter_math.dart';
 import 'package:markdown/markdown.dart' as md;
 
-import '../platform/spark_clipboard.dart';
-import '../theme/spark_design_tokens.dart';
 import '../theme/spark_font_sizes.dart';
 import '../theme/spark_theme.dart';
+import 'spark_code_highlight.dart';
 
 /// Inline LaTeX syntax that replaces [LatexInlineSyntax] from
 /// flutter_markdown_plus_latex.
@@ -171,30 +170,13 @@ class SparkMarkdown extends StatelessWidget {
         ),
         builders: <String, MarkdownElementBuilder>{
           'latex': SparkLatexElementBuilder(textStyle: bodyStyle),
+          'pre': SparkCodeBlockBuilder(textStyle: styleSheet.code),
         },
         styleSheet: styleSheet,
       );
     }
 
-    final segments = _MarkdownCodeFenceParser.split(markdown);
-    late final Widget content;
-    if (segments.length == 1 && !segments.first.isCode) {
-      content = markdownBody(markdown);
-    } else {
-      content = Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          for (final segment in segments)
-            segment.isCode
-                ? _MarkdownCodeBlock(
-                    code: segment.content,
-                    language: segment.language,
-                    textStyle: styleSheet.code,
-                  )
-                : markdownBody(segment.content),
-        ],
-      );
-    }
+    final content = markdownBody(markdown);
 
     if (!selectable) {
       return SelectionContainer.disabled(child: content);
@@ -206,149 +188,6 @@ class SparkMarkdown extends StatelessWidget {
   }
 }
 
-class _MarkdownCodeFenceParser {
-  const _MarkdownCodeFenceParser._();
-
-  static List<_MarkdownSegment> split(String source) {
-    final segments = <_MarkdownSegment>[];
-    final plain = StringBuffer();
-    final code = StringBuffer();
-    var inCode = false;
-    String? language;
-
-    void flushPlain() {
-      if (plain.isEmpty) return;
-      segments.add(_MarkdownSegment.plain(plain.toString()));
-      plain.clear();
-    }
-
-    void flushCode() {
-      final value = code.toString().trimRight();
-      if (value.isNotEmpty) {
-        segments.add(_MarkdownSegment.code(value, language));
-      }
-      code.clear();
-      language = null;
-    }
-
-    for (final line in source.split('\n')) {
-      final trimmed = line.trimLeft();
-      if (trimmed.startsWith('```')) {
-        if (!inCode) {
-          flushPlain();
-          inCode = true;
-          language = trimmed.substring(3).trim();
-        } else {
-          flushCode();
-          inCode = false;
-        }
-        continue;
-      }
-      if (inCode) {
-        code.writeln(line);
-      } else {
-        plain.writeln(line);
-      }
-    }
-    if (inCode) {
-      flushCode();
-    }
-    flushPlain();
-    return segments.isEmpty ? [_MarkdownSegment.plain('')] : segments;
-  }
-}
-
-class _MarkdownSegment {
-  const _MarkdownSegment._({
-    required this.content,
-    required this.isCode,
-    this.language,
-  });
-
-  const _MarkdownSegment.plain(String content)
-      : this._(content: content, isCode: false);
-
-  const _MarkdownSegment.code(String content, String? language)
-      : this._(content: content, isCode: true, language: language);
-
-  final String content;
-  final bool isCode;
-  final String? language;
-}
-
-class _MarkdownCodeBlock extends StatelessWidget {
-  const _MarkdownCodeBlock({
-    required this.code,
-    required this.language,
-    required this.textStyle,
-  });
-
-  final String code;
-  final String? language;
-  final TextStyle? textStyle;
-
-  Future<void> _copy() {
-    return platformSparkClipboard.copyText(code);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final codeStyle = (textStyle ?? const TextStyle()).copyWith(
-      color: const Color(0xFFE9EDF5),
-      fontFamily: 'monospace',
-      fontSize: textStyle?.fontSize ?? 13,
-      height: 1.45,
-    );
-    return Container(
-      key: ValueKey('paper-code-block-${code.hashCode}'),
-      margin: const EdgeInsets.symmetric(vertical: 7),
-      decoration: BoxDecoration(
-        color: const Color(0xFF172033),
-        borderRadius: BorderRadius.circular(SparkDesignTokens.radiusLg),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(12, 7, 6, 4),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    language == null || language!.isEmpty ? '代码' : language!,
-                    style: const TextStyle(
-                      color: Color(0xFFB8C1D1),
-                      fontSize: SparkFontSizes.caption,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-                IconButton(
-                  key: ValueKey('paper-code-copy-${code.hashCode}'),
-                  tooltip: '复制代码',
-                  onPressed: _copy,
-                  visualDensity: VisualDensity.compact,
-                  icon: const Icon(
-                    Icons.copy_rounded,
-                    color: Color(0xFFB8C1D1),
-                    size: 16,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-            child: SelectableText(code, style: codeStyle),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 /// 阅读正文测量样式。颜色对排版测量无影响，故不含颜色；
 /// 展示路径由 [paperReaderMarkdownStyle] 按主题补色。
 const paperReaderBodyTextStyle = TextStyle(
@@ -357,10 +196,13 @@ const paperReaderBodyTextStyle = TextStyle(
 );
 
 MarkdownStyleSheet paperReaderMarkdownStyle(BuildContext context) {
-  final body = paperReaderBodyTextStyle.copyWith(
-    color: SparkColors.of(context).ink,
-  );
+  final palette = SparkColors.of(context);
+  final body = paperReaderBodyTextStyle.copyWith(color: palette.ink);
   return MarkdownStyleSheet(
+    a: body.copyWith(
+      color: palette.primary,
+      decoration: TextDecoration.underline,
+    ),
     p: body,
     h1: body.copyWith(
       fontSize: SparkFontSizes.headline,
@@ -376,18 +218,22 @@ MarkdownStyleSheet paperReaderMarkdownStyle(BuildContext context) {
     ),
     listBullet: body,
     strong: const TextStyle(fontWeight: FontWeight.w700),
-    code: const TextStyle(
-      color: Color(0xFFE9EDF5),
-      fontFamily: 'monospace',
+    code: TextStyle(
+      color: palette.primary,
+      fontFamily: 'JetBrainsMono',
       fontSize: SparkFontSizes.bodySmall,
       height: 1.45,
     ),
-    codeblockPadding: const EdgeInsets.all(12),
-    codeblockDecoration: BoxDecoration(
-      color: Color(0xFF172033),
-      borderRadius: BorderRadius.all(
-        Radius.circular(SparkDesignTokens.radiusLg),
-      ),
+    blockquote: body.copyWith(fontStyle: FontStyle.italic),
+    blockquoteDecoration: BoxDecoration(
+      color: palette.surfaceMuted,
+      border: Border(left: BorderSide(color: palette.lineStrong, width: 3)),
+    ),
+    blockquotePadding: const EdgeInsets.fromLTRB(12, 8, 10, 8),
+    codeblockPadding: EdgeInsets.zero,
+    codeblockDecoration: const BoxDecoration(),
+    horizontalRuleDecoration: BoxDecoration(
+      border: Border(top: BorderSide(color: palette.line)),
     ),
     blockSpacing: 7,
     listIndent: 20,
@@ -407,6 +253,10 @@ MarkdownStyleSheet sparkMarkdownStyle(
     height: reasoning ? 1.4 : 1.5,
   );
   return MarkdownStyleSheet(
+    a: body.copyWith(
+      color: palette.primary,
+      decoration: TextDecoration.underline,
+    ),
     p: body,
     h1: body.copyWith(
       fontSize: SparkFontSizes.titleLarge,
@@ -423,17 +273,21 @@ MarkdownStyleSheet sparkMarkdownStyle(
     listBullet: body,
     strong: TextStyle(color: effectiveColor, fontWeight: FontWeight.w700),
     code: TextStyle(
-      color: reasoning ? palette.muted : const Color(0xFFE9EDF5),
-      fontFamily: 'monospace',
+      color: reasoning ? palette.muted : palette.primary,
+      fontFamily: 'JetBrainsMono',
       fontSize: reasoning ? 11 : 12.8,
       height: 1.5,
     ),
-    codeblockPadding: const EdgeInsets.all(12),
-    codeblockDecoration: BoxDecoration(
-      color: Color(0xFF172033),
-      borderRadius: BorderRadius.all(
-        Radius.circular(SparkDesignTokens.radiusLg),
-      ),
+    blockquote: body.copyWith(fontStyle: FontStyle.italic),
+    blockquoteDecoration: BoxDecoration(
+      color: palette.surfaceMuted,
+      border: Border(left: BorderSide(color: palette.lineStrong, width: 3)),
+    ),
+    blockquotePadding: const EdgeInsets.fromLTRB(12, 7, 10, 7),
+    codeblockPadding: EdgeInsets.zero,
+    codeblockDecoration: const BoxDecoration(),
+    horizontalRuleDecoration: BoxDecoration(
+      border: Border(top: BorderSide(color: palette.line)),
     ),
     blockSpacing: reasoning ? 4 : 9,
     listIndent: reasoning ? 16 : 20,
@@ -454,14 +308,11 @@ class SparkMarkdownPreprocessor {
     bool stabilizeGeneratedSyntax = false,
   }) {
     if (source.isEmpty) return source;
-    final codeBlocks = <String>[];
-    var normalized = source.replaceAllMapped(RegExp(r'```[\s\S]*?```'), (
-      match,
-    ) {
-      final token = '\u0000SPARK_CODE_${codeBlocks.length}\u0000';
-      codeBlocks.add(match.group(0)!);
-      return token;
-    });
+    final stabilized = stabilizeGeneratedSyntax
+        ? GeneratedMarkdownStabilizer.stabilize(source)
+        : source;
+    final protectedCode = _FencedCodeProtection.extract(stabilized);
+    var normalized = protectedCode.visible;
     normalized = normalized
         .replaceAll(r'\[', r'$$')
         .replaceAll(r'\]', r'$$')
@@ -469,7 +320,7 @@ class SparkMarkdownPreprocessor {
         .replaceAll(r'\)', r'$');
     normalized = _convertLatexTextCommands(normalized);
 
-    if (stabilizeGeneratedSyntax || _containsLikelyLatex(normalized)) {
+    if (!stabilizeGeneratedSyntax && _containsLikelyLatex(normalized)) {
       normalized = GeneratedMarkdownStabilizer.stabilize(normalized);
     }
 
@@ -481,13 +332,7 @@ class SparkMarkdownPreprocessor {
     if (!_hasBalancedBraces(normalized) || _hasUnbalancedDollar(normalized)) {
       normalized = readableLatexFallback(normalized);
     }
-    for (var index = 0; index < codeBlocks.length; index++) {
-      normalized = normalized.replaceAll(
-        '\u0000SPARK_CODE_$index\u0000',
-        codeBlocks[index],
-      );
-    }
-    return normalized;
+    return protectedCode.restore(normalized);
   }
 
   static String readableLatexFallback(String source) {
@@ -594,16 +439,95 @@ class SparkMarkdownPreprocessor {
   }
 
   static bool _hasUnbalancedDollar(String source) {
-    final visible = source.replaceAll(RegExp(r'```[\s\S]*?```'), '');
     var count = 0;
-    for (var index = 0; index < visible.length; index++) {
-      if (visible[index] == r'$'[0] &&
-          !GeneratedMarkdownStabilizer._isEscaped(visible, index)) {
+    for (var index = 0; index < source.length; index++) {
+      if (source[index] == r'$'[0] &&
+          !GeneratedMarkdownStabilizer._isEscaped(source, index)) {
         count++;
       }
     }
     return count.isOdd;
   }
+}
+
+class _FencedCodeProtection {
+  const _FencedCodeProtection._({
+    required this.visible,
+    required this.blocks,
+    required this.pendingFence,
+  });
+
+  final String visible;
+  final List<String> blocks;
+  final String? pendingFence;
+
+  static final _fencePattern = RegExp(r'^[ \t]{0,3}(`{3,}|~{3,})(.*)$');
+
+  static _FencedCodeProtection extract(String source) {
+    final visible = StringBuffer();
+    final blocks = <String>[];
+    StringBuffer? activeBlock;
+    String? fenceCharacter;
+    var fenceLength = 0;
+
+    final lines = source.split('\n');
+    for (var index = 0; index < lines.length; index++) {
+      final line = lines[index];
+      final completeLine = index == lines.length - 1 ? line : '$line\n';
+      final fenceMatch = _fencePattern.firstMatch(line);
+
+      if (activeBlock == null) {
+        if (fenceMatch == null) {
+          visible.write(completeLine);
+          continue;
+        }
+        final marker = fenceMatch.group(1)!;
+        fenceCharacter = marker[0];
+        fenceLength = marker.length;
+        activeBlock = StringBuffer()..write(completeLine);
+        continue;
+      }
+
+      activeBlock.write(completeLine);
+      if (fenceMatch == null) continue;
+      final marker = fenceMatch.group(1)!;
+      final trailing = fenceMatch.group(2) ?? '';
+      final closesFence = marker[0] == fenceCharacter &&
+          marker.length >= fenceLength &&
+          trailing.trim().isEmpty;
+      if (!closesFence) continue;
+
+      final token = _token(blocks.length);
+      blocks.add(activeBlock.toString());
+      visible.write(token);
+      activeBlock = null;
+      fenceCharacter = null;
+      fenceLength = 0;
+    }
+
+    String? pendingFence;
+    if (activeBlock != null) {
+      final token = _token(blocks.length);
+      blocks.add(activeBlock.toString());
+      visible.write(token);
+      pendingFence = List.filled(fenceLength, fenceCharacter).join();
+    }
+    return _FencedCodeProtection._(
+      visible: visible.toString(),
+      blocks: blocks,
+      pendingFence: pendingFence,
+    );
+  }
+
+  String restore(String source) {
+    var restored = source;
+    for (var index = 0; index < blocks.length; index++) {
+      restored = restored.replaceAll(_token(index), blocks[index]);
+    }
+    return restored;
+  }
+
+  static String _token(int index) => '\u0000SPARK_CODE_$index\u0000';
 }
 
 /// Repairs only unfinished trailing delimiters. It never changes completed
@@ -614,13 +538,13 @@ class GeneratedMarkdownStabilizer {
   static String stabilize(String source) {
     if (source.isEmpty) return source;
 
-    final fenceMatches = RegExp(
-      r'(^|\n)[ \t]*```',
-      multiLine: true,
-    ).allMatches(source).length;
-    if (fenceMatches.isOdd) return '$source\n```';
+    final protectedCode = _FencedCodeProtection.extract(source);
+    if (protectedCode.pendingFence case final pendingFence?) {
+      final separator = source.endsWith('\n') ? '' : '\n';
+      return '$source$separator$pendingFence';
+    }
 
-    final visible = source.replaceAll(RegExp(r'```[\s\S]*?```'), '');
+    final visible = protectedCode.visible;
     final pendingClosers = <_PendingCloser>[];
 
     _collectPairedDelimiter(visible, r'\[', r'\]', pendingClosers);

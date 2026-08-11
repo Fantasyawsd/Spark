@@ -5,9 +5,82 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:markdown/markdown.dart' as md;
+import 'package:spark/src/core/widgets/spark_code_highlight.dart';
 import 'package:spark/src/core/widgets/spark_markdown.dart';
+import 'package:spark/src/core/theme/spark_theme.dart';
 
 void main() {
+  group('SparkCodeTokenizer', () {
+    test('preserves source and applies Atom One token categories', () {
+      const source = 'final value = 42; // note';
+      final tokens = SparkCodeTokenizer.tokenize(source, language: 'dart');
+
+      expect(tokens.map((token) => token.text).join(), source);
+      expect(
+        tokens.any(
+          (token) =>
+              token.text == 'final' && token.kind == SparkCodeTokenKind.keyword,
+        ),
+        isTrue,
+      );
+      expect(
+        tokens.any(
+          (token) =>
+              token.text == '42' && token.kind == SparkCodeTokenKind.number,
+        ),
+        isTrue,
+      );
+      expect(
+        tokens.any(
+          (token) =>
+              token.text == '// note' &&
+              token.kind == SparkCodeTokenKind.comment,
+        ),
+        isTrue,
+      );
+    });
+
+    test('keeps unsupported languages as one readable plain token', () {
+      const source = '+++ unknown syntax';
+      final tokens = SparkCodeTokenizer.tokenize(source, language: 'unknown');
+
+      expect(tokens, hasLength(1));
+      expect(tokens.single.text, source);
+      expect(tokens.single.kind, SparkCodeTokenKind.plain);
+    });
+
+    test('preserves source for every supported language', () {
+      const source = 'value = "text" + 42;\n';
+
+      for (final language in SparkCodeTokenizer.supportedLanguages) {
+        final tokens = SparkCodeTokenizer.tokenize(
+          source,
+          language: language,
+        );
+        expect(
+          tokens.map((token) => token.text).join(),
+          source,
+          reason: language,
+        );
+      }
+    });
+
+    test('uses JetBrains Mono and the requested Atom palette', () {
+      final theme = SparkCodeTheme.dark();
+      final span = SparkCodeHighlighter.textSpan(
+        'final value = 42;',
+        language: 'dart',
+        theme: theme,
+      );
+
+      expect(span.style?.fontFamily, 'JetBrainsMono');
+      final keyword = span.children!.firstWhere(
+        (child) => child is TextSpan && child.text == 'final',
+      ) as TextSpan;
+      expect(keyword.style?.color, theme.keyword);
+    });
+  });
+
   group('GeneratedMarkdownStabilizer', () {
     test('temporarily closes unfinished rich text delimiters', () {
       expect(GeneratedMarkdownStabilizer.stabilize('**结论'), '**结论**');
@@ -350,9 +423,60 @@ void main() {
   });
 
   test('does not normalize Markdown syntax inside fenced code', () {
-    const source =
+    const backtickSource =
         '```python\nfinal value = \$raw\nif (value) {\n  print(value);\n}\n```';
-    expect(SparkMarkdownPreprocessor.prepare(source), source);
+    const tildeSource = '~~~bash\necho \$raw && printf "\\(literal\\)"\n~~~';
+
+    expect(SparkMarkdownPreprocessor.prepare(backtickSource), backtickSource);
+    expect(SparkMarkdownPreprocessor.prepare(tildeSource), tildeSource);
+  });
+
+  testWidgets('renders the supported GFM structure set', (tester) async {
+    const source = '# 标题\n\n'
+        '**加粗**、*强调*、~~删除线~~与[链接](https://example.com)。\n\n'
+        '> 引用\n\n'
+        '- 列表项\n'
+        '- [x] 已完成\n\n'
+        '| 列一 | 列二 |\n'
+        '| --- | --- |\n'
+        '| 单元格一 | 单元格二 |\n\n'
+        '---';
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: SparkTheme.light(),
+        home: Scaffold(
+          body: SingleChildScrollView(
+            child: Builder(
+              builder: (context) => SparkMarkdown(
+                data: source,
+                styleSheet: sparkMarkdownStyle(context),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(tester.takeException(), isNull);
+    for (final text in <String>[
+      '标题',
+      '加粗',
+      '强调',
+      '删除线',
+      '链接',
+      '引用',
+      '列表项',
+      '已完成',
+      '列一',
+      '列二',
+      '单元格一',
+      '单元格二',
+    ]) {
+      expect(find.textContaining(text, findRichText: true), findsOneWidget);
+    }
+    expect(find.byIcon(Icons.check_box), findsOneWidget);
+    expect(find.byType(Table), findsOneWidget);
   });
 
   testWidgets('renders fenced code with a direct copy action', (tester) async {
@@ -391,5 +515,98 @@ void main() {
     await tester.tap(copyButton);
     await tester.pump();
     expect(copiedText, 'final value = 42;');
+  });
+
+  testWidgets('wraps long code within the available block width', (
+    tester,
+  ) async {
+    const code =
+        'final generatedValue = "abcdefghijklmnopqrstuvwxyz0123456789abcdefghijklmnopqrstuvwxyz0123456789";';
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SizedBox(
+            width: 240,
+            child: Builder(
+              builder: (context) => SparkMarkdown(
+                data: '```dart\n$code\n```',
+                styleSheet: sparkMarkdownStyle(context),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    final block = find.byKey(ValueKey('paper-code-block-${code.hashCode}'));
+    final content = find.byKey(ValueKey('paper-code-content-${code.hashCode}'));
+
+    expect(
+      find.byKey(ValueKey('paper-code-scroll-${code.hashCode}')),
+      findsNothing,
+    );
+    expect(
+        tester.getSize(content).width, lessThan(tester.getSize(block).width));
+    expect(tester.getSize(content).height, greaterThan(30));
+  });
+
+  testWidgets('renders GFM tilde fences with highlighted code', (tester) async {
+    const code = 'final value = 42;';
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: SparkTheme.light(),
+        home: Scaffold(
+          body: Builder(
+            builder: (context) => SparkMarkdown(
+              data: '# 标题\n\n- [x] 完成\n\n~~~dart\n$code\n~~~',
+              styleSheet: sparkMarkdownStyle(context),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    expect(find.textContaining('标题', findRichText: true), findsOneWidget);
+    expect(find.textContaining('完成', findRichText: true), findsOneWidget);
+    expect(find.byKey(ValueKey('paper-code-block-${code.hashCode}')),
+        findsOneWidget);
+    expect(find.textContaining(code, findRichText: true), findsOneWidget);
+  });
+
+  testWidgets('uses distinct non-black Atom backgrounds for light and dark',
+      (tester) async {
+    const code = 'final value = 42;';
+
+    Future<Color?> pumpAndReadBackground(ThemeData theme) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: theme,
+          home: Scaffold(
+            body: Builder(
+              builder: (context) => SparkMarkdown(
+                data: '```dart\n$code\n```',
+                styleSheet: sparkMarkdownStyle(context),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final container = tester.widget<Container>(
+        find.byKey(ValueKey('paper-code-block-${code.hashCode}')),
+      );
+      return (container.decoration as BoxDecoration?)?.color;
+    }
+
+    final lightBackground = await pumpAndReadBackground(SparkTheme.light());
+    final darkBackground = await pumpAndReadBackground(SparkTheme.dark());
+
+    expect(lightBackground, SparkCodeTheme.light().background);
+    expect(darkBackground, SparkCodeTheme.dark().background);
+    expect(lightBackground, isNot(Colors.black));
+    expect(darkBackground, isNot(Colors.black));
+    expect(lightBackground, isNot(darkBackground));
   });
 }

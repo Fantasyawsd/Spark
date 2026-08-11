@@ -536,13 +536,13 @@ class SparkCodeBlock extends StatelessWidget {
               ],
             ),
           ),
-          SingleChildScrollView(
-            key: ValueKey('paper-code-scroll-$codeKey'),
-            scrollDirection: Axis.horizontal,
+          Padding(
+            key: ValueKey('paper-code-wrap-$codeKey'),
             padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
             child: SelectableText.rich(
               textSpan,
               key: ValueKey('paper-code-content-$codeKey'),
+              textWidthBasis: TextWidthBasis.parent,
             ),
           ),
         ],

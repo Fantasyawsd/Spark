@@ -517,6 +517,39 @@ void main() {
     expect(copiedText, 'final value = 42;');
   });
 
+  testWidgets('wraps long code within the available block width', (
+    tester,
+  ) async {
+    const code =
+        'final generatedValue = "abcdefghijklmnopqrstuvwxyz0123456789abcdefghijklmnopqrstuvwxyz0123456789";';
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SizedBox(
+            width: 240,
+            child: Builder(
+              builder: (context) => SparkMarkdown(
+                data: '```dart\n$code\n```',
+                styleSheet: sparkMarkdownStyle(context),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    final block = find.byKey(ValueKey('paper-code-block-${code.hashCode}'));
+    final content = find.byKey(ValueKey('paper-code-content-${code.hashCode}'));
+
+    expect(
+      find.byKey(ValueKey('paper-code-scroll-${code.hashCode}')),
+      findsNothing,
+    );
+    expect(
+        tester.getSize(content).width, lessThan(tester.getSize(block).width));
+    expect(tester.getSize(content).height, greaterThan(30));
+  });
+
   testWidgets('renders GFM tilde fences with highlighted code', (tester) async {
     const code = 'final value = 42;';
     await tester.pumpWidget(

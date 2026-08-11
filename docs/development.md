@@ -56,8 +56,8 @@ Spark 面向个人研究者，核心闭环由三个一级能力组成：
 
 ### 2.2 当前边界与已知缺口
 
-- 仍无账号、跨设备同步或 Spark 服务端；论文目录由 Client 直连 arXiv，所有互动、会话和偏好保存在当前设备。
-- 推荐与最新频道尚未接入独立服务端语义，当前仍使用现有 arXiv 目录能力；A100 Paper Database、推荐服务和 Paper API 均未实现。
+- 仍无账号、跨设备同步；Flutter Client 暂不切换服务端数据源，所有互动、会话和偏好仍保存在当前设备。
+- Phase 1/2 服务端实现已合入 `main`：提供可离线重放的 Paper Database、来源同步适配器、推荐服务和版本化 Paper API；A100 当前无外网，真实大规模数据回放与生产部署仍待执行。
 - 会议频道只有领域模型和管理入口，尚无可靠 Venue 数据源；OpenAlex、Semantic Scholar、GitHub 增强尚未进入生产论文链路。
 - 六问结构化 AI 解读及其缓存尚未完成并随 PDF 线暂缓；相关论文页面仍缺真实语义检索或引用图谱。
 - 论文聊天“读取全文”在部分下载、解析或异常场景可能无反馈或停留在加载状态，对应修复随 PDF 线暂缓。
@@ -99,8 +99,8 @@ OpenAlex / Semantic Scholar / GitHub 增强 ─┘                              
 
 | 阶段 | 状态 | 主要交付 |
 | --- | --- | --- |
-| Phase 1：论文数据底座 | 待开始 | 导入本地 arXiv 数据并建立增量同步；镜像 HF Daily；同步 OpenAlex/Semantic Scholar/GitHub；AI 准入；`paper_id`、去重、统一字段、来源留痕与 Paper Database |
-| Phase 2：基础 Feed API | 等待 Phase 1 | 推荐频道的 High Impact / Trending 候选池、基础质量/趋势分、时间分层、已读过滤、概率抽样与混排；最新频道日期回填；关注频道保持基础功能 |
+| Phase 1：论文数据底座 | 已完成 | `server/` 已实现 Paper schema、JSONL/OAI/Atom/HF/OpenAlex/Semantic Scholar/GitHub 同步、原始快照、AI 准入、稳定 `paper_id`、去重、provenance、SQLite Paper Database 和索引；已完成本地与 A100 Python 3.10 fixture 验证，真实外部回放待联网部署 |
+| Phase 2：基础 Feed API | 已完成 | `server/spark_papers/api.py` 提供版本化详情、最新、主题、会议、关注和推荐 API；实现 High Impact / Trending、质量/趋势分、年龄桶、已读过滤、diversity、无放回抽样和推荐批次快照 |
 | Phase 3：热点能力增强 | 后续阶段 | GitHub star velocity、citation velocity、Web Heat、LLM Trend Scout、24–72 小时 Trend Boost 与热点原因 |
 | Phase 4：个性化推荐 | 后续阶段 | 行为日志、用户画像与论文向量、Personalized Pool、个性化排序、Diversity 与 Exploration |
 | Phase 5：高级推荐系统 | 后续阶段 | 多路召回、Two-Tower、Learning to Rank、Reranker、序列推荐、实时兴趣更新与 A/B Test |
@@ -109,12 +109,12 @@ Phase 1 按以下依赖顺序拆分：
 
 | # | 任务 | 完成条件 |
 | --- | --- | --- |
-| 1.1 | Paper schema 与原始快照契约 | 明确 `paper_id`、外部 ID、字段来源、可空值、时间语义、schema 版本和迁移策略 |
-| 1.2 | HF Daily 镜像 PoC | A100 按日期增量保存原始/规范化数据、ETag 和游标；重跑幂等，断网/429 保留最后成功快照；Client 暂不切流 |
-| 1.3 | arXiv 底库导入与增量 | 导入现有数据集，按规范时间和版本去重；建立 OAI/API 增量、AI 分类准入和失败恢复 |
-| 1.4 | 身份解析与数据质量 | arXiv ID/DOI/OpenAlex ID 精确匹配可审计；低置信度模糊匹配、撤稿和异常值进入隔离/复核状态 |
-| 1.5 | OpenAlex/Semantic Scholar/GitHub 增强 | 同步质量信号、Topics、Venue、DOI、影响引用与可靠仓库字段；各来源独立保存抓取时间、周期快照和缺失原因 |
-| 1.6 | 索引与只读 Paper API | 建立 Latest/Channel/Candidate 索引，提供 `/api/v1` 详情和日期游标查询；随后再进入 Phase 2 推荐刷新接口 |
+| 1.1 | Paper schema 与原始快照契约 | 已完成：`server/schema/paper.v1.json`、版本字段、来源请求/响应快照与 provenance |
+| 1.2 | HF Daily 镜像 PoC | 已完成：按日期/页增量、请求参数、ETag、游标、幂等和 429/5xx 退避；Client 暂不切流 |
+| 1.3 | arXiv 底库导入与增量 | 已完成：JSONL 本地导入、Atom API 和 OAI-PMH `ListRecords` 适配、AI 分类准入与失败保留 |
+| 1.4 | 身份解析与数据质量 | 已完成：精确 ID 合并、模糊候选复核队列、未知值 `null`、撤稿排除和字段缺失原因 |
+| 1.5 | OpenAlex/Semantic Scholar/GitHub 增强 | 已完成：独立信号、抓取时间、请求快照、引用不相加和可靠 GitHub 论文匹配 |
+| 1.6 | 索引与只读 Paper API | 已完成：Latest/Channel/Candidate 索引、`/api/v1` 详情/日期游标及 Phase 2 刷新接口 |
 
 服务端逐步拆分为 `Data Pipeline`、`Paper Database`、`Recommendation Service`、`Paper API` 和 `Model Service`。抓取、清洗、跨源匹配、候选池生成和在线元数据查询主要使用 CPU；A100 为服务端 PDF/OCR、Embedding、主题分类、相似论文、reranker、摘要/翻译、Paper QA、用户兴趣向量和 LLM 热点分析等模型任务预留。数据、日志、索引和模型产物只落在 `/data2/fanjiahao/...`；每次安装依赖或下载数据前按服务器规范探测网络，禁止向 `/`、`/home`、`/data1` 或 `/data3` 落大数据。
 

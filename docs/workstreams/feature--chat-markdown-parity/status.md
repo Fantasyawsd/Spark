@@ -8,8 +8,8 @@
 - Worktree：`C:\Users\Fantasy\Desktop\Spark-worktrees\feature--chat-markdown-parity`
 - 基线提交：`c01a6d252135cdfe82261a9c60be9fb0a137a62a`（本地 `main`；创建时比 `origin/main` 领先 13 个已集成提交）
 - 负责人：Fantasy（编排者）；执行：Codex
-- 状态：规划中
-- 最近更新：2026-08-11
+- 状态：开发完成，待测试门禁
+- 最近更新：2026-08-12
 
 ## 目标
 
@@ -25,11 +25,11 @@
 
 ## 验收标准
 
-- [ ] ChatPaper 继续使用 GFM 解析，并以测试覆盖标题、强调、删除线、引用、链接、列表、任务列表、表格、分隔线和围栏代码；现有行内/块级 LaTeX 行为不回归。
-- [ ] 亮色模式代码块使用 Atom One Light 调色板，暗色模式使用 Atom One Dark 调色板；容器、工具栏、边框和正文在两种模式下均有可读对比度，暗色背景不使用纯黑。
-- [ ] 围栏代码按语言进行语法高亮；未知语言和高亮失败时完整显示原始代码，不丢字、不崩溃，并保留复制能力。
-- [ ] 代码正文和行内代码使用随应用打包的 JetBrains Mono；字体授权文件随资源保留，不依赖运行时联网下载。
-- [ ] AI 流式内容、用户气泡、思考面板、论文正文共用 Markdown 和现有选择语义没有回归。
+- [x] ChatPaper 继续使用 GFM 解析，并以测试覆盖标题、强调、删除线、引用、链接、列表、任务列表、表格、分隔线和围栏代码；现有行内/块级 LaTeX 行为不回归。
+- [x] 亮色模式代码块使用 Atom One Light 调色板，暗色模式使用 Atom One Dark 调色板；容器、工具栏、边框和正文在两种模式下均有可读对比度，暗色背景不使用纯黑。
+- [x] 围栏代码按语言进行语法高亮；未知语言和高亮失败时完整显示原始代码，不丢字、不崩溃，并保留复制能力。
+- [x] 代码正文和行内代码使用随应用打包的 JetBrains Mono；字体授权文件随资源保留，不依赖运行时联网下载。
+- [x] AI 流式内容、用户气泡、思考面板、论文正文共用 Markdown 和现有选择语义没有回归。
 - [ ] 定向 Widget 测试、格式检查、`flutter analyze`、全量 `flutter test` 与后续阶段要求的 release/profile 构建通过，结果如实写入本台账。
 
 ## 写入范围
@@ -64,9 +64,9 @@
 
 ## 当前进度
 
-- 已完成：任务边界、验收标准和非目标确认；必读文档、重叠 ChatPaper/Markdown 台账、RikkaHub 上游实现与 Git 基线核对；独立分支和 worktree 创建；验证证据路径规划。
-- 正在进行：无（`/start` 已完成）。
-- 下一步：等待编排者触发 `/develop`，先建立失败测试并完成高亮依赖选型。
+- 已完成：任务边界与基线确认；完成高亮依赖选型；新增本地 JetBrains Mono、Atom One Light/Dark 主题、有限语言 tokenizer、GFM AST 代码块 builder 与明暗/回退/GFM/LaTeX/消息视图测试；定向测试和静态门禁通过。
+- 正在进行：无；功能提交与台账检查点已完成。
+- 下一步：等待编排者触发 `/test`，再运行全量测试与 release/profile 构建门禁。
 - 阻塞项：无。
 
 ## 决策记录
@@ -77,6 +77,7 @@
 | 2026-08-11 | 保留 Spark 现有 GFM + LaTeX 解析路径 | Spark 与 RikkaHub 当前都使用 GFM；用户需要的是行为与展示对齐，不需要替换为 Kotlin 解析器 | 以补齐结构测试和渲染差异为主，降低公式与流式回归风险 |
 | 2026-08-11 | 代码高亮对齐 Atom One Light/Dark，字体使用本地 JetBrains Mono | 这是 RikkaHub 代码展示的明确实现；本地打包避免运行时网络和字体漂移 | 新增字体资源与授权记录；两套 Theme 下分别验证 |
 | 2026-08-11 | 不实现纯黑、HTML、Mermaid 和代码预览 | 用户明确不需要纯黑；其余属于更大安全和交互范围 | 本任务保持在 Markdown/代码展示边界内 |
+| 2026-08-12 | 不引入 `syntax_highlight 0.5.0`，改用展示层内有限语言 tokenizer | 该包会传递引入 `super_clipboard` 原生插件，并造成 Windows 依赖降级和注册文件变化；与本次只读代码展示的范围不相称 | 保持依赖树和平台注册文件稳定；未知语言与高亮异常统一完整回退原文 |
 
 ## 验证记录
 
@@ -84,6 +85,12 @@
 | --- | --- | --- |
 | `/start` 基线检查：`git status --short`、diff stat、最近提交、worktree 列表、`origin/main...main` | 控制工作树干净；本地 `main` 比 `origin/main` 领先 13；采用 `c01a6d2` | 2026-08-11 |
 | RikkaHub 源码只读核对 | 确认 GFM 解析、Material 3 Expressive 亮暗主题、Atom One Light/Dark 和 JetBrains Mono | 2026-08-11 |
+| `flutter test test\\spark_markdown_test.dart --reporter expanded`（新增测试红测） | tokenizer、未知语言、主题和 GFM 波浪线围栏测试暴露捕获组编号漂移；原有非代码 Markdown/LaTeX 用例未见新增失败 | 2026-08-12 |
+| `flutter pub get` | 资源与依赖解析通过；未新增、降级或修改锁定依赖 | 2026-08-12 |
+| `flutter test test\\spark_markdown_test.dart test\\paper_ai_message_view_test.dart --reporter expanded` | 34 项通过；覆盖 GFM、LaTeX、所有声明语言原文完整性、未知语言回退、复制、亮暗 Atom 背景及消息选择语义 | 2026-08-12 |
+| `flutter analyze` | 通过，0 issues | 2026-08-12 |
+| `.\\tool\\verify_changed_dart_format.ps1` | 通过，3 个变更 Dart 文件格式正确 | 2026-08-12 |
+| `git diff --check` | 通过 | 2026-08-12 |
 
 ## 审查结论
 
@@ -98,6 +105,7 @@
 
 | SHA | 提交信息 | 对应阶段 | 验证摘要 |
 | --- | --- | --- | --- |
+| `20c5d21e792b5cb355463500d93465c3252c2565` | `新增（ChatPaper）：支持明暗代码高亮` | `/develop` | `flutter pub get`；34 项 Markdown/ChatPaper 定向测试；`flutter analyze`；变更 Dart 格式检查；`git diff --check` 均通过 |
 
 ## 交付准备（合并前收集）
 
@@ -107,11 +115,11 @@
 
 ### 实际变更
 
-- 领域与业务逻辑：当前无改动。
-- 数据与基础设施：当前无改动。
-- 界面与交互：当前无改动。
-- 测试与工具：已规划 GFM、亮暗代码主题、字体和回退路径的 Widget 验证。
-- 文档：本任务台账。
+- 领域与业务逻辑：无改动。
+- 数据与基础设施：无改动；未新增第三方运行时依赖。
+- 界面与交互：代码块由 GFM AST builder 统一渲染，支持 Atom One Light/Dark、语言标签、高亮、横向滚动、选择与复制；行内代码和代码块使用 JetBrains Mono；链接、引用和分隔线跟随应用主题。
+- 测试与工具：新增 GFM 结构、代码围栏、明暗背景、token 分类、全部声明语言原文完整性、未知语言回退与复制测试，并回归 ChatPaper 消息视图。
+- 文档：更新本任务台账；新增 JetBrains Mono OFL-1.1 授权文件。
 
 ### 兼容性与迁移
 
@@ -121,7 +129,7 @@
 
 ### 已知风险与回滚
 
-- 已知风险：流式高亮的重建成本、第三方语言覆盖差异、字体资源包体增加；待实现与测试量化。
+- 已知风险：有限 tokenizer 只覆盖当前声明的常用语言和基础 token 类型，不承诺完整编译器级语法；不支持的语言完整回退纯文本。字体资源增加约 300 KiB 源文件体积。
 - 回滚方式：整体 revert 本任务功能提交；不涉及本地数据迁移。
 
 ### 文档更新建议

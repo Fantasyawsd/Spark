@@ -115,7 +115,9 @@ Both debug and release builds only read the key the user configures inside the a
 .\tool\verify_changed_dart_format.ps1
 flutter analyze
 flutter test
-flutter build apk --debug --flavor development --dart-define=SPARK_ENV=development
+flutter build apk --release --flavor development --dart-define=SPARK_ENV=development
 ```
+
+Android release builds require signing; until `android/key.properties` is configured, use `--profile` instead (AOT, performance equivalent to release, installable with the debug signature).
 
 The project does not use Android emulators for routine acceptance. See the [Release & Compatibility Guide](docs/standards/release-management.md) for Android production signing, on-device acceptance, and release gates.

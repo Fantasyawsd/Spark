@@ -8,7 +8,7 @@
 - Worktree：`C:\Users\Fantasy\Desktop\Spark-worktrees\feature--chat-markdown-parity`
 - 基线提交：`c01a6d252135cdfe82261a9c60be9fb0a137a62a`（本地 `main`；创建时比 `origin/main` 领先 13 个已集成提交）
 - 负责人：Fantasy（编排者）；执行：Codex
-- 状态：开发完成，待重新测试门禁
+- 状态：待合并
 - 最近更新：2026-08-12
 
 ## 目标
@@ -30,7 +30,7 @@
 - [x] 围栏代码按语言进行语法高亮并在容器宽度内自动换行；未知语言和高亮失败时完整显示原始代码，不丢字、不崩溃，并保留复制能力。
 - [x] 代码正文和行内代码使用随应用打包的 JetBrains Mono；字体授权文件随资源保留，不依赖运行时联网下载。
 - [x] AI 流式内容、用户气泡、思考面板、论文正文共用 Markdown 和现有选择语义没有回归。
-- [ ] 定向 Widget 测试、格式检查、`flutter analyze`、全量 `flutter test` 与后续阶段要求的 release/profile 构建通过，结果如实写入本台账。
+- [x] 定向 Widget 测试、格式检查、`flutter analyze`、全量 `flutter test` 与 release/profile 构建通过，结果如实写入本台账。
 
 ## 写入范围
 
@@ -65,8 +65,8 @@
 ## 当前进度
 
 - 已完成：任务边界与基线确认；完成高亮依赖选型；新增本地 JetBrains Mono、Atom One Light/Dark 主题、有限语言 tokenizer、GFM AST 代码块 builder 与明暗/回退/GFM/LaTeX/消息视图测试；定向测试和静态门禁通过。
-- 正在进行：无；代码自动换行实现与定向门禁已完成。
-- 下一步：等待编排者重新触发 `/test`，运行全量测试与 release/profile 构建门禁。
+- 正在进行：无；代码自动换行实现、全量门禁和人工验收已完成。
+- 下一步：合入 `main`，完成合并后集成验证和台账归档。
 - 阻塞项：无。
 
 ## 决策记录
@@ -94,7 +94,7 @@
 | `git diff --check` | 通过 | 2026-08-12 |
 | `/test`：`.\\tool\\verify_changed_dart_format.ps1` | 通过，3 个变更 Dart 文件格式正确 | 2026-08-12 |
 | `/test`：`flutter analyze` | 通过，0 issues | 2026-08-12 |
-| `/test`：`flutter test --reporter expanded` | 全量 417 项通过 | 2026-08-12 |
+| `/test`：`flutter test --reporter expanded` | 全量 418 项通过（最终计数 `+418`） | 2026-08-12 |
 | `/test`：`flutter build apk --profile --flavor development --dart-define=SPARK_ENV=development` | 通过；因缺少 `android/key.properties` 按规则使用 profile；`build/app/outputs/flutter-apk/app-development-profile.apk`，90,808,169 bytes，SHA-256 `7CDFB11BB06488D61BAFE9D9AB977AB2EB016F54A8962BBCCBC9DAFE863299FC` | 2026-08-12 |
 | `/test`：`flutter build windows --release --dart-define=SPARK_ENV=development` | 通过；`build/windows/x64/runner/Release/spark.exe`，101,888 bytes，SHA-256 `6216D4E75402B5C95B6E2F2E7783AFF156E5C36FAB15EF3389115C3E1C2DD680` | 2026-08-12 |
 | `/test` 验收运行：`flutter pub get` + `flutter run -d windows --release --dart-define=SPARK_ENV=development` | 依赖解析通过；本任务 worktree 的 Spark release 窗口成功启动（PID `46060`）；人工验收结果待编排者反馈 | 2026-08-12 |
@@ -104,16 +104,17 @@
 | `flutter test test\\spark_markdown_test.dart test\\paper_ai_message_view_test.dart test\\paper_ai_content_test.dart test\\paper_ai_composer_test.dart --reporter expanded` | 48 项通过 | 2026-08-12 |
 | 自动换行迭代：`flutter analyze`、`.\\tool\\verify_changed_dart_format.ps1`、`git diff --check` | 通过；0 issues，3 个变更 Dart 文件格式正确，无 whitespace 错误 | 2026-08-12 |
 | 自动换行预览：`flutter build windows --release --dart-define=SPARK_ENV=development` | 通过；从本任务 worktree 的 release 产物启动 Spark（PID `26296`），等待编排者检查自动换行 | 2026-08-12 |
-| 自动换行人工验收 | 编排者确认代码块自动换行效果通过；完整 `/test` 门禁仍待重新触发 | 2026-08-12 |
+| 自动换行人工验收 | 编排者确认代码块自动换行效果通过；随后全量测试门禁通过 | 2026-08-12 |
+| 合并前收尾确认 | 编排者确认“可以合并”；按编排者明确指示豁免独立 `/review` 阶段 | 2026-08-12 |
 
 ## 审查结论
 
-> 由 `/review` 填写摘要（阻断项、缺陷、结论）。
+> 编排者明确确认可以合并，豁免独立 `/review` 阶段；以下记录收尾结论。
 
-- 审查日期：尚未进入 `/review` 阶段。
-- 阻断项：尚未审查。
-- 缺陷：尚未审查。
-- 结论：尚未审查。
+- 审查日期：2026-08-12。
+- 阻断项：无。
+- 缺陷：无已知阻断缺陷；模型头像曾在重复构建期间出现运行态缓存问题，稳定重启后恢复，未修改头像代码。
+- 结论：编排者确认可以合并，按指示跳过独立 `/review`。
 
 ## 检查点与提交
 
@@ -126,7 +127,7 @@
 
 ### 交付摘要
 
-尚未进入合并前交付整理阶段；当前仅完成任务初始化。
+已完成合并前交付整理，等待合入 `main`。
 
 ### 实际变更
 
@@ -140,7 +141,7 @@
 
 - 本地数据迁移：无。
 - API 或领域契约变化：无。
-- 旧版本兼容性：仅展示层变化，待实现后复核。
+- 旧版本兼容性：仅展示层变化；全量测试和发布模式构建已通过。
 
 ### 已知风险与回滚
 
@@ -149,7 +150,7 @@
 
 ### 文档更新建议
 
-- `/finish` 时评估是否在 `docs/development.md` 的 ChatPaper 当前能力与验收原则中记录代码高亮和主题适配。
+- 合入 `main` 后在 `docs/development.md` 的 ChatPaper 当前能力与验收原则中记录代码高亮和主题适配。
 
 ### 未完成与后续工作
 
@@ -159,11 +160,11 @@
 
 > 只有任务提交已真实进入 `main` 后才能填写。本节与 `docs/development.md` 的真实状态更新一并提交；完成后台账转为只读归档。
 
-- 最终状态：不适用（任务尚未开发或合并）
+- 最终状态：待合并
 - 合入分支：`main`
 - 最终集成提交：不适用（任务尚未合并）
 - Pull Request：无
 - 合并时间：不适用（任务尚未合并）
 - main 集成验证：不适用（任务尚未合并）
 - 开发计划更新：不适用（任务尚未合并）
-- 最终后续项：等待编排者触发 `/develop`。
+- 最终后续项：合入 `main` 后完成归档文档提交并清理任务 worktree。

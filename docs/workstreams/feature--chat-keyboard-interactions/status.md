@@ -8,8 +8,8 @@
 - Worktree：`C:\Users\Fantasy\Desktop\Spark-worktrees\feature--chat-keyboard-interactions`
 - 基线提交：`948f3aff8a791aeb1602c1ef38313fde2278c4a6`（main HEAD）
 - 负责人：Fantasy（编排者）；执行：Claude
-- 状态：开发中
-- 最近更新：2026-08-11 21:00
+- 状态：待审查
+- 最近更新：2026-08-11 22:00
 
 ## 目标
 
@@ -56,9 +56,9 @@
 
 ## 当前进度
 
-- 已完成：任务边界确认；必读文档与历史台账阅读；现状分析；rikkahub ime 滚动对照（无代码改动，结论见决策记录）；桌面端发送后保持焦点；`_dismissKeyboard()` 三层兜底并接入多选入口；3 个 Widget 测试；定向验证全过（格式/analyze/test 410）。
-- 正在进行：等待编排者验收与后续流程（/test、/review 由编排者触发）。
-- 下一步：编排者 Windows 实测验收（`flutter run -d windows` 需先确认）。
+- 已完成：任务边界确认；必读文档与历史台账阅读；现状分析；rikkahub ime 滚动对照（无代码改动，结论见决策记录）；桌面端发送后保持焦点；`_dismissKeyboard()` 三层兜底并接入多选入口；3 个 Widget 测试；/test 完整验证门禁全过（diff check/格式/analyze/test 410/APK+Windows 构建）。
+- 正在进行：等待编排者触发 /review。
+- 下一步：/review 只读审查；编排者可随时要求 `flutter run -d windows` 实测验收。
 - 阻塞项：无
 
 ## 决策记录
@@ -82,6 +82,12 @@
 | `flutter analyze` | No issues found | 2026-08-11 |
 | `flutter test`（全量） | 410 全过，无回归 | 2026-08-11 |
 | rikkahub `ImeLazyListAutoScroller.kt` vs `paper_ai_chat_screen.dart` `_ImeAnchoringScrollController` 人工对照 | Spark 为参照算法超集，未改代码 | 2026-08-11 |
+| `git diff --check HEAD~3 HEAD` | 通过 | 2026-08-11（/test 阶段复跑） |
+| `tool/verify_changed_dart_format.ps1`（/test 复跑） | 通过 | 2026-08-11 |
+| `flutter analyze`（/test 复跑） | No issues found | 2026-08-11 |
+| `flutter test` 全量（/test 复跑） | 410 全过 | 2026-08-11 |
+| `flutter build apk --debug --flavor development --dart-define=SPARK_ENV=development` | 通过（71.1s），产物 `build/app/outputs/flutter-apk/app-development-debug.apk` | 2026-08-11 |
+| `flutter build windows --debug --dart-define=SPARK_ENV=development` | 通过（63.3s），产物 `build/windows/x64/runner/Debug/spark.exe` | 2026-08-11 |
 
 ## 审查结论
 

@@ -4,13 +4,15 @@ import hashlib
 import math
 import random
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from typing import Any, Iterable, Mapping
 
 from . import SCORE_VERSION
 from .dto import recommendation_to_api
 from .models import PaperRecord, RecommendationItem, utc_now
 from .ports import RecommendationRepository
+
+UTC = timezone.utc
 
 
 @dataclass(frozen=True)

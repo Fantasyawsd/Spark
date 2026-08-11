@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from typing import Any, Mapping
 
 from . import PAPER_SCHEMA_VERSION
+
+UTC = timezone.utc
 
 
 def utc_now() -> datetime:

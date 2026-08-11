@@ -61,7 +61,8 @@
 - 已完成：接入 arXiv Atom、HF Daily、OpenAlex、Semantic Scholar、GitHub enrichment 适配器；实现精确身份合并、低置信度匹配队列和 12 项服务端测试。
 - 已完成：实现 `/api/v1` 详情、最新、主题、关注、推荐查询，以及质量/趋势评分、年龄桶、已读过滤、无放回抽样和推荐批次快照。
 - 已完成：Flutter 全量静态检查、407 项客户端测试、development APK 与 Windows debug 构建均通过。
-- 正在进行：真实 A100 数据回放和外部配额验证尚未执行，需在部署阶段执行。
+- 已完成：A100 `torch` Python 3.10 环境 fixture 回放 12 项通过；网络探测为 `OFFLINE`，因此未执行外部数据下载。
+- 正在进行：真实 A100 数据回放和外部配额验证尚未执行，需待服务器联网后执行。
 - 下一步：记录最终验证证据，提交任务检查点，并由编排者决定合入与 A100 部署。
 - 阻塞项：无。
 
@@ -84,6 +85,8 @@
 | `flutter test` | 407 项通过 | 2026-08-11 |
 | `flutter build apk --debug --flavor development --dart-define=SPARK_ENV=development` | 通过；`build/app/outputs/flutter-apk/app-development-debug.apk`；164,811,140 bytes；SHA-256 `9726F13C3465E2EA2366688477AB84D2BD34610527AA7C558729A7878687474F` | 2026-08-11 |
 | `flutter build windows --debug --dart-define=SPARK_ENV=development` | 通过；`build/windows/x64/runner/Debug/spark.exe`；1,279,488 bytes；SHA-256 `BCA00A3389F00027B4EABACE9616ED415DB560B933338E7162A3BFA812C13F30` | 2026-08-11 |
+| `ssh a100 ... curl -sI https://pypi.org` | 服务器 `PR4910W` 可访问；网络 `OFFLINE`；`/data2/fanjiahao` 存在 | 2026-08-11 |
+| A100 `/data2/fanjiahao/anaconda3/envs/torch/bin/python -m unittest discover -s server/tests -v` | 12 项通过；Python 3.10 兼容性验证 | 2026-08-11 |
 
 ## 审查结论
 
@@ -119,7 +122,7 @@
 
 ### 已知风险与回滚
 
-- 已知风险：真实外部接口配额、许可和字段变化需在部署前重新核验；本次验证使用本地 fixture，未在 A100 上执行大规模数据回放；本任务不提交线上数据。
+- 已知风险：真实外部接口配额、许可和字段变化需在部署前重新核验；A100 当前无外网，只完成了离线 fixture 回放；本任务不提交线上数据。
 - 回滚方式：按提交逆序 `git revert`；服务端数据库可删除并从原始快照重建。
 
 ### 文档更新建议

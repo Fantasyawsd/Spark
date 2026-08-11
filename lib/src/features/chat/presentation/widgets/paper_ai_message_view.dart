@@ -389,7 +389,7 @@ class _MessageActionRow extends StatelessWidget {
               icon: Icons.edit_outlined,
               onPressed: onEdit,
             ),
-          if (assistant)
+          if (assistant && onDelete != null)
             _MessageActionButton(
               key: const ValueKey('paper-ai-assistant-more'),
               tooltip: '更多',

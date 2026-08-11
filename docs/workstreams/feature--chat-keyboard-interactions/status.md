@@ -9,7 +9,7 @@
 - 基线提交：`948f3aff8a791aeb1602c1ef38313fde2278c4a6`（main HEAD）
 - 负责人：Fantasy（编排者）；执行：Claude
 - 状态：待审查
-- 最近更新：2026-08-11 22:00
+- 最近更新：2026-08-11 23:05
 
 ## 目标
 
@@ -56,9 +56,8 @@
 
 ## 当前进度
 
-- 已完成：任务边界确认；必读文档与历史台账阅读；现状分析；rikkahub ime 滚动对照（无代码改动，结论见决策记录）；桌面端发送后保持焦点；`_dismissKeyboard()` 三层兜底并接入多选入口；3 个 Widget 测试；/test 完整验证门禁全过（diff check/格式/analyze/test 410/APK+Windows 构建）。
+- 已完成：任务边界确认；必读文档与历史台账阅读；现状分析；rikkahub ime 滚动对照（无代码改动，结论见决策记录）；桌面端发送后保持焦点；`_dismissKeyboard()` 三层兜底并接入多选入口；3 个 Widget 测试；/test 完整验证门禁全过（diff check/格式/analyze/test 410/APK+Windows 构建）；Windows 桌面端启动实测；profile 包手机端实测（键盘弹出顺滑，debug 卡顿确认为构建类型假象）。
 - 正在进行：等待编排者触发 /review。
-- 下一步：/review 只读审查；编排者可随时要求 `flutter run -d windows` 实测验收。
 - 阻塞项：无
 
 ## 决策记录
@@ -70,10 +69,11 @@
 | 2026-08-11 | 第 3 项（ime 滚动对照）无代码改动 | 对照结论：Spark 现有实现（`fix/android-keyboard-jank`）是 rikkahub `ImeLazyListAutoScroller` 的超集——① 同样的高度差值思想（`_ImeAnchoringScrollController.updateImeInset` 算 delta 对应 rikkahub 的 scrollBy 差值）；② 超集：底部锚定阈值守卫（距底 >160px 不跟随，阅读中不被拽走，rikkahub 无此守卫）；③ 超集：修正延迟到 `correctForNewDimensions` 一次性应用，避免与布局放大打架；④ 超集：输入栏独立 `Transform.translate` 平移 + `removeViewInsets`，消息视口不参与 IME 合成变换 | 验收标准该项以台账记录为证据 |
 | 2026-08-11 | `_dismissKeyboard` 保留 kelivo 的三层兜底（含 `TextInput.hide`） | Spark 主验收平台是 Android，kelivo 加此层正是防御 Android 输入法在焦点转移后的残留；成本一行，且 `Future.ignore()` 吞掉无平台通道环境（测试）的异步错误 | presentation 调用 `SystemChannels` 属框架 API 而非平台插件，不违反分层约束 |
 | 2026-08-11 | 桌面保焦范围不含 Web | 验收平台为 Android 手机 + Windows 桌面；kelivo 同样只判三个桌面 OS | Web 平台维持 unfocus 现状 |
+| 2026-08-11 | 后续构建一律发布版（Android 签名未配置期间以 profile 代替） | 编排者指示；本任务手机实测时 debug 包出现键盘弹出卡顿，profile 包顺滑，确认卡顿为 debug 构建（JIT/断言）假象，debug 产物会误导验收 | 已记入 AGENTS.md §10（main 75dc0aa）；本任务 /finish 起门禁产物按发布版执行 |
 
 ## 验证记录
 
-> `/finish` 合并后必须记录 development APK 与 Windows debug EXE 两个目标的构建结果、产物路径、大小和 SHA-256；任一目标失败时不得填写“已合并”或清理 worktree。
+> `/finish` 合并后必须记录 development APK 与 Windows EXE 两个目标的发布版构建结果、产物路径、大小和 SHA-256（AGENTS.md §10，2026-08-11 起构建一律发布版，Android 签名未配置期间以 profile 代替）；任一目标失败时不得填写“已合并”或清理 worktree。
 
 | 命令或人工检查 | 结果 | 日期 |
 | --- | --- | --- |
@@ -88,6 +88,9 @@
 | `flutter test` 全量（/test 复跑） | 410 全过 | 2026-08-11 |
 | `flutter build apk --debug --flavor development --dart-define=SPARK_ENV=development` | 通过（71.1s），产物 `build/app/outputs/flutter-apk/app-development-debug.apk` | 2026-08-11 |
 | `flutter build windows --debug --dart-define=SPARK_ENV=development` | 通过（63.3s），产物 `build/windows/x64/runner/Debug/spark.exe` | 2026-08-11 |
+| Windows 桌面端 `flutter run` 启动实测 | 应用正常启动运行，无障碍日志噪音与本次改动无关 | 2026-08-11 |
+| `flutter build apk --profile --flavor development --dart-define=SPARK_ENV=development` | 通过（126.2s），产物 `build/app/outputs/flutter-apk/app-development-profile.apk`（86.4MB） | 2026-08-11 |
+| 手机端实测（profile 包）：键盘弹出动画与列表跟随 | 顺滑无卡顿；debug 包卡顿确认为构建类型（JIT/断言）假象，非实现问题 | 2026-08-11 |
 
 ## 审查结论
 

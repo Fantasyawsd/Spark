@@ -112,6 +112,12 @@
 | `sync-external --hf-days 14 --semantic-scholar-limit 500 --github-limit 50` | 通过；HF 326 条、Semantic Scholar 498/500、GitHub 50 条，0 unmatched/0 rejected；写入真实快照，耗时约 560.6 秒 | 2026-08-11 |
 | SQLite 全量来源与推荐核验 | 通过；675,168 论文/唯一 arXiv ID，source observation：HF 326、Semantic Scholar 498、GitHub 50；HF heat 326、Semantic Scholar citation 498、GitHub stars 194、GitHub links 195；quality outlier 0、Trending 非零 326、错误年龄桶 0 | 2026-08-11 |
 | Paper API HTTP 端到端核验 | 通过；health 675,168；最新/主题/会议/关注各返回真实论文；推荐 20 条无重复，10 条已读交集为 0，不同 limit 的 batch_id 不同 | 2026-08-11 |
+| `flutter pub get` | 通过；Flutter 3.44.8，依赖解析成功 | 2026-08-11 |
+| `.\tool\verify_changed_dart_format.ps1` | 通过；17 个 Dart 文件，0 个需格式化 | 2026-08-11 |
+| `flutter analyze` | 通过；No issues found | 2026-08-11 |
+| `flutter test` | 通过；426 项全部通过 | 2026-08-11 |
+| `flutter build apk --profile --flavor development --dart-define=SPARK_ENV=development` | 通过；`build/app/outputs/flutter-apk/app-development-profile.apk`，90,680,457 bytes，SHA-256 `6FA4FB557A62F98E3D676FC09B1F4C44AF9ABF90B2C7497FA93985DCF5E955F6`；因无 `android/key.properties`，按规范使用 profile | 2026-08-11 |
+| `flutter build windows --release --dart-define=SPARK_ENV=development` | 通过；`build/windows/x64/runner/Release/spark.exe`，101,888 bytes，SHA-256 `D818C73AC821F64BD61F6FCA692DE66EA2CE8DCFC3EFEC05BD1E5870064F5F95` | 2026-08-11 |
 
 ## 审查结论
 

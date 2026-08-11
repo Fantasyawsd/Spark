@@ -8,8 +8,8 @@
 - Worktree：`C:\Users\Fantasy\Desktop\Spark-worktrees\feature--chat-keyboard-interactions`
 - 基线提交：`948f3aff8a791aeb1602c1ef38313fde2278c4a6`（main HEAD）
 - 负责人：Fantasy（编排者）；执行：Claude
-- 状态：收尾中
-- 最近更新：2026-08-11 23:20
+- 状态：已合并
+- 最近更新：2026-08-11 23:30
 
 ## 目标
 
@@ -56,9 +56,9 @@
 
 ## 当前进度
 
-- 已完成：任务边界确认；必读文档与历史台账阅读；现状分析；rikkahub ime 滚动对照（无代码改动，结论见决策记录）；桌面端发送后保持焦点；`_dismissKeyboard()` 三层兜底并接入多选入口；3 个 Widget 测试；/test 完整验证门禁全过（diff check/格式/analyze/test 410/APK+Windows 构建）；Windows 桌面端启动实测；profile 包手机端实测（键盘弹出顺滑，debug 卡顿确认为构建类型假象）。
-- 正在进行：/finish 收尾：合并前交付信息已收集，编排者已批准合并，待合入 main 后做集成回归与归档。
-- 下一步：合入 main → main 集成回归（含发布版双目标构建证据）→ 台账归档 → 清理 worktree。
+- 已完成：任务边界确认；必读文档与历史台账阅读；现状分析；rikkahub ime 滚动对照（无代码改动，结论见决策记录）；桌面端发送后保持焦点；`_dismissKeyboard()` 三层兜底并接入多选入口；3 个 Widget 测试；/test 完整验证门禁全过（diff check/格式/analyze/test 410/APK+Windows 构建）；Windows 桌面端启动实测；profile 包手机端实测（键盘弹出顺滑，debug 卡顿确认为构建类型假象）；合并前交付信息收集；合入 main（`4437503`）；main 集成回归全过（含发布版双目标构建证据）。
+- 正在进行：无（任务已合并，本提交完成归档）。
+- 阻塞项：无
 
 ## 决策记录
 
@@ -91,6 +91,9 @@
 | Windows 桌面端 `flutter run` 启动实测 | 应用正常启动运行，无障碍日志噪音与本次改动无关 | 2026-08-11 |
 | `flutter build apk --profile --flavor development --dart-define=SPARK_ENV=development` | 通过（126.2s），产物 `build/app/outputs/flutter-apk/app-development-profile.apk`（86.4MB） | 2026-08-11 |
 | 手机端实测（profile 包）：键盘弹出动画与列表跟随 | 顺滑无卡顿；debug 包卡顿确认为构建类型（JIT/断言）假象，非实现问题 | 2026-08-11 |
+| main 集成回归（合并后）：`tool/verify_changed_dart_format.ps1` + `flutter analyze` + `flutter test` 全量 | 全过（410 项） | 2026-08-11 |
+| main 集成构建（合并后）：`flutter build apk --profile --flavor development --dart-define=SPARK_ENV=development`（Android release 签名未配置，按 AGENTS.md §10 以 profile 代替，产物类型 profile） | 通过（115.1s）；产物 `build/app/outputs/flutter-apk/app-development-profile.apk`，90,582,153 B（86.4 MB），SHA-256 `13b52dece05033013d62c943fe1f6badd3965dbe07a7f514c5ae8458eabc5317` | 2026-08-11 |
+| main 集成构建（合并后）：`flutter build windows --release --dart-define=SPARK_ENV=development` | 通过（99.5s）；产物 `build/windows/x64/runner/Release/spark.exe`，101,888 B，SHA-256 `cdfcde6d1129aa3b01faf6ddcbc8feaab9d92b647a6b7bd00b9c712e579ba28a` | 2026-08-11 |
 
 ## 审查结论
 
@@ -145,11 +148,11 @@ ChatPaper 聊天页（主聊天与论文聊天共用的 `PaperAiChatScreen`）�
 
 > 只有任务提交已真实进入 `main` 后才能填写。本节与 `docs/development.md` 的真实状态更新一并提交；完成后台账转为只读归档。
 
-- 最终状态：（待合并后填写）
+- 最终状态：已合并
 - 合入分支：`main`
-- 最终集成提交：（待合并后填写）
+- 最终集成提交：`443750390bfa6c95b6bfe66a96045e0ddcfe60ae`
 - Pull Request：无
-- 合并时间：（待合并后填写）
-- main 集成验证：（待合并后填写）
-- 开发计划更新：（待合并后填写）
-- 最终后续项：（待合并后填写）
+- 合并时间：2026-08-11 23:21:17 +08:00
+- main 集成验证：格式门禁、`flutter analyze`、`flutter test` 全量 410 项、development APK（profile，按 AGENTS.md §10 代替 release）与 Windows release EXE 双目标发布版构建全部通过；产物路径、大小与 SHA-256 见上方验证记录。
+- 开发计划更新：不适用；键盘交互细节优化不改变 `docs/development.md` 的功能能力状态（同 `fix/android-keyboard-jank` 先例）。
+- 最终后续项：enterToSend（移动端回车发送/换行切换）设置项另立任务；本台账转为只读归档，除勘误外不再更新。

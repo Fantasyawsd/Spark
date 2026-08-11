@@ -13,7 +13,7 @@
 
 ## 目标
 
-使用本地 Spark arXiv 数据集建立可重复、可恢复的真实 SQLite Paper Database，接入 OpenAlex 高引增强，并在真实规模下完成 Paper API、基础推荐和 Windows development App 验收，以补齐 Phase 1/2 尚未完成的交付条件。
+使用本地 Spark arXiv 数据集建立可重复、可恢复的真实 SQLite Paper Database，接入 OpenAlex 高引、HF Daily、Semantic Scholar 与 GitHub 真实增强，并在真实规模下完成 Paper API、基础推荐和 Windows development App 验收，以补齐 Phase 1/2 尚未完成的交付条件。
 
 ## 非目标
 
@@ -32,6 +32,8 @@
 - [x] 健康、详情、最新、主题、会议、关注和推荐 API 在真实数据库上通过；不同 seed 生成不同可重放推荐 batch。
 - [ ] Windows development App 展示真实论文，推荐刷新返回新 batch 并与现有列表合并，由编排者人工验收。
 - [x] 服务端测试、Flutter 定向测试、格式检查和静态分析通过；真实导入数量、耗时、数据库大小和接口检查有记录。
+- [ ] HF Daily、Semantic Scholar 与 GitHub 完成有界的真实同步、快照和落库验证；同步失败保留最近成功状态。
+- [ ] 推荐年龄桶、批次标识和异常引用排除满足可回放契约，并在真实库复验。
 
 ## 写入范围
 
@@ -64,14 +66,16 @@
 3. 将索引刷新改为集合式 SQL，将推荐候选改为有界数据库查询。
 4. 先以小规模真实记录验证，再导入完整主 JSONL，并执行会议标签和 OpenAlex 增强。
 5. 在新 SQLite 上完成 API、推荐批次和 Windows development App 验收。
+6. 接入 HF Daily、Semantic Scholar 和 GitHub 的真实有界同步，补齐定时执行入口与快照证据。
+7. 修复审查发现的年龄桶回补、推荐批次标识冲突和异常引用参与评分问题，并刷新真实索引复验。
 
 ## 当前进度
 
 - 已完成：可恢复导入器、字段契约、集合式索引和有界推荐查询；674,969 篇 arXiv 主库、99,577 条会议增强和 2,901 条 OpenAlex 增强已真实落库。
 - 已完成：真实库健康、详情、最新、主题、会议、关注、推荐和已读排除验证；服务端 18 项测试及客户端推荐刷新、增量合并、已读 ID 传递定向测试通过。
 - 已完成：Dart 格式、`flutter analyze`、426 项 Flutter 测试、development APK 和 Windows debug 构建全部通过。
-- 正在进行：准备重启 Windows development App，使最新客户端代码连接 `127.0.0.1:8000` 的真实库。
-- 下一步：编排者人工确认真实论文、数据源标识、推荐刷新增量合并和频道内容；通过后更新 Phase 1/2/2.5 状态并进入最终审查。
+- 正在进行：补齐 HF Daily、Semantic Scholar、GitHub 的真实同步，并修复推荐年龄桶、批次标识和异常引用评分问题。
+- 下一步：完成真实来源与推荐回归后，由编排者人工确认真实论文、数据源标识、推荐刷新增量合并和频道内容。
 - 阻塞项：无；人工 App 验收尚待执行。
 
 ## 决策记录

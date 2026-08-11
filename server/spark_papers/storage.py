@@ -659,6 +659,15 @@ class PaperStore:
                 ("3-5y", generated_at - timedelta(days=365.25 * 5), generated_at - timedelta(days=365.25 * 3)),
                 ("5y+", None, generated_at - timedelta(days=365.25 * 5)),
             )
+            quality_sort = """COALESCE(
+                CASE
+                    WHEN json_extract(signals_json, '$.openalex.citation_count_outlier') = 1
+                    THEN NULL
+                    ELSE json_extract(signals_json, '$.openalex.citation_count')
+                END,
+                json_extract(signals_json, '$.semantic_scholar.citation_count'),
+                0
+            )"""
             for bucket, lower, upper in boundaries:
                 clauses = ["admitted = 1", "withdrawn = 0", "published_at < ?"]
                 date_params: list[Any] = [upper.isoformat()]
@@ -669,10 +678,10 @@ class PaperStore:
                 connection.execute(
                     f"""INSERT INTO candidate_index(pool, paper_id, generated_at, sort_key, published_at)
                         SELECT ?, paper_id, ?,
-                               COALESCE(json_extract(signals_json, '$.openalex.citation_count'), 0),
+                               {quality_sort},
                                published_at
                         FROM papers WHERE {where}
-                        ORDER BY COALESCE(json_extract(signals_json, '$.openalex.citation_count'), 0) DESC,
+                        ORDER BY {quality_sort} DESC,
                                  published_at DESC, paper_id DESC LIMIT 5000""",
                     (f"quality:{bucket}", generated, *date_params),
                 )
@@ -731,7 +740,15 @@ class PaperStore:
         )
         rows_by_id: dict[str, sqlite3.Row] = {}
         orders = (
-            "COALESCE(json_extract(signals_json, '$.openalex.citation_count'), -1) DESC, published_at DESC, paper_id DESC",
+            """COALESCE(
+                CASE
+                    WHEN json_extract(signals_json, '$.openalex.citation_count_outlier') = 1
+                    THEN NULL
+                    ELSE json_extract(signals_json, '$.openalex.citation_count')
+                END,
+                json_extract(signals_json, '$.semantic_scholar.citation_count'),
+                -1
+            ) DESC, published_at DESC, paper_id DESC""",
             "COALESCE(json_extract(signals_json, '$.huggingface.heat'), -1) DESC, published_at DESC, paper_id DESC",
         )
         for lower, upper in boundaries:

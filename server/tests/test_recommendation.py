@@ -2,13 +2,14 @@ from __future__ import annotations
 
 import tempfile
 import unittest
+from dataclasses import replace
 from datetime import datetime, timedelta, timezone
 
 UTC = timezone.utc
 from pathlib import Path
 
 from spark_papers.pipeline import SnapshotStore, SyncRunner
-from spark_papers.recommendation import RecommendationEngine, age_bucket
+from spark_papers.recommendation import RecommendationEngine, age_bucket, score_paper
 from spark_papers.sources import StaticSource
 from spark_papers.storage import PaperStore
 
@@ -43,19 +44,70 @@ class RecommendationTest(unittest.TestCase):
 
     def test_recommendation_is_deterministic_and_excludes_read_ids(self) -> None:
         engine = RecommendationEngine(self.store)
-        batch_one, items_one = engine.generate(limit=8, read_ids=["paper_does_not_exist"], seed=41)
-        batch_two, items_two = engine.generate(limit=8, read_ids=["paper_does_not_exist"], seed=41)
+        now = datetime(2026, 8, 11, 23, 59, 59, tzinfo=UTC)
+        batch_one, items_one = engine.generate(
+            limit=8,
+            read_ids=["paper_does_not_exist"],
+            seed=41,
+            as_of=now,
+        )
+        batch_two, items_two = engine.generate(
+            limit=8,
+            read_ids=["paper_does_not_exist"],
+            seed=41,
+            as_of=now,
+        )
         self.assertEqual(batch_one, batch_two)
         self.assertEqual([item.paper.paper_id for item in items_one], [item.paper.paper_id for item in items_two])
         self.assertEqual(len(items_one), len({item.paper.paper_id for item in items_one}))
         self.assertTrue(all(item.pool in {"high_impact", "trending"} for item in items_one))
+        self.assertTrue(
+            all(
+                item.age_bucket == age_bucket(item.paper.published_at, now)
+                for item in items_one
+            )
+        )
         for previous, current in zip(items_one, items_one[1:]):
             self.assertNotEqual(previous.paper.authors[0], current.paper.authors[0])
             self.assertTrue(set(previous.paper.subjects).isdisjoint(current.paper.subjects))
 
         read_id = items_one[0].paper.paper_id
-        _, items_without_read = engine.generate(limit=8, read_ids=[read_id], seed=41)
+        batch_without_read, items_without_read = engine.generate(
+            limit=8,
+            read_ids=[read_id],
+            seed=41,
+            as_of=now,
+        )
         self.assertNotIn(read_id, {item.paper.paper_id for item in items_without_read})
+        self.assertNotEqual(batch_one, batch_without_read)
+
+        batch_with_different_limit, _ = engine.generate(
+            limit=7,
+            read_ids=["paper_does_not_exist"],
+            seed=41,
+            as_of=now,
+        )
+        self.assertNotEqual(batch_one, batch_with_different_limit)
+
+    def test_openalex_outlier_is_not_used_as_a_quality_signal(self) -> None:
+        now = datetime(2026, 8, 11, tzinfo=UTC)
+        paper = self.store.all_candidates()[0]
+        outlier = replace(
+            paper,
+            signals={
+                "openalex": {
+                    "citation_count": 10_000_000,
+                    "citation_velocity": 100_000,
+                    "citation_count_outlier": True,
+                }
+            },
+        )
+
+        quality, _, signals = score_paper(outlier, (outlier,), as_of=now)
+
+        self.assertEqual(quality, 0.0)
+        self.assertNotIn("quality.citation_count", signals)
+        self.assertNotIn("quality.citation_velocity", signals)
 
     def test_age_bucket_boundaries_are_mutually_exclusive(self) -> None:
         now = datetime(2026, 8, 11, tzinfo=UTC)

@@ -55,14 +55,24 @@ def _signal(paper: PaperRecord, name: str, as_of: datetime | None = None) -> flo
     semantic = paper.signals.get("semantic_scholar", {})
     github = paper.signals.get("github", {})
     hf = paper.signals.get("huggingface", {})
+    openalex_is_outlier = openalex.get("citation_count_outlier") is True
     values = {
-        "citation_count": _first_number(openalex.get("citation_count"), semantic.get("citation_count")),
-        "citation_velocity": _first_number(openalex.get("citation_velocity"), semantic.get("citation_velocity")),
+        "citation_count": _first_number(
+            None if openalex_is_outlier else openalex.get("citation_count"),
+            semantic.get("citation_count"),
+        ),
+        "citation_velocity": _first_number(
+            None if openalex_is_outlier else openalex.get("citation_velocity"),
+            semantic.get("citation_velocity"),
+        ),
         "github_stars": _number(github.get("stars")),
         "venue_score": _number(paper.metadata.get("venue_score")),
         "hf_heat": _first_number(hf.get("heat"), hf.get("upvotes")),
         "github_star_velocity": _number(github.get("star_velocity")),
-        "short_citation_velocity": _first_number(openalex.get("short_citation_velocity"), semantic.get("short_citation_velocity")),
+        "short_citation_velocity": _first_number(
+            None if openalex_is_outlier else openalex.get("short_citation_velocity"),
+            semantic.get("short_citation_velocity"),
+        ),
     }
     if name == "freshness":
         age_days = max(((as_of or datetime.now(UTC)) - paper.published_at).total_seconds() / 86400, 0)
@@ -228,15 +238,16 @@ class RecommendationEngine:
             per_pool_limit=max(limit * 50, 500),
             as_of=as_of,
         )
+        effective_seed = seed if seed is not None else int(as_of.timestamp())
         if not candidates:
-            return self._batch_id(seed or 0, as_of), []
+            return self._batch_id(effective_seed, as_of, limit, read, ()), []
         scored = _score_candidates(candidates, self.config, as_of)
         quality_pool = sorted(scored, key=lambda item: (item[1], item[0].published_at, item[0].paper_id), reverse=True)[: max(limit * 8, 20)]
         trend_pool = sorted(scored, key=lambda item: (item[2], item[0].published_at, item[0].paper_id), reverse=True)[: max(limit * 8, 20)]
         quality_ids = {item[0].paper_id for item in quality_pool}
         trend_ids = {item[0].paper_id for item in trend_pool}
         by_id = {paper.paper_id: (paper, quality, trend, signals) for paper, quality, trend, signals in scored}
-        rng = random.Random(seed if seed is not None else int(as_of.timestamp()))
+        rng = random.Random(effective_seed)
         quotas = _allocate_quotas(limit, self.config.age_bucket_targets, candidates, as_of)
         selected: list[RecommendationItem] = []
         remaining = set(by_id)
@@ -269,7 +280,31 @@ class RecommendationEngine:
                     score = quality if pool == "high_impact" else trend
                     options.append((paper, quality, trend, signals, pool, max(score, 0.001)))
                 if not options:
-                    options = _fallback_options(remaining, by_id, desired_pool, last_author, last_subjects, quality_pool, trend_pool)
+                    options = _fallback_options(
+                        remaining,
+                        by_id,
+                        desired_pool,
+                        bucket,
+                        as_of,
+                        last_author,
+                        last_subjects,
+                        quality_ids,
+                        trend_ids,
+                        enforce_diversity=False,
+                    )
+                if not options:
+                    options = _fallback_options(
+                        remaining,
+                        by_id,
+                        None,
+                        bucket,
+                        as_of,
+                        last_author,
+                        last_subjects,
+                        quality_ids,
+                        trend_ids,
+                        enforce_diversity=False,
+                    )
                 if not options:
                     break
                 chosen = _weighted_choice(options, rng)
@@ -303,36 +338,68 @@ class RecommendationEngine:
             )
             for item in selected
         ]
-        batch_id = self._batch_id(seed if seed is not None else int(as_of.timestamp()), as_of)
-        self.store.record_batch(batch_id, as_of, self.config.version, seed if seed is not None else int(as_of.timestamp()), {item.paper.paper_id: recommendation_to_api(item) for item in selected}, [item.paper.paper_id for item in selected])
+        selected_ids = tuple(item.paper.paper_id for item in selected)
+        batch_id = self._batch_id(effective_seed, as_of, limit, read, selected_ids)
+        self.store.record_batch(batch_id, as_of, self.config.version, effective_seed, {item.paper.paper_id: recommendation_to_api(item) for item in selected}, list(selected_ids))
         return batch_id, selected
 
-    def _batch_id(self, seed: int, as_of: datetime) -> str:
-        value = f"{self.config.version}:{seed}:{as_of.date().isoformat()}"
+    def _batch_id(
+        self,
+        seed: int,
+        as_of: datetime,
+        limit: int,
+        read_ids: Iterable[str],
+        selected_ids: Iterable[str],
+    ) -> str:
+        read_key = ",".join(sorted(set(read_ids)))
+        selected_key = ",".join(selected_ids)
+        value = (
+            f"{self.config.version}:{seed}:{as_of.date().isoformat()}:"
+            f"{limit}:{read_key}:{selected_key}"
+        )
         return "batch_" + hashlib.sha256(value.encode()).hexdigest()[:20]
 
 
 def _fallback_options(
     remaining: set[str],
     by_id: Mapping[str, tuple[PaperRecord, float, float, dict[str, float]]],
-    desired_pool: str,
+    desired_pool: str | None,
+    bucket: str,
+    as_of: datetime,
     last_author: str | None,
     last_subjects: set[str],
-    quality_pool: Iterable[tuple[PaperRecord, float, float, dict[str, float]]],
-    trend_pool: Iterable[tuple[PaperRecord, float, float, dict[str, float]]],
+    quality_ids: set[str],
+    trend_ids: set[str],
+    *,
+    enforce_diversity: bool,
 ) -> list[tuple[PaperRecord, float, float, dict[str, float], str, float]]:
-    allowed = {item[0].paper_id for item in (quality_pool if desired_pool == "high_impact" else trend_pool)}
     options = []
     for paper_id in sorted(remaining):
-        if paper_id not in allowed:
-            continue
         paper, quality, trend, signals = by_id[paper_id]
+        if age_bucket(paper.published_at, as_of) != bucket:
+            continue
+        in_quality = paper_id in quality_ids
+        in_trend = paper_id in trend_ids
+        if desired_pool == "high_impact" and not in_quality:
+            continue
+        if desired_pool == "trending" and not in_trend:
+            continue
+        if not in_quality and not in_trend:
+            continue
         author = paper.authors[0].lower() if paper.authors else ""
         subjects = {subject.lower() for subject in paper.subjects}
-        if last_author and author == last_author or last_subjects.intersection(subjects):
+        if enforce_diversity and (
+            (last_author and author == last_author) or last_subjects.intersection(subjects)
+        ):
             continue
-        score = quality if desired_pool == "high_impact" else trend
-        options.append((paper, quality, trend, signals, desired_pool, max(score, 0.001)))
+        pool = desired_pool
+        if pool is None:
+            if in_quality and (not in_trend or quality >= trend):
+                pool = "high_impact"
+            else:
+                pool = "trending"
+        score = quality if pool == "high_impact" else trend
+        options.append((paper, quality, trend, signals, pool, max(score, 0.001)))
     return options
 
 

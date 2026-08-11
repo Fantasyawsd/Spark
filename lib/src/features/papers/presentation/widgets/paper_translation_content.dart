@@ -68,11 +68,11 @@ class PaperTranslationContent extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        SizedBox(
-          height: 30,
-          child: Row(
-            children: [
-              if (translating) ...[
+        if (translating)
+          SizedBox(
+            height: 30,
+            child: Row(
+              children: [
                 const SizedBox(
                   width: 13,
                   height: 13,
@@ -87,20 +87,8 @@ class PaperTranslationContent extends StatelessWidget {
                   ),
                 ),
               ],
-              const Spacer(),
-              TextButton(
-                key: const ValueKey('paper-translation-refresh'),
-                onPressed: translating ? onCancel : onRefresh,
-                style: TextButton.styleFrom(
-                  minimumSize: const Size(0, 28),
-                  padding: const EdgeInsets.symmetric(horizontal: 6),
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-                child: Text(translating ? '停止' : '重新翻译'),
-              ),
-            ],
+            ),
           ),
-        ),
         if (error != null)
           Padding(
             padding: const EdgeInsets.only(bottom: 6),
@@ -117,6 +105,16 @@ class PaperTranslationContent extends StatelessWidget {
             text: markdown,
             expandable: true,
             stabilizeGeneratedSyntax: true,
+            bottomLeadingAction: TextButton(
+              key: const ValueKey('paper-translation-refresh'),
+              onPressed: translating ? onCancel : onRefresh,
+              style: TextButton.styleFrom(
+                minimumSize: const Size(0, 28),
+                padding: const EdgeInsets.symmetric(horizontal: 6),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              child: Text(translating ? '停止' : '重新翻译'),
+            ),
             onExpand: onExpand,
           ),
         ),

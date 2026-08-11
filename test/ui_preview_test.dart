@@ -467,6 +467,12 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('展开全文'), findsOneWidget);
+    final refreshBounds = tester.getRect(
+      find.byKey(const ValueKey('paper-translation-refresh')),
+    );
+    final expandBounds = tester.getRect(find.text('展开全文'));
+    expect(refreshBounds.center.dy, closeTo(expandBounds.center.dy, 0.1));
+    expect(refreshBounds.left, lessThan(expandBounds.left));
     await tester.tap(find.text('展开全文'));
     await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey('paper-full-reader')), findsOneWidget);

@@ -12,6 +12,7 @@ class PaperTabBody extends StatelessWidget {
     required this.expandable,
     this.topics = const [],
     this.stabilizeGeneratedSyntax = false,
+    this.bottomLeadingAction,
     required this.onExpand,
   });
 
@@ -19,6 +20,7 @@ class PaperTabBody extends StatelessWidget {
   final bool expandable;
   final List<String> topics;
   final bool stabilizeGeneratedSyntax;
+  final Widget? bottomLeadingAction;
   final VoidCallback onExpand;
 
   static const textStyle = paperReaderBodyTextStyle;
@@ -36,6 +38,26 @@ class PaperTabBody extends StatelessWidget {
                 (constraints.maxHeight - _CollapsedPaperContent.actionHeight);
 
         if (expandable && !hasOverflow) {
+          if (bottomLeadingAction != null) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  child: _StaticPaperContent(
+                    markdown: text,
+                    stabilizeGeneratedSyntax: stabilizeGeneratedSyntax,
+                  ),
+                ),
+                SizedBox(
+                  height: _CollapsedPaperContent.actionHeight,
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: bottomLeadingAction,
+                  ),
+                ),
+              ],
+            );
+          }
           return _StaticPaperContent(
             markdown: text,
             stabilizeGeneratedSyntax: stabilizeGeneratedSyntax,
@@ -54,6 +76,7 @@ class PaperTabBody extends StatelessWidget {
         return _CollapsedPaperContent(
           text: text,
           stabilizeGeneratedSyntax: stabilizeGeneratedSyntax,
+          bottomLeadingAction: bottomLeadingAction,
           onExpand: onExpand,
         );
       },
@@ -78,6 +101,7 @@ class _CollapsedPaperContent extends StatelessWidget {
   const _CollapsedPaperContent({
     required this.text,
     required this.stabilizeGeneratedSyntax,
+    required this.bottomLeadingAction,
     required this.onExpand,
   });
 
@@ -86,6 +110,7 @@ class _CollapsedPaperContent extends StatelessWidget {
 
   final String text;
   final bool stabilizeGeneratedSyntax;
+  final Widget? bottomLeadingAction;
   final VoidCallback onExpand;
 
   @override
@@ -131,24 +156,30 @@ class _CollapsedPaperContent extends StatelessWidget {
             ],
           ),
         ),
-        Align(
-          alignment: Alignment.centerRight,
-          child: TextButton.icon(
-            onPressed: onExpand,
-            style: TextButton.styleFrom(
-              foregroundColor: SparkColors.of(context).ink,
-              padding: const EdgeInsets.symmetric(
-                horizontal: SparkDesignTokens.space1,
+        SizedBox(
+          height: actionHeight,
+          child: Row(
+            children: [
+              if (bottomLeadingAction != null) bottomLeadingAction!,
+              const Spacer(),
+              TextButton.icon(
+                onPressed: onExpand,
+                style: TextButton.styleFrom(
+                  foregroundColor: SparkColors.of(context).ink,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: SparkDesignTokens.space1,
+                  ),
+                  minimumSize: const Size(0, actionHeight),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                iconAlignment: IconAlignment.end,
+                icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 18),
+                label: const Text(
+                  '展开全文',
+                  style: TextStyle(fontWeight: FontWeight.w700),
+                ),
               ),
-              minimumSize: const Size(0, actionHeight),
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            ),
-            iconAlignment: IconAlignment.end,
-            icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 18),
-            label: const Text(
-              '展开全文',
-              style: TextStyle(fontWeight: FontWeight.w700),
-            ),
+            ],
           ),
         ),
       ],

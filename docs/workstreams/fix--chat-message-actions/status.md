@@ -8,8 +8,8 @@
 - Worktree：`C:\Users\Fantasy\Desktop\Spark-worktrees\fix--chat-message-actions`
 - 基线提交：`f8932a5c06d95102a7c22aa6077f77af2dbf8f51`（main HEAD）
 - 负责人：Fantasy（编排者）；执行：Claude
-- 状态：开发中
-- 最近更新：2026-08-12 00:30
+- 状态：待合并
+- 最近更新：2026-08-12 02:15
 
 ## 目标
 
@@ -55,9 +55,9 @@
 
 ## 当前进度
 
-- 已完成：任务边界确认（编排者拍板隐藏方案）；必读文档与并行任务核对；worktree 与分支创建；台账初始化；`paper_ai_content.dart` 可空透传；`paper_ai_message_view.dart` 「更多」按钮条件渲染；2 个新 Widget 测试；定向验证（格式门禁、analyze、全量 test 413 通过）。
-- 正在进行：无（等待编排者触发 /test 或验收）。
-- 下一步：/test 完整验证门禁。
+- 已完成：实现与定向验证；编排者 Windows 发布版实测验收通过；合并前交付信息收集。
+- 正在进行：等待合并。
+- 下一步：合入 main 并做集成回归与归档。
 - 阻塞项：无
 
 ## 决策记录
@@ -78,15 +78,17 @@
 | `tool/verify_changed_dart_format.ps1` | 通过（3 文件） | 2026-08-12 |
 | `flutter analyze` | No issues found | 2026-08-12 |
 | `flutter test`（全量） | 413 全过 | 2026-08-12 |
+| Windows 桌面发布版 `flutter run --release` 实测：内嵌讨论无修改/更多按钮、复制/重试保留；全屏聊天修改/删除入口可用 | 通过（编排者验收） | 2026-08-12 |
+| 长 slug worktree `flutter build windows --release` | 失败：MSB3491 路径超 MAX_PATH 260；已通过缩短 slug 根治（见决策记录） | 2026-08-12 |
 
 ## 审查结论
 
 > 由 `/review` 填写摘要（阻断项、缺陷、结论）。
 
-- 审查日期：
-- 阻断项：
-- 缺陷：
-- 结论：可合并 / 需修复 / 需重新审查
+- 审查日期：2026-08-12
+- 阻断项：无
+- 缺陷：无
+- 结论：可合并（编排者 Windows 桌面发布版实测验收通过后直接批准合并，未走独立 /review 只读审查，同 `feature/chat-keyboard-interactions` 先例）
 
 ## 检查点与提交
 
@@ -94,18 +96,22 @@
 | --- | --- | --- | --- |
 | 968c624 | 文档（台账）：创建论文讨论消息操作任务台账 | /start | 无（纯文档） |
 | ab37e6b | 修复（ChatPaper）：隐藏论文内嵌讨论中无效的消息操作入口 | /develop | 格式门禁、analyze、test 全量 413 通过 |
+| ffced6e | 文档（台账）：记录消息操作隐藏实现检查点 | /develop | 无（纯文档） |
+| a3df644 | 文档（台账）：缩短分支 slug 绕开 Windows 路径长度上限 | /finish 前置 | 无（纯文档） |
 
 ## 交付准备（合并前收集）
 
 ### 交付摘要
 
+论文详情页内嵌 AI 讨论视图中，原先显示但点击无效的「修改」按钮与「更多 → 删除消息」入口已彻底隐藏：AI 消息只保留「复制 / 重新生成」，用户消息只保留「复制」。全屏聊天页（主聊天与论文全屏聊天）的修改、删除与多选行为完全不变。与计划一致（编排者拍板隐藏而非接线）。
+
 ### 实际变更
 
-- 领域与业务逻辑：
-- 数据与基础设施：
-- 界面与交互：
-- 测试与工具：
-- 文档：
+- 领域与业务逻辑：无。
+- 数据与基础设施：无。
+- 界面与交互：`paper_ai_content.dart` 的 `onDelete`/`onEdit` 由非空闭包包装改为可空透传；`paper_ai_message_view.dart` 的「更多」按钮仅在存在删除回调时渲染（菜单当前只有删除消息一项）。
+- 测试与工具：新增 `test/paper_ai_discussion_view_test.dart`（内嵌隐藏两入口且保留复制/重试、全屏页两入口可用 2 用例）。
+- 文档：本任务台账。
 
 ### 兼容性与迁移
 
@@ -115,14 +121,16 @@
 
 ### 已知风险与回滚
 
-- 已知风险：
-- 回滚方式：
+- 已知风险：低。改动仅 2 处条件渲染逻辑（共 8 行），全屏页路径由现有 40 项相关测试与新增对照用例兜底；编排者已完成 Windows 发布版实测。
+- 回滚方式：revert 任务提交 `ab37e6b`，无数据影响。
 
 ### 文档更新建议
 
+- 不适用；消息操作入口的显隐不改变 `docs/development.md` 的功能能力状态（同 `feature/chat-keyboard-interactions` 先例）。
+
 ### 未完成与后续工作
 
-- 无
+- 若后续决定为内嵌讨论视图接线删除/修改功能，底层 `ChatConversationController.deleteMessagesAt` 与 `editLatestPromptAndRetry` 已具备能力，仅需 presentation 层接线。
 
 ## 合并归档（合并后在 main 补齐）
 

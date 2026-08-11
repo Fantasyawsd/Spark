@@ -8,7 +8,7 @@
 - Worktree：`C:\Users\Fantasy\Desktop\Spark-worktrees\feature--chat-markdown-parity`
 - 基线提交：`c01a6d252135cdfe82261a9c60be9fb0a137a62a`（本地 `main`；创建时比 `origin/main` 领先 13 个已集成提交）
 - 负责人：Fantasy（编排者）；执行：Codex
-- 状态：开发完成，待测试门禁
+- 状态：测试与人工验收通过，待审查
 - 最近更新：2026-08-12
 
 ## 目标
@@ -30,7 +30,7 @@
 - [x] 围栏代码按语言进行语法高亮；未知语言和高亮失败时完整显示原始代码，不丢字、不崩溃，并保留复制能力。
 - [x] 代码正文和行内代码使用随应用打包的 JetBrains Mono；字体授权文件随资源保留，不依赖运行时联网下载。
 - [x] AI 流式内容、用户气泡、思考面板、论文正文共用 Markdown 和现有选择语义没有回归。
-- [ ] 定向 Widget 测试、格式检查、`flutter analyze`、全量 `flutter test` 与后续阶段要求的 release/profile 构建通过，结果如实写入本台账。
+- [x] 定向 Widget 测试、格式检查、`flutter analyze`、全量 `flutter test` 与后续阶段要求的 release/profile 构建通过，结果如实写入本台账。
 
 ## 写入范围
 
@@ -65,8 +65,8 @@
 ## 当前进度
 
 - 已完成：任务边界与基线确认；完成高亮依赖选型；新增本地 JetBrains Mono、Atom One Light/Dark 主题、有限语言 tokenizer、GFM AST 代码块 builder 与明暗/回退/GFM/LaTeX/消息视图测试；定向测试和静态门禁通过。
-- 正在进行：无；功能提交与台账检查点已完成。
-- 下一步：等待编排者触发 `/test`，再运行全量测试与 release/profile 构建门禁。
+- 正在进行：无；自动门禁与 Windows release 人工验收均已通过。
+- 下一步：等待编排者触发 `/review`。
 - 阻塞项：无。
 
 ## 决策记录
@@ -91,6 +91,13 @@
 | `flutter analyze` | 通过，0 issues | 2026-08-12 |
 | `.\\tool\\verify_changed_dart_format.ps1` | 通过，3 个变更 Dart 文件格式正确 | 2026-08-12 |
 | `git diff --check` | 通过 | 2026-08-12 |
+| `/test`：`.\\tool\\verify_changed_dart_format.ps1` | 通过，3 个变更 Dart 文件格式正确 | 2026-08-12 |
+| `/test`：`flutter analyze` | 通过，0 issues | 2026-08-12 |
+| `/test`：`flutter test --reporter expanded` | 全量 417 项通过 | 2026-08-12 |
+| `/test`：`flutter build apk --profile --flavor development --dart-define=SPARK_ENV=development` | 通过；因缺少 `android/key.properties` 按规则使用 profile；`build/app/outputs/flutter-apk/app-development-profile.apk`，90,808,169 bytes，SHA-256 `7CDFB11BB06488D61BAFE9D9AB977AB2EB016F54A8962BBCCBC9DAFE863299FC` | 2026-08-12 |
+| `/test`：`flutter build windows --release --dart-define=SPARK_ENV=development` | 通过；`build/windows/x64/runner/Release/spark.exe`，101,888 bytes，SHA-256 `6216D4E75402B5C95B6E2F2E7783AFF156E5C36FAB15EF3389115C3E1C2DD680` | 2026-08-12 |
+| `/test` 验收运行：`flutter pub get` + `flutter run -d windows --release --dart-define=SPARK_ENV=development` | 依赖解析通过；本任务 worktree 的 Spark release 窗口成功启动（PID `46060`）；人工验收结果待编排者反馈 | 2026-08-12 |
+| `/test` 人工验收 | 编排者确认 GFM、LaTeX、亮暗模式、代码高亮、JetBrains Mono、复制及模型头像均正常；首次运行的头像缺失由验收期间重复构建造成，停止重复构建并从稳定 release 产物重启后恢复，未修改产品代码 | 2026-08-12 |
 
 ## 审查结论
 

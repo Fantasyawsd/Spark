@@ -8,7 +8,7 @@
 - Worktree：`C:\Users\Fantasy\Desktop\Spark-worktrees\feature--chat-markdown-parity`
 - 基线提交：`c01a6d252135cdfe82261a9c60be9fb0a137a62a`（本地 `main`；创建时比 `origin/main` 领先 13 个已集成提交）
 - 负责人：Fantasy（编排者）；执行：Codex
-- 状态：待合并
+- 状态：已合并
 - 最近更新：2026-08-12
 
 ## 目标
@@ -66,7 +66,7 @@
 
 - 已完成：任务边界与基线确认；完成高亮依赖选型；新增本地 JetBrains Mono、Atom One Light/Dark 主题、有限语言 tokenizer、GFM AST 代码块 builder 与明暗/回退/GFM/LaTeX/消息视图测试；定向测试和静态门禁通过。
 - 正在进行：无；代码自动换行实现、全量门禁和人工验收已完成。
-- 下一步：合入 `main`，完成合并后集成验证和台账归档。
+- 下一步：归档已完成；后续按产品计划维护。
 - 阻塞项：无。
 
 ## 决策记录
@@ -106,6 +106,12 @@
 | 自动换行预览：`flutter build windows --release --dart-define=SPARK_ENV=development` | 通过；从本任务 worktree 的 release 产物启动 Spark（PID `26296`），等待编排者检查自动换行 | 2026-08-12 |
 | 自动换行人工验收 | 编排者确认代码块自动换行效果通过；随后全量测试门禁通过 | 2026-08-12 |
 | 合并前收尾确认 | 编排者确认“可以合并”；按编排者明确指示豁免独立 `/review` 阶段 | 2026-08-12 |
+| `/finish`：`flutter pub get` | 通过；依赖解析成功 | 2026-08-12 |
+| `/finish`：`.\tool\verify_changed_dart_format.ps1` | 通过；3 个变更 Dart 文件格式正确 | 2026-08-12 |
+| `/finish`：`flutter analyze` | 通过，0 issues | 2026-08-12 |
+| `/finish`：`flutter test --reporter expanded` | `main` 全量 419 项通过（最终计数 `+419`） | 2026-08-12 |
+| `/finish`：`flutter build apk --profile --flavor development --dart-define=SPARK_ENV=development` | 通过；因缺少 `android/key.properties` 按规则使用 profile；`build/app/outputs/flutter-apk/app-development-profile.apk`，119,278,476 bytes，SHA-256 `2D82165189DA3590FE38A77D5433280126B08270CA8A46F2DB9BA01C3311AC39` | 2026-08-12 |
+| `/finish`：`flutter build windows --release --dart-define=SPARK_ENV=development` | 通过；`build/windows/x64/runner/Release/spark.exe`，101,888 bytes，SHA-256 `CDFCDE6D1129AA3B01FAF6DDCBC8FEAAB9D92B647A6B7BD00B9C712E579BA28A` | 2026-08-12 |
 
 ## 审查结论
 
@@ -150,7 +156,7 @@
 
 ### 文档更新建议
 
-- 合入 `main` 后在 `docs/development.md` 的 ChatPaper 当前能力与验收原则中记录代码高亮和主题适配。
+- 已在 `docs/development.md` 的 ChatPaper 当前能力与验收原则中记录代码高亮和主题适配。
 
 ### 未完成与后续工作
 
@@ -160,11 +166,11 @@
 
 > 只有任务提交已真实进入 `main` 后才能填写。本节与 `docs/development.md` 的真实状态更新一并提交；完成后台账转为只读归档。
 
-- 最终状态：待合并
+- 最终状态：已合并
 - 合入分支：`main`
-- 最终集成提交：不适用（任务尚未合并）
+- 最终集成提交：`2c3c6f805afb5c67e8f7839a025fdb0402906ac4`
 - Pull Request：无
-- 合并时间：不适用（任务尚未合并）
-- main 集成验证：不适用（任务尚未合并）
-- 开发计划更新：不适用（任务尚未合并）
-- 最终后续项：合入 `main` 后完成归档文档提交并清理任务 worktree。
+- 合并时间：2026-08-12
+- main 集成验证：格式检查、`flutter analyze`、全量 419 项测试、Android development profile APK 与 Windows development release EXE 构建均通过；产物路径、大小和 SHA-256 见验证记录
+- 开发计划更新：已更新 `docs/development.md` 的 ChatPaper 能力和验收原则
+- 最终后续项：无；HTML、Mermaid、代码执行/预览仍不在本任务范围。

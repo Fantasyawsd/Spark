@@ -8,8 +8,8 @@
 - Worktree：`C:\Users\Fantasy\Desktop\Spark-worktrees\fix--android-keyboard-jank`
 - 基线提交：`a768f0a4003c7f84a99fb7674c48202961f9d584`
 - 负责人：Fantasy（编排者）；执行：Codex
-- 状态：待合并
-- 最近更新：2026-08-11 00:36
+- 状态：已合并
+- 最近更新：2026-08-11 13:53
 
 ## 目标
 
@@ -63,8 +63,8 @@
 ## 当前进度
 
 - 已完成：必读文档、历史 ChatPaper 台账、基线与设备状态核对；前三轮依据真机反馈已消除二次动画、原生窗口避让和顶栏误位移。第四轮针对仍有轻微掉帧，对照 RikkaHub 源码改为固定顶栏与消息视口、输入栏独立合成层跟随 IME、长对话按 inset 差值增量滚动。8 帧布局事件为 328，不超过 360 上限；25 项定向测试、格式、静态分析、402 项全量测试和 development APK 构建通过。
-- 正在进行：编排者已于 2026-08-11 明确指示合并，进入 `/finish` 合并与归档。
-- 下一步：合入 `main`，执行 development APK 与 Windows debug EXE 双目标集成构建，再在 `main` 完成台账归档。
+- 正在进行：无；任务已合入 `main`，集成验证与双目标构建通过，本台账已完成合并后归档。
+- 下一步：编排者在 Android 真机安装合并后 APK，复核键盘弹出/收起体感与帧时间。
 - 阻塞项：无；本机没有 Android 真机，因此设备级帧时间尚未采集，自动证据不能替代最终真机验收。
 
 ## 决策记录
@@ -78,6 +78,7 @@
 | 2026-08-10 | 根据真机反馈改为 Android 窗口级 `adjustPan` | 第一轮已解决卡顿，但只移动面板；产品预期是页面、遮罩和面板作为同一静态画面统一上移 | Android 跳过面板级 inset follower，并在应用根部阻止 Flutter 组件消费 Android IME bottom inset，避免二次位移；其他平台保留原有避让 |
 | 2026-08-10 | 放弃原生 `adjustPan`，改由 Flutter 对话页 body 统一平移 | 真机证明 Android 仅弹出键盘，没有平移 Flutter 画面；编排者进一步明确顶栏必须固定，仅移动对话区域 | Activity 使用 `adjustNothing`；chat body 根据 IME inset 更新单一变换，body 子树看到 0 inset，避免布局抖动和局部二次位移 |
 | 2026-08-11 | 参考 RikkaHub 的 Scaffold 分层与 IME 增量滚动，取消整个 chat body 变换 | 第三轮真机体感仍有轻微掉帧；整个富文本消息区参与逐帧合成是最高优先级可证伪根因 | 顶栏与消息视口固定；只平移输入栏的 `RepaintBoundary`；消息列表增加 IME spacer，并在同一布局帧按 inset 差值校正滚动偏移 |
+| 2026-08-11 | 合并冲突中同时保留主壳动态主题与 Android 键盘布局边界 | `main` 的样式收敛将背景色改为 `SparkColors.of(context).canvas`，本任务在相同 Scaffold 增加 `resizeToAvoidBottomInset: false` | 不回退暗色模式；主壳仍不消费 Android IME inset，由 ChatPaper 内部分层处理 |
 
 ## 验证记录
 
@@ -121,6 +122,14 @@
 | `flutter build apk --debug --flavor development --dart-define=SPARK_ENV=development`（第四轮） | 通过；`build/app/outputs/flutter-apk/app-development-debug.apk`，193,264,913 字节（184.31 MiB），SHA-256 `994F93120066C0852FD3C4A55859C90C1245B0F4A2C9CE87E870D08850CD3597` | 2026-08-11 |
 | 检查 Gradle merged/packaged manifest（第四轮） | 通过；developmentDebug 最终清单均包含 `android:windowSoftInputMode="adjustNothing"` | 2026-08-11 |
 | `git diff --check`（第四轮） | 通过 | 2026-08-11 |
+| 合并冲突后 `flutter analyze` 与 5 个键盘/ChatPaper/主壳定向测试文件 | 通过；No issues found，25 项交叉定向回归全部通过 | 2026-08-11 |
+| `git merge-base --is-ancestor 74239ac main` | 通过；任务 tip 可从 `main@70447cf` 达到 | 2026-08-11 |
+| `flutter analyze`（`main@70447cf` 集成） | 通过；No issues found | 2026-08-11 |
+| `flutter test`（`main@70447cf` 集成） | 通过；407 项全量测试 | 2026-08-11 |
+| `flutter build apk --debug --flavor development --dart-define=SPARK_ENV=development`（`main` 集成） | 通过；`build/app/outputs/flutter-apk/app-development-debug.apk`，193,305,007 字节，SHA-256 `FD3CF5838347BF7A5CF191778F72356966C4B85FD4C548143A90F0FB135EFF83` | 2026-08-11 |
+| `flutter build windows --debug --dart-define=SPARK_ENV=development`（`main` 集成） | 通过；`build/windows/x64/runner/Debug/spark.exe`，1,278,976 字节，SHA-256 `7C27356B6774A41377FC9E5232F8CEBE9A80F074415ABABF2B39B6F5574F3214` | 2026-08-11 |
+| 检查 `main` Gradle merged/packaged manifest | 通过；developmentDebug 最终清单均包含 `android:windowSoftInputMode="adjustNothing"` | 2026-08-11 |
+| `git diff --check`（`main` 集成） | 通过 | 2026-08-11 |
 
 ## 审查结论
 
@@ -137,6 +146,7 @@
 | `cd702b1` | `修复（键盘）：改为 Android 整屏静态上移` | 真机反馈迭代、窗口级平移与回归测试 | 窗口配置与静态布局红/绿反馈环、55 项定向测试、401 项全量测试、analyze、格式门禁、最终清单核对与 development APK 构建通过 |
 | `ee12142` | `修复（ChatPaper）：固定顶栏并上移对话区域` | 二次真机反馈纠偏、对话 body 图层平移与回归测试 | 真实主聊天红/绿反馈环、56 项定向测试、401 项全量测试、analyze、格式门禁、最终清单核对与 development APK 构建通过 |
 | `c0c5826` | `修复（ChatPaper）：按输入栏与消息滚动跟随键盘` | RikkaHub 分层方案迭代、输入栏独立合成与滚动锚定 | 新红/绿反馈环、25 项定向测试、402 项全量测试、analyze、格式门禁、最终清单核对与 development APK 构建通过 |
+| `74239ac` | `文档（台账）：补齐键盘修复合并准入` | `/finish` 合并前检查 | 工作区干净，交付、兼容、风险、回滚与编排者审查豁免记录齐全 |
 
 ## 交付准备（合并前收集）
 
@@ -173,11 +183,11 @@ Android 的评论/AI 面板不再为系统键盘的每个 inset 帧重启一段�
 
 ## 合并归档（合并后在 main 补齐）
 
-- 最终状态：待合并
+- 最终状态：已合并
 - 合入分支：`main`
-- 最终集成提交：待合并后填写
+- 最终集成提交：`70447cfbba9869cd35321622b96de734732ec393`
 - Pull Request：无
-- 合并时间：待合并后填写
-- main 集成验证：待合并后填写
-- 开发计划更新：待合并后填写
-- 最终后续项：待合并后填写
+- 合并时间：2026-08-11 13:47:50 +08:00
+- main 集成验证：格式门禁、`flutter analyze`、407 项全量测试、development APK、Windows debug EXE、Android 最终清单与 `git diff --check` 全部通过；双目标产物路径、大小与 SHA-256 已记录。
+- 开发计划更新：不适用；本任务仅修复 Android IME 展示性能与几何行为，不改变 `docs/development.md` 中的功能能力状态。
+- 最终后续项：在 Android 真机验收输入栏跟手性、长对话锚定和 UI/Raster 帧时间；如无回归，本台账除勘误外不再更新。

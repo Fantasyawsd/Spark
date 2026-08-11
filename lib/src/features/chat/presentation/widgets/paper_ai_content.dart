@@ -196,10 +196,10 @@ class _PaperAiConversation extends StatelessWidget {
                     isLatest: index == messages.length - 1,
                     isLatestUserPrompt: index == latestUserIndex,
                     onRetry: sending ? null : onRetry,
-                    onDelete: () => onDelete?.call(index),
-                    onEdit: sending
+                    onDelete: onDelete == null ? null : () => onDelete!(index),
+                    onEdit: sending || onEdit == null
                         ? null
-                        : () => onEdit?.call(messages[index].content),
+                        : () => onEdit!(messages[index].content),
                     onOpenSource: onOpenSource,
                     selectionMode: selectionMode,
                     selected: selectedMessageIndexes.contains(index),

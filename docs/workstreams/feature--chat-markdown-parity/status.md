@@ -103,6 +103,7 @@
 | 自动换行绿测：同上 | 通过：240px 容器内无水平代码滚动，长代码正文高度增加为多行 | 2026-08-12 |
 | `flutter test test\\spark_markdown_test.dart test\\paper_ai_message_view_test.dart test\\paper_ai_content_test.dart test\\paper_ai_composer_test.dart --reporter expanded` | 48 项通过 | 2026-08-12 |
 | 自动换行迭代：`flutter analyze`、`.\\tool\\verify_changed_dart_format.ps1`、`git diff --check` | 通过；0 issues，3 个变更 Dart 文件格式正确，无 whitespace 错误 | 2026-08-12 |
+| 自动换行预览：`flutter build windows --release --dart-define=SPARK_ENV=development` | 通过；从本任务 worktree 的 release 产物启动 Spark（PID `26296`），等待编排者检查自动换行 | 2026-08-12 |
 
 ## 审查结论
 

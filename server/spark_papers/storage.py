@@ -105,6 +105,17 @@ class PaperStore:
                 PRIMARY KEY (source, external_id)
             );
             CREATE INDEX IF NOT EXISTS idx_observations_paper ON source_observations (paper_id);
+            CREATE INDEX IF NOT EXISTS idx_observations_source_paper_fetched
+                ON source_observations (source, paper_id, fetched_at);
+
+            CREATE TABLE IF NOT EXISTS github_repository_links (
+                paper_id TEXT PRIMARY KEY REFERENCES papers(paper_id),
+                arxiv_id TEXT NOT NULL,
+                github_url TEXT NOT NULL,
+                discovered_at TEXT NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_github_links_arxiv
+                ON github_repository_links (arxiv_id);
 
             CREATE TABLE IF NOT EXISTS provenance (
                 paper_id TEXT NOT NULL REFERENCES papers(paper_id),
@@ -334,7 +345,8 @@ class PaperStore:
         fetched_at: datetime,
         source_updated_at: datetime | None = None,
         etag: str | None = None,
-    ) -> str:
+        allow_create: bool = True,
+    ) -> str | None:
         existing_ids = self.find_by_external_ids(paper.external_ids)
         target_id = paper.paper_id
         if len(existing_ids) == 1:
@@ -343,9 +355,28 @@ class PaperStore:
             self.queue_match(source, external_id, None, 1.0, "conflicting_exact_identity", raw_payload)
             return paper.paper_id
         elif not existing_ids:
-            fuzzy = self.find_fuzzy_candidates(paper.title, paper.authors[0] if paper.authors else "", limit=1)
+            fuzzy = (
+                self.find_fuzzy_candidates(
+                    paper.title,
+                    paper.authors[0] if paper.authors else "",
+                    limit=1,
+                )
+                if not paper.external_ids
+                else []
+            )
             if fuzzy and fuzzy[0][1] >= 0.65:
                 self.queue_match(source, external_id, fuzzy[0][0], fuzzy[0][1], "fuzzy_candidate_requires_review", raw_payload)
+            if not allow_create:
+                if not fuzzy or fuzzy[0][1] < 0.65:
+                    self.queue_match(
+                        source,
+                        external_id,
+                        None,
+                        0.0,
+                        "enrichment_identity_not_found",
+                        raw_payload,
+                    )
+                return None
         current = self.get(target_id)
         if current is None:
             merged = paper if target_id == paper.paper_id else PaperRecord(
@@ -366,7 +397,12 @@ class PaperStore:
             )
             created_at = fetched_at
         else:
-            merged = self._merge(current, paper, target_id)
+            merged = self._merge(
+                current,
+                paper,
+                target_id,
+                preserve_canonical=source != "arxiv",
+            )
             created_at = parse_datetime(self._connection.execute(
                 "SELECT created_at FROM papers WHERE paper_id = ?", (target_id,)
             ).fetchone()[0]) or fetched_at
@@ -414,6 +450,19 @@ class PaperStore:
                    ON CONFLICT(id_type, id_value) DO UPDATE SET paper_id=excluded.paper_id""",
                 ((key, value, merged.paper_id) for key, value in merged.external_ids.items()),
             )
+            github_url = merged.metadata.get("github_url") or merged.signals.get("github", {}).get("url")
+            arxiv_id = merged.external_ids.get("arxiv_id")
+            if github_url and arxiv_id:
+                connection.execute(
+                    """INSERT INTO github_repository_links(
+                           paper_id, arxiv_id, github_url, discovered_at
+                       ) VALUES (?, ?, ?, ?)
+                       ON CONFLICT(paper_id) DO UPDATE SET
+                           arxiv_id=excluded.arxiv_id,
+                           github_url=excluded.github_url,
+                           discovered_at=excluded.discovered_at""",
+                    (merged.paper_id, arxiv_id, str(github_url), fetched_at.isoformat()),
+                )
             provenance_fields = _provenance_fields(merged)
             provenance_fields["missing_fields"] = _source_missing_fields(raw_payload)
             for field_name, evidence in provenance_fields.items():
@@ -435,7 +484,14 @@ class PaperStore:
                 )
         return merged.paper_id
 
-    def _merge(self, current: PaperRecord, incoming: PaperRecord, target_id: str) -> PaperRecord:
+    def _merge(
+        self,
+        current: PaperRecord,
+        incoming: PaperRecord,
+        target_id: str,
+        *,
+        preserve_canonical: bool,
+    ) -> PaperRecord:
         external_ids = dict(current.external_ids)
         external_ids.update({key: value for key, value in incoming.external_ids.items() if value})
         signals = {key: dict(value) for key, value in current.signals.items()}
@@ -443,12 +499,20 @@ class PaperStore:
             signals.setdefault(key, {}).update({field: val for field, val in value.items() if val is not None})
         metadata = dict(current.metadata)
         metadata.update({key: value for key, value in incoming.metadata.items() if value is not None})
-        title = current.title if current.title.strip() else incoming.title
-        abstract = incoming.abstract or current.abstract
+        title = current.title if preserve_canonical or current.title.strip() else incoming.title
+        abstract = current.abstract or incoming.abstract if preserve_canonical else incoming.abstract or current.abstract
         authors = current.authors or incoming.authors
-        published_at = min(current.published_at, incoming.published_at)
-        updated_at = max(filter(None, (current.updated_at, incoming.updated_at)), default=None)
-        subjects = tuple(dict.fromkeys((*current.subjects, *incoming.subjects)))
+        published_at = current.published_at if preserve_canonical else min(current.published_at, incoming.published_at)
+        updated_at = (
+            current.updated_at
+            if preserve_canonical
+            else max(filter(None, (current.updated_at, incoming.updated_at)), default=None)
+        )
+        subjects = (
+            current.subjects
+            if preserve_canonical
+            else tuple(dict.fromkeys((*current.subjects, *incoming.subjects)))
+        )
         sources = tuple(dict.fromkeys((*current.discovery_sources, *incoming.discovery_sources)))
         return PaperRecord(
             paper_id=target_id,
@@ -659,15 +723,15 @@ class PaperStore:
                 ("3-5y", generated_at - timedelta(days=365.25 * 5), generated_at - timedelta(days=365.25 * 3)),
                 ("5y+", None, generated_at - timedelta(days=365.25 * 5)),
             )
-            quality_sort = """COALESCE(
-                CASE
-                    WHEN json_extract(signals_json, '$.openalex.citation_count_outlier') = 1
-                    THEN NULL
-                    ELSE json_extract(signals_json, '$.openalex.citation_count')
-                END,
-                json_extract(signals_json, '$.semantic_scholar.citation_count'),
-                0
-            )"""
+            quality_sort = """CASE
+                WHEN json_extract(signals_json, '$.openalex.citation_count_outlier') = 1
+                THEN 0
+                ELSE COALESCE(
+                    json_extract(signals_json, '$.openalex.citation_count'),
+                    json_extract(signals_json, '$.semantic_scholar.citation_count'),
+                    0
+                )
+            END"""
             for bucket, lower, upper in boundaries:
                 clauses = ["admitted = 1", "withdrawn = 0", "published_at < ?"]
                 date_params: list[Any] = [upper.isoformat()]
@@ -675,12 +739,17 @@ class PaperStore:
                     clauses.append("published_at >= ?")
                     date_params.append(lower.isoformat())
                 where = " AND ".join(clauses)
+                quality_where = (
+                    f"{where} AND "
+                    "(json_extract(signals_json, '$.openalex.citation_count_outlier') IS NULL "
+                    "OR json_extract(signals_json, '$.openalex.citation_count_outlier') != 1)"
+                )
                 connection.execute(
                     f"""INSERT INTO candidate_index(pool, paper_id, generated_at, sort_key, published_at)
                         SELECT ?, paper_id, ?,
                                {quality_sort},
                                published_at
-                        FROM papers WHERE {where}
+                        FROM papers WHERE {quality_where}
                         ORDER BY {quality_sort} DESC,
                                  published_at DESC, paper_id DESC LIMIT 5000""",
                     (f"quality:{bucket}", generated, *date_params),
@@ -740,15 +809,15 @@ class PaperStore:
         )
         rows_by_id: dict[str, sqlite3.Row] = {}
         orders = (
-            """COALESCE(
-                CASE
-                    WHEN json_extract(signals_json, '$.openalex.citation_count_outlier') = 1
-                    THEN NULL
-                    ELSE json_extract(signals_json, '$.openalex.citation_count')
-                END,
-                json_extract(signals_json, '$.semantic_scholar.citation_count'),
-                -1
-            ) DESC, published_at DESC, paper_id DESC""",
+            """CASE
+                WHEN json_extract(signals_json, '$.openalex.citation_count_outlier') = 1
+                THEN -1
+                ELSE COALESCE(
+                    json_extract(signals_json, '$.openalex.citation_count'),
+                    json_extract(signals_json, '$.semantic_scholar.citation_count'),
+                    -1
+                )
+            END DESC, published_at DESC, paper_id DESC""",
             "COALESCE(json_extract(signals_json, '$.huggingface.heat'), -1) DESC, published_at DESC, paper_id DESC",
         )
         for lower, upper in boundaries:
@@ -757,16 +826,109 @@ class PaperStore:
             if lower is not None:
                 clauses.append("published_at >= ?")
                 params.append(lower.isoformat())
-            for order in orders:
+            for order_index, order in enumerate(orders):
+                order_clauses = clauses
+                if order_index == 0:
+                    order_clauses = [
+                        *clauses,
+                        "(json_extract(signals_json, '$.openalex.citation_count_outlier') IS NULL "
+                        "OR json_extract(signals_json, '$.openalex.citation_count_outlier') != 1)",
+                    ]
                 query_params = [*params, per_pool_limit]
                 rows = self._connection.execute(
-                    f"SELECT * FROM papers WHERE {' AND '.join(clauses)} ORDER BY {order} LIMIT ?",
+                    f"SELECT * FROM papers WHERE {' AND '.join(order_clauses)} ORDER BY {order} LIMIT ?",
                     query_params,
                 ).fetchall()
                 for row in rows:
                     if row["paper_id"] not in read:
                         rows_by_id[row["paper_id"]] = row
         return [paper_from_row(row, []) for row in rows_by_id.values()]
+
+    def semantic_scholar_candidates(
+        self,
+        *,
+        limit: int = 500,
+        stale_before: datetime | None = None,
+    ) -> list[str]:
+        bounded_limit = max(1, min(int(limit), 5000))
+        stale_value = stale_before.isoformat() if stale_before else None
+        selected: dict[str, None] = {}
+        quality_limit = max(1, (bounded_limit + 1) // 2)
+        queries = (
+            ("""SELECT json_extract(papers.external_ids_json, '$.arxiv_id') AS arxiv_id
+               FROM candidate_index
+               JOIN papers ON papers.paper_id = candidate_index.paper_id
+               LEFT JOIN source_observations AS observation
+                 ON observation.paper_id = papers.paper_id
+                AND observation.source = 'semantic_scholar'
+               WHERE candidate_index.pool LIKE 'quality:%'
+                 AND json_extract(papers.external_ids_json, '$.arxiv_id') IS NOT NULL
+                 AND (? IS NULL OR observation.fetched_at IS NULL OR observation.fetched_at < ?)
+               ORDER BY candidate_index.sort_key DESC,
+                        candidate_index.published_at DESC,
+                        candidate_index.paper_id DESC
+               LIMIT ?""", quality_limit),
+            ("""SELECT json_extract(papers.external_ids_json, '$.arxiv_id') AS arxiv_id
+               FROM latest_index
+               JOIN papers ON papers.paper_id = latest_index.paper_id
+               LEFT JOIN source_observations AS observation
+                 ON observation.paper_id = papers.paper_id
+                AND observation.source = 'semantic_scholar'
+               WHERE json_extract(papers.external_ids_json, '$.arxiv_id') IS NOT NULL
+                 AND (? IS NULL OR observation.fetched_at IS NULL OR observation.fetched_at < ?)
+               ORDER BY latest_index.published_at DESC, latest_index.paper_id DESC
+               LIMIT ?""", bounded_limit),
+            ("""SELECT json_extract(papers.external_ids_json, '$.arxiv_id') AS arxiv_id
+               FROM papers
+               LEFT JOIN source_observations AS observation
+                 ON observation.paper_id = papers.paper_id
+                AND observation.source = 'semantic_scholar'
+               WHERE papers.admitted = 1 AND papers.withdrawn = 0
+                 AND json_extract(papers.external_ids_json, '$.arxiv_id') IS NOT NULL
+                 AND (? IS NULL OR observation.fetched_at IS NULL OR observation.fetched_at < ?)
+               ORDER BY papers.published_at DESC, papers.paper_id DESC
+               LIMIT ?""", bounded_limit),
+        )
+        for query, query_limit in queries:
+            rows = self._connection.execute(
+                query,
+                (stale_value, stale_value, query_limit),
+            ).fetchall()
+            for row in rows:
+                arxiv_id = str(row["arxiv_id"] or "").strip()
+                if arxiv_id:
+                    selected.setdefault(arxiv_id, None)
+                if len(selected) >= bounded_limit:
+                    return list(selected)
+        return list(selected)
+
+    def github_candidates(
+        self,
+        *,
+        limit: int = 50,
+        stale_before: datetime | None = None,
+    ) -> list[dict[str, str]]:
+        bounded_limit = max(1, min(int(limit), 500))
+        stale_value = stale_before.isoformat() if stale_before else None
+        rows = self._connection.execute(
+            """SELECT links.paper_id, links.arxiv_id, links.github_url
+               FROM github_repository_links AS links
+               LEFT JOIN source_observations AS observation
+                 ON observation.paper_id = links.paper_id
+                AND observation.source = 'github'
+               WHERE (? IS NULL OR observation.fetched_at IS NULL OR observation.fetched_at < ?)
+               ORDER BY links.discovered_at DESC, links.paper_id DESC
+               LIMIT ?""",
+            (stale_value, stale_value, bounded_limit),
+        ).fetchall()
+        return [
+            {
+                "paper_id": str(row["paper_id"]),
+                "arxiv_id": str(row["arxiv_id"]),
+                "github_url": str(row["github_url"]),
+            }
+            for row in rows
+        ]
 
     def start_dataset_import(
         self,

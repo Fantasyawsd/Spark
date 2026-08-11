@@ -45,4 +45,6 @@ class AiAdmissionPolicy:
             topic_id = str(topic.get("id", topic) if isinstance(topic, Mapping) else topic)
             if topic_id in self._openalex_topic_ids:
                 return AdmissionDecision(True, f"openalex_topic:{topic_id}")
+        if (signals or {}).get("huggingface", {}).get("daily_selected") is True:
+            return AdmissionDecision(True, "huggingface_daily")
         return AdmissionDecision(False, "no_ai_subject_or_topic")

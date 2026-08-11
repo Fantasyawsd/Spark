@@ -9,7 +9,7 @@
 - 基线提交：`c01a6d252135cdfe82261a9c60be9fb0a137a62a`
 - 负责人：Fantasy（编排者）
 - 状态：开发中
-- 最近更新：2026-08-12 14:30
+- 最近更新：2026-08-11 19:30
 
 ## 目标
 
@@ -32,8 +32,8 @@
 - [x] 健康、详情、最新、主题、会议、关注和推荐 API 在真实数据库上通过；不同 seed 生成不同可重放推荐 batch。
 - [ ] Windows development App 展示真实论文，推荐刷新返回新 batch 并与现有列表合并，由编排者人工验收。
 - [x] 服务端测试、Flutter 定向测试、格式检查和静态分析通过；真实导入数量、耗时、数据库大小和接口检查有记录。
-- [ ] HF Daily、Semantic Scholar 与 GitHub 完成有界的真实同步、快照和落库验证；同步失败保留最近成功状态。
-- [ ] 推荐年龄桶、批次标识和异常引用排除满足可回放契约，并在真实库复验。
+- [x] HF Daily、Semantic Scholar 与 GitHub 完成有界的真实同步、快照和落库验证；同步失败保留最近成功状态。
+- [x] 推荐年龄桶、批次标识和异常引用排除满足可回放契约，并在真实库复验。
 
 ## 写入范围
 
@@ -71,12 +71,13 @@
 
 ## 当前进度
 
-- 已完成：可恢复导入器、字段契约、集合式索引和有界推荐查询；674,969 篇 arXiv 主库、99,577 条会议增强和 2,901 条 OpenAlex 增强已真实落库。
-- 已完成：真实库健康、详情、最新、主题、会议、关注、推荐和已读排除验证；服务端 18 项测试及客户端推荐刷新、增量合并、已读 ID 传递定向测试通过。
-- 已完成：Dart 格式、`flutter analyze`、426 项 Flutter 测试、development APK 和 Windows debug 构建全部通过。
-- 已完成：修复年龄桶跨桶回补、不同请求复用 `batch_id` 和异常 OpenAlex 引用参与评分的问题；服务端 19 项回归通过。
-- 正在进行：补齐 HF Daily、Semantic Scholar、GitHub 的真实同步，并修复推荐年龄桶、批次标识和异常引用评分问题。
-- 下一步：完成真实来源与推荐回归后，由编排者人工确认真实论文、数据源标识、推荐刷新增量合并和频道内容。
+- 已完成：可恢复导入器、字段契约、集合式索引和有界推荐查询；675,168 篇论文、675,168 个唯一 arXiv ID、99,577 条会议增强和 2,895 个唯一 OpenAlex ID 已真实落库。
+- 已完成：14 天 HF Daily 326 条、Semantic Scholar 500 请求/498 有效返回、GitHub 50 条真实增强均保留原始快照、source observation 和 provenance。
+- 已完成：真实库健康、详情、最新、主题、会议、关注、推荐、已读排除、年龄桶和批次隔离验证；服务端 22 项测试通过。
+- 已完成：修复年龄桶跨桶回补、不同请求复用 `batch_id`、非 arXiv 来源覆盖规范字段和异常 OpenAlex 引用进入 quality pool 的问题；真实索引复验 0 违规。
+- 已完成：Dart 格式、`flutter analyze`、426 项 Flutter 测试及 development 构建证据已保留；发布版门禁待本轮收尾执行。
+- 正在进行：等待编排者人工确认 Windows development App 的真实论文、推荐刷新增量合并、已读过滤和频道内容。
+- 下一步：完成 App 人工验收后更新 Phase 2/2.5 状态，进入 `/test`、`/review` 和合并收尾。
 - 阻塞项：无；人工 App 验收尚待执行。
 
 ## 决策记录
@@ -87,27 +88,30 @@
 | 2026-08-11 | 主输入使用 `spark-arxiv-ai-full.jsonl`，会议目录只作增强 | 实测主文件有 674,969 行，`by-year-venue-label/` 只有 99,577 行且不存在 `_none` 文件，与 README 的“全部 AI 论文”描述不一致 | 主文件建立完整底库；会议目录按 arXiv ID 增强 `_matched_venue` 和 `_matched_label`，禁止替代底库 |
 | 2026-08-11 | 继续使用 SQLite 并建立独立新库 | 编排者已明确选择 SQLite；独立数据库便于验证和回滚 | 不覆盖现有 50 篇临时数据库 |
 | 2026-08-11 | 使用分层证据路径验收 Phase 2.5 | 单一 fixture 或接口 200 响应不能证明真实数据阶段完成 | 单元测试验证字段/恢复；全量报告和 SQL 验证数量/唯一性；接口计时验证性能；Windows App 人工验证用户行为 |
-| 2026-08-12 | 推荐请求最多携带 200 个本地已读 ID | URL 查询参数必须有界，同时让服务端在刷新时排除近期已读论文 | App 每次推荐请求实时读取本地集合、去重排序并截断；服务端仍保留 5,000 个输入上限 |
+| 2026-08-11 | 推荐请求最多携带 200 个本地已读 ID | URL 查询参数必须有界，同时让服务端在刷新时排除近期已读论文 | App 每次推荐请求实时读取本地集合、去重排序并截断；服务端仍保留 5,000 个输入上限 |
 
 ## 验证记录
 
 | 命令或人工检查 | 结果 | 日期 |
 | --- | --- | --- |
 | 本地数据集逐行计数 | 主 JSONL `674,969` 行 / `1,306,961,453` bytes；会议分区 `99,577` 行 / `202,295,639` bytes，共 `1,049` 文件且无 `_none` 文件 | 2026-08-11 |
-| `import-dataset --batch-size 1000` | 通过；主库 `674,969` 导入、0 重复、0 拒绝；会议 `1,049` 文件 / `99,577` 条全部匹配；OpenAlex `2,901` 条全部匹配，数据库约 `4.86 GB` | 2026-08-12 |
-| SQLite 数量与索引核验 | `papers=674,969`、唯一 arXiv ID `674,969`、Latest `674,969`、Channel `1,421,373`、Author `3,109,720`、Venue `99,577`、Candidate `714,969`（含全量池和 8 个各 5,000 的物化池） | 2026-08-12 |
-| OpenAlex 增强核验 | `2,901` 条输入和匹配、`2,895` 个唯一 OpenAlex ID、`29` 条 `citation_count_outlier` 标记、0 未匹配、0 拒绝 | 2026-08-12 |
-| `GET /api/v1/health` | 通过；`status=ok`、`schema_version=api.v1`、`paper_count=674969` | 2026-08-12 |
-| 真实 API 定向计时 | 最新/主题/关注热请求约 `5–20 ms`，会议约 `87–102 ms`，推荐约 `0.45–0.58 s`；接口均返回真实论文 | 2026-08-12 |
-| 两个推荐 seed + 第二批 `read_ids` | 通过；产生不同 `batch_id`，第二批与第一批 10 个已读 ID 交集为 0 | 2026-08-12 |
-| `PYTHONPATH=server; python -m unittest discover -s server/tests -v` | 通过；18 项全部通过 | 2026-08-12 |
-| 推荐可回放修复后的服务端全量测试 | 通过；19 项全部通过，覆盖年龄桶标签、批次请求隔离和异常引用排除 | 2026-08-12 |
-| `flutter test test/paper_controller_test.dart` | 通过；32 项全部通过，覆盖首次远程替换 seed、刷新前插去重、200 个已读 ID 上限和实时集合更新 | 2026-08-12 |
-| `.\tool\verify_changed_dart_format.ps1` | 通过；18 个改动 Dart 文件均符合当前 formatter | 2026-08-12 |
-| `flutter analyze` | 通过；No issues found | 2026-08-12 |
-| `flutter test` | 通过；426 项全部通过 | 2026-08-12 |
-| `flutter build apk --debug --flavor development --dart-define=SPARK_ENV=development` | 通过；`build/app/outputs/flutter-apk/app-development-debug.apk`，`164,834,576` bytes，SHA-256 `580341603E2983BE586B22772E563514761628ED487876CC24518B567B5699C6` | 2026-08-12 |
-| `flutter build windows --debug --dart-define=SPARK_ENV=development` | 通过；`build/windows/x64/runner/Debug/spark.exe`，`1,279,488` bytes，SHA-256 `B9AA1FDD196CB2E83C26C274F86337C1D4A544315BFC06CE7748AC87DC3EA5A8` | 2026-08-12 |
+| `import-dataset --batch-size 1000` | 通过；主库 `674,969` 导入、0 重复、0 拒绝；会议 `1,049` 文件 / `99,577` 条全部匹配；OpenAlex `2,901` 条全部匹配，数据库约 `4.86 GB` | 2026-08-11 |
+| SQLite 数量与索引核验 | `papers=674,969`、唯一 arXiv ID `674,969`、Latest `674,969`、Channel `1,421,373`、Author `3,109,720`、Venue `99,577`、Candidate `714,969`（含全量池和 8 个各 5,000 的物化池） | 2026-08-11 |
+| OpenAlex 增强核验 | `2,901` 条输入和匹配、`2,895` 个唯一 OpenAlex ID、`29` 条 `citation_count_outlier` 标记、0 未匹配、0 拒绝 | 2026-08-11 |
+| `GET /api/v1/health` | 通过；`status=ok`、`schema_version=api.v1`、`paper_count=674969` | 2026-08-11 |
+| 真实 API 定向计时 | 最新/主题/关注热请求约 `5–20 ms`，会议约 `87–102 ms`，推荐约 `0.45–0.58 s`；接口均返回真实论文 | 2026-08-11 |
+| 两个推荐 seed + 第二批 `read_ids` | 通过；产生不同 `batch_id`，第二批与第一批 10 个已读 ID 交集为 0 | 2026-08-11 |
+| `PYTHONPATH=server; python -m unittest discover -s server/tests -v` | 通过；18 项全部通过 | 2026-08-11 |
+| 推荐可回放修复后的服务端全量测试 | 通过；19 项全部通过，覆盖年龄桶标签、批次请求隔离和异常引用排除 | 2026-08-11 |
+| `flutter test test/paper_controller_test.dart` | 通过；32 项全部通过，覆盖首次远程替换 seed、刷新前插去重、200 个已读 ID 上限和实时集合更新 | 2026-08-11 |
+| `.\tool\verify_changed_dart_format.ps1` | 通过；18 个改动 Dart 文件均符合当前 formatter | 2026-08-11 |
+| `flutter analyze` | 通过；No issues found | 2026-08-11 |
+| `flutter test` | 通过；426 项全部通过 | 2026-08-11 |
+| `flutter build apk --debug --flavor development --dart-define=SPARK_ENV=development` | 通过；`build/app/outputs/flutter-apk/app-development-debug.apk`，`164,834,576` bytes，SHA-256 `580341603E2983BE586B22772E563514761628ED487876CC24518B567B5699C6` | 2026-08-11 |
+| `flutter build windows --debug --dart-define=SPARK_ENV=development` | 通过；历史 development debug 构建证据，仅作客户端连接回归，不作为发布产物 | 2026-08-11 |
+| `sync-external --hf-days 14 --semantic-scholar-limit 500 --github-limit 50` | 通过；HF 326 条、Semantic Scholar 498/500、GitHub 50 条，0 unmatched/0 rejected；写入真实快照，耗时约 560.6 秒 | 2026-08-11 |
+| SQLite 全量来源与推荐核验 | 通过；675,168 论文/唯一 arXiv ID，source observation：HF 326、Semantic Scholar 498、GitHub 50；HF heat 326、Semantic Scholar citation 498、GitHub stars 194、GitHub links 195；quality outlier 0、Trending 非零 326、错误年龄桶 0 | 2026-08-11 |
+| Paper API HTTP 端到端核验 | 通过；health 675,168；最新/主题/会议/关注各返回真实论文；推荐 20 条无重复，10 条已读交集为 0，不同 limit 的 batch_id 不同 | 2026-08-11 |
 
 ## 审查结论
 
@@ -145,17 +149,17 @@
 
 ### 已知风险与回滚
 
-- 已知风险：会议增强只覆盖 `99,577/674,969`；OpenAlex 高引数据仅覆盖 2,901 条且 29 条引用数被标记为异常；HF Daily、Semantic Scholar 和 GitHub 尚无真实同步数据。
+- 已知风险：会议增强只覆盖 `99,577/674,969`；OpenAlex 高引数据输入 2,901 条且 29 条引用数被标记为异常（已排除 quality pool）；HF/Semantic Scholar/GitHub 本轮按免费接口预算做有界同步，后续由 `tool/sync_paper_sources.ps1` 周期增量。
 - 回滚方式：停止新 API 进程并重新指向旧 SQLite；代码按任务提交 `git revert`。
 
 ### 文档更新建议
 
-- Phase 2.5 人工验收和完整门禁通过后，再依据实际剩余的 HF/GitHub 数据项决定 Phase 1/2 是否可关闭，不能只因本地 arXiv 导入成功就提前标记完成。
+- Phase 2.5 的真实来源和推荐回归已经通过；只剩 Windows development App 人工验收与发布版门禁，不能在用户未确认前关闭 Phase 2/2.5。
 
 ### 未完成与后续工作
 
-- Windows development App 人工验收待完成。
-- HF Daily 定时镜像与真实 GitHub/Semantic Scholar 增强仍是 Phase 1 的剩余项；Phase 3–5 保持后续阶段。
+- Windows development App 人工验收待完成；确认后补充人工证据。
+- `tool/sync_paper_sources.ps1` 已提供定时调用入口，部署后的 Task Scheduler 注册在合并到 `main` 后执行；Phase 3–5 保持后续阶段。
 
 ## 合并归档（合并后在 main 补齐）
 

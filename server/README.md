@@ -39,6 +39,27 @@ same command resumes incomplete work or verifies a completed import. It also
 rebuilds Latest, subject/author/venue and bounded recommendation indexes only
 when they are stale.
 
+To run the real external-source increment (HF Daily, Semantic Scholar and
+GitHub) after the base dataset has been imported:
+
+```powershell
+$env:PYTHONPATH = (Resolve-Path server).Path
+python -m spark_papers.cli `
+  --db $db `
+  --snapshots $snapshots `
+  sync-external `
+  --hf-days 7 `
+  --semantic-scholar-limit 500 `
+  --github-limit 50
+```
+
+The command is bounded by source budgets, stores request/response snapshots,
+uses exact arXiv identity for academic and repository enrichment, and refreshes
+SQLite indexes once after all sources finish. `tool/sync_paper_sources.ps1`
+wraps this command for Windows Task Scheduler. Tokens are optional environment
+variables (`SEMANTIC_SCHOLAR_API_KEY` and `GITHUB_TOKEN`) and are never written
+to snapshots or logs.
+
 The service exposes:
 
 - `GET /api/v1/health`

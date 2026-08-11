@@ -46,7 +46,7 @@ class SyncRunner:
         self.snapshot_store = snapshot_store
         self.policy = policy or AiAdmissionPolicy()
 
-    def sync(self, adapter: SourceAdapter) -> dict[str, Any]:
+    def sync(self, adapter: SourceAdapter, *, refresh_indexes: bool = True) -> dict[str, Any]:
         state = self.store.get_sync_state(adapter.name)
         now = utc_now()
         try:
@@ -61,11 +61,16 @@ class SyncRunner:
             return {"source": adapter.name, "status": "not_modified", "records": 0, "snapshot": state.get("last_snapshot_path")}
         raw_path = self.snapshot_store.save(adapter.name, key, result.raw_payload, result.fetched_at)
         ingested = 0
+        unmatched = 0
         rejected = 0
+        enrichment_only = bool(
+            getattr(adapter, "enrichment_only", False)
+            or adapter.name in {"openalex", "semantic_scholar", "github"}
+        )
         for record in result.records:
             try:
                 paper, external_id = normalize_record(adapter.name, record, fetched_at=result.fetched_at, policy=self.policy)
-                self.store.ingest(
+                paper_id = self.store.ingest(
                     paper,
                     source=adapter.name,
                     external_id=external_id,
@@ -73,11 +78,23 @@ class SyncRunner:
                     fetched_at=result.fetched_at,
                     source_updated_at=paper.updated_at,
                     etag=result.etag,
+                    allow_create=not enrichment_only,
                 )
-                ingested += 1
+                if paper_id is None:
+                    unmatched += 1
+                else:
+                    ingested += 1
             except (TypeError, ValueError, KeyError):
                 rejected += 1
         self.store.record_snapshot(adapter.name, key, status="success", fetched_at=result.fetched_at, etag=result.etag, cursor=result.cursor, raw_path=raw_path, record_count=ingested)
         self.store.set_sync_state(adapter.name, result.etag, result.cursor, raw_path, result.fetched_at)
-        self.store.refresh_indexes(result.fetched_at)
-        return {"source": adapter.name, "status": "success", "records": ingested, "rejected": rejected, "snapshot": raw_path}
+        if refresh_indexes:
+            self.store.refresh_indexes(result.fetched_at)
+        return {
+            "source": adapter.name,
+            "status": "success",
+            "records": ingested,
+            "unmatched": unmatched,
+            "rejected": rejected,
+            "snapshot": raw_path,
+        }

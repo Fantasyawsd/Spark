@@ -59,11 +59,11 @@ def _signal(paper: PaperRecord, name: str, as_of: datetime | None = None) -> flo
     values = {
         "citation_count": _first_number(
             None if openalex_is_outlier else openalex.get("citation_count"),
-            semantic.get("citation_count"),
+            None if openalex_is_outlier else semantic.get("citation_count"),
         ),
         "citation_velocity": _first_number(
             None if openalex_is_outlier else openalex.get("citation_velocity"),
-            semantic.get("citation_velocity"),
+            None if openalex_is_outlier else semantic.get("citation_velocity"),
         ),
         "github_stars": _number(github.get("stars")),
         "venue_score": _number(paper.metadata.get("venue_score")),
@@ -71,7 +71,7 @@ def _signal(paper: PaperRecord, name: str, as_of: datetime | None = None) -> flo
         "github_star_velocity": _number(github.get("star_velocity")),
         "short_citation_velocity": _first_number(
             None if openalex_is_outlier else openalex.get("short_citation_velocity"),
-            semantic.get("short_citation_velocity"),
+            None if openalex_is_outlier else semantic.get("short_citation_velocity"),
         ),
     }
     if name == "freshness":

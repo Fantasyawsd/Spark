@@ -40,21 +40,56 @@ class PipelineTest(unittest.TestCase):
             arxiv = StaticSource("arxiv", (_paper("2401.00001v2", "A Stable Paper", "2024-01-02T00:00:00Z"),))
             hf = StaticSource(
                 "huggingface",
-                (_paper("2401.00001", "A Stable Paper", "2024-01-02T00:00:00Z", source_fields={"signals": {"huggingface": {"heat": 7}}}),),
+                (
+                    _paper(
+                        "2401.00001",
+                        "A Stable Paper",
+                        "2024-01-02T00:00:00Z",
+                        source_fields={
+                            "signals": {"huggingface": {"heat": 7}},
+                            "metadata": {"github_url": "https://github.com/example/research"},
+                        },
+                    ),
+                ),
+            )
+
+            github = StaticSource(
+                "github",
+                (
+                    _paper(
+                        "2401.00001",
+                        "Repository Name",
+                        "2020-01-01T00:00:00Z",
+                        source_fields={
+                            "subjects": ["cs.CV"],
+                            "signals": {"github": {"stars": 12}},
+                        },
+                    ),
+                ),
             )
 
             first = runner.sync(arxiv)
             second = runner.sync(hf)
+            github_result = runner.sync(github)
             repeat = runner.sync(arxiv)
 
             self.assertEqual(first["status"], "success")
             self.assertEqual(second["records"], 1)
+            self.assertEqual(github_result["records"], 1)
             self.assertEqual(repeat["status"], "not_modified")
             self.assertEqual(store.count(), 1)
             paper = store.all_candidates()[0]
             self.assertEqual(paper.external_ids["arxiv_id"], "2401.00001")
-            self.assertEqual(set(paper.discovery_sources), {"arxiv", "huggingface"})
+            self.assertEqual(set(paper.discovery_sources), {"arxiv", "huggingface", "github"})
+            self.assertEqual(paper.title, "A Stable Paper")
+            self.assertEqual(paper.published_at, datetime(2024, 1, 2, tzinfo=UTC))
+            self.assertEqual(paper.subjects, ("cs.AI",))
             self.assertEqual(paper.signals["huggingface"]["heat"], 7)
+            self.assertEqual(paper.signals["github"]["stars"], 12)
+            self.assertEqual(
+                store.github_candidates(limit=1)[0]["github_url"],
+                "https://github.com/example/research",
+            )
             store.close()
 
     def test_failure_keeps_last_successful_snapshot(self) -> None:
@@ -89,9 +124,10 @@ class PipelineTest(unittest.TestCase):
             first.pop("external_id")
             second = {**first, "title": "A Reliable Identity Paper: Extended", "published_at": "2024-01-04T00:00:00Z"}
             runner.sync(StaticSource("arxiv", (first,), snapshot_key="one"))
-            runner.sync(StaticSource("semantic_scholar", (second,), snapshot_key="two"))
+            result = runner.sync(StaticSource("semantic_scholar", (second,), snapshot_key="two"))
             queued = store._connection.execute("SELECT reason, confidence FROM match_queue").fetchall()
-            self.assertEqual(store.count(), 2)
+            self.assertEqual(store.count(), 1)
+            self.assertEqual(result["unmatched"], 1)
             self.assertTrue(any(row["reason"] == "fuzzy_candidate_requires_review" for row in queued))
             self.assertTrue(all(0.65 <= row["confidence"] <= 1 for row in queued))
             store.close()

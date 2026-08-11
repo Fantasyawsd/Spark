@@ -207,6 +207,7 @@ class DatasetImporterTest(unittest.TestCase):
 
         self.assertLessEqual(len(candidates), 5 * 2 * 4)
         self.assertGreater(len(candidates), 0)
+        self.assertGreater(len(self.store.semantic_scholar_candidates(limit=5)), 0)
 
 
 if __name__ == "__main__":

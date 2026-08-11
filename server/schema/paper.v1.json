@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://spark.app/schema/paper.v1.json",
+  "title": "Spark canonical paper",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "paper_id",
+    "title",
+    "authors",
+    "published_at",
+    "subjects",
+    "external_ids",
+    "discovery_sources",
+    "signals",
+    "metadata",
+    "admitted",
+    "admission_reason",
+    "withdrawn",
+    "schema_version"
+  ],
+  "properties": {
+    "paper_id": {"type": "string", "pattern": "^paper_[a-f0-9]{24}$"},
+    "title": {"type": "string", "minLength": 1},
+    "abstract": {"type": ["string", "null"]},
+    "authors": {"type": "array", "items": {"type": "string"}},
+    "published_at": {"type": "string", "format": "date-time"},
+    "updated_at": {"type": ["string", "null"], "format": "date-time"},
+    "subjects": {"type": "array", "items": {"type": "string"}},
+    "external_ids": {
+      "type": "object",
+      "additionalProperties": {"type": "string"}
+    },
+    "discovery_sources": {
+      "type": "array",
+      "items": {"enum": ["arxiv", "huggingface", "openalex", "semantic_scholar", "github"]}
+    },
+    "signals": {
+      "type": "object",
+      "additionalProperties": {"type": "object"}
+    },
+    "metadata": {"type": "object"},
+    "admitted": {"type": "boolean"},
+    "admission_reason": {"type": "string"},
+    "withdrawn": {"type": "boolean"},
+    "schema_version": {"const": "paper.v1"},
+    "provenance": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["field_name", "source", "fetched_at", "evidence"],
+        "properties": {
+          "field_name": {"type": "string"},
+          "source": {"type": "string"},
+          "fetched_at": {"type": "string", "format": "date-time"},
+          "source_updated_at": {"type": ["string", "null"], "format": "date-time"},
+          "evidence": {"type": "object"}
+        }
+      }
+    }
+  }
+}

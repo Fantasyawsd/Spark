@@ -1,0 +1,11 @@
+[
+  {
+    "arxiv_id": "2401.99999",
+    "title": "Fixture AI Paper",
+    "abstract": "A deterministic fixture for the CLI smoke test.",
+    "authors": ["Ada Lovelace"],
+    "published_at": "2024-01-31T00:00:00Z",
+    "subjects": ["cs.AI"],
+    "signals": {"openalex": {"citation_count": 4}}
+  }
+]

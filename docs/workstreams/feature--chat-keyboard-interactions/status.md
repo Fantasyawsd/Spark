@@ -8,8 +8,8 @@
 - Worktree：`C:\Users\Fantasy\Desktop\Spark-worktrees\feature--chat-keyboard-interactions`
 - 基线提交：`948f3aff8a791aeb1602c1ef38313fde2278c4a6`（main HEAD）
 - 负责人：Fantasy（编排者）；执行：Claude
-- 状态：待审查
-- 最近更新：2026-08-11 23:05
+- 状态：收尾中
+- 最近更新：2026-08-11 23:20
 
 ## 目标
 
@@ -57,8 +57,8 @@
 ## 当前进度
 
 - 已完成：任务边界确认；必读文档与历史台账阅读；现状分析；rikkahub ime 滚动对照（无代码改动，结论见决策记录）；桌面端发送后保持焦点；`_dismissKeyboard()` 三层兜底并接入多选入口；3 个 Widget 测试；/test 完整验证门禁全过（diff check/格式/analyze/test 410/APK+Windows 构建）；Windows 桌面端启动实测；profile 包手机端实测（键盘弹出顺滑，debug 卡顿确认为构建类型假象）。
-- 正在进行：等待编排者触发 /review。
-- 阻塞项：无
+- 正在进行：/finish 收尾：合并前交付信息已收集，编排者已批准合并，待合入 main 后做集成回归与归档。
+- 下一步：合入 main → main 集成回归（含发布版双目标构建证据）→ 台账归档 → 清理 worktree。
 
 ## 决策记录
 
@@ -96,10 +96,10 @@
 
 > 由 `/review` 填写摘要（阻断项、缺陷、结论）。
 
-- 审查日期：
-- 阻断项：
-- 缺陷：
-- 结论：可合并 / 需修复 / 需重新审查
+- 审查日期：2026-08-11
+- 阻断项：无
+- 缺陷：无
+- 结论：可合并（编排者 Windows 桌面端与 Android 手机 profile 包双端实测验收后直接批准合并，未走独立 /review 只读审查）
 
 ## 检查点与提交
 
@@ -112,15 +112,15 @@
 
 ### 交付摘要
 
-（合并前填写）
+ChatPaper 聊天页（主聊天与论文聊天共用的 `PaperAiChatScreen`）吸收主流 AI 客户端的三项键盘交互：桌面端发送后输入框保持焦点可直接连续输入；进入消息多选时经三层兜底统一收起键盘、退出多选不自动弹起；对照确认既有 IME 差值滚动实现为 rikkahub 参照算法的超集（第 3 项无代码改动）。新增 3 个 Widget 测试覆盖桌面/移动平台分支与多选场景。
 
 ### 实际变更
 
-- 领域与业务逻辑：
-- 数据与基础设施：
-- 界面与交互：
-- 测试与工具：
-- 文档：
+- 领域与业务逻辑：无。
+- 数据与基础设施：无。
+- 界面与交互：`paper_ai_chat_screen.dart` 新增 `_isDesktopPlatform` 平台判断；`_send` 发送后焦点按平台分流（桌面 `requestFocus` 保焦续输、移动 `unfocus` 维持发送收键盘）；新增 `_dismissKeyboard()` 三层兜底（composer unfocus + primaryFocus unfocus + `SystemChannels.textInput` 显式 `TextInput.hide`，无平台通道环境由 `Future.ignore()` 吞掉错误）并在 `_deleteMessage` 进入多选时调用。
+- 测试与工具：新增 `test/paper_ai_chat_keyboard_interactions_test.dart`（桌面发送保焦 / Android 发送收键盘 / 多选收键盘与退出不弹 3 用例）。
+- 文档：本任务台账。
 
 ### 兼容性与迁移
 
@@ -130,12 +130,12 @@
 
 ### 已知风险与回滚
 
-- 已知风险：（合并前填写）
+- 已知风险：低。焦点行为变更仅限聊天页发送与多选两条路径，3 个 Widget 测试覆盖；移动端发送收键盘为既有行为未改变；桌面保焦仅限 Windows/macOS/Linux，Web 维持现状。
 - 回滚方式：revert 任务提交，无数据影响。
 
 ### 文档更新建议
 
-- `docs/development.md` §3.2 ChatPaper 任务表视交付情况补充。
+- 键盘交互细节优化不改变 `docs/development.md` 的功能能力状态；合并归档时记录为不适用（同 `fix/android-keyboard-jank` 先例）。
 
 ### 未完成与后续工作
 

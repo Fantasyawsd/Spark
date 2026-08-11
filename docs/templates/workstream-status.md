@@ -59,7 +59,7 @@
 
 ## 验证记录
 
-> `/finish` 合并后必须记录 development APK 与 Windows debug EXE 两个目标的构建结果、产物路径、大小和 SHA-256；任一目标失败时不得填写“已合并”或清理 worktree。
+> `/finish` 合并后必须记录 development APK 与 Windows release EXE 两个目标的构建结果、产物路径、大小和 SHA-256；任一目标失败时不得填写“已合并”或清理 worktree。
 
 | 命令或人工检查 | 结果 | 日期 |
 | --- | --- | --- |

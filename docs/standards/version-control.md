@@ -198,7 +198,7 @@ git diff --cached --check
 3. 检查与已合并任务的路径和契约冲突。
 4. 在任务分支补齐交付摘要、验证、兼容性、风险和回滚等合并前信息；此时状态最多为“待合并”。
 5. 将任务分支合入 `main`（版本迭代通过 Pull Request）；解决冲突、记录语义决策并形成真实集成提交。
-6. 在已包含任务提交的 `main` 上执行要求的格式、分析、全量测试和目标平台构建。日常 `/finish` 至少完成 development APK 与 Windows debug EXE 两个目标构建。
+6. 在已包含任务提交的 `main` 上执行要求的格式、分析、全量测试和目标平台构建。日常 `/finish` 至少完成 development APK 与 Windows release EXE 两个目标构建。
 7. 在 `main` 更新对应 `status.md`：标记 `已合并`，记录最终集成 SHA（fast-forward 时记录合入后的 `main` HEAD/任务 tip）或 PR、合并时间、集成验证和真实后续项。
 8. 依据合并后的真实能力更新 `docs/development.md`；关联发布时再更新发布进度与清单。不影响开发计划的任务必须在台账归档中明确说明。
 9. 将第 7、8 步形成独立的合并后文档归档提交；只有该提交已进入 `main`，才可清理 worktree 和分支。若 `main` 受保护，使用以已合并 `main` 为基线的仅文档 PR 完成该提交，在其合入前不得宣布 `/finish` 完成。
@@ -220,18 +220,18 @@ git diff --cached --check
 
 ## 10. 验证门禁
 
-每个任务分支至少执行定向验证；合并前后默认执行完整验证：
+每个任务分支至少执行定向验证；完整验证门禁如下：
 
 ```powershell
 .\tool\verify_changed_dart_format.ps1
 flutter analyze
 flutter test
-flutter build apk --debug --flavor development --dart-define=SPARK_ENV=development
-flutter build windows --debug --dart-define=SPARK_ENV=development
+flutter build apk --release --flavor development --dart-define=SPARK_ENV=development
+flutter build windows --release --dart-define=SPARK_ENV=development
 git diff --check
 ```
 
-`/finish` 合并后必须记录 APK 与 Windows debug EXE 的产物路径、大小和 SHA-256；任一目标构建失败不得完成归档或清理。Windows release、正式 Android release 和真机测试根据对应发布清单执行。项目日常开发不启动 Android 模拟器。
+`/test` 阶段执行格式检查、`flutter analyze`、`flutter test`，不重复执行目标构建；两个目标的发布版构建由 `/finish` 合并后统一执行，必须记录 APK 与 Windows release EXE 的产物路径、大小和 SHA-256，任一目标构建失败不得完成归档或清理。Windows release、正式 Android release 和真机测试根据对应发布清单执行。项目日常开发不启动 Android 模拟器。
 
 测试失败时必须区分：
 
@@ -284,7 +284,7 @@ git worktree prune
 - 需求和验收标准满足；
 - 代码结构和数据分层符合项目原则；
 - 测试和构建结果准确记录；
-- `/finish` 合并后的 development APK 与 Windows debug EXE 均已构建成功，并在台账中记录产物证据；
+- `/finish` 合并后的 development APK 与 Windows release EXE 均已构建成功，并在台账中记录产物证据；
 - 提交职责单一且工作区干净；
 - 任务台账 status.md 完整，并在合并后记录最终集成 SHA 或 PR 与状态；
 - 风险、迁移和后续工作已经记录；

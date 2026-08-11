@@ -115,7 +115,9 @@ DeepSeek 调试与正式构建都只读取用户在应用内配置、由设备�
 .\tool\verify_changed_dart_format.ps1
 flutter analyze
 flutter test
-flutter build apk --debug --flavor development --dart-define=SPARK_ENV=development
+flutter build apk --release --flavor development --dart-define=SPARK_ENV=development
 ```
+
+Android release 构建受签名门控；未配置 `android/key.properties` 时改用 `--profile` 代替（AOT，性能等同发布版，debug 签名可直接安装）。
 
 项目不使用 Android 模拟器作为日常验收方式。Android 正式签名、真机验收和发布门见 [发布与兼容性管理](docs/standards/release-management.md)。

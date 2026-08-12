@@ -33,6 +33,7 @@ class ChatSessionController extends ChangeNotifier {
     ChatSessionSettingsRepository? settingsRepository,
     required String mainSessionId,
     Iterable<ChatContextSummary> contexts = const [],
+    this.beforeDelete,
   })  : _repository = repository,
         _settingsRepository = settingsRepository,
         _mainSessionId = mainSessionId,
@@ -44,6 +45,7 @@ class ChatSessionController extends ChangeNotifier {
   final ChatSessionSettingsRepository? _settingsRepository;
   late final StreamSubscription<void> _changesSubscription;
   final String _mainSessionId;
+  final Future<void> Function(String contextId)? beforeDelete;
   Map<String, ChatContextSummary> _contexts;
   List<ChatSessionEntry> _entries = const [];
   ChatSessionSummary? _mainSession;
@@ -97,6 +99,7 @@ class ChatSessionController extends ChangeNotifier {
 
   Future<void> delete(String contextId) async {
     try {
+      await beforeDelete?.call(contextId);
       await _settingsRepository?.clear(contextId);
       await _repository.clear(contextId);
       _rawSessions = _rawSessions

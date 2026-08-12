@@ -8,8 +8,8 @@
 - Worktree：`C:\Users\Fantasy\Desktop\Spark-worktrees\agent-1`
 - 基线提交：`fc6394d72cfb0d28bec85e8c7e0c2b6c79095c0a`
 - 负责人：Fantasy（编排者）；执行：Codex
-- 状态：待合并
-- 最近更新：2026-08-13 01:40
+- 状态：已合并
+- 最近更新：2026-08-13 01:48
 
 ## 目标
 
@@ -74,8 +74,9 @@
 - 已完成：单会话删除、ChatPaper 全量清理和 Spark 根组件销毁均会取消相应活跃任务并排空既有写队列，避免会话复活。
 - 已完成：7 项新行为测试、68 项相关回归、格式门禁、静态分析与全量 447 项测试全部通过；开发阶段双轴自审无阻断项。
 - 已完成：Windows development 配置的 release App 人工验收通过；编排者明确批准进入 `/finish`。
-- 正在进行：整理合并前交付信息并合入 `main`。
-- 下一步：合并后执行双目标构建，更新开发计划与台账归档，再清理 worktree 和任务分支。
+- 已完成：任务提交已通过合并提交 `d734d2f` 进入 `main`；合并后格式、静态分析、全量测试和双目标构建均通过。
+- 正在进行：无；本台账完成归档后转为只读。
+- 下一步：无；强制退出或系统杀进程后的续跑属于未来服务端异步任务方向。
 - 阻塞项：无。
 
 ## 决策记录
@@ -102,6 +103,11 @@
 | `flutter test` | 全量 447 项通过 | 2026-08-13 |
 | 开发阶段 Spec / Standards 双轴自审 | 无功能或架构阻断项 | 2026-08-13 |
 | `flutter pub get` + `flutter run -d windows --release --dart-define=SPARK_ENV=development` | 当前任务分支 Windows App 启动成功；编排者人工验证“回复中离开 → 等待 → 返回同一会话”通过 | 2026-08-13 |
+| main：`.\tool\verify_changed_dart_format.ps1 -BaseRevision fc6394d` | 8 个 Dart 文件格式检查通过 | 2026-08-13 |
+| main：`flutter analyze` | 通过，No issues found | 2026-08-13 |
+| main：`flutter test` | 全量 447 项通过 | 2026-08-13 |
+| main：`flutter build apk --profile --flavor development --dart-define=SPARK_ENV=development` | Android release 签名未配置，按规范生成 profile APK；`build/app/outputs/flutter-apk/app-development-profile.apk`，119,409,548 B（113.88 MiB），SHA-256 `B1A8386AD904EAD434584F2374E4E9F54A4D60F06AE094C66960C2FD9D25270F` | 2026-08-13 |
+| main：`flutter build windows --release --dart-define=SPARK_ENV=development` | 通过；`build/windows/x64/runner/Release/spark.exe`，101,888 B（99.5 KiB），SHA-256 `CDFCDE6D1129AA3B01FAF6DDCBC8FEAAB9D92B647A6B7BD00B9C712E579BA28A` | 2026-08-13 |
 
 ## 审查结论
 
@@ -118,6 +124,8 @@
 | --- | --- | --- | --- |
 | `c857df3` | `文档（台账）：创建聊天后台续答任务台账` | `/start` | 台账与独立 worktree 初始化 |
 | `a41410d` | `新增（ChatPaper）：离开聊天后继续完成回复` | `/develop` | 7 项新行为、68 项相关回归、格式、analyze 与全量 447 项测试通过 |
+| `e12a2d4` | `文档（台账）：准备聊天后台续答任务合并` | `/finish` 合并前 | 人工验收通过，交付信息完整 |
+| `d734d2f` | `杂项（合并）：合入聊天后台续答功能` | `/finish` 合并 | 任务提交进入 `main` |
 
 ## 交付准备（合并前收集）
 
@@ -156,11 +164,11 @@ ChatPaper 的 AI 生成任务已从页面生命周期提升到 Spark 应用生�
 
 > 只有任务提交已真实进入 `main` 后才能填写。本节与 `docs/development.md` 的真实状态更新一并提交；完成后台账转为只读归档。
 
-- 最终状态：待合并
+- 最终状态：已合并
 - 合入分支：`main`
-- 最终集成提交：待合并
+- 最终集成提交：`d734d2f`（`杂项（合并）：合入聊天后台续答功能`）
 - Pull Request：无
-- 合并时间：待合并
-- main 集成验证：待合并
-- 开发计划更新：待合并
-- 最终后续项：待合并
+- 合并时间：2026-08-13 01:41:18 +08:00
+- main 集成验证：`git merge-base --is-ancestor e12a2d4 main` 通过；格式门禁、`flutter analyze`、全量 447 项测试、development profile APK 和 Windows release EXE 双目标构建全部通过，产物证据见验证记录。
+- 开发计划更新：已更新 `docs/development.md` §2.1、§2.2、§3.2 和 ChatPaper 验收标准，记录跨界面续答能力及进程退出边界。
+- 最终后续项：如需应用被强制退出或系统杀进程后仍继续生成，后续设计服务端异步任务、任务 id、结果轮询/推送和断点恢复协议。

@@ -9,7 +9,7 @@
 - 基线提交：`c01a6d252135cdfe82261a9c60be9fb0a137a62a`
 - 负责人：Fantasy（编排者）
 - 状态：开发中
-- 最近更新：2026-08-12 12:20
+- 最近更新：2026-08-12
 
 ## 目标
 
@@ -51,7 +51,7 @@
 - `server/spark_papers/recommendation.py`、`server/spark_papers/ports.py`：只调整真实规模候选契约。
 - `server/spark_papers/cli.py`、`server/README.md`：只增加数据集导入与部署入口。
 - `lib/src/app/spark_app.dart`、`lib/src/features/papers/application/`：只补真实推荐刷新、增量合并和已读 ID 传递。
-- `test/paper_controller_test.dart`、`test/paper_api_*`：只补 Paper API 与 Feed 端到端行为测试。
+- `test/paper_controller_test.dart`、`test/paper_api_*`、`test/ui_preview_test.dart`：只补 Paper API、Feed 与论文导航刷新行为测试。
 - `docs/development.md`：只校正 Phase 1/2 状态并维护 Phase 2.5。
 
 ## 依赖关系
@@ -68,6 +68,7 @@
 5. 在新 SQLite 上完成 API、推荐批次和 Windows development App 验收。
 6. 接入 HF Daily、Semantic Scholar 和 GitHub 的真实有界同步，补齐定时执行入口与快照证据。
 7. 修复审查发现的年龄桶回补、推荐批次标识冲突和异常引用参与评分问题，并刷新真实索引复验。
+8. 将已选中的底部「论文」导航键作为当前频道刷新入口；从其他一级页面切回论文页时只导航，不额外刷新。
 
 ## 当前进度
 
@@ -75,9 +76,10 @@
 - 已完成：14 天 HF Daily 326 条、Semantic Scholar 500 请求/498 有效返回、GitHub 50 条真实增强均保留原始快照、source observation 和 provenance。
 - 已完成：真实库健康、详情、最新、主题、会议、关注、推荐、已读排除、年龄桶和批次隔离验证；服务端 23 项测试通过。
 - 已完成：修复年龄桶跨桶回补、不同请求复用 `batch_id`、非 arXiv 来源覆盖规范字段和异常 OpenAlex 引用进入 quality pool 的问题；真实索引复验 0 违规。
-- 已完成：Dart 格式、`flutter analyze`、428 项 Flutter 测试和服务端 23 项测试通过；会议/刷新修复后的 profile/release 产物需在最终收尾重新构建。
+- 已完成：Dart 格式、`flutter analyze`、429 项 Flutter 测试和服务端 23 项测试通过；会议/刷新修复后的 profile/release 产物需在最终收尾重新构建。
 - 已完成：根据编排者验收反馈开放 19 个真实会议频道；推荐刷新优先排除当前频道缓冲区，再补历史已读 ID，旧列表不会因刷新消失。
-- 正在进行：等待编排者在已重启的 Windows development App 中复验会议频道和推荐净增量。
+- 已完成：已处于论文一级页面时重复点击底部「论文」导航键会强制刷新当前频道；从其他一级页面返回论文页时只导航、不额外刷新。
+- 正在进行：等待编排者在 Windows development App 中一并复验会议频道、推荐净增量和论文导航刷新。
 - 下一步：人工复验通过后更新 Phase 2/2.5 状态，进入 `/test`、`/review` 和合并收尾。
 - 阻塞项：无；人工 App 验收尚待执行。
 
@@ -126,6 +128,8 @@
 | discovery source 数据校正 | 通过；675,168 篇保持不变，发现来源仅 arXiv 674,969 / HF 326；GitHub 50、Semantic Scholar 498、OpenAlex 2,895 等观测完整保留 | 2026-08-12 |
 | 推荐净增量控制器测试 | 通过；初始 10 篇，刷新请求排除旧 10 篇，返回新 20 篇后列表恰好 30 篇，旧 10 篇顺序保留 | 2026-08-12 |
 | 反馈修复后的完整静态门禁 | 通过；服务端 23 项、Dart 格式 20 文件、`flutter analyze` 无问题、Flutter 428 项全部通过 | 2026-08-12 |
+| 论文导航刷新红绿测试 | 修复前重复点击已选中的「论文」导航仍只有初始化 1 次 Feed 请求；修复后产生第 2 次 `forceRefresh=true` 请求，从 ChatPaper 返回论文页不增加请求 | 2026-08-12 |
+| 论文导航刷新完整静态门禁 | 通过；Dart 格式检查 21 个文件、`flutter analyze` 无问题、Flutter 429 项全部通过；标准与需求一致性审查无阻断项 | 2026-08-12 |
 
 ## 审查结论
 
@@ -142,6 +146,7 @@
 | `8df10b4` | 修复（论文推荐）：保证批次与评分结果可回放 | Phase 2 正确性检查点 | 年龄桶回补、批次标识和异常引用评分问题修复；服务端 19 项通过 |
 | `79b642d` | 新增（论文数据）：接入真实外部来源与 Phase 2.5 入口 | Phase 1/2/2.5 真实同步检查点 | HF/Semantic Scholar/GitHub 真实同步、来源快照、索引优化、推荐回归、定时脚本和计划文档完成；Windows App 人工验收待完成 |
 | `b0ba4c0` | 修复（论文频道）：补齐会议入口与推荐净增量 | Phase 2 反馈修复检查点 | development App 开放 19 个会议频道；当前列表优先进入推荐排除集合；10→30 净增量和 discovery source 迁移测试通过 |
+| `1eec33e` | 新增（论文导航）：重复点击论文键刷新频道 | Phase 2 交互补充检查点 | 重复点击已选中的论文导航强制刷新当前频道；从其他一级页面返回只导航；Dart 格式、静态分析、429 项 Flutter 测试和只读审查通过 |
 
 ## 交付准备（合并前收集）
 
@@ -153,8 +158,8 @@
 
 - 领域与业务逻辑：推荐引擎按有界候选、年龄桶、High Impact/Trending 池和 seed 生成批次；客户端刷新前插新论文并按 `paper_id` 去重，推荐请求携带有界已读集合。
 - 数据与基础设施：新增可恢复的 JSONL 批量导入器、租约/断点/拒绝记录、外部 ID 索引、会议/OpenAlex 增强、集合式索引和物化推荐池。
-- 界面与交互：无计划内视觉改动；development App 首次远程成功替换内置 seed，后续刷新合并新 batch。
-- 测试与工具：新增导入恢复、并发租约、字段映射、只增强已有论文、有界候选及客户端刷新/已读过滤测试；服务端、Flutter、格式、分析和双目标 development 构建门禁均通过。
+- 界面与交互：无视觉改动；development App 首次远程成功替换内置 seed，后续刷新合并新 batch；已选中的底部论文导航键同时作为当前频道刷新入口。
+- 测试与工具：新增导入恢复、并发租约、字段映射、只增强已有论文、有界候选、客户端刷新/已读过滤及论文导航刷新测试；服务端、Flutter、格式、分析和双目标 development 构建门禁均通过。
 - 文档：Phase 1/2 状态与 Phase 2.5 进度。
 
 ### 兼容性与迁移

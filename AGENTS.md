@@ -224,6 +224,7 @@ flutter build windows --release --dart-define=SPARK_ENV=development
 
 - 不启动 Android 模拟器。
 - 构建一律发布版（2026-08-11 编排者指示）：debug 构建的 JIT/断言开销会造成性能假象（如键盘动画卡顿），不得用于验收或交付。Android release 受签名门控：无 `android/key.properties` 时 Gradle 拒绝 release 构建，签名配置前 APK 构建改用 `--profile` 代替（AOT 编译，性能等同发布版，debug 签名可直接安装），台账必须注明产物类型为 profile。
+- 每次 Android 构建命令结束后（无论成功或失败），必须在仓库根目录执行 `.\android\gradlew.bat --stop`，再用 `.\android\gradlew.bat --status` 确认没有运行中的 Gradle Daemon；不得把构建产生的 OpenJDK/Gradle 后台进程留到收尾之后。
 - `/finish` 合入 `main` 后必须在同一次收尾流程中完成 development APK 和 Windows EXE 两个目标的发布版构建，并在 `status.md` 记录产物路径、大小和 SHA-256；任一构建失败不得完成归档或清理。
 - 开发验收（用户要求检验时）：执行 `flutter pub get` + `flutter run -d windows` 启动 Windows 桌面应用，等待用户操作检验；不自行替代为 APK、模拟器或其他平台。运行前先与用户确认。
 - UI 修改使用 Widget 测试、静态检查和构建验证；不使用浏览器自动化验证 Flutter 应用。

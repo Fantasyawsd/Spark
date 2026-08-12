@@ -8,7 +8,7 @@
 - Worktree：`C:\Users\Fantasy\Desktop\Spark-worktrees\feature--arxiv-dataset-import`
 - 基线提交：`c01a6d252135cdfe82261a9c60be9fb0a137a62a`
 - 负责人：Fantasy（编排者）
-- 状态：开发中
+- 状态：验收中
 - 最近更新：2026-08-12
 
 ## 目标
@@ -79,15 +79,15 @@
 - 已完成：14 天 HF Daily 326 条、Semantic Scholar 500 请求/498 有效返回、GitHub 50 条真实增强均保留原始快照、source observation 和 provenance。
 - 已完成：真实库健康、详情、最新、主题、会议、关注、推荐、已读排除、年龄桶和批次隔离验证。
 - 已完成：修复年龄桶跨桶回补、不同请求复用 `batch_id`、非 arXiv 来源覆盖规范字段和异常 OpenAlex 引用进入 quality pool 的问题；真实索引复验 0 违规。
-- 已完成：Dart 格式、`flutter analyze` 和 429 项 Flutter 测试通过；本轮 OAI 增量、迁移打包及失败语义纳入服务端 48 项全量测试。会议/刷新修复后的 profile/release 产物需在最终收尾重新构建。
+- 已完成：本轮 `/test` 自动化验收通过；服务端 48 项、Dart 格式 21 个文件、`flutter analyze` 和 Flutter 429 项测试均通过，Python/PowerShell/diff 静态检查通过。目标构建按规范留到 `/finish` 合入 `main` 后执行。
 - 已完成：根据编排者验收反馈开放 19 个真实会议频道；推荐刷新优先排除当前频道缓冲区，再补历史已读 ID，旧列表不会因刷新消失。
 - 已完成：已处于论文一级页面时重复点击底部「论文」导航键会强制刷新当前频道；从其他一级页面返回论文页时只导航、不额外刷新。
 - 已完成：编排者在重新启动的 Windows development App 中人工确认论文导航刷新通过。
 - 已完成：arXiv OAI 日增量已接入官方端点；独立完成水位、窗口级 checkpoint、分页 token、3 秒限流、逐页快照、坏记录整页重试、token 失效后窗口重放、持久删除和完整窗口单次索引刷新均已实现。
 - 已完成：真实同步 `2026-07-31` 至 `2026-08-12` 共 18 页；AI 准入 8,864 条、非 AI 排除 13,516 条、0 unmatched、0 rejected、0 failed page，论文总数从 675,168 增至 680,199。
 - 已完成：SQLite OAI 状态已通过不可变迁移升级到数据库版本 1，真实库完成水位为 `2026-08-12T00:00:00+00:00`，迁移前后论文数量不变，Paper API 健康检查仍返回 680,199。
-- 下一步：会议频道与推荐净增量仍待编排者在 Windows development App 中分别人工复验；之后进入 `/test`、`/review` 与 `/finish` 收尾。
-- 阻塞项：无；会议频道和推荐净增量的 Windows App 人工确认尚待执行。
+- 下一步：启动 Windows development App，由编排者人工复验会议频道和推荐刷新 `10 → 30` 净增量；通过后再由编排者决定是否进入 `/finish` 合并收尾。
+- 阻塞项：无代码阻塞；等待编排者确认启动 Windows App。
 
 ## 决策记录
 
@@ -145,13 +145,18 @@
 | `python -m unittest discover -s server/tests -v` | 通过；48 项全部通过，覆盖窗口/checkpoint、分页恢复、坏页重试、持久删除、失败非零退出、旧库迁移、未来版本拒绝及 wheel 安装迁移 | 2026-08-12 |
 | Python / PowerShell / diff 静态检查 | 通过；全部服务端与测试 Python 文件可编译，`tool/sync_paper_sources.ps1` 语法解析成功，迁移目录仅含 `001_oai_sync_windows.sql`，`git diff --check` 通过 | 2026-08-12 |
 | wheel 构建与隔离安装 smoke | 通过；迁移 SQL 进入 `spark_papers/database/migrations/` package data，安装后的 `PaperStore` 可将旧库升级到版本 1 | 2026-08-12 |
+| `/test` 服务端门禁 | 通过；48 项服务端测试全部通过，Python 编译、PowerShell 语法和 `git diff --check` 均通过 | 2026-08-12 |
+| `/test` `./tool/verify_changed_dart_format.ps1` | 通过；21 个 Dart 文件，0 个需格式化 | 2026-08-12 |
+| `/test` `flutter analyze` | 通过；No issues found | 2026-08-12 |
+| `/test` `flutter test` | 通过；429 项全部通过 | 2026-08-12 |
+| `/test` 目标构建 | 本阶段按规范不重复执行；development APK 与 Windows release 构建留到 `/finish` 合入 `main` 后统一执行 | 2026-08-12 |
 
 ## 审查结论
 
 - 审查日期：2026-08-12
 - 阻断项：最终双轴复审无阻断项；早期发现的集合水位污染、旧数量、缺阅读链接、未来窗口、坏页推进水位、内联迁移、迁移未打包、外部失败被吞和 checkpoint 污染成功时间均已修复。
 - 缺陷：无未关闭缺陷。
-- 结论：arXiv OAI 日增量、版本化迁移和统一定时入口的 Spec / Standards 复审通过，可进入后续 `/test`、`/review`；Phase 2/2.5 仍保留会议频道与推荐净增量人工验收。
+- 结论：arXiv OAI 日增量、版本化迁移和统一定时入口的 Spec / Standards 复审无阻断项，本轮 `/test` 自动化门禁已通过；Phase 2/2.5 仍保留会议频道与推荐净增量的 Windows App 人工验收。
 
 ## 检查点与提交
 

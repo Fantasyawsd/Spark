@@ -542,17 +542,25 @@ class PaperFeedController extends ChangeNotifier {
   }
 
   List<String> _readPaperIdsForRequest() {
-    final provider = _readPaperIdsProvider;
-    if (provider == null || _channelMode != PaperFeedMode.recommended) {
-      return const [];
+    if (_channelMode != PaperFeedMode.recommended) return const [];
+    final seen = <String>{};
+    final excluded = <String>[];
+    void add(String value) {
+      final paperId = value.trim();
+      if (paperId.isNotEmpty && seen.add(paperId)) excluded.add(paperId);
     }
-    final ids = provider()
+
+    for (final paper in _channelPapers[currentChannelKey] ?? const <Paper>[]) {
+      add(paper.id);
+    }
+    final readIds = (_readPaperIdsProvider?.call() ?? const <String>[])
         .map((paperId) => paperId.trim())
         .where((paperId) => paperId.isNotEmpty)
         .toSet()
         .toList(growable: false)
       ..sort();
-    return ids.take(_maxReadPaperIdsPerRequest).toList(growable: false);
+    readIds.forEach(add);
+    return excluded.take(_maxReadPaperIdsPerRequest).toList(growable: false);
   }
 
   bool get _canLoadCurrentChannel =>

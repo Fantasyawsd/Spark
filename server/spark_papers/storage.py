@@ -285,6 +285,29 @@ class PaperStore:
             "INSERT OR IGNORE INTO schema_meta(key, value, updated_at) VALUES ('paper_schema', ?, ?)",
             (PAPER_SCHEMA_VERSION, utc_now().isoformat()),
         )
+        discovery_marker = self._connection.execute(
+            "SELECT 1 FROM schema_meta WHERE key = 'discovery_sources_v2'"
+        ).fetchone()
+        if discovery_marker is None:
+            self._connection.execute(
+                """UPDATE papers
+                   SET discovery_sources_json = COALESCE(
+                       (
+                           SELECT json_group_array(value)
+                           FROM json_each(papers.discovery_sources_json)
+                           WHERE value IN ('arxiv', 'huggingface')
+                       ),
+                       '[]'
+                   )
+                   WHERE EXISTS (
+                       SELECT 1 FROM json_each(papers.discovery_sources_json)
+                       WHERE value NOT IN ('arxiv', 'huggingface')
+                   )"""
+            )
+            self._connection.execute(
+                "INSERT INTO schema_meta(key, value, updated_at) VALUES ('discovery_sources_v2', 'complete', ?)",
+                (utc_now().isoformat(),),
+            )
         self._connection.commit()
 
     def _row_to_paper(self, row: sqlite3.Row) -> PaperRecord:
@@ -402,6 +425,7 @@ class PaperStore:
                 paper,
                 target_id,
                 preserve_canonical=source != "arxiv",
+                add_discovery_source=source in {"arxiv", "huggingface"},
             )
             created_at = parse_datetime(self._connection.execute(
                 "SELECT created_at FROM papers WHERE paper_id = ?", (target_id,)
@@ -491,6 +515,7 @@ class PaperStore:
         target_id: str,
         *,
         preserve_canonical: bool,
+        add_discovery_source: bool,
     ) -> PaperRecord:
         external_ids = dict(current.external_ids)
         external_ids.update({key: value for key, value in incoming.external_ids.items() if value})
@@ -513,7 +538,11 @@ class PaperStore:
             if preserve_canonical
             else tuple(dict.fromkeys((*current.subjects, *incoming.subjects)))
         )
-        sources = tuple(dict.fromkeys((*current.discovery_sources, *incoming.discovery_sources)))
+        sources = (
+            tuple(dict.fromkeys((*current.discovery_sources, *incoming.discovery_sources)))
+            if add_discovery_source
+            else current.discovery_sources
+        )
         return PaperRecord(
             paper_id=target_id,
             title=title,

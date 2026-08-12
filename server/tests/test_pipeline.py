@@ -80,7 +80,7 @@ class PipelineTest(unittest.TestCase):
             self.assertEqual(store.count(), 1)
             paper = store.all_candidates()[0]
             self.assertEqual(paper.external_ids["arxiv_id"], "2401.00001")
-            self.assertEqual(set(paper.discovery_sources), {"arxiv", "huggingface", "github"})
+            self.assertEqual(set(paper.discovery_sources), {"arxiv", "huggingface"})
             self.assertEqual(paper.title, "A Stable Paper")
             self.assertEqual(paper.published_at, datetime(2024, 1, 2, tzinfo=UTC))
             self.assertEqual(paper.subjects, ("cs.AI",))
@@ -91,6 +91,36 @@ class PipelineTest(unittest.TestCase):
                 "https://github.com/example/research",
             )
             store.close()
+
+    def test_existing_database_migrates_enrichment_out_of_discovery_sources(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "papers.sqlite3"
+            store = PaperStore(path)
+            runner = SyncRunner(store, SnapshotStore(Path(directory) / "snapshots"))
+            runner.sync(
+                StaticSource(
+                    "arxiv",
+                    (_paper("2401.00010", "Discovery Source", "2024-01-02T00:00:00Z"),),
+                )
+            )
+            store._connection.execute(
+                "UPDATE papers SET discovery_sources_json = ?",
+                ('["arxiv","semantic_scholar","github"]',),
+            )
+            store._connection.execute(
+                "DELETE FROM schema_meta WHERE key = 'discovery_sources_v2'"
+            )
+            store._connection.commit()
+            store.close()
+
+            migrated = PaperStore(path)
+            paper = migrated.all_candidates()[0]
+            self.assertEqual(paper.discovery_sources, ("arxiv",))
+            marker = migrated._connection.execute(
+                "SELECT value FROM schema_meta WHERE key = 'discovery_sources_v2'"
+            ).fetchone()
+            self.assertEqual(marker["value"], "complete")
+            migrated.close()
 
     def test_failure_keeps_last_successful_snapshot(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

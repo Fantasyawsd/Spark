@@ -53,9 +53,17 @@ final class AppConfig {
     final paperApiBaseUrl = environment == AppEnvironment.development
         ? _resolvePaperApiBaseUrl(requestedPaperApiBaseUrl)
         : null;
+    final requestedFeatures = FeatureFlags.fromEnvironment(environment);
+    final features = environment == AppEnvironment.development
+        ? FeatureFlags(
+            experimentalCommunity: requestedFeatures.experimentalCommunity,
+            experimentalConferenceChannels: true,
+            experimentalPdfAi: requestedFeatures.experimentalPdfAi,
+          )
+        : requestedFeatures;
     return AppConfig(
       environment: environment,
-      features: FeatureFlags.fromEnvironment(environment),
+      features: features,
       paperApiBaseUrl: paperApiBaseUrl,
     );
   }

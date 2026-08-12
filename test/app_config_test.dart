@@ -62,6 +62,7 @@ void main() {
 
     expect(development.environment, AppEnvironment.development);
     expect(development.paperApiBaseUrl, 'http://127.0.0.1:8000/api/v1');
+    expect(development.features.experimentalConferenceChannels, isTrue);
     expect(
       () => AppConfig.resolve(
         platformFlavor: 'production',

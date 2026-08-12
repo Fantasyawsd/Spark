@@ -670,6 +670,64 @@ void main() {
       );
     });
 
+    test('recommended refresh keeps ten papers and prepends twenty new ones',
+        () async {
+      final catalog = _IncrementalRecommendationCatalogRepository();
+      final feed = PaperFeedController.fromPapers(
+        const [],
+        catalogRepository: catalog,
+        readPaperIdsProvider: () => const <String>{},
+      );
+      addTearDown(feed.dispose);
+
+      await feed.initializeCatalog();
+      expect(feed.papers, hasLength(10));
+
+      await feed.refreshCatalog();
+
+      expect(feed.papers, hasLength(30));
+      expect(
+        feed.papers.take(20).map((paper) => paper.id),
+        orderedEquals(<String>[
+          for (var index = 0; index < 20; index++) 'new-$index',
+        ]),
+      );
+      expect(
+        feed.papers.skip(20).map((paper) => paper.id),
+        orderedEquals(<String>[
+          for (var index = 0; index < 10; index++) 'old-$index',
+        ]),
+      );
+      expect(
+        catalog.queries.last.readPaperIds,
+        orderedEquals(<String>[
+          for (var index = 0; index < 10; index++) 'old-$index',
+        ]),
+      );
+    });
+
+    test('recommended refresh excludes the current channel buffer', () async {
+      final catalog = _PagedPaperCatalogRepository(
+        firstPage: List.generate(10, (index) => _catalogPaper('p$index')),
+      );
+      final feed = PaperFeedController.fromPapers(
+        const [],
+        catalogRepository: catalog,
+        readPaperIdsProvider: () => const {'p0', 'p1'},
+      );
+      addTearDown(feed.dispose);
+
+      await feed.initializeCatalog();
+      await feed.refreshCatalog();
+
+      expect(
+        catalog.queries.last.readPaperIds,
+        containsAll(<String>[
+          for (var index = 0; index < 10; index++) 'p$index',
+        ]),
+      );
+    });
+
     test('recommended requests include a bounded live read-id set', () async {
       final readIds = <String>{
         for (var index = 0; index < 205; index++) 'read-$index',
@@ -919,6 +977,32 @@ class _FlakyPaperPreferenceRepository implements PaperPreferenceRepository {
     saveCalls++;
     if (saveCalls == 1) throw StateError('disk unavailable');
   }
+}
+
+class _IncrementalRecommendationCatalogRepository
+    implements PaperCatalogRepository {
+  final List<PaperFeedQuery> queries = [];
+
+  @override
+  Future<Paper?> findById(String paperId) async => null;
+
+  @override
+  Future<PaperPage> loadFeed(PaperFeedQuery query) async {
+    queries.add(query);
+    final prefix = queries.length == 1 ? 'old' : 'new';
+    final count = queries.length == 1 ? 10 : 20;
+    return PaperPage(
+      papers: [
+        for (var index = 0; index < count; index++)
+          _catalogPaper('$prefix-$index')
+      ],
+      source: PaperPageSource.remote,
+    );
+  }
+
+  @override
+  Future<PaperPage> search(PaperSearchQuery query) async =>
+      PaperPage(papers: const [], source: PaperPageSource.remote);
 }
 
 class _PagedPaperCatalogRepository implements PaperCatalogRepository {

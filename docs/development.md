@@ -1,7 +1,7 @@
 # Spark 开发路线图
 
 > 状态：持续维护
-> 最近更新：2026-08-11
+> 最近更新：2026-08-12
 
 本文是开发计划的唯一文件，记录产品边界、当前能力、开发任务与后续方向。
 发布范围和证据归入 `releases/<version>/`；架构、Git 与发布规则分别见
@@ -101,8 +101,8 @@ OpenAlex / Semantic Scholar / GitHub 增强 ─┘                              
 | 阶段 | 状态 | 主要交付 |
 | --- | --- | --- |
 | Phase 1：论文数据底座 | 已完成 | 674,969 篇 arXiv 主库、326 条 HF Daily、498 条 Semantic Scholar、50 条 GitHub 真实同步记录，以及 2,895 个唯一 OpenAlex 增强 ID 已落库；来源快照、精确身份、异常引用隔离和可重复 `sync-external` 入口已验证 |
-| Phase 2：基础 Feed API | 开发中 | 详情、最新、主题、会议、关注和推荐 API 已在真实库验证；已读过滤、刷新批次、年龄桶和客户端增量合并已有自动化覆盖，仍待 Windows development App 最终人工验收 |
-| Phase 2.5：真实数据落库与端到端验收 | 开发中 | 真实数据库、外部来源、索引、API 和自动化验证已完成；当前只剩 Windows development App 人工验收、发布版门禁和任务收尾 |
+| Phase 2：基础 Feed API | 开发中 | 详情、最新、主题、会议、关注和推荐 API 已在真实库验证；development App 已开放 19 个真实会议频道，推荐刷新排除当前列表与已读论文并增量合并；仍待 Windows App 最终人工确认 |
+| Phase 2.5：真实数据落库与端到端验收 | 开发中 | 真实数据库、外部来源、索引、API、会议入口、推荐刷新语义和自动化验证已完成；当前只剩 Windows development App 人工确认与任务收尾 |
 | Phase 3：热点能力增强 | 后续阶段 | GitHub star velocity、citation velocity、Web Heat、LLM Trend Scout、24–72 小时 Trend Boost 与热点原因 |
 | Phase 4：个性化推荐 | 后续阶段 | 行为日志、用户画像与论文向量、Personalized Pool、个性化排序、Diversity 与 Exploration |
 | Phase 5：高级推荐系统 | 后续阶段 | 多路召回、Two-Tower、Learning to Rank、Reranker、序列推荐、实时兴趣更新与 A/B Test |
@@ -126,7 +126,7 @@ Phase 2.5 是 Phase 1/2 的收口检查点，不是新的推荐能力阶段。�
 - 真实底库：675,168 篇论文、675,168 个唯一 arXiv ID、0 个重复 arXiv ID；HF、Semantic Scholar、GitHub、OpenAlex 和会议来源均保留独立观测与 provenance。
 - 推荐正确性：High Impact 排除 OpenAlex 异常引用，Trending 使用 HF heat；年龄桶标签与发布时间一致；同 seed 不同 `limit`/`read_ids` 生成不同 `batch_id`；已读 ID 不会再次抽中。
 - API 正确性：真实库健康、最新、主题、会议、关注和推荐接口均返回真实论文；Paper API 不在请求期间扇出第三方服务。
-- 人工收口：Windows development App 仍需由编排者确认真实论文、推荐刷新增量合并、已读过滤和频道内容；确认前不把 Phase 2/2.5 标记为最终完成。
+- 人工收口：Windows development App 仍需由编排者确认真实论文、推荐刷新后旧列表保留且新 batch 净新增、已读过滤，以及会议频道可添加并返回内容；确认前不把 Phase 2/2.5 标记为最终完成。
 
 服务端逐步拆分为 `Data Pipeline`、`Paper Database`、`Recommendation Service`、`Paper API` 和 `Model Service`。抓取、清洗、跨源匹配、候选池生成和在线元数据查询主要使用 CPU；A100 为服务端 PDF/OCR、Embedding、主题分类、相似论文、reranker、摘要/翻译、Paper QA、用户兴趣向量和 LLM 热点分析等模型任务预留。数据、日志、索引和模型产物只落在 `/data2/fanjiahao/...`；每次安装依赖或下载数据前按服务器规范探测网络，禁止向 `/`、`/home`、`/data1` 或 `/data3` 落大数据。
 

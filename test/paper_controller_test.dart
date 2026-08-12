@@ -549,8 +549,7 @@ void main() {
       expect(catalog.queries.last.offset, 20);
     });
 
-    test('a pending pagination page cannot repopulate a refreshed empty feed',
-        () async {
+    test('a pending pagination page cannot pollute a refreshed feed', () async {
       final catalog = _ConcurrentRefreshCatalogRepository();
       final feed = PaperFeedController.fromPapers(
         const [],
@@ -568,7 +567,7 @@ void main() {
       catalog.completePagination();
       await pagination;
 
-      expect(feed.papers, isEmpty);
+      expect(feed.papers.map((paper) => paper.id), ['initial-page']);
       expect(feed.catalogHasMore, isFalse);
     });
 
@@ -642,7 +641,7 @@ void main() {
       expect(feed.papers.map((paper) => paper.id).toSet(), hasLength(35));
     });
 
-    test('refresh prepends unseen papers without discarding the buffer',
+    test('refresh appends unseen papers without discarding the buffer',
         () async {
       final catalog = _PagedPaperCatalogRepository(
         firstPage: List.generate(20, (index) => _catalogPaper('p$index')),
@@ -661,8 +660,14 @@ void main() {
 
       await feed.refreshCatalog();
 
-      expect(feed.papers.first.id, 'new-paper');
-      expect(feed.papers[1].title, 'Updated paper');
+      expect(
+        feed.papers.map((paper) => paper.id),
+        orderedEquals(<String>[
+          for (var index = 0; index < 20; index++) 'p$index',
+          'new-paper',
+        ]),
+      );
+      expect(feed.papers.first.title, 'Updated paper');
       expect(feed.papers, hasLength(21));
       expect(
         feed.papers.where((paper) => paper.id == 'p0'),
@@ -670,7 +675,7 @@ void main() {
       );
     });
 
-    test('recommended refresh keeps ten papers and prepends twenty new ones',
+    test('recommended refresh keeps ten papers and appends twenty new ones',
         () async {
       final catalog = _IncrementalRecommendationCatalogRepository();
       final feed = PaperFeedController.fromPapers(
@@ -687,15 +692,15 @@ void main() {
 
       expect(feed.papers, hasLength(30));
       expect(
-        feed.papers.take(20).map((paper) => paper.id),
+        feed.papers.take(10).map((paper) => paper.id),
         orderedEquals(<String>[
-          for (var index = 0; index < 20; index++) 'new-$index',
+          for (var index = 0; index < 10; index++) 'old-$index',
         ]),
       );
       expect(
-        feed.papers.skip(20).map((paper) => paper.id),
+        feed.papers.skip(10).map((paper) => paper.id),
         orderedEquals(<String>[
-          for (var index = 0; index < 10; index++) 'old-$index',
+          for (var index = 0; index < 20; index++) 'new-$index',
         ]),
       );
       expect(
@@ -776,8 +781,7 @@ void main() {
       expect(feed.papers.map((paper) => paper.id), ['remote-paper']);
     });
 
-    test('an empty first page clears papers from the previous refresh',
-        () async {
+    test('an empty refresh keeps papers from the previous batch', () async {
       final catalog = _PagedPaperCatalogRepository(
         firstPage: [_catalogPaper('old-paper')],
       );
@@ -793,7 +797,7 @@ void main() {
       catalog.firstPage = const [];
       await feed.refreshCatalog();
 
-      expect(feed.papers, isEmpty);
+      expect(feed.papers.map((paper) => paper.id), ['old-paper']);
       expect(feed.catalogHasMore, isFalse);
     });
   });

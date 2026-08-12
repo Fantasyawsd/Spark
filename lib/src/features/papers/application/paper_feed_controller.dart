@@ -162,7 +162,11 @@ class PaperFeedController extends ChangeNotifier {
     try {
       final page = await repository.loadFeed(query);
       if (!_disposed && queryRevision == _catalogQueryRevision) {
-        _applyCatalogPage(page, channelKey: channelKey, append: false);
+        _applyCatalogPage(
+          page,
+          channelKey: channelKey,
+          append: _loadedChannelKeys.contains(channelKey),
+        );
       }
     } on Object catch (_) {
       if (!_disposed && queryRevision == _catalogQueryRevision) {

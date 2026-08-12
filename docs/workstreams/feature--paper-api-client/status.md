@@ -8,8 +8,8 @@
 - Worktree：`C:\Users\Fantasy\Desktop\Spark-worktrees\feature--paper-api-client`
 - 基线提交：`f33c2ccd274f4f269a412244c7e2cc08b1cd0e4f`
 - 负责人：Fantasy（编排者）
-- 状态：已验收，待合入
-- 最近更新：2026-08-11 22:42
+- 状态：已合并
+- 最近更新：2026-08-13
 
 ## 目标
 
@@ -66,7 +66,7 @@
 - 已完成：补齐频道查询契约、opaque cursor、Paper API DTO/mapper/client、API 优先仓储、development-only 组合根和备用目录回退。
 - 已完成：新增 API、仓储、控制器和配置测试；全量 Flutter 测试与 development Windows 构建通过。
 - 已完成：编排者在 Windows App 内确认论文页和“最新”频道显示 `Fixture AI Paper`，并确认“我的”页数据源为 `Spark Paper API`。
-- 下一步：将已验收提交合入 `main`，再完成合并后台账和开发计划归档。
+- 下一步：随已完成的 Phase 2/2.5 保持 development Paper API 回归；Android、staging 与 production 服务地址另行排期。
 - 阻塞项：无。
 
 ## 决策记录
@@ -90,15 +90,17 @@
 
 ## 审查结论
 
-- 审查日期：
-- 阻断项：
-- 缺陷：
-- 结论：待审查
+- 审查日期：2026-08-13（归档核对）
+- 阻断项：无。
+- 缺陷：无未关闭缺陷。
+- 结论：原功能提交 `2c7aeed` 与主线提交为 patch-equivalent；功能由 `46f6d32` 及后续 Phase 2/2.5 提交完整覆盖，并已通过真实库端到端验收。
 
 ## 检查点与提交
 
 | SHA | 提交信息 | 对应阶段 | 验证摘要 |
 | --- | --- | --- | --- |
+| `2c7aeed` | 新增（论文客户端）：development 接入本地 Paper API | 客户端实现检查点 | 与主线 `46f6d32` patch-equivalent；接口、回退、分页和 Windows fixture 验收通过 |
+| `8a999ce` | 文档（任务台账）：记录论文客户端检查点 | 任务分支记录 | 分支台账检查点；最终状态由本次 main 归档更新覆盖 |
 
 ## 交付准备（合并前收集）
 
@@ -127,7 +129,7 @@ development 环境的 Flutter App 已接入本地 Paper API，保留原有离线
 
 ### 文档更新建议
 
-- 合入后更新 `docs/development.md` 的 Flutter Client 数据源边界。
+- 已完成：`docs/development.md` 已记录 development Paper API 与 production arXiv Atom 的真实边界，并将 Phase 2/2.5 标记为已完成。
 
 ### 未完成与后续工作
 
@@ -135,11 +137,11 @@ development 环境的 Flutter App 已接入本地 Paper API，保留原有离线
 
 ## 合并归档（合并后在 main 补齐）
 
-- 最终状态：待合并
+- 最终状态：已合并
 - 合入分支：`main`
-- 最终集成提交：待填写
+- 最终集成提交：`31f5555100bdd30794885769a9542aed7894c1a1`（客户端等价实现提交 `46f6d32`）
 - Pull Request：无
-- 合并时间：待填写
-- main 集成验证：待填写
-- 开发计划更新：待填写
-- 最终后续项：待填写
+- 合并时间：`2026-08-13T00:25:44+08:00`
+- main 集成验证：随 Phase 2/2.5 完成服务端 48 项、Flutter 440 项、`flutter analyze`、development profile APK 与 Windows release EXE 构建；真实库 Windows App 人工验收通过。
+- 开发计划更新：已完成；development 使用 Paper API，production 继续使用 arXiv Atom。
+- 最终后续项：Android 真机地址、staging/production 服务地址随部署任务另行排期。

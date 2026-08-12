@@ -60,6 +60,31 @@ wraps this command for Windows Task Scheduler. Tokens are optional environment
 variables (`SEMANTIC_SCHOLAR_API_KEY` and `GITHUB_TOKEN`) and are never written
 to snapshots or logs.
 
+To backfill or run the arXiv OAI daily increment, use the resumable command.
+The first run derives its start date from the latest stored arXiv update; pass
+explicit dates for a reproducible bounded window. The current OAI endpoint is
+`https://oaipmh.arxiv.org/oai`, pages are checkpointed under the separate
+`arxiv_oai` sync state, and indexes refresh once only after the final page.
+The completion watermark is stored separately from the active window and page
+token. A rejected record keeps the current page checkpoint for idempotent replay,
+and the command refuses windows ending after the current UTC date. Requests use
+the arXiv-required three-second minimum interval.
+
+```powershell
+python -m spark_papers.cli `
+  --db $db `
+  --snapshots $snapshots `
+  sync-arxiv-oai `
+  --from-date 2026-07-31 `
+  --until-date 2026-08-12 `
+  --max-pages 100
+```
+
+SQLite schema changes are applied in order from immutable package files under
+`spark_papers/database/migrations/` (stored under `server/spark_papers/` in the
+source tree). The store rejects databases whose migration version is newer than
+this code supports.
+
 The service exposes:
 
 - `GET /api/v1/health`

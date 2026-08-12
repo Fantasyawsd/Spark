@@ -11,3 +11,6 @@ dependencies = []
 
 [tool.setuptools.packages.find]
 where = ["."]
+
+[tool.setuptools.package-data]
+spark_papers = ["database/migrations/*.sql"]

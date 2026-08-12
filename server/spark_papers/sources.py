@@ -437,19 +437,80 @@ class ArxivOaiSource:
 
     name = "arxiv"
 
-    def __init__(self, endpoint: str = "https://export.arxiv.org/oai2", *, set_name: str = "", timeout: float = 30.0) -> None:
+    def __init__(
+        self,
+        endpoint: str = "https://oaipmh.arxiv.org/oai",
+        *,
+        from_date: str | None = None,
+        until_date: str | None = None,
+        timeout: float = 30.0,
+        min_interval_seconds: float = 3.0,
+    ) -> None:
         self.endpoint = endpoint
-        self.set_name = set_name
+        self.from_date = from_date
+        self.until_date = until_date
         self.timeout = timeout
+        self.min_interval_seconds = max(0.0, min_interval_seconds)
+        self._last_request_at: float | None = None
 
     def fetch(self, *, etag: str | None = None, cursor: str | None = None) -> FetchResult:
+        checkpoint = decode_arxiv_oai_cursor(cursor)
+        token = checkpoint.get("token")
+        from_date = checkpoint.get("from_date") or self.from_date
+        until_date = checkpoint.get("until_date") or self.until_date
         params = {"verb": "ListRecords", "metadataPrefix": "arXiv"}
-        if self.set_name:
-            params["set"] = self.set_name
-        if cursor:
-            params = {"verb": "ListRecords", "resumptionToken": cursor}
-        request = urllib.request.Request(self.endpoint + "?" + urllib.parse.urlencode(params), headers={"Accept": "application/xml"})
+        if from_date:
+            params["from"] = from_date
+        if until_date:
+            params["until"] = until_date
+        if token:
+            params = {"verb": "ListRecords", "resumptionToken": token}
+        body = self._request(params)
         try:
+            root = ET.fromstring(body)
+        except ET.ParseError as error:
+            raise RetryableSourceError(f"arxiv OAI invalid XML: {error}") from error
+        oai_error = root.find(".//{http://www.openarchives.org/OAI/2.0/}error")
+        if oai_error is not None:
+            code = oai_error.attrib.get("code", "unknown")
+            message = (oai_error.text or "").strip()
+            if code == "noRecordsMatch":
+                return FetchResult(self.name, (), body.decode("utf-8"), utc_now(), cursor=None, etag=None)
+            if code == "badResumptionToken" and token and from_date and until_date:
+                body = self._request(
+                    {
+                        "verb": "ListRecords",
+                        "metadataPrefix": "arXiv",
+                        "from": from_date,
+                        "until": until_date,
+                    }
+                )
+                try:
+                    root = ET.fromstring(body)
+                except ET.ParseError as error:
+                    raise RetryableSourceError(f"arxiv OAI invalid XML: {error}") from error
+                oai_error = root.find(".//{http://www.openarchives.org/OAI/2.0/}error")
+                if oai_error is not None:
+                    code = oai_error.attrib.get("code", "unknown")
+                    message = (oai_error.text or "").strip()
+                    if code == "noRecordsMatch":
+                        return FetchResult(self.name, (), body.decode("utf-8"), utc_now(), cursor=None, etag=None)
+                    raise SourceError(f"arxiv OAI error {code}: {message}")
+            else:
+                raise SourceError(f"arxiv OAI error {code}: {message}")
+        records = tuple(_parse_oai_record(record) for record in root.findall(".//{http://www.openarchives.org/OAI/2.0/}record"))
+        next_token = root.findtext(".//{http://www.openarchives.org/OAI/2.0/}resumptionToken") or None
+        next_cursor = encode_arxiv_oai_cursor(from_date, until_date, next_token) if next_token else None
+        return FetchResult(self.name, records, body.decode("utf-8"), utc_now(), cursor=next_cursor, etag=None)
+
+    def _request(self, params: Mapping[str, str]) -> bytes:
+        request = urllib.request.Request(self.endpoint + "?" + urllib.parse.urlencode(params), headers={"Accept": "application/xml"})
+        if self._last_request_at is not None:
+            remaining = self.min_interval_seconds - (time.monotonic() - self._last_request_at)
+            if remaining > 0:
+                time.sleep(remaining)
+        try:
+            self._last_request_at = time.monotonic()
             with urllib.request.urlopen(request, timeout=self.timeout) as response:
                 body = response.read()
         except urllib.error.HTTPError as error:
@@ -458,10 +519,31 @@ class ArxivOaiSource:
             raise SourceError(f"arxiv OAI returned HTTP {error.code}") from error
         except OSError as error:
             raise RetryableSourceError(f"arxiv OAI fetch failed: {error}") from error
-        root = ET.fromstring(body)
-        records = tuple(_parse_oai_record(record) for record in root.findall(".//{http://www.openarchives.org/OAI/2.0/}record"))
-        token = root.findtext(".//{http://www.openarchives.org/OAI/2.0/}resumptionToken") or None
-        return FetchResult(self.name, records, body.decode("utf-8"), utc_now(), cursor=token, etag=None)
+        return body
+
+
+def decode_arxiv_oai_cursor(cursor: str | None) -> dict[str, str | None]:
+    if not cursor:
+        return {"from_date": None, "until_date": None, "token": None}
+    try:
+        value = json.loads(cursor)
+    except (TypeError, ValueError, json.JSONDecodeError):
+        return {"from_date": None, "until_date": None, "token": cursor}
+    if not isinstance(value, Mapping):
+        return {"from_date": None, "until_date": None, "token": cursor}
+    return {
+        "from_date": str(value.get("from")) if value.get("from") else None,
+        "until_date": str(value.get("until")) if value.get("until") else None,
+        "token": str(value.get("token")) if value.get("token") else None,
+    }
+
+
+def encode_arxiv_oai_cursor(from_date: str | None, until_date: str | None, token: str) -> str:
+    return json.dumps(
+        {"from": from_date, "until": until_date, "token": token},
+        separators=(",", ":"),
+        sort_keys=True,
+    )
 
 
 def _normalize_huggingface_record(item: Mapping[str, Any], paper: Mapping[str, Any]) -> dict[str, Any]:
@@ -686,6 +768,17 @@ def _github_repository_name(value: str | None) -> str | None:
 
 
 def _parse_oai_record(record: ET.Element) -> dict[str, Any]:
+    oai = "{http://www.openarchives.org/OAI/2.0/}"
+    header = record.find(oai + "header")
+    if header is not None and header.attrib.get("status") == "deleted":
+        identifier = (header.findtext(oai + "identifier") or "").strip()
+        arxiv_id = identifier.removeprefix("oai:arXiv.org:")
+        return {
+            "external_id": arxiv_id,
+            "arxiv_id": arxiv_id,
+            "withdrawn": True,
+            "deleted_at": (header.findtext(oai + "datestamp") or "").strip() or None,
+        }
     ns = "{http://arxiv.org/OAI/arXiv/}"
     metadata = record.find(".//" + ns + "arXiv")
     if metadata is None:
@@ -708,7 +801,11 @@ def _parse_oai_record(record: ET.Element) -> dict[str, Any]:
         "updated_at": text("updated"),
         "subjects": categories,
         "doi": text("doi") or None,
-        "metadata": {"journal_ref": text("journal-ref") or None},
+        "metadata": {
+            "journal_ref": text("journal-ref") or None,
+            "abs_url": f"https://arxiv.org/abs/{arxiv_id}",
+            "pdf_url": f"https://arxiv.org/pdf/{arxiv_id}",
+        },
     }
 
 

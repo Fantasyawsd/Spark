@@ -9,12 +9,37 @@ param(
     [ValidateRange(1, 5000)]
     [int]$SemanticScholarLimit = 500,
     [ValidateRange(1, 500)]
-    [int]$GithubLimit = 50
+    [int]$GithubLimit = 50,
+    [string]$ArxivFromDate,
+    [string]$ArxivUntilDate,
+    [ValidateRange(1, 10000)]
+    [int]$ArxivMaxPages = 100
 )
 
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $env:PYTHONPATH = Join-Path $repoRoot 'server'
 $python = (Get-Command python -ErrorAction Stop).Source
+
+$arxivArguments = @(
+    '-m', 'spark_papers.cli',
+    '--db', $Database,
+    '--snapshots', $Snapshots,
+    'sync-arxiv-oai',
+    '--max-pages', $ArxivMaxPages,
+    '--skip-index-refresh'
+)
+if ($ArxivFromDate) {
+    $arxivArguments += @('--from-date', $ArxivFromDate)
+}
+if ($ArxivUntilDate) {
+    $arxivArguments += @('--until-date', $ArxivUntilDate)
+}
+
+& $python @arxivArguments
+
+if ($LASTEXITCODE -ne 0) {
+    throw "Spark arXiv OAI sync failed with exit code $LASTEXITCODE"
+}
 
 & $python -m spark_papers.cli `
     --db $Database `
@@ -26,5 +51,5 @@ $python = (Get-Command python -ErrorAction Stop).Source
     --github-limit $GithubLimit
 
 if ($LASTEXITCODE -ne 0) {
-    throw "Spark paper source sync failed with exit code $LASTEXITCODE"
+    throw "Spark external paper source sync failed with exit code $LASTEXITCODE"
 }

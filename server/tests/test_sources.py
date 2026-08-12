@@ -1,22 +1,195 @@
 from __future__ import annotations
 
+import io
 import unittest
+import urllib.parse
 from unittest.mock import patch
 
 from spark_papers.models import FetchResult, utc_now
 from spark_papers.normalization import normalize_record
 from spark_papers.policy import AiAdmissionPolicy
 from spark_papers.sources import (
+    ArxivOaiSource,
+    encode_arxiv_oai_cursor,
     GitHubRepositorySource,
     HttpJsonSource,
     HuggingFaceDailySource,
     OpenAlexSource,
     SemanticScholarBatchSource,
     SemanticScholarSource,
+    RetryableSourceError,
+    SourceError,
 )
 
 
 class SourceMappingTest(unittest.TestCase):
+    def test_arxiv_oai_uses_absolute_window_then_resumption_token(self) -> None:
+        payloads = iter(
+            (
+                b'''<?xml version="1.0" encoding="UTF-8"?>
+                <OAI-PMH xmlns="http://www.openarchives.org/OAI/2.0/">
+                  <ListRecords><resumptionToken>next-page</resumptionToken></ListRecords>
+                </OAI-PMH>''',
+                b'''<?xml version="1.0" encoding="UTF-8"?>
+                <OAI-PMH xmlns="http://www.openarchives.org/OAI/2.0/">
+                  <ListRecords><resumptionToken /></ListRecords>
+                </OAI-PMH>''',
+            )
+        )
+        urls: list[str] = []
+
+        def open_request(request, timeout):
+            urls.append(request.full_url)
+            return io.BytesIO(next(payloads))
+
+        source = ArxivOaiSource(
+            from_date="2026-07-31",
+            until_date="2026-08-12",
+            min_interval_seconds=0,
+        )
+        with patch("spark_papers.sources.urllib.request.urlopen", side_effect=open_request):
+            first = source.fetch()
+            second = source.fetch(cursor=first.cursor)
+
+        first_query = urllib.parse.parse_qs(urllib.parse.urlparse(urls[0]).query)
+        second_query = urllib.parse.parse_qs(urllib.parse.urlparse(urls[1]).query)
+        self.assertEqual(first_query["from"], ["2026-07-31"])
+        self.assertEqual(first_query["until"], ["2026-08-12"])
+        self.assertEqual(first_query["metadataPrefix"], ["arXiv"])
+        self.assertEqual(second_query, {"verb": ["ListRecords"], "resumptionToken": ["next-page"]})
+        self.assertEqual(second.cursor, None)
+
+    def test_arxiv_oai_defaults_to_current_oai_endpoint(self) -> None:
+        self.assertEqual(ArxivOaiSource().endpoint, "https://oaipmh.arxiv.org/oai")
+
+    def test_arxiv_oai_embedded_error_does_not_look_like_completion(self) -> None:
+        payload = b'''<?xml version="1.0" encoding="UTF-8"?>
+        <OAI-PMH xmlns="http://www.openarchives.org/OAI/2.0/">
+          <error code="badResumptionToken">The resumption token is invalid.</error>
+        </OAI-PMH>'''
+        source = ArxivOaiSource(min_interval_seconds=0)
+
+        with patch(
+            "spark_papers.sources.urllib.request.urlopen",
+            return_value=io.BytesIO(payload),
+        ):
+            with self.assertRaisesRegex(SourceError, "badResumptionToken"):
+                source.fetch(cursor="expired-token")
+
+    def test_arxiv_oai_expired_window_token_replays_the_absolute_window(self) -> None:
+        payloads = iter(
+            (
+                b'''<?xml version="1.0" encoding="UTF-8"?>
+                <OAI-PMH xmlns="http://www.openarchives.org/OAI/2.0/">
+                  <error code="badResumptionToken">The resumption token expired.</error>
+                </OAI-PMH>''',
+                b'''<?xml version="1.0" encoding="UTF-8"?>
+                <OAI-PMH xmlns="http://www.openarchives.org/OAI/2.0/">
+                  <ListRecords><resumptionToken /></ListRecords>
+                </OAI-PMH>''',
+            )
+        )
+        urls: list[str] = []
+
+        def open_request(request, timeout):
+            urls.append(request.full_url)
+            return io.BytesIO(next(payloads))
+
+        source = ArxivOaiSource(min_interval_seconds=0)
+        cursor = encode_arxiv_oai_cursor(
+            "2026-07-31",
+            "2026-08-12",
+            "expired-token",
+        )
+        with patch("spark_papers.sources.urllib.request.urlopen", side_effect=open_request):
+            result = source.fetch(cursor=cursor)
+
+        token_query = urllib.parse.parse_qs(urllib.parse.urlparse(urls[0]).query)
+        replay_query = urllib.parse.parse_qs(urllib.parse.urlparse(urls[1]).query)
+        self.assertEqual(
+            token_query,
+            {"verb": ["ListRecords"], "resumptionToken": ["expired-token"]},
+        )
+        self.assertEqual(replay_query["from"], ["2026-07-31"])
+        self.assertEqual(replay_query["until"], ["2026-08-12"])
+        self.assertEqual(replay_query["metadataPrefix"], ["arXiv"])
+        self.assertEqual(result.cursor, None)
+
+    def test_arxiv_oai_malformed_xml_is_retryable(self) -> None:
+        source = ArxivOaiSource(min_interval_seconds=0)
+
+        with patch(
+            "spark_papers.sources.urllib.request.urlopen",
+            return_value=io.BytesIO(b"<not-closed>"),
+        ):
+            with self.assertRaisesRegex(RetryableSourceError, "invalid XML"):
+                source.fetch()
+
+    def test_arxiv_oai_deleted_record_preserves_identifier(self) -> None:
+        payload = b'''<?xml version="1.0" encoding="UTF-8"?>
+        <OAI-PMH xmlns="http://www.openarchives.org/OAI/2.0/">
+          <ListRecords>
+            <record>
+              <header status="deleted">
+                <identifier>oai:arXiv.org:2608.00001</identifier>
+                <datestamp>2026-08-12</datestamp>
+              </header>
+            </record>
+          </ListRecords>
+        </OAI-PMH>'''
+        source = ArxivOaiSource(min_interval_seconds=0)
+
+        with patch(
+            "spark_papers.sources.urllib.request.urlopen",
+            return_value=io.BytesIO(payload),
+        ):
+            record = source.fetch().records[0]
+
+        self.assertEqual(record["arxiv_id"], "2608.00001")
+        self.assertEqual(record["external_id"], "2608.00001")
+        self.assertEqual(record["deleted_at"], "2026-08-12")
+        self.assertTrue(record["withdrawn"])
+
+    def test_arxiv_oai_record_builds_reading_urls_from_the_stable_id(self) -> None:
+        payload = b'''<?xml version="1.0" encoding="UTF-8"?>
+        <OAI-PMH xmlns="http://www.openarchives.org/OAI/2.0/"
+                 xmlns:arXiv="http://arxiv.org/OAI/arXiv/">
+          <ListRecords>
+            <record>
+              <header>
+                <identifier>oai:arXiv.org:2608.00021</identifier>
+                <datestamp>2026-08-12</datestamp>
+              </header>
+              <metadata>
+                <arXiv:arXiv>
+                  <arXiv:id>2608.00021</arXiv:id>
+                  <arXiv:created>2026-08-11</arXiv:created>
+                  <arXiv:updated>2026-08-12</arXiv:updated>
+                  <arXiv:title>Reading Links</arXiv:title>
+                  <arXiv:abstract>Abstract</arXiv:abstract>
+                  <arXiv:authors>
+                    <arXiv:author>
+                      <arXiv:keyname>Lovelace</arXiv:keyname>
+                      <arXiv:forenames>Ada</arXiv:forenames>
+                    </arXiv:author>
+                  </arXiv:authors>
+                  <arXiv:categories>cs.AI</arXiv:categories>
+                </arXiv:arXiv>
+              </metadata>
+            </record>
+          </ListRecords>
+        </OAI-PMH>'''
+        source = ArxivOaiSource(min_interval_seconds=0)
+
+        with patch(
+            "spark_papers.sources.urllib.request.urlopen",
+            return_value=io.BytesIO(payload),
+        ):
+            record = source.fetch().records[0]
+
+        self.assertEqual(record["metadata"]["abs_url"], "https://arxiv.org/abs/2608.00021")
+        self.assertEqual(record["metadata"]["pdf_url"], "https://arxiv.org/pdf/2608.00021")
+
     def test_openalex_inverted_index_and_signals_are_normalized(self) -> None:
         result = FetchResult(
             source="openalex",

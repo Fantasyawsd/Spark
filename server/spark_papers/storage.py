@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 import sqlite3
 from contextlib import contextmanager
 from datetime import datetime, timedelta
@@ -36,6 +37,9 @@ def _merge_nested(current: Mapping[str, Any], incoming: Mapping[str, Any]) -> di
     return merged
 
 
+_MIGRATION_PATTERN = re.compile(r"^(?P<version>\d{3})_[a-z0-9_]+\.sql$")
+
+
 class PaperStore:
     """SQLite persistence for canonical papers and source observations."""
 
@@ -47,7 +51,13 @@ class PaperStore:
         self._connection.row_factory = sqlite3.Row
         self._connection.execute("PRAGMA foreign_keys = ON")
         self._connection.execute("PRAGMA journal_mode = WAL")
-        self._create_schema()
+        try:
+            self._validate_database_version()
+            self._create_schema()
+            self._apply_migrations()
+        except Exception:
+            self._connection.close()
+            raise
 
     def close(self) -> None:
         self._connection.close()
@@ -507,6 +517,51 @@ class PaperStore:
                     ),
                 )
         return merged.paper_id
+
+    def withdraw_by_external_id(
+        self,
+        *,
+        source: str,
+        external_id: str,
+        raw_payload: Mapping[str, Any],
+        fetched_at: datetime,
+        source_updated_at: datetime | None = None,
+    ) -> bool:
+        normalized = normalize_external_ids({"arxiv_id": external_id}).get("arxiv_id")
+        if not normalized:
+            return False
+        row = self._connection.execute(
+            "SELECT paper_id FROM paper_external_ids WHERE id_type = 'arxiv_id' AND id_value = ?",
+            (normalized,),
+        ).fetchone()
+        if row is None:
+            return False
+        paper_id = str(row["paper_id"])
+        with self.transaction() as connection:
+            connection.execute(
+                "UPDATE papers SET withdrawn = 1, last_seen_at = ? WHERE paper_id = ?",
+                (fetched_at.isoformat(), paper_id),
+            )
+            connection.execute(
+                """INSERT INTO source_observations(
+                       source, external_id, paper_id, payload_json,
+                       source_updated_at, fetched_at, etag
+                   ) VALUES (?, ?, ?, ?, ?, ?, NULL)
+                   ON CONFLICT(source, external_id) DO UPDATE SET
+                       paper_id=excluded.paper_id,
+                       payload_json=excluded.payload_json,
+                       source_updated_at=excluded.source_updated_at,
+                       fetched_at=excluded.fetched_at""",
+                (
+                    source,
+                    normalized,
+                    paper_id,
+                    _json(raw_payload),
+                    source_updated_at.isoformat() if source_updated_at else None,
+                    fetched_at.isoformat(),
+                ),
+            )
+        return True
 
     def _merge(
         self,
@@ -1427,21 +1482,112 @@ class PaperStore:
                 (source, snapshot_key, fetched_at.isoformat(), status, etag, cursor, raw_path, record_count, error),
             )
 
-    def set_sync_state(self, source: str, etag: str | None, cursor: str | None, path: str | None, at: datetime) -> None:
+    def set_sync_state(
+        self,
+        source: str,
+        etag: str | None,
+        cursor: str | None,
+        path: str | None,
+        at: datetime,
+        *,
+        completed_through: datetime | None = None,
+        window_from: str | None = None,
+        window_until: str | None = None,
+        mark_success: bool = True,
+    ) -> None:
         self._connection.execute(
-            """INSERT INTO sync_state(source, etag, cursor, last_success_at, last_snapshot_path)
-               VALUES (?, ?, ?, ?, ?)
+            """INSERT INTO sync_state(
+                   source, etag, cursor, last_success_at, last_snapshot_path,
+                   completed_through, window_from, window_until
+               ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                ON CONFLICT(source) DO UPDATE SET etag=excluded.etag, cursor=excluded.cursor,
-               last_success_at=excluded.last_success_at, last_snapshot_path=excluded.last_snapshot_path""",
-            (source, etag, cursor, at.isoformat(), path),
+               last_success_at=COALESCE(excluded.last_success_at, sync_state.last_success_at),
+               last_snapshot_path=excluded.last_snapshot_path,
+               completed_through=CASE
+                   WHEN excluded.completed_through IS NULL THEN sync_state.completed_through
+                   WHEN sync_state.completed_through IS NULL THEN excluded.completed_through
+                   WHEN excluded.completed_through > sync_state.completed_through THEN excluded.completed_through
+                   ELSE sync_state.completed_through
+               END,
+               window_from=COALESCE(excluded.window_from, sync_state.window_from),
+               window_until=COALESCE(excluded.window_until, sync_state.window_until)""",
+            (
+                source,
+                etag,
+                cursor,
+                at.isoformat() if mark_success else None,
+                path,
+                completed_through.isoformat() if completed_through else None,
+                window_from,
+                window_until,
+            ),
         )
         self._connection.commit()
+
+    @staticmethod
+    def _migration_files() -> list[tuple[int, Path]]:
+        root = Path(__file__).parent / "database" / "migrations"
+        migrations: list[tuple[int, Path]] = []
+        for path in sorted(root.glob("*.sql")):
+            match = _MIGRATION_PATTERN.fullmatch(path.name)
+            if match is None:
+                raise RuntimeError(f"invalid database migration filename: {path.name}")
+            migrations.append((int(match.group("version")), path))
+        expected = list(range(1, len(migrations) + 1))
+        actual = [version for version, _ in migrations]
+        if actual != expected:
+            raise RuntimeError(f"database migrations must be consecutive: {actual}")
+        return migrations
+
+    def _validate_database_version(self) -> None:
+        migrations = self._migration_files()
+        latest = migrations[-1][0] if migrations else 0
+        current = int(self._connection.execute("PRAGMA user_version").fetchone()[0])
+        if current > latest:
+            raise RuntimeError(
+                f"database version {current} is newer than supported version {latest}"
+            )
+
+    def _apply_migrations(self) -> None:
+        current = int(self._connection.execute("PRAGMA user_version").fetchone()[0])
+        for version, path in self._migration_files():
+            if version <= current:
+                continue
+            script = path.read_text(encoding="utf-8")
+            try:
+                self._connection.executescript(
+                    "BEGIN IMMEDIATE;\n"
+                    + script
+                    + f"\nPRAGMA user_version = {version};\nCOMMIT;"
+                )
+            except sqlite3.DatabaseError as error:
+                if self._connection.in_transaction:
+                    self._connection.rollback()
+                raise RuntimeError(
+                    f"database migration {path.name} failed: {error}"
+                ) from error
+            current = version
 
     def get_sync_state(self, source: str) -> dict[str, str | None]:
         row = self._connection.execute("SELECT * FROM sync_state WHERE source = ?", (source,)).fetchone()
         if not row:
-            return {"etag": None, "cursor": None, "last_success_at": None, "last_snapshot_path": None}
+            return {
+                "etag": None,
+                "cursor": None,
+                "last_success_at": None,
+                "last_snapshot_path": None,
+                "completed_through": None,
+                "window_from": None,
+                "window_until": None,
+            }
         return dict(row)
+
+    def latest_source_update(self, source: str) -> datetime | None:
+        row = self._connection.execute(
+            "SELECT MAX(source_updated_at) AS latest FROM source_observations WHERE source = ?",
+            (source,),
+        ).fetchone()
+        return parse_datetime(row["latest"]) if row and row["latest"] else None
 
     def record_batch(
         self,

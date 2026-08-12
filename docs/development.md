@@ -57,7 +57,7 @@ Spark 面向个人研究者，核心闭环由三个一级能力组成：
 ### 2.2 当前边界与已知缺口
 
 - 仍无账号、跨设备同步；production Flutter Client 暂不切换服务端数据源，development 环境仅用于本地 Paper API 验收，所有互动、会话和偏好仍保存在当前设备。
-- Phase 1 数据底座已完成真实初次同步：本地 arXiv 主库、HF Daily、OpenAlex、Semantic Scholar 和 GitHub 的来源观测均已写入独立 SQLite；`sync-external` 提供可重复的有界增量入口和原始快照保留。
+- Phase 1 数据底座已完成真实初次同步和 arXiv OAI 日增量闭环：本地 arXiv 主库、HF Daily、OpenAlex、Semantic Scholar 和 GitHub 的来源观测均已写入独立 SQLite；`sync-arxiv-oai` 与 `sync-external` 提供可恢复、可重复的有界同步入口并保留逐页原始快照。
 - Phase 2/2.5 的服务端与 development Client 自动化已完成，仍待 Windows development App 使用真实库完成最终人工验收；production Client 数据源保持 arXiv Atom 不变。
 - 会议频道真实 Venue 数据来自本地会议增强；OpenAlex 异常引用已从 High Impact 候选池排除，Semantic Scholar 与 GitHub 信号独立保存。
 - 六问结构化 AI 解读及其缓存尚未完成并随 PDF 线暂缓；相关论文页面仍缺真实语义检索或引用图谱。
@@ -100,7 +100,7 @@ OpenAlex / Semantic Scholar / GitHub 增强 ─┘                              
 
 | 阶段 | 状态 | 主要交付 |
 | --- | --- | --- |
-| Phase 1：论文数据底座 | 已完成 | 674,969 篇 arXiv 主库、326 条 HF Daily、498 条 Semantic Scholar、50 条 GitHub 真实同步记录，以及 2,895 个唯一 OpenAlex 增强 ID 已落库；来源快照、精确身份、异常引用隔离和可重复 `sync-external` 入口已验证 |
+| Phase 1：论文数据底座 | 已完成 | 680,199 篇真实论文已落库，其中 680,187 篇由 arXiv 发现、326 篇由 HF Daily 发现；326 条 HF、498 条 Semantic Scholar、50 条 GitHub 真实同步记录及 2,895 个唯一 OpenAlex 增强 ID 已验证；arXiv OAI 逐页快照、独立完成水位、分页断点、幂等重放、删除处理和统一定时入口均已接通 |
 | Phase 2：基础 Feed API | 开发中 | 详情、最新、主题、会议、关注和推荐 API 已在真实库验证；development App 已开放 19 个真实会议频道，推荐刷新排除当前列表与已读论文并增量合并；仍待 Windows App 最终人工确认 |
 | Phase 2.5：真实数据落库与端到端验收 | 开发中 | 真实数据库、外部来源、索引、API、会议入口、推荐刷新语义和自动化验证已完成；当前只剩 Windows development App 人工确认与任务收尾 |
 | Phase 3：热点能力增强 | 后续阶段 | GitHub star velocity、citation velocity、Web Heat、LLM Trend Scout、24–72 小时 Trend Boost 与热点原因 |
@@ -113,8 +113,8 @@ Phase 1 按以下依赖顺序拆分：
 | --- | --- | --- |
 | 1.1 | Paper schema 与原始快照契约 | 已完成：本地数据集、会议标签和 OpenAlex 嵌套字段已固化并通过契约测试 |
 | 1.2 | HF Daily 镜像 PoC | 已完成：14 天真实 Daily 快照共 326 条，保留请求/响应原始快照；`sync-external` 可由 Windows Task Scheduler 周期调用，失败保留最近成功状态 |
-| 1.3 | arXiv 底库导入与增量 | 已完成：674,969 行主 JSONL 流式落库，断点、租约、拒绝记录和幂等重跑均有测试；Atom/OAI 增量适配器保留 |
-| 1.4 | 身份解析与数据质量 | 已完成本地底库验收：674,969 个唯一 arXiv ID，重复和拒绝均为 0；低置信度跨源匹配继续进入待核验队列 |
+| 1.3 | arXiv 底库导入与增量 | 已完成：674,969 行主 JSONL 流式落库；OAI 已真实同步 `2026-07-31` 至 `2026-08-12` 的 18 页增量，AI 准入 8,864 条、非 AI 排除 13,516 条，并支持独立完成水位、窗口级 checkpoint、分页 token、失败续跑、token 失效后窗口幂等重放、持久删除、坏记录整页重试和完整窗口后单次索引刷新 |
+| 1.4 | 身份解析与数据质量 | 已完成本地底库与增量验收：680,199 个唯一 arXiv ID，重复 arXiv ID 为 0；低置信度跨源匹配继续进入待核验队列 |
 | 1.5 | OpenAlex/Semantic Scholar/GitHub 增强 | 已完成：2,901 条 OpenAlex 输入/2,895 个唯一 ID、498 条 Semantic Scholar 和 50 条 GitHub 真实增强；29 条 OpenAlex 异常引用被标记并排除出 High Impact 候选池 |
 | 1.6 | 索引与只读 Paper API | 已完成真实全量索引、查询性能和 API 验证；Windows App 端到端人工验收由 Phase 2.5 收尾 |
 
@@ -123,7 +123,7 @@ Phase 1 按以下依赖顺序拆分：
 Phase 2.5 是 Phase 1/2 的收口检查点，不是新的推荐能力阶段。它要求把“代码适配器”和“真实数据已经可用”分开验收：
 
 - 真实来源：HF Daily 14 天快照 326 条、Semantic Scholar 500 条请求/498 条有效返回、GitHub 50 条仓库指标；所有同步均为精确 arXiv 关联，未匹配不创建残缺论文。
-- 真实底库：675,168 篇论文、675,168 个唯一 arXiv ID、0 个重复 arXiv ID；HF、Semantic Scholar、GitHub、OpenAlex 和会议来源均保留独立观测与 provenance。
+- 真实底库：680,199 篇论文、680,199 个唯一 arXiv ID、0 个重复 arXiv ID；其中 arXiv discovery 680,187、HF discovery 326、两者交集 314、HF-only 12；HF、Semantic Scholar、GitHub、OpenAlex 和会议来源均保留独立观测与 provenance。
 - 推荐正确性：High Impact 排除 OpenAlex 异常引用，Trending 使用 HF heat；年龄桶标签与发布时间一致；同 seed 不同 `limit`/`read_ids` 生成不同 `batch_id`；已读 ID 不会再次抽中。
 - API 正确性：真实库健康、最新、主题、会议、关注和推荐接口均返回真实论文；Paper API 不在请求期间扇出第三方服务。
 - 人工收口：Windows development App 仍需由编排者确认真实论文、推荐刷新后旧列表保留且新 batch 净新增、已读过滤，以及会议频道可添加并返回内容；确认前不把 Phase 2/2.5 标记为最终完成。

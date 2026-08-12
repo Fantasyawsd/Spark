@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../application/main_ai_chat_definition.dart';
+import '../application/chat_conversation_controller.dart';
 import '../domain/chat_ai_service.dart';
 import '../domain/chat_session_repository.dart';
 import '../domain/chat_session_settings.dart';
@@ -13,12 +14,14 @@ class MainAiChatScreen extends StatelessWidget {
     this.webSearchAiService,
     required this.sessionRepository,
     this.settingsRepository,
+    this.conversationController,
   });
 
   final ChatAiService aiService;
   final ChatAiService? webSearchAiService;
   final ChatSessionRepository sessionRepository;
   final ChatSessionSettingsRepository? settingsRepository;
+  final ChatConversationController? conversationController;
 
   @override
   Widget build(BuildContext context) {
@@ -28,6 +31,7 @@ class MainAiChatScreen extends StatelessWidget {
       webSearchAiService: webSearchAiService,
       sessionRepository: sessionRepository,
       settingsRepository: settingsRepository,
+      conversationController: conversationController,
       screenTitle: '主聊天',
       screenSubtitle: '主会话',
       welcomeTitle: '今天想研究什么？',

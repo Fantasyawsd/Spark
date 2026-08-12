@@ -32,6 +32,7 @@ class PaperAiChatScreen extends StatefulWidget {
     this.clearConfirmation = '这会删除当前论文的全部 AI 对话记录。',
     this.fullTextAvailable = false,
     this.onLoadFullText,
+    this.conversationController,
   });
 
   final ChatContext chatContext;
@@ -49,6 +50,7 @@ class PaperAiChatScreen extends StatefulWidget {
   final bool fullTextAvailable;
   final Future<ChatContext> Function()? onLoadFullText;
   final String clearConfirmation;
+  final ChatConversationController? conversationController;
 
   @override
   State<PaperAiChatScreen> createState() => _PaperAiChatScreenState();
@@ -60,6 +62,7 @@ class _PaperAiChatScreenState extends State<PaperAiChatScreen> {
   final _ImeAnchoringScrollController _scrollController =
       _ImeAnchoringScrollController();
   late final ChatConversationController _conversation;
+  late final bool _ownsConversation;
   late String _conversationTitle;
   bool _previewMode = false;
   bool _selectionMode = false;
@@ -83,13 +86,16 @@ class _PaperAiChatScreenState extends State<PaperAiChatScreen> {
   void initState() {
     super.initState();
     _conversationTitle = widget.screenTitle;
-    _conversation = ChatConversationController(
-      context: widget.chatContext,
-      service: widget.aiService,
-      webSearchService: widget.webSearchAiService,
-      sessionRepository: widget.sessionRepository,
-      settingsRepository: widget.settingsRepository,
-    )..addListener(_handleConversationChanged);
+    _ownsConversation = widget.conversationController == null;
+    _conversation = (widget.conversationController ??
+        ChatConversationController(
+          context: widget.chatContext,
+          service: widget.aiService,
+          webSearchService: widget.webSearchAiService,
+          sessionRepository: widget.sessionRepository,
+          settingsRepository: widget.settingsRepository,
+        ))
+      ..addListener(_handleConversationChanged);
     _conversation.initialize();
   }
 
@@ -98,9 +104,8 @@ class _PaperAiChatScreenState extends State<PaperAiChatScreen> {
     _composer.dispose();
     _composerFocusNode.dispose();
     _scrollController.dispose();
-    _conversation
-      ..removeListener(_handleConversationChanged)
-      ..dispose();
+    _conversation.removeListener(_handleConversationChanged);
+    if (_ownsConversation) _conversation.dispose();
     super.dispose();
   }
 

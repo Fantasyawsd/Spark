@@ -12,6 +12,7 @@ import '../core/theme/theme_preference_repository.dart';
 import '../features/ai_settings/application/deepseek_credential_controller.dart';
 import '../features/ai_settings/presentation/deepseek_settings_section.dart';
 import '../features/chat/application/chat_session_controller.dart';
+import '../features/chat/application/chat_conversation_coordinator.dart';
 import '../features/chat/application/main_ai_chat_definition.dart';
 import '../features/chat/domain/chat_ai_service.dart';
 import '../features/chat/domain/chat_session_repository.dart';
@@ -308,6 +309,7 @@ class _SparkShellState extends State<SparkShell> {
   late final ChatAiService _mainWebSearchAiService;
   late final ChatSessionRepository _aiSessionRepository;
   late final ChatSessionController _chatSessionController;
+  late final ChatConversationCoordinator _chatConversationCoordinator;
   late final PaperSearchHistoryRepository _searchHistoryRepository;
   late final PaperTranslationServiceFactory _translationServiceFactory;
   late final PaperChatContextLoader _paperChatContextLoader;
@@ -352,11 +354,16 @@ class _SparkShellState extends State<SparkShell> {
     _mainAiService = _dependencies.mainAiService;
     _mainWebSearchAiService = _dependencies.mainWebSearchAiService;
     _aiSessionRepository = _dependencies.aiSessionRepository;
+    _chatConversationCoordinator = ChatConversationCoordinator(
+      sessionRepository: _aiSessionRepository,
+      settingsRepository: _dependencies.chatSessionSettingsRepository,
+    );
     _chatSessionController = ChatSessionController(
       repository: _aiSessionRepository,
       settingsRepository: _dependencies.chatSessionSettingsRepository,
       mainSessionId: MainAiChatDefinition.sessionId,
       contexts: _paperChatContexts,
+      beforeDelete: _chatConversationCoordinator.remove,
     );
     unawaited(_chatSessionController.refresh());
     _translationServiceFactory = _dependencies.translationServiceFactory;
@@ -386,6 +393,7 @@ class _SparkShellState extends State<SparkShell> {
     _readingController
       ..removeListener(_handleReadingStateChanged)
       ..dispose();
+    _chatConversationCoordinator.dispose();
     _chatSessionController.dispose();
     _credentialController.dispose();
     _localDataController.dispose();
@@ -528,6 +536,10 @@ class _SparkShellState extends State<SparkShell> {
   }
 
   Future<void> _prepareLocalDataMutation(LocalDataClearTarget target) async {
+    if (target == LocalDataClearTarget.chats ||
+        target == LocalDataClearTarget.allBusinessData) {
+      await _chatConversationCoordinator.removeAll();
+    }
     await Future.wait([
       _paperController.interactions.flushPendingWrites(),
       _paperController.feed.flushPreferenceWrites(),
@@ -643,6 +655,11 @@ class _SparkShellState extends State<SparkShell> {
   Future<void> _openAiChat(Paper paper) async {
     final chatContext = await _paperChatContextLoader.load(paper);
     if (!mounted) return;
+    final conversation = _chatConversationCoordinator.conversation(
+      context: chatContext,
+      service: _paperAiService,
+      webSearchService: _webSearchAiService,
+    );
     await Navigator.of(context).push<void>(
       MaterialPageRoute(
         builder: (context) => PaperAiChatScreen(
@@ -651,6 +668,7 @@ class _SparkShellState extends State<SparkShell> {
           webSearchAiService: _webSearchAiService,
           sessionRepository: _aiSessionRepository,
           settingsRepository: _dependencies.chatSessionSettingsRepository,
+          conversationController: conversation,
           fullTextAvailable: widget.features.experimentalPdfAi &&
               validPaperUri(paper.pdfUrl) != null,
           onLoadFullText: widget.features.experimentalPdfAi
@@ -667,15 +685,21 @@ class _SparkShellState extends State<SparkShell> {
     required List<String> generatedKeywords,
     required ScrollController? scrollController,
   }) {
+    final chatContext = PaperChatContext.fromPaper(
+      paper,
+      generatedKeywords: generatedKeywords,
+    );
     return PaperAiDiscussionView(
       key: ValueKey('paper-ai-discussion-${paper.id}'),
-      chatContext: PaperChatContext.fromPaper(
-        paper,
-        generatedKeywords: generatedKeywords,
-      ),
+      chatContext: chatContext,
       aiService: _paperAiService,
       webSearchAiService: _webSearchAiService,
       sessionRepository: _aiSessionRepository,
+      conversationController: _chatConversationCoordinator.conversation(
+        context: chatContext,
+        service: _paperAiService,
+        webSearchService: _webSearchAiService,
+      ),
       scrollController: scrollController,
     );
   }
@@ -695,6 +719,11 @@ class _SparkShellState extends State<SparkShell> {
           webSearchAiService: _mainWebSearchAiService,
           sessionRepository: _aiSessionRepository,
           settingsRepository: _dependencies.chatSessionSettingsRepository,
+          conversationController: _chatConversationCoordinator.conversation(
+            context: MainAiChatDefinition.context,
+            service: _mainAiService,
+            webSearchService: _mainWebSearchAiService,
+          ),
         ),
       ),
     );

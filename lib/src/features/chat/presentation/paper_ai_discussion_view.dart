@@ -18,6 +18,7 @@ class PaperAiDiscussionView extends StatefulWidget {
     this.webSearchAiService,
     this.sessionRepository,
     this.scrollController,
+    this.conversationController,
   });
 
   final ChatContext chatContext;
@@ -25,6 +26,7 @@ class PaperAiDiscussionView extends StatefulWidget {
   final ChatAiService? webSearchAiService;
   final ChatSessionRepository? sessionRepository;
   final ScrollController? scrollController;
+  final ChatConversationController? conversationController;
 
   @override
   State<PaperAiDiscussionView> createState() => _PaperAiDiscussionViewState();
@@ -33,25 +35,28 @@ class PaperAiDiscussionView extends StatefulWidget {
 class _PaperAiDiscussionViewState extends State<PaperAiDiscussionView> {
   final TextEditingController _composerController = TextEditingController();
   late final ChatConversationController _conversation;
+  late final bool _ownsConversation;
 
   @override
   void initState() {
     super.initState();
-    _conversation = ChatConversationController(
-      context: widget.chatContext,
-      service: widget.aiService,
-      webSearchService: widget.webSearchAiService,
-      sessionRepository: widget.sessionRepository,
-    )..addListener(_handleConversationChanged);
+    _ownsConversation = widget.conversationController == null;
+    _conversation = (widget.conversationController ??
+        ChatConversationController(
+          context: widget.chatContext,
+          service: widget.aiService,
+          webSearchService: widget.webSearchAiService,
+          sessionRepository: widget.sessionRepository,
+        ))
+      ..addListener(_handleConversationChanged);
     unawaited(_conversation.initialize());
   }
 
   @override
   void dispose() {
     _composerController.dispose();
-    _conversation
-      ..removeListener(_handleConversationChanged)
-      ..dispose();
+    _conversation.removeListener(_handleConversationChanged);
+    if (_ownsConversation) _conversation.dispose();
     super.dispose();
   }
 

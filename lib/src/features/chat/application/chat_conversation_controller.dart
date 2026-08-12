@@ -441,6 +441,8 @@ class ChatConversationController extends ChangeNotifier {
     return queued;
   }
 
+  Future<void> flushPendingWrites() => _writeQueue;
+
   void _notify() {
     if (!_disposed) notifyListeners();
   }

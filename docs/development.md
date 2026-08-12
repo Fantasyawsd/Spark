@@ -1,7 +1,7 @@
 # Spark 开发路线图
 
 > 状态：持续维护
-> 最近更新：2026-08-11
+> 最近更新：2026-08-12
 
 本文是开发计划的唯一文件，记录产品边界、当前能力、开发任务与后续方向。
 发布范围和证据归入 `releases/<version>/`；架构、Git 与发布规则分别见
@@ -47,7 +47,7 @@ Spark 面向个人研究者，核心闭环由三个一级能力组成：
 | 模块 | 当前状态 |
 | --- | --- |
 | 应用入口 | 论文 / ChatPaper / 我的三个一级页面形成单机闭环；社区和私信不在生产导航 |
-| 论文目录 | Client 直连 arXiv Atom，使用版本化本地缓存与内置种子回退；推荐、关注、最新固定频道及 arXiv 主题频道可用 |
+| 论文目录 | production Client 仍直连 arXiv Atom并使用版本化本地缓存与内置种子回退；development 环境可切换本地 Paper API；推荐、关注、最新固定频道及 arXiv 主题频道可用 |
 | 频道体验 | 频道偏好、列表状态、浏览位置、发布时间筛选和懒加载按频道保存；主题/会议管理页已存在 |
 | 论文阅读 | 提供 Abstract、中文摘要、关键词、作者、AI 解读、相关论文六页结构；中文摘要与内容关键词按需生成并版本化缓存 |
 | 本地研究数据 | 搜索、点赞、收藏、评论、分享、阅读历史、稍后阅读和自定义收藏分组保存在设备本地 |
@@ -56,9 +56,10 @@ Spark 面向个人研究者，核心闭环由三个一级能力组成：
 
 ### 2.2 当前边界与已知缺口
 
-- 仍无账号、跨设备同步；Flutter Client 暂不切换服务端数据源，所有互动、会话和偏好仍保存在当前设备。
-- Phase 1/2 服务端实现已合入 `main`：提供可离线重放的 Paper Database、来源同步适配器、推荐服务和版本化 Paper API；A100 当前无外网，真实大规模数据回放与生产部署仍待执行。
-- 会议频道只有领域模型和管理入口，尚无可靠 Venue 数据源；OpenAlex、Semantic Scholar、GitHub 增强尚未进入生产论文链路。
+- 仍无账号、跨设备同步；production Flutter Client 暂不切换服务端数据源，development 环境仅用于本地 Paper API 验收，所有互动、会话和偏好仍保存在当前设备。
+- Phase 1 数据底座已完成真实初次同步和 arXiv OAI 日增量闭环：本地 arXiv 主库、HF Daily、OpenAlex、Semantic Scholar 和 GitHub 的来源观测均已写入独立 SQLite；`sync-arxiv-oai` 与 `sync-external` 提供可恢复、可重复的有界同步入口并保留逐页原始快照。
+- Phase 2/2.5 的服务端与 development Client 自动化已完成，仍待 Windows development App 使用真实库完成最终人工验收；production Client 数据源保持 arXiv Atom 不变。
+- 会议频道真实 Venue 数据来自本地会议增强；OpenAlex 异常引用已从 High Impact 候选池排除，Semantic Scholar 与 GitHub 信号独立保存。
 - 六问结构化 AI 解读及其缓存尚未完成并随 PDF 线暂缓；相关论文页面仍缺真实语义检索或引用图谱。
 - 论文聊天“读取全文”在部分下载、解析或异常场景可能无反馈或停留在加载状态，对应修复随 PDF 线暂缓。
 - DeepSeek Key 由用户配置并存入设备安全存储；公开构建不包含共享 Key，清理普通业务数据不隐式删除 Key。
@@ -99,8 +100,9 @@ OpenAlex / Semantic Scholar / GitHub 增强 ─┘                              
 
 | 阶段 | 状态 | 主要交付 |
 | --- | --- | --- |
-| Phase 1：论文数据底座 | 已完成 | `server/` 已实现 Paper schema、JSONL/OAI/Atom/HF/OpenAlex/Semantic Scholar/GitHub 同步、原始快照、AI 准入、稳定 `paper_id`、去重、provenance、SQLite Paper Database 和索引；已完成本地与 A100 Python 3.10 fixture 验证，真实外部回放待联网部署 |
-| Phase 2：基础 Feed API | 已完成 | `server/spark_papers/api.py` 提供版本化详情、最新、主题、会议、关注和推荐 API；实现 High Impact / Trending、质量/趋势分、年龄桶、已读过滤、diversity、无放回抽样和推荐批次快照 |
+| Phase 1：论文数据底座 | 已完成 | 680,199 篇真实论文已落库，其中 680,187 篇由 arXiv 发现、326 篇由 HF Daily 发现；326 条 HF、498 条 Semantic Scholar、50 条 GitHub 真实同步记录及 2,895 个唯一 OpenAlex 增强 ID 已验证；arXiv OAI 逐页快照、独立完成水位、分页断点、幂等重放、删除处理和统一定时入口均已接通 |
+| Phase 2：基础 Feed API | 开发中 | 详情、最新、主题、会议、关注和推荐 API 已在真实库验证；development App 已开放 19 个真实会议频道，推荐刷新排除当前列表与已读论文并增量合并；仍待 Windows App 最终人工确认 |
+| Phase 2.5：真实数据落库与端到端验收 | 开发中 | 真实数据库、外部来源、索引、API、会议入口、推荐刷新语义和自动化验证已完成；当前只剩 Windows development App 人工确认与任务收尾 |
 | Phase 3：热点能力增强 | 后续阶段 | GitHub star velocity、citation velocity、Web Heat、LLM Trend Scout、24–72 小时 Trend Boost 与热点原因 |
 | Phase 4：个性化推荐 | 后续阶段 | 行为日志、用户画像与论文向量、Personalized Pool、个性化排序、Diversity 与 Exploration |
 | Phase 5：高级推荐系统 | 后续阶段 | 多路召回、Two-Tower、Learning to Rank、Reranker、序列推荐、实时兴趣更新与 A/B Test |
@@ -109,12 +111,22 @@ Phase 1 按以下依赖顺序拆分：
 
 | # | 任务 | 完成条件 |
 | --- | --- | --- |
-| 1.1 | Paper schema 与原始快照契约 | 已完成：`server/schema/paper.v1.json`、版本字段、来源请求/响应快照与 provenance |
-| 1.2 | HF Daily 镜像 PoC | 已完成：按日期/页增量、请求参数、ETag、游标、幂等和 429/5xx 退避；Client 暂不切流 |
-| 1.3 | arXiv 底库导入与增量 | 已完成：JSONL 本地导入、Atom API 和 OAI-PMH `ListRecords` 适配、AI 分类准入与失败保留 |
-| 1.4 | 身份解析与数据质量 | 已完成：精确 ID 合并、模糊候选复核队列、未知值 `null`、撤稿排除和字段缺失原因 |
-| 1.5 | OpenAlex/Semantic Scholar/GitHub 增强 | 已完成：独立信号、抓取时间、请求快照、引用不相加和可靠 GitHub 论文匹配 |
-| 1.6 | 索引与只读 Paper API | 已完成：Latest/Channel/Candidate 索引、`/api/v1` 详情/日期游标及 Phase 2 刷新接口 |
+| 1.1 | Paper schema 与原始快照契约 | 已完成：本地数据集、会议标签和 OpenAlex 嵌套字段已固化并通过契约测试 |
+| 1.2 | HF Daily 镜像 PoC | 已完成：14 天真实 Daily 快照共 326 条，保留请求/响应原始快照；`sync-external` 可由 Windows Task Scheduler 周期调用，失败保留最近成功状态 |
+| 1.3 | arXiv 底库导入与增量 | 已完成：674,969 行主 JSONL 流式落库；OAI 已真实同步 `2026-07-31` 至 `2026-08-12` 的 18 页增量，AI 准入 8,864 条、非 AI 排除 13,516 条，并支持独立完成水位、窗口级 checkpoint、分页 token、失败续跑、token 失效后窗口幂等重放、持久删除、坏记录整页重试和完整窗口后单次索引刷新 |
+| 1.4 | 身份解析与数据质量 | 已完成本地底库与增量验收：680,199 个唯一 arXiv ID，重复 arXiv ID 为 0；低置信度跨源匹配继续进入待核验队列 |
+| 1.5 | OpenAlex/Semantic Scholar/GitHub 增强 | 已完成：2,901 条 OpenAlex 输入/2,895 个唯一 ID、498 条 Semantic Scholar 和 50 条 GitHub 真实增强；29 条 OpenAlex 异常引用被标记并排除出 High Impact 候选池 |
+| 1.6 | 索引与只读 Paper API | 已完成真实全量索引、查询性能和 API 验证；Windows App 端到端人工验收由 Phase 2.5 收尾 |
+
+#### Phase 2.5：真实数据落库与端到端验收
+
+Phase 2.5 是 Phase 1/2 的收口检查点，不是新的推荐能力阶段。它要求把“代码适配器”和“真实数据已经可用”分开验收：
+
+- 真实来源：HF Daily 14 天快照 326 条、Semantic Scholar 500 条请求/498 条有效返回、GitHub 50 条仓库指标；所有同步均为精确 arXiv 关联，未匹配不创建残缺论文。
+- 真实底库：680,199 篇论文、680,199 个唯一 arXiv ID、0 个重复 arXiv ID；其中 arXiv discovery 680,187、HF discovery 326、两者交集 314、HF-only 12；HF、Semantic Scholar、GitHub、OpenAlex 和会议来源均保留独立观测与 provenance。
+- 推荐正确性：High Impact 排除 OpenAlex 异常引用，Trending 使用 HF heat；年龄桶标签与发布时间一致；同 seed 不同 `limit`/`read_ids` 生成不同 `batch_id`；已读 ID 不会再次抽中。
+- API 正确性：真实库健康、最新、主题、会议、关注和推荐接口均返回真实论文；Paper API 不在请求期间扇出第三方服务。
+- 人工收口：Windows development App 仍需由编排者确认真实论文、推荐刷新后旧列表保留且新 batch 净新增、已读过滤，以及会议频道可添加并返回内容；确认前不把 Phase 2/2.5 标记为最终完成。
 
 服务端逐步拆分为 `Data Pipeline`、`Paper Database`、`Recommendation Service`、`Paper API` 和 `Model Service`。抓取、清洗、跨源匹配、候选池生成和在线元数据查询主要使用 CPU；A100 为服务端 PDF/OCR、Embedding、主题分类、相似论文、reranker、摘要/翻译、Paper QA、用户兴趣向量和 LLM 热点分析等模型任务预留。数据、日志、索引和模型产物只落在 `/data2/fanjiahao/...`；每次安装依赖或下载数据前按服务器规范探测网络，禁止向 `/`、`/home`、`/data1` 或 `/data3` 落大数据。
 

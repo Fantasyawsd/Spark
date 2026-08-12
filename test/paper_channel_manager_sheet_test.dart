@@ -103,29 +103,35 @@ void main() {
     }
   });
 
-  testWidgets('conference tab is reachable by swipe and not addable',
+  testWidgets('conference tab adds and removes real conference channels',
       (tester) async {
+    List<UserPaperChannel>? lastSaved;
     await openSheet(
       tester,
-      onChannelsChanged: (_) {},
+      onChannelsChanged: (channels) => lastSaved = channels,
       showConferenceChannels: true,
     );
 
-    const hint = '会议频道尚未开放，真实会议数据源接入后可编辑。';
-    expect(find.text(hint), findsNothing);
-
-    await tester.drag(
-      find.byKey(const ValueKey('paper-channel-subject-page')),
-      const Offset(-400, 0),
-    );
+    await tester.tap(find.text('会议'));
     await tester.pumpAndSettle();
-    expect(find.text(hint), findsOneWidget);
-    expect(find.byKey(const ValueKey('paper-channel-subject-cs.AI')),
-        findsNothing);
 
-    await tester.tap(find.text('主题'));
-    await tester.pumpAndSettle();
-    expect(find.byKey(const ValueKey('paper-channel-subject-cs.AI')),
+    expect(find.byKey(const ValueKey('paper-channel-conference-ICML')),
         findsOneWidget);
+    expect(find.byKey(const ValueKey('paper-channel-conference-NeurIPS')),
+        findsOneWidget);
+
+    await tester.tap(
+      find.byKey(const ValueKey('paper-channel-conference-ICML')),
+    );
+    await tester.pump();
+    expect(lastSaved, hasLength(1));
+    expect(lastSaved!.single.kind, PaperChannelKind.conference);
+    expect(lastSaved!.single.id, 'ICML');
+
+    await tester.tap(
+      find.byKey(const ValueKey('paper-channel-conference-ICML')),
+    );
+    await tester.pump();
+    expect(lastSaved, isEmpty);
   });
 }

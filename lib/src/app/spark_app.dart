@@ -338,6 +338,7 @@ class _SparkShellState extends State<SparkShell> {
       interactionRepository: _dependencies.interactionRepository,
       preferenceRepository: _dependencies.preferenceRepository,
       catalogRepository: _dependencies.paperCatalogRepository,
+      readPaperIdsProvider: () => _readingController.readPaperIds,
     )..addListener(_handlePaperStateChanged);
     _readingController = PaperReadingController(
       repository: _dependencies.readingRepository,
@@ -441,11 +442,14 @@ class _SparkShellState extends State<SparkShell> {
                   ),
                   catalogStatus: PaperCatalogStatusView(
                     sourceLabel: switch (_paperController.feed.catalogSource) {
+                      PaperPageSource.paperApi => 'Spark Paper API',
                       PaperPageSource.remote => 'arXiv 远程目录',
                       PaperPageSource.cache => 'arXiv 本地缓存',
                       PaperPageSource.seed => '内置论文',
                     },
                     availability: switch (_paperController.feed.catalogSource) {
+                      PaperPageSource.paperApi =>
+                        PaperCatalogAvailability.online,
                       PaperPageSource.remote => PaperCatalogAvailability.online,
                       PaperPageSource.cache => PaperCatalogAvailability.offline,
                       PaperPageSource.seed => PaperCatalogAvailability.local,
@@ -493,6 +497,10 @@ class _SparkShellState extends State<SparkShell> {
   }
 
   void _handleNavigation(int index) {
+    if (index == 0 && _selectedIndex == 0) {
+      unawaited(_paperController.feed.refreshCatalog());
+      return;
+    }
     setState(() => _selectedIndex = index);
   }
 

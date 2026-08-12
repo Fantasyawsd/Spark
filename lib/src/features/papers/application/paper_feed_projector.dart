@@ -28,9 +28,16 @@ class PaperFeedProjector {
   }) {
     final incomingPapers = incoming.toList(growable: false);
     if (!append && incomingPapers.isEmpty) return const [];
+    final incomingById = <String, Paper>{
+      for (final paper in incomingPapers) paper.id: paper,
+    };
+    final existingPapers = existing.toList(growable: false);
     final ordered = append
-        ? [...existing, ...incomingPapers]
-        : [...incomingPapers, ...existing];
+        ? [
+            for (final paper in existingPapers) incomingById[paper.id] ?? paper,
+            ...incomingPapers,
+          ]
+        : [...incomingPapers, ...existingPapers];
     final seen = <String>{};
     return List.unmodifiable([
       for (final paper in ordered)

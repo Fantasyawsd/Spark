@@ -18,12 +18,14 @@ class PaperController extends ChangeNotifier {
     PaperPreferenceRepository? preferenceRepository,
     PaperCatalogRepository? catalogRepository,
     PaperChannelPreferenceRepository? channelPreferenceRepository,
+    Iterable<String> Function()? readPaperIdsProvider,
   }) : this._fromPapers(
           repository.getAll(),
           interactionRepository: interactionRepository,
           preferenceRepository: preferenceRepository,
           catalogRepository: catalogRepository,
           channelPreferenceRepository: channelPreferenceRepository,
+          readPaperIdsProvider: readPaperIdsProvider,
         );
 
   PaperController._fromPapers(
@@ -32,11 +34,13 @@ class PaperController extends ChangeNotifier {
     PaperPreferenceRepository? preferenceRepository,
     PaperCatalogRepository? catalogRepository,
     PaperChannelPreferenceRepository? channelPreferenceRepository,
+    Iterable<String> Function()? readPaperIdsProvider,
   })  : feed = PaperFeedController.fromPapers(
           papers,
           preferenceRepository: preferenceRepository,
           catalogRepository: catalogRepository,
           channelPreferenceRepository: channelPreferenceRepository,
+          readPaperIdsProvider: readPaperIdsProvider,
         ),
         interactions = PaperInteractionController(
           repository: interactionRepository,

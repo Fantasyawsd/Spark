@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import json
+import re
 import sqlite3
 from contextlib import contextmanager
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Iterable, Iterator, Mapping
 
@@ -23,6 +24,22 @@ def _load(value: str | None, fallback: Any) -> Any:
     return json.loads(value)
 
 
+def _merge_nested(current: Mapping[str, Any], incoming: Mapping[str, Any]) -> dict[str, Any]:
+    merged = dict(current)
+    for key, value in incoming.items():
+        if value is None:
+            continue
+        existing = merged.get(key)
+        if isinstance(existing, Mapping) and isinstance(value, Mapping):
+            merged[key] = _merge_nested(existing, value)
+        else:
+            merged[key] = value
+    return merged
+
+
+_MIGRATION_PATTERN = re.compile(r"^(?P<version>\d{3})_[a-z0-9_]+\.sql$")
+
+
 class PaperStore:
     """SQLite persistence for canonical papers and source observations."""
 
@@ -34,7 +51,13 @@ class PaperStore:
         self._connection.row_factory = sqlite3.Row
         self._connection.execute("PRAGMA foreign_keys = ON")
         self._connection.execute("PRAGMA journal_mode = WAL")
-        self._create_schema()
+        try:
+            self._validate_database_version()
+            self._create_schema()
+            self._apply_migrations()
+        except Exception:
+            self._connection.close()
+            raise
 
     def close(self) -> None:
         self._connection.close()
@@ -73,6 +96,14 @@ class PaperStore:
             CREATE INDEX IF NOT EXISTS idx_papers_published ON papers (published_at DESC, paper_id DESC);
             CREATE INDEX IF NOT EXISTS idx_papers_admitted ON papers (admitted, withdrawn, published_at DESC);
 
+            CREATE TABLE IF NOT EXISTS paper_external_ids (
+                id_type TEXT NOT NULL,
+                id_value TEXT NOT NULL,
+                paper_id TEXT NOT NULL REFERENCES papers(paper_id),
+                PRIMARY KEY (id_type, id_value)
+            );
+            CREATE INDEX IF NOT EXISTS idx_external_ids_paper ON paper_external_ids (paper_id);
+
             CREATE TABLE IF NOT EXISTS source_observations (
                 source TEXT NOT NULL,
                 external_id TEXT NOT NULL,
@@ -84,6 +115,17 @@ class PaperStore:
                 PRIMARY KEY (source, external_id)
             );
             CREATE INDEX IF NOT EXISTS idx_observations_paper ON source_observations (paper_id);
+            CREATE INDEX IF NOT EXISTS idx_observations_source_paper_fetched
+                ON source_observations (source, paper_id, fetched_at);
+
+            CREATE TABLE IF NOT EXISTS github_repository_links (
+                paper_id TEXT PRIMARY KEY REFERENCES papers(paper_id),
+                arxiv_id TEXT NOT NULL,
+                github_url TEXT NOT NULL,
+                discovered_at TEXT NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_github_links_arxiv
+                ON github_repository_links (arxiv_id);
 
             CREATE TABLE IF NOT EXISTS provenance (
                 paper_id TEXT NOT NULL REFERENCES papers(paper_id),
@@ -157,20 +199,125 @@ class PaperStore:
                 pool TEXT NOT NULL,
                 paper_id TEXT NOT NULL REFERENCES papers(paper_id),
                 generated_at TEXT NOT NULL,
+                sort_key REAL NOT NULL DEFAULT 0,
+                published_at TEXT,
                 PRIMARY KEY (pool, paper_id)
             );
+
+            CREATE TABLE IF NOT EXISTS author_index (
+                author_key TEXT NOT NULL,
+                paper_id TEXT NOT NULL REFERENCES papers(paper_id),
+                published_at TEXT NOT NULL,
+                PRIMARY KEY (author_key, paper_id)
+            );
+            CREATE INDEX IF NOT EXISTS idx_author_index_order
+                ON author_index(author_key, published_at DESC, paper_id DESC);
+
+            CREATE TABLE IF NOT EXISTS venue_index (
+                venue_key TEXT NOT NULL,
+                paper_id TEXT NOT NULL REFERENCES papers(paper_id),
+                published_at TEXT NOT NULL,
+                PRIMARY KEY (venue_key, paper_id)
+            );
+            CREATE INDEX IF NOT EXISTS idx_venue_index_order
+                ON venue_index(venue_key, published_at DESC, paper_id DESC);
 
             CREATE TABLE IF NOT EXISTS schema_meta (
                 key TEXT PRIMARY KEY,
                 value TEXT NOT NULL,
                 updated_at TEXT NOT NULL
             );
+
+            CREATE TABLE IF NOT EXISTS dataset_imports (
+                dataset_key TEXT PRIMARY KEY,
+                source TEXT NOT NULL,
+                source_path TEXT NOT NULL,
+                source_size INTEGER NOT NULL,
+                source_mtime_ns INTEGER NOT NULL,
+                byte_offset INTEGER NOT NULL DEFAULT 0,
+                line_number INTEGER NOT NULL DEFAULT 0,
+                processed_count INTEGER NOT NULL DEFAULT 0,
+                imported_count INTEGER NOT NULL DEFAULT 0,
+                duplicate_count INTEGER NOT NULL DEFAULT 0,
+                rejected_count INTEGER NOT NULL DEFAULT 0,
+                unmatched_count INTEGER NOT NULL DEFAULT 0,
+                status TEXT NOT NULL,
+                started_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL,
+                completed_at TEXT,
+                error TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS dataset_rejections (
+                dataset_key TEXT NOT NULL REFERENCES dataset_imports(dataset_key),
+                line_number INTEGER NOT NULL,
+                byte_offset INTEGER NOT NULL,
+                error TEXT NOT NULL,
+                payload_excerpt TEXT,
+                created_at TEXT NOT NULL,
+                PRIMARY KEY (dataset_key, line_number)
+            );
             """
         )
+        columns = {row["name"] for row in self._connection.execute("PRAGMA table_info(dataset_imports)")}
+        if "run_token" not in columns:
+            self._connection.execute("ALTER TABLE dataset_imports ADD COLUMN run_token TEXT")
+        if "lease_expires_at" not in columns:
+            self._connection.execute("ALTER TABLE dataset_imports ADD COLUMN lease_expires_at TEXT")
+        candidate_columns = {
+            row["name"] for row in self._connection.execute("PRAGMA table_info(candidate_index)")
+        }
+        if "sort_key" not in candidate_columns:
+            self._connection.execute(
+                "ALTER TABLE candidate_index ADD COLUMN sort_key REAL NOT NULL DEFAULT 0"
+            )
+        if "published_at" not in candidate_columns:
+            self._connection.execute("ALTER TABLE candidate_index ADD COLUMN published_at TEXT")
+        self._connection.execute(
+            """CREATE INDEX IF NOT EXISTS idx_candidate_index_order
+               ON candidate_index(pool, sort_key DESC, published_at DESC, paper_id DESC)"""
+        )
+        identity_marker = self._connection.execute(
+            "SELECT 1 FROM schema_meta WHERE key = 'external_identity_index_v1'"
+        ).fetchone()
+        if identity_marker is None:
+            self._connection.execute(
+                """INSERT OR IGNORE INTO paper_external_ids(id_type, id_value, paper_id)
+                   SELECT ids.key, CAST(ids.value AS TEXT), papers.paper_id
+                   FROM papers, json_each(papers.external_ids_json) AS ids
+                   WHERE ids.value IS NOT NULL AND CAST(ids.value AS TEXT) != ''"""
+            )
+            self._connection.execute(
+                "INSERT INTO schema_meta(key, value, updated_at) VALUES ('external_identity_index_v1', 'complete', ?)",
+                (utc_now().isoformat(),),
+            )
         self._connection.execute(
             "INSERT OR IGNORE INTO schema_meta(key, value, updated_at) VALUES ('paper_schema', ?, ?)",
             (PAPER_SCHEMA_VERSION, utc_now().isoformat()),
         )
+        discovery_marker = self._connection.execute(
+            "SELECT 1 FROM schema_meta WHERE key = 'discovery_sources_v2'"
+        ).fetchone()
+        if discovery_marker is None:
+            self._connection.execute(
+                """UPDATE papers
+                   SET discovery_sources_json = COALESCE(
+                       (
+                           SELECT json_group_array(value)
+                           FROM json_each(papers.discovery_sources_json)
+                           WHERE value IN ('arxiv', 'huggingface')
+                       ),
+                       '[]'
+                   )
+                   WHERE EXISTS (
+                       SELECT 1 FROM json_each(papers.discovery_sources_json)
+                       WHERE value NOT IN ('arxiv', 'huggingface')
+                   )"""
+            )
+            self._connection.execute(
+                "INSERT INTO schema_meta(key, value, updated_at) VALUES ('discovery_sources_v2', 'complete', ?)",
+                (utc_now().isoformat(),),
+            )
         self._connection.commit()
 
     def _row_to_paper(self, row: sqlite3.Row) -> PaperRecord:
@@ -190,8 +337,8 @@ class PaperStore:
         matches: set[str] = set()
         for key, value in normalize_external_ids(external_ids).items():
             rows = self._connection.execute(
-                "SELECT paper_id, external_ids_json FROM papers WHERE json_extract(external_ids_json, ?) = ?",
-                (f"$.{key}", value),
+                "SELECT paper_id FROM paper_external_ids WHERE id_type = ? AND id_value = ?",
+                (key, value),
             ).fetchall()
             matches.update(row["paper_id"] for row in rows)
         return matches
@@ -231,7 +378,8 @@ class PaperStore:
         fetched_at: datetime,
         source_updated_at: datetime | None = None,
         etag: str | None = None,
-    ) -> str:
+        allow_create: bool = True,
+    ) -> str | None:
         existing_ids = self.find_by_external_ids(paper.external_ids)
         target_id = paper.paper_id
         if len(existing_ids) == 1:
@@ -240,9 +388,28 @@ class PaperStore:
             self.queue_match(source, external_id, None, 1.0, "conflicting_exact_identity", raw_payload)
             return paper.paper_id
         elif not existing_ids:
-            fuzzy = self.find_fuzzy_candidates(paper.title, paper.authors[0] if paper.authors else "", limit=1)
+            fuzzy = (
+                self.find_fuzzy_candidates(
+                    paper.title,
+                    paper.authors[0] if paper.authors else "",
+                    limit=1,
+                )
+                if not paper.external_ids
+                else []
+            )
             if fuzzy and fuzzy[0][1] >= 0.65:
                 self.queue_match(source, external_id, fuzzy[0][0], fuzzy[0][1], "fuzzy_candidate_requires_review", raw_payload)
+            if not allow_create:
+                if not fuzzy or fuzzy[0][1] < 0.65:
+                    self.queue_match(
+                        source,
+                        external_id,
+                        None,
+                        0.0,
+                        "enrichment_identity_not_found",
+                        raw_payload,
+                    )
+                return None
         current = self.get(target_id)
         if current is None:
             merged = paper if target_id == paper.paper_id else PaperRecord(
@@ -263,7 +430,13 @@ class PaperStore:
             )
             created_at = fetched_at
         else:
-            merged = self._merge(current, paper, target_id)
+            merged = self._merge(
+                current,
+                paper,
+                target_id,
+                preserve_canonical=source != "arxiv",
+                add_discovery_source=source in {"arxiv", "huggingface"},
+            )
             created_at = parse_datetime(self._connection.execute(
                 "SELECT created_at FROM papers WHERE paper_id = ?", (target_id,)
             ).fetchone()[0]) or fetched_at
@@ -305,6 +478,25 @@ class PaperStore:
                     etag,
                 ),
             )
+            connection.executemany(
+                """INSERT INTO paper_external_ids(id_type, id_value, paper_id)
+                   VALUES (?, ?, ?)
+                   ON CONFLICT(id_type, id_value) DO UPDATE SET paper_id=excluded.paper_id""",
+                ((key, value, merged.paper_id) for key, value in merged.external_ids.items()),
+            )
+            github_url = merged.metadata.get("github_url") or merged.signals.get("github", {}).get("url")
+            arxiv_id = merged.external_ids.get("arxiv_id")
+            if github_url and arxiv_id:
+                connection.execute(
+                    """INSERT INTO github_repository_links(
+                           paper_id, arxiv_id, github_url, discovered_at
+                       ) VALUES (?, ?, ?, ?)
+                       ON CONFLICT(paper_id) DO UPDATE SET
+                           arxiv_id=excluded.arxiv_id,
+                           github_url=excluded.github_url,
+                           discovered_at=excluded.discovered_at""",
+                    (merged.paper_id, arxiv_id, str(github_url), fetched_at.isoformat()),
+                )
             provenance_fields = _provenance_fields(merged)
             provenance_fields["missing_fields"] = _source_missing_fields(raw_payload)
             for field_name, evidence in provenance_fields.items():
@@ -326,7 +518,60 @@ class PaperStore:
                 )
         return merged.paper_id
 
-    def _merge(self, current: PaperRecord, incoming: PaperRecord, target_id: str) -> PaperRecord:
+    def withdraw_by_external_id(
+        self,
+        *,
+        source: str,
+        external_id: str,
+        raw_payload: Mapping[str, Any],
+        fetched_at: datetime,
+        source_updated_at: datetime | None = None,
+    ) -> bool:
+        normalized = normalize_external_ids({"arxiv_id": external_id}).get("arxiv_id")
+        if not normalized:
+            return False
+        row = self._connection.execute(
+            "SELECT paper_id FROM paper_external_ids WHERE id_type = 'arxiv_id' AND id_value = ?",
+            (normalized,),
+        ).fetchone()
+        if row is None:
+            return False
+        paper_id = str(row["paper_id"])
+        with self.transaction() as connection:
+            connection.execute(
+                "UPDATE papers SET withdrawn = 1, last_seen_at = ? WHERE paper_id = ?",
+                (fetched_at.isoformat(), paper_id),
+            )
+            connection.execute(
+                """INSERT INTO source_observations(
+                       source, external_id, paper_id, payload_json,
+                       source_updated_at, fetched_at, etag
+                   ) VALUES (?, ?, ?, ?, ?, ?, NULL)
+                   ON CONFLICT(source, external_id) DO UPDATE SET
+                       paper_id=excluded.paper_id,
+                       payload_json=excluded.payload_json,
+                       source_updated_at=excluded.source_updated_at,
+                       fetched_at=excluded.fetched_at""",
+                (
+                    source,
+                    normalized,
+                    paper_id,
+                    _json(raw_payload),
+                    source_updated_at.isoformat() if source_updated_at else None,
+                    fetched_at.isoformat(),
+                ),
+            )
+        return True
+
+    def _merge(
+        self,
+        current: PaperRecord,
+        incoming: PaperRecord,
+        target_id: str,
+        *,
+        preserve_canonical: bool,
+        add_discovery_source: bool,
+    ) -> PaperRecord:
         external_ids = dict(current.external_ids)
         external_ids.update({key: value for key, value in incoming.external_ids.items() if value})
         signals = {key: dict(value) for key, value in current.signals.items()}
@@ -334,13 +579,25 @@ class PaperStore:
             signals.setdefault(key, {}).update({field: val for field, val in value.items() if val is not None})
         metadata = dict(current.metadata)
         metadata.update({key: value for key, value in incoming.metadata.items() if value is not None})
-        title = current.title if current.title.strip() else incoming.title
-        abstract = incoming.abstract or current.abstract
+        title = current.title if preserve_canonical or current.title.strip() else incoming.title
+        abstract = current.abstract or incoming.abstract if preserve_canonical else incoming.abstract or current.abstract
         authors = current.authors or incoming.authors
-        published_at = min(current.published_at, incoming.published_at)
-        updated_at = max(filter(None, (current.updated_at, incoming.updated_at)), default=None)
-        subjects = tuple(dict.fromkeys((*current.subjects, *incoming.subjects)))
-        sources = tuple(dict.fromkeys((*current.discovery_sources, *incoming.discovery_sources)))
+        published_at = current.published_at if preserve_canonical else min(current.published_at, incoming.published_at)
+        updated_at = (
+            current.updated_at
+            if preserve_canonical
+            else max(filter(None, (current.updated_at, incoming.updated_at)), default=None)
+        )
+        subjects = (
+            current.subjects
+            if preserve_canonical
+            else tuple(dict.fromkeys((*current.subjects, *incoming.subjects)))
+        )
+        sources = (
+            tuple(dict.fromkeys((*current.discovery_sources, *incoming.discovery_sources)))
+            if add_discovery_source
+            else current.discovery_sources
+        )
         return PaperRecord(
             paper_id=target_id,
             title=title,
@@ -425,54 +682,171 @@ class PaperStore:
         limit: int,
         cursor: tuple[str, str] | None = None,
     ) -> tuple[list[PaperRecord], tuple[str, str] | None]:
-        wanted_authors = {str(item).lower() for item in authors}
-        wanted_subjects = {str(item).lower() for item in subjects}
-        wanted_venues = {str(item).lower() for item in venues}
-        rows = self._connection.execute(
-            "SELECT * FROM papers WHERE admitted = 1 AND withdrawn = 0 ORDER BY published_at DESC, paper_id DESC"
-        ).fetchall()
-        items: list[PaperRecord] = []
-        for row in rows:
-            paper = self._row_to_paper(row)
-            key = (paper.published_at.isoformat(), paper.paper_id)
-            if cursor and not (key[0] < cursor[0] or (key[0] == cursor[0] and key[1] < cursor[1])):
-                continue
-            author_match = wanted_authors.intersection(author.lower() for author in paper.authors)
-            subject_match = wanted_subjects.intersection(subject.lower() for subject in paper.subjects)
-            venue_match = str(paper.metadata.get("venue_name", "")).lower() in wanted_venues
-            if not (author_match or subject_match or (wanted_venues and venue_match)):
-                continue
-            items.append(paper)
-            if len(items) > min(limit, 100):
-                break
-        bounded = items[: min(limit, 100)]
+        wanted_authors = tuple(sorted({str(item).strip().lower() for item in authors if str(item).strip()}))
+        wanted_subjects = tuple(sorted({str(item).strip().lower() for item in subjects if str(item).strip()}))
+        wanted_venues = tuple(sorted({str(item).strip().lower() for item in venues if str(item).strip()}))
+        match_queries: list[str] = []
+        params: list[Any] = []
+        if wanted_authors:
+            placeholders = ",".join("?" for _ in wanted_authors)
+            match_queries.append(f"SELECT paper_id FROM author_index WHERE author_key IN ({placeholders})")
+            params.extend(wanted_authors)
+        if wanted_subjects:
+            placeholders = ",".join("?" for _ in wanted_subjects)
+            match_queries.append(f"SELECT paper_id FROM channel_index WHERE channel_key IN ({placeholders})")
+            params.extend(f"subject:{subject}" for subject in wanted_subjects)
+        if wanted_venues:
+            placeholders = ",".join("?" for _ in wanted_venues)
+            match_queries.append(f"SELECT paper_id FROM venue_index WHERE venue_key IN ({placeholders})")
+            params.extend(wanted_venues)
+        if not match_queries:
+            return [], None
+        clauses = ["papers.admitted = 1", "papers.withdrawn = 0"]
+        direct_index: str | None = None
+        direct_values: tuple[str, ...] = ()
+        if wanted_authors and not wanted_subjects and not wanted_venues:
+            direct_index = "author_index"
+            direct_values = wanted_authors
+        elif wanted_subjects and not wanted_authors and not wanted_venues:
+            direct_index = "channel_index"
+            direct_values = tuple(f"subject:{subject}" for subject in wanted_subjects)
+        elif wanted_venues and not wanted_authors and not wanted_subjects:
+            direct_index = "venue_index"
+            direct_values = wanted_venues
+        if direct_index:
+            placeholders = ",".join("?" for _ in direct_values)
+            params = list(direct_values)
+            direct_date_column = "matched.sort_key" if direct_index == "channel_index" else "matched.published_at"
+            if cursor:
+                clauses.append(
+                    f"({direct_date_column} < ? OR ({direct_date_column} = ? AND matched.paper_id < ?))"
+                )
+                params.extend((cursor[0], cursor[0], cursor[1]))
+            bounded_limit = max(1, min(limit, 100))
+            params.append(bounded_limit + 1)
+            rows = self._connection.execute(
+                f"""SELECT papers.* FROM {direct_index} AS matched
+                    JOIN papers ON papers.paper_id = matched.paper_id
+                    WHERE matched.{('author_key' if direct_index == 'author_index' else 'venue_key' if direct_index == 'venue_index' else 'channel_key')} IN ({placeholders})
+                      AND {' AND '.join(clauses)}
+                    ORDER BY {direct_date_column} DESC, matched.paper_id DESC LIMIT ?""",
+                params,
+            ).fetchall()
+        else:
+            matches = " UNION ".join(match_queries)
+            if cursor:
+                clauses.append(
+                    "(papers.published_at < ? OR (papers.published_at = ? AND papers.paper_id < ?))"
+                )
+                params.extend((cursor[0], cursor[0], cursor[1]))
+            bounded_limit = max(1, min(limit, 100))
+            params.append(bounded_limit + 1)
+            rows = self._connection.execute(
+                f"SELECT papers.* FROM papers JOIN ({matches}) AS matched "
+                f"ON matched.paper_id = papers.paper_id WHERE {' AND '.join(clauses)} "
+                "ORDER BY papers.published_at DESC, papers.paper_id DESC LIMIT ?",
+                params,
+            ).fetchall()
+        bounded = [self._row_to_paper(row) for row in rows[:bounded_limit]]
         next_cursor = None
-        if len(items) > len(bounded) and bounded:
+        if len(rows) > len(bounded) and bounded:
             next_cursor = (bounded[-1].published_at.isoformat(), bounded[-1].paper_id)
         return bounded, next_cursor
 
     def refresh_indexes(self, generated_at: datetime | None = None) -> None:
         generated_at = generated_at or utc_now()
+        generated = generated_at.isoformat()
         with self.transaction() as connection:
             connection.execute("DELETE FROM latest_index")
+            connection.execute(
+                """INSERT INTO latest_index(paper_id, published_at, generated_at)
+                   SELECT paper_id, published_at, ? FROM papers
+                   WHERE admitted = 1 AND withdrawn = 0
+                     AND EXISTS (
+                       SELECT 1 FROM json_each(papers.discovery_sources_json)
+                       WHERE value IN ('arxiv', 'huggingface')
+                     )""",
+                (generated,),
+            )
+        with self.transaction() as connection:
             connection.execute("DELETE FROM channel_index")
+            connection.execute("DELETE FROM author_index")
+            connection.execute("DELETE FROM venue_index")
+            connection.execute(
+                """INSERT OR REPLACE INTO channel_index(channel_key, paper_id, sort_key, generated_at)
+                   SELECT 'subject:' || lower(subjects.value), papers.paper_id, papers.published_at, ?
+                   FROM papers JOIN json_each(papers.subjects_json) AS subjects
+                   WHERE papers.admitted = 1 AND papers.withdrawn = 0""",
+                (generated,),
+            )
+            connection.execute(
+                """INSERT OR REPLACE INTO author_index(author_key, paper_id, published_at)
+                   SELECT lower(authors.value), papers.paper_id, papers.published_at
+                   FROM papers JOIN json_each(papers.authors_json) AS authors
+                   WHERE papers.admitted = 1 AND papers.withdrawn = 0
+                     AND trim(CAST(authors.value AS TEXT)) != ''"""
+            )
+            connection.execute(
+                """INSERT OR REPLACE INTO venue_index(venue_key, paper_id, published_at)
+                   SELECT lower(json_extract(metadata_json, '$.venue_name')), paper_id, published_at
+                   FROM papers
+                   WHERE admitted = 1 AND withdrawn = 0
+                     AND json_extract(metadata_json, '$.venue_name') IS NOT NULL"""
+            )
+        with self.transaction() as connection:
             connection.execute("DELETE FROM candidate_index")
-            rows = connection.execute("SELECT * FROM papers WHERE admitted = 1 AND withdrawn = 0").fetchall()
-            for row in rows:
-                paper = self._row_to_paper(row)
-                if set(paper.discovery_sources).intersection({"arxiv", "huggingface"}):
-                    connection.execute(
-                        "INSERT INTO latest_index(paper_id, published_at, generated_at) VALUES (?, ?, ?)",
-                        (paper.paper_id, paper.published_at.isoformat(), generated_at.isoformat()),
-                    )
-                for subject in paper.subjects:
-                    connection.execute(
-                        "INSERT OR REPLACE INTO channel_index(channel_key, paper_id, sort_key, generated_at) VALUES (?, ?, ?, ?)",
-                        (f"subject:{subject}", paper.paper_id, paper.published_at.isoformat(), generated_at.isoformat()),
-                    )
+            connection.execute(
+                """INSERT INTO candidate_index(pool, paper_id, generated_at, sort_key, published_at)
+                   SELECT 'all', paper_id, ?, 0, published_at FROM papers
+                   WHERE admitted = 1 AND withdrawn = 0""",
+                (generated,),
+            )
+            boundaries = (
+                ("0-1y", generated_at - timedelta(days=365.25), generated_at),
+                ("1-3y", generated_at - timedelta(days=365.25 * 3), generated_at - timedelta(days=365.25)),
+                ("3-5y", generated_at - timedelta(days=365.25 * 5), generated_at - timedelta(days=365.25 * 3)),
+                ("5y+", None, generated_at - timedelta(days=365.25 * 5)),
+            )
+            quality_sort = """CASE
+                WHEN json_extract(signals_json, '$.openalex.citation_count_outlier') = 1
+                THEN 0
+                ELSE COALESCE(
+                    json_extract(signals_json, '$.openalex.citation_count'),
+                    json_extract(signals_json, '$.semantic_scholar.citation_count'),
+                    0
+                )
+            END"""
+            for bucket, lower, upper in boundaries:
+                clauses = ["admitted = 1", "withdrawn = 0", "published_at < ?"]
+                date_params: list[Any] = [upper.isoformat()]
+                if lower is not None:
+                    clauses.append("published_at >= ?")
+                    date_params.append(lower.isoformat())
+                where = " AND ".join(clauses)
+                quality_where = (
+                    f"{where} AND "
+                    "(json_extract(signals_json, '$.openalex.citation_count_outlier') IS NULL "
+                    "OR json_extract(signals_json, '$.openalex.citation_count_outlier') != 1)"
+                )
                 connection.execute(
-                    "INSERT INTO candidate_index(pool, paper_id, generated_at) VALUES ('all', ?, ?)",
-                    (paper.paper_id, generated_at.isoformat()),
+                    f"""INSERT INTO candidate_index(pool, paper_id, generated_at, sort_key, published_at)
+                        SELECT ?, paper_id, ?,
+                               {quality_sort},
+                               published_at
+                        FROM papers WHERE {quality_where}
+                        ORDER BY {quality_sort} DESC,
+                                 published_at DESC, paper_id DESC LIMIT 5000""",
+                    (f"quality:{bucket}", generated, *date_params),
+                )
+                connection.execute(
+                    f"""INSERT INTO candidate_index(pool, paper_id, generated_at, sort_key, published_at)
+                        SELECT ?, paper_id, ?,
+                               COALESCE(json_extract(signals_json, '$.huggingface.heat'), 0),
+                               published_at
+                        FROM papers WHERE {where}
+                        ORDER BY COALESCE(json_extract(signals_json, '$.huggingface.heat'), 0) DESC,
+                                 published_at DESC, paper_id DESC LIMIT 5000""",
+                    (f"trending:{bucket}", generated, *date_params),
                 )
 
     def all_candidates(self) -> list[PaperRecord]:
@@ -480,6 +854,608 @@ class PaperStore:
             "SELECT * FROM papers WHERE admitted = 1 AND withdrawn = 0 ORDER BY published_at DESC, paper_id DESC"
         ).fetchall()
         return [self._row_to_paper(row) for row in rows]
+
+    def recommendation_candidates(
+        self,
+        *,
+        read_ids: Iterable[str] = (),
+        per_pool_limit: int = 500,
+        as_of: datetime | None = None,
+    ) -> list[PaperRecord]:
+        as_of = as_of or utc_now()
+        per_pool_limit = max(1, min(int(per_pool_limit), 5000))
+        read = set(list(read_ids)[:5000])
+        has_materialized_pools = self._connection.execute(
+            "SELECT 1 FROM candidate_index WHERE pool LIKE 'quality:%' LIMIT 1"
+        ).fetchone()
+        if has_materialized_pools is not None:
+            rows_by_id: dict[str, sqlite3.Row] = {}
+            for bucket in ("0-1y", "1-3y", "3-5y", "5y+"):
+                for pool in ("quality", "trending"):
+                    rows = self._connection.execute(
+                        """SELECT papers.* FROM candidate_index
+                           JOIN papers ON papers.paper_id = candidate_index.paper_id
+                           WHERE candidate_index.pool = ?
+                           ORDER BY candidate_index.sort_key DESC,
+                                    candidate_index.published_at DESC,
+                                    candidate_index.paper_id DESC LIMIT ?""",
+                        (f"{pool}:{bucket}", per_pool_limit),
+                    ).fetchall()
+                    for row in rows:
+                        if row["paper_id"] not in read:
+                            rows_by_id[row["paper_id"]] = row
+            return [paper_from_row(row, []) for row in rows_by_id.values()]
+        boundaries = (
+            (as_of - timedelta(days=365.25), as_of),
+            (as_of - timedelta(days=365.25 * 3), as_of - timedelta(days=365.25)),
+            (as_of - timedelta(days=365.25 * 5), as_of - timedelta(days=365.25 * 3)),
+            (None, as_of - timedelta(days=365.25 * 5)),
+        )
+        rows_by_id: dict[str, sqlite3.Row] = {}
+        orders = (
+            """CASE
+                WHEN json_extract(signals_json, '$.openalex.citation_count_outlier') = 1
+                THEN -1
+                ELSE COALESCE(
+                    json_extract(signals_json, '$.openalex.citation_count'),
+                    json_extract(signals_json, '$.semantic_scholar.citation_count'),
+                    -1
+                )
+            END DESC, published_at DESC, paper_id DESC""",
+            "COALESCE(json_extract(signals_json, '$.huggingface.heat'), -1) DESC, published_at DESC, paper_id DESC",
+        )
+        for lower, upper in boundaries:
+            clauses = ["admitted = 1", "withdrawn = 0", "published_at < ?"]
+            params: list[Any] = [upper.isoformat()]
+            if lower is not None:
+                clauses.append("published_at >= ?")
+                params.append(lower.isoformat())
+            for order_index, order in enumerate(orders):
+                order_clauses = clauses
+                if order_index == 0:
+                    order_clauses = [
+                        *clauses,
+                        "(json_extract(signals_json, '$.openalex.citation_count_outlier') IS NULL "
+                        "OR json_extract(signals_json, '$.openalex.citation_count_outlier') != 1)",
+                    ]
+                query_params = [*params, per_pool_limit]
+                rows = self._connection.execute(
+                    f"SELECT * FROM papers WHERE {' AND '.join(order_clauses)} ORDER BY {order} LIMIT ?",
+                    query_params,
+                ).fetchall()
+                for row in rows:
+                    if row["paper_id"] not in read:
+                        rows_by_id[row["paper_id"]] = row
+        return [paper_from_row(row, []) for row in rows_by_id.values()]
+
+    def semantic_scholar_candidates(
+        self,
+        *,
+        limit: int = 500,
+        stale_before: datetime | None = None,
+    ) -> list[str]:
+        bounded_limit = max(1, min(int(limit), 5000))
+        stale_value = stale_before.isoformat() if stale_before else None
+        selected: dict[str, None] = {}
+        quality_limit = max(1, (bounded_limit + 1) // 2)
+        queries = (
+            ("""SELECT json_extract(papers.external_ids_json, '$.arxiv_id') AS arxiv_id
+               FROM candidate_index
+               JOIN papers ON papers.paper_id = candidate_index.paper_id
+               LEFT JOIN source_observations AS observation
+                 ON observation.paper_id = papers.paper_id
+                AND observation.source = 'semantic_scholar'
+               WHERE candidate_index.pool LIKE 'quality:%'
+                 AND json_extract(papers.external_ids_json, '$.arxiv_id') IS NOT NULL
+                 AND (? IS NULL OR observation.fetched_at IS NULL OR observation.fetched_at < ?)
+               ORDER BY candidate_index.sort_key DESC,
+                        candidate_index.published_at DESC,
+                        candidate_index.paper_id DESC
+               LIMIT ?""", quality_limit),
+            ("""SELECT json_extract(papers.external_ids_json, '$.arxiv_id') AS arxiv_id
+               FROM latest_index
+               JOIN papers ON papers.paper_id = latest_index.paper_id
+               LEFT JOIN source_observations AS observation
+                 ON observation.paper_id = papers.paper_id
+                AND observation.source = 'semantic_scholar'
+               WHERE json_extract(papers.external_ids_json, '$.arxiv_id') IS NOT NULL
+                 AND (? IS NULL OR observation.fetched_at IS NULL OR observation.fetched_at < ?)
+               ORDER BY latest_index.published_at DESC, latest_index.paper_id DESC
+               LIMIT ?""", bounded_limit),
+            ("""SELECT json_extract(papers.external_ids_json, '$.arxiv_id') AS arxiv_id
+               FROM papers
+               LEFT JOIN source_observations AS observation
+                 ON observation.paper_id = papers.paper_id
+                AND observation.source = 'semantic_scholar'
+               WHERE papers.admitted = 1 AND papers.withdrawn = 0
+                 AND json_extract(papers.external_ids_json, '$.arxiv_id') IS NOT NULL
+                 AND (? IS NULL OR observation.fetched_at IS NULL OR observation.fetched_at < ?)
+               ORDER BY papers.published_at DESC, papers.paper_id DESC
+               LIMIT ?""", bounded_limit),
+        )
+        for query, query_limit in queries:
+            rows = self._connection.execute(
+                query,
+                (stale_value, stale_value, query_limit),
+            ).fetchall()
+            for row in rows:
+                arxiv_id = str(row["arxiv_id"] or "").strip()
+                if arxiv_id:
+                    selected.setdefault(arxiv_id, None)
+                if len(selected) >= bounded_limit:
+                    return list(selected)
+        return list(selected)
+
+    def github_candidates(
+        self,
+        *,
+        limit: int = 50,
+        stale_before: datetime | None = None,
+    ) -> list[dict[str, str]]:
+        bounded_limit = max(1, min(int(limit), 500))
+        stale_value = stale_before.isoformat() if stale_before else None
+        rows = self._connection.execute(
+            """SELECT links.paper_id, links.arxiv_id, links.github_url
+               FROM github_repository_links AS links
+               LEFT JOIN source_observations AS observation
+                 ON observation.paper_id = links.paper_id
+                AND observation.source = 'github'
+               WHERE (? IS NULL OR observation.fetched_at IS NULL OR observation.fetched_at < ?)
+               ORDER BY links.discovered_at DESC, links.paper_id DESC
+               LIMIT ?""",
+            (stale_value, stale_value, bounded_limit),
+        ).fetchall()
+        return [
+            {
+                "paper_id": str(row["paper_id"]),
+                "arxiv_id": str(row["arxiv_id"]),
+                "github_url": str(row["github_url"]),
+            }
+            for row in rows
+        ]
+
+    def start_dataset_import(
+        self,
+        *,
+        dataset_key: str,
+        source: str,
+        source_path: str,
+        source_size: int,
+        source_mtime_ns: int,
+        started_at: datetime,
+        run_token: str,
+        lease_seconds: int = 120,
+    ) -> dict[str, Any]:
+        existing = self.get_dataset_import(dataset_key)
+        lease_expires_at = started_at + timedelta(seconds=max(30, lease_seconds))
+        if existing is not None:
+            unchanged = (
+                existing["source_path"] == source_path
+                and int(existing["source_size"]) == source_size
+                and int(existing["source_mtime_ns"]) == source_mtime_ns
+            )
+            if not unchanged:
+                raise ValueError(f"dataset source changed after checkpoint: {dataset_key}")
+            if existing["status"] == "completed":
+                return existing
+            active_lease = parse_datetime(existing.get("lease_expires_at"))
+            if (
+                existing.get("run_token")
+                and existing["run_token"] != run_token
+                and active_lease is not None
+                and active_lease > started_at
+            ):
+                raise RuntimeError(f"dataset import already running: {dataset_key}")
+            self._connection.execute(
+                """UPDATE dataset_imports SET status = 'running', error = NULL,
+                   run_token = ?, lease_expires_at = ?, updated_at = ? WHERE dataset_key = ?""",
+                (run_token, lease_expires_at.isoformat(), started_at.isoformat(), dataset_key),
+            )
+            self._connection.commit()
+            return self.get_dataset_import(dataset_key) or existing
+        self._connection.execute(
+            """INSERT INTO dataset_imports(
+                   dataset_key, source, source_path, source_size, source_mtime_ns,
+                   status, started_at, updated_at, run_token, lease_expires_at
+               ) VALUES (?, ?, ?, ?, ?, 'running', ?, ?, ?, ?)""",
+            (
+                dataset_key,
+                source,
+                source_path,
+                source_size,
+                source_mtime_ns,
+                started_at.isoformat(),
+                started_at.isoformat(),
+                run_token,
+                lease_expires_at.isoformat(),
+            ),
+        )
+        self._connection.commit()
+        return self.get_dataset_import(dataset_key) or {}
+
+    def get_dataset_import(self, dataset_key: str) -> dict[str, Any] | None:
+        row = self._connection.execute(
+            "SELECT * FROM dataset_imports WHERE dataset_key = ?", (dataset_key,)
+        ).fetchone()
+        return dict(row) if row else None
+
+    def list_dataset_imports(self, prefix: str = "") -> list[dict[str, Any]]:
+        if prefix:
+            rows = self._connection.execute(
+                "SELECT * FROM dataset_imports WHERE dataset_key LIKE ? ORDER BY dataset_key",
+                (prefix + "%",),
+            ).fetchall()
+        else:
+            rows = self._connection.execute("SELECT * FROM dataset_imports ORDER BY dataset_key").fetchall()
+        return [dict(row) for row in rows]
+
+    def apply_dataset_paper_batch(
+        self,
+        *,
+        dataset_key: str,
+        records: list[Mapping[str, Any]],
+        rejections: list[Mapping[str, Any]],
+        byte_offset: int,
+        line_number: int,
+        fetched_at: datetime,
+        run_token: str,
+        lease_seconds: int = 120,
+    ) -> dict[str, int]:
+        paper_ids = [str(item["paper"].paper_id) for item in records]
+        existing_ids: set[str] = set()
+        for start in range(0, len(paper_ids), 500):
+            chunk = paper_ids[start : start + 500]
+            if not chunk:
+                continue
+            placeholders = ",".join("?" for _ in chunk)
+            rows = self._connection.execute(
+                f"SELECT paper_id FROM papers WHERE paper_id IN ({placeholders})", chunk
+            ).fetchall()
+            existing_ids.update(row["paper_id"] for row in rows)
+        unique_ids = set(paper_ids)
+        imported = len(unique_ids - existing_ids)
+        duplicates = len(records) - imported
+        at = fetched_at.isoformat()
+        with self.transaction() as connection:
+            connection.executemany(
+                """INSERT INTO papers(
+                       paper_id, title, abstract, authors_json, published_at, updated_at,
+                       subjects_json, external_ids_json, discovery_sources_json, signals_json,
+                       metadata_json, admitted, admission_reason, withdrawn, created_at,
+                       last_seen_at, schema_version
+                   ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                   ON CONFLICT(paper_id) DO UPDATE SET
+                       title=excluded.title, abstract=excluded.abstract,
+                       authors_json=excluded.authors_json, published_at=excluded.published_at,
+                       updated_at=excluded.updated_at, subjects_json=excluded.subjects_json,
+                       external_ids_json=json_patch(papers.external_ids_json, excluded.external_ids_json),
+                       signals_json=json_patch(papers.signals_json, excluded.signals_json),
+                       metadata_json=json_patch(papers.metadata_json, excluded.metadata_json),
+                       admitted=excluded.admitted, admission_reason=excluded.admission_reason,
+                       withdrawn=excluded.withdrawn, last_seen_at=excluded.last_seen_at,
+                       schema_version=excluded.schema_version""",
+                (paper_values(item["paper"], fetched_at, fetched_at) for item in records),
+            )
+            identity_rows = [
+                (key, value, item["paper"].paper_id)
+                for item in records
+                for key, value in item["paper"].external_ids.items()
+            ]
+            connection.executemany(
+                """INSERT INTO paper_external_ids(id_type, id_value, paper_id)
+                   VALUES (?, ?, ?)
+                   ON CONFLICT(id_type, id_value) DO UPDATE SET paper_id=excluded.paper_id""",
+                identity_rows,
+            )
+            connection.executemany(
+                """INSERT INTO source_observations(
+                       source, external_id, paper_id, payload_json, source_updated_at, fetched_at, etag
+                   ) VALUES (?, ?, ?, ?, ?, ?, NULL)
+                   ON CONFLICT(source, external_id) DO UPDATE SET
+                       paper_id=excluded.paper_id, payload_json=excluded.payload_json,
+                       source_updated_at=excluded.source_updated_at, fetched_at=excluded.fetched_at""",
+                (
+                    (
+                        item["source"],
+                        item["external_id"],
+                        item["paper"].paper_id,
+                        _json(item["raw_payload"]),
+                        item["source_updated_at"].isoformat() if item.get("source_updated_at") else None,
+                        at,
+                    )
+                    for item in records
+                ),
+            )
+            provenance_rows = [
+                (
+                    item["paper"].paper_id,
+                    field_name,
+                    item["source"],
+                    at,
+                    item["source_updated_at"].isoformat() if item.get("source_updated_at") else None,
+                    _json(evidence),
+                )
+                for item in records
+                for field_name, evidence in item["provenance"].items()
+            ]
+            connection.executemany(
+                """INSERT INTO provenance(
+                       paper_id, field_name, source, fetched_at, source_updated_at, evidence_json
+                   ) VALUES (?, ?, ?, ?, ?, ?)
+                   ON CONFLICT(paper_id, field_name, source) DO UPDATE SET
+                       fetched_at=excluded.fetched_at,
+                       source_updated_at=excluded.source_updated_at,
+                       evidence_json=excluded.evidence_json""",
+                provenance_rows,
+            )
+            self._insert_dataset_rejections(connection, dataset_key, rejections, fetched_at)
+            updated = connection.execute(
+                """UPDATE dataset_imports SET
+                       byte_offset = ?, line_number = ?,
+                       processed_count = processed_count + ?,
+                       imported_count = imported_count + ?,
+                       duplicate_count = duplicate_count + ?,
+                       rejected_count = rejected_count + ?,
+                       status = 'running', updated_at = ?, error = NULL,
+                       lease_expires_at = ?
+                   WHERE dataset_key = ? AND run_token = ?""",
+                (
+                    byte_offset,
+                    line_number,
+                    len(records) + len(rejections),
+                    imported,
+                    duplicates,
+                    len(rejections),
+                    at,
+                    (fetched_at + timedelta(seconds=max(30, lease_seconds))).isoformat(),
+                    dataset_key,
+                    run_token,
+                ),
+            )
+            if updated.rowcount != 1:
+                raise RuntimeError(f"dataset import lease lost: {dataset_key}")
+        return {"imported": imported, "duplicates": duplicates, "rejected": len(rejections)}
+
+    def apply_dataset_enrichment_batch(
+        self,
+        *,
+        dataset_key: str,
+        records: list[Mapping[str, Any]],
+        rejections: list[Mapping[str, Any]],
+        byte_offset: int,
+        line_number: int,
+        fetched_at: datetime,
+        run_token: str,
+        lease_seconds: int = 120,
+    ) -> dict[str, int]:
+        lookup_values = tuple(dict.fromkeys(str(item["lookup_value"]) for item in records))
+        identities: dict[str, str] = {}
+        for start in range(0, len(lookup_values), 500):
+            chunk = lookup_values[start : start + 500]
+            if not chunk:
+                continue
+            placeholders = ",".join("?" for _ in chunk)
+            rows = self._connection.execute(
+                f"SELECT id_value, paper_id FROM paper_external_ids "
+                f"WHERE id_type = 'arxiv_id' AND id_value IN ({placeholders})",
+                chunk,
+            ).fetchall()
+            identities.update({row["id_value"]: row["paper_id"] for row in rows})
+        matched_records = [(item, identities.get(str(item["lookup_value"]))) for item in records]
+        matched_records = [(item, paper_id) for item, paper_id in matched_records if paper_id is not None]
+        paper_ids = tuple(dict.fromkeys(str(paper_id) for _, paper_id in matched_records))
+        current_rows: dict[str, sqlite3.Row] = {}
+        for start in range(0, len(paper_ids), 500):
+            chunk = paper_ids[start : start + 500]
+            if not chunk:
+                continue
+            placeholders = ",".join("?" for _ in chunk)
+            rows = self._connection.execute(
+                f"SELECT paper_id, external_ids_json, signals_json, metadata_json FROM papers "
+                f"WHERE paper_id IN ({placeholders})",
+                chunk,
+            ).fetchall()
+            current_rows.update({row["paper_id"]: row for row in rows})
+        at = fetched_at.isoformat()
+        updates: list[tuple[str, str, str, str, str]] = []
+        identity_rows: list[tuple[str, str, str]] = []
+        observation_rows: list[tuple[Any, ...]] = []
+        provenance_rows: list[tuple[Any, ...]] = []
+        for item, paper_id in matched_records:
+            current = current_rows[str(paper_id)]
+            external_ids = _merge_nested(_load(current["external_ids_json"], {}), item.get("external_ids") or {})
+            signals = _merge_nested(_load(current["signals_json"], {}), item.get("signals") or {})
+            metadata = _merge_nested(_load(current["metadata_json"], {}), item.get("metadata") or {})
+            updates.append((_json(external_ids), _json(signals), _json(metadata), at, str(paper_id)))
+            identity_rows.extend((key, value, str(paper_id)) for key, value in (item.get("external_ids") or {}).items())
+            observation_rows.append(
+                (
+                    item["source"],
+                    item["external_id"],
+                    str(paper_id),
+                    _json(item["raw_payload"]),
+                    at,
+                )
+            )
+            provenance_rows.extend(
+                (
+                    str(paper_id),
+                    field_name,
+                    item["source"],
+                    at,
+                    _json(evidence),
+                )
+                for field_name, evidence in item["provenance"].items()
+            )
+        unmatched = len(records) - len(matched_records)
+        with self.transaction() as connection:
+            connection.executemany(
+                """UPDATE papers SET external_ids_json = ?, signals_json = ?, metadata_json = ?,
+                   last_seen_at = ? WHERE paper_id = ?""",
+                updates,
+            )
+            connection.executemany(
+                """INSERT INTO paper_external_ids(id_type, id_value, paper_id)
+                   VALUES (?, ?, ?)
+                   ON CONFLICT(id_type, id_value) DO UPDATE SET paper_id=excluded.paper_id""",
+                identity_rows,
+            )
+            connection.executemany(
+                """INSERT INTO source_observations(
+                       source, external_id, paper_id, payload_json, source_updated_at, fetched_at, etag
+                   ) VALUES (?, ?, ?, ?, NULL, ?, NULL)
+                   ON CONFLICT(source, external_id) DO UPDATE SET
+                       paper_id=excluded.paper_id, payload_json=excluded.payload_json,
+                       fetched_at=excluded.fetched_at""",
+                observation_rows,
+            )
+            connection.executemany(
+                """INSERT INTO provenance(
+                       paper_id, field_name, source, fetched_at, source_updated_at, evidence_json
+                   ) VALUES (?, ?, ?, ?, NULL, ?)
+                   ON CONFLICT(paper_id, field_name, source) DO UPDATE SET
+                       fetched_at=excluded.fetched_at, evidence_json=excluded.evidence_json""",
+                provenance_rows,
+            )
+            self._insert_dataset_rejections(connection, dataset_key, rejections, fetched_at)
+            updated = connection.execute(
+                """UPDATE dataset_imports SET
+                       byte_offset = ?, line_number = ?,
+                       processed_count = processed_count + ?,
+                       imported_count = imported_count + ?,
+                       rejected_count = rejected_count + ?,
+                       unmatched_count = unmatched_count + ?,
+                       status = 'running', updated_at = ?, error = NULL,
+                       lease_expires_at = ?
+                   WHERE dataset_key = ? AND run_token = ?""",
+                (
+                    byte_offset,
+                    line_number,
+                    len(records) + len(rejections),
+                    len(matched_records),
+                    len(rejections),
+                    unmatched,
+                    at,
+                    (fetched_at + timedelta(seconds=max(30, lease_seconds))).isoformat(),
+                    dataset_key,
+                    run_token,
+                ),
+            )
+            if updated.rowcount != 1:
+                raise RuntimeError(f"dataset import lease lost: {dataset_key}")
+        return {"matched": len(matched_records), "unmatched": unmatched, "rejected": len(rejections)}
+
+    def _insert_dataset_rejections(
+        self,
+        connection: sqlite3.Connection,
+        dataset_key: str,
+        rejections: list[Mapping[str, Any]],
+        created_at: datetime,
+    ) -> None:
+        connection.executemany(
+            """INSERT OR REPLACE INTO dataset_rejections(
+                   dataset_key, line_number, byte_offset, error, payload_excerpt, created_at
+               ) VALUES (?, ?, ?, ?, ?, ?)""",
+            (
+                (
+                    dataset_key,
+                    int(item["line_number"]),
+                    int(item["byte_offset"]),
+                    str(item["error"]),
+                    str(item.get("payload_excerpt") or "")[:1000],
+                    created_at.isoformat(),
+                )
+                for item in rejections
+            ),
+        )
+
+    def complete_dataset_import(
+        self,
+        dataset_key: str,
+        completed_at: datetime,
+        *,
+        run_token: str,
+    ) -> dict[str, Any]:
+        updated = self._connection.execute(
+            """UPDATE dataset_imports SET status = 'completed', completed_at = ?,
+               updated_at = ?, error = NULL, run_token = NULL, lease_expires_at = NULL
+               WHERE dataset_key = ? AND run_token = ?""",
+            (completed_at.isoformat(), completed_at.isoformat(), dataset_key, run_token),
+        )
+        if updated.rowcount != 1:
+            self._connection.rollback()
+            raise RuntimeError(f"dataset import lease lost: {dataset_key}")
+        self._connection.commit()
+        return self.get_dataset_import(dataset_key) or {}
+
+    def pause_dataset_import(self, dataset_key: str, paused_at: datetime, *, run_token: str) -> dict[str, Any]:
+        updated = self._connection.execute(
+            """UPDATE dataset_imports SET run_token = NULL, lease_expires_at = NULL,
+               updated_at = ? WHERE dataset_key = ? AND run_token = ?""",
+            (paused_at.isoformat(), dataset_key, run_token),
+        )
+        if updated.rowcount != 1:
+            self._connection.rollback()
+            raise RuntimeError(f"dataset import lease lost: {dataset_key}")
+        self._connection.commit()
+        return self.get_dataset_import(dataset_key) or {}
+
+    def fail_dataset_import(self, dataset_key: str, error: str, failed_at: datetime, *, run_token: str) -> None:
+        self._connection.execute(
+            """UPDATE dataset_imports SET status = 'failed', error = ?, updated_at = ?,
+               run_token = NULL, lease_expires_at = NULL
+               WHERE dataset_key = ? AND run_token = ?""",
+            (error, failed_at.isoformat(), dataset_key, run_token),
+        )
+        self._connection.commit()
+
+    def reconcile_arxiv_dataset(self, dataset_key: str, source_path: str) -> dict[str, Any]:
+        state = self.get_dataset_import(dataset_key)
+        if state is None:
+            raise ValueError(f"unknown dataset import: {dataset_key}")
+        observations = int(
+            self._connection.execute(
+                """SELECT COUNT(*) FROM source_observations
+                   WHERE source = 'arxiv'
+                     AND json_extract(payload_json, '$.source_path') = ?""",
+                (source_path,),
+            ).fetchone()[0]
+        )
+        rejected = int(
+            self._connection.execute(
+                "SELECT COUNT(*) FROM dataset_rejections WHERE dataset_key = ?", (dataset_key,)
+            ).fetchone()[0]
+        )
+        processed = int(state["line_number"])
+        duplicates = max(processed - observations - rejected, 0)
+        self._connection.execute(
+            """UPDATE dataset_imports SET processed_count = ?, imported_count = ?,
+               duplicate_count = ?, rejected_count = ?, updated_at = ?
+               WHERE dataset_key = ?""",
+            (processed, observations, duplicates, rejected, utc_now().isoformat(), dataset_key),
+        )
+        self._connection.commit()
+        return self.get_dataset_import(dataset_key) or {}
+
+    def indexes_ready(self) -> bool:
+        admitted = int(
+            self._connection.execute(
+                "SELECT COUNT(*) FROM papers WHERE admitted = 1 AND withdrawn = 0"
+            ).fetchone()[0]
+        )
+        latest = int(self._connection.execute("SELECT COUNT(*) FROM latest_index").fetchone()[0])
+        candidates = int(
+            self._connection.execute(
+                "SELECT COUNT(*) FROM candidate_index WHERE pool = 'all'"
+            ).fetchone()[0]
+        )
+        recommendation_pools = int(
+            self._connection.execute(
+                "SELECT COUNT(*) FROM candidate_index WHERE pool LIKE 'quality:%' OR pool LIKE 'trending:%'"
+            ).fetchone()[0]
+        )
+        author_rows = int(self._connection.execute("SELECT COUNT(*) FROM author_index").fetchone()[0])
+        return admitted == latest == candidates and recommendation_pools > 0 and author_rows > 0
 
     def record_snapshot(
         self,
@@ -506,21 +1482,112 @@ class PaperStore:
                 (source, snapshot_key, fetched_at.isoformat(), status, etag, cursor, raw_path, record_count, error),
             )
 
-    def set_sync_state(self, source: str, etag: str | None, cursor: str | None, path: str | None, at: datetime) -> None:
+    def set_sync_state(
+        self,
+        source: str,
+        etag: str | None,
+        cursor: str | None,
+        path: str | None,
+        at: datetime,
+        *,
+        completed_through: datetime | None = None,
+        window_from: str | None = None,
+        window_until: str | None = None,
+        mark_success: bool = True,
+    ) -> None:
         self._connection.execute(
-            """INSERT INTO sync_state(source, etag, cursor, last_success_at, last_snapshot_path)
-               VALUES (?, ?, ?, ?, ?)
+            """INSERT INTO sync_state(
+                   source, etag, cursor, last_success_at, last_snapshot_path,
+                   completed_through, window_from, window_until
+               ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                ON CONFLICT(source) DO UPDATE SET etag=excluded.etag, cursor=excluded.cursor,
-               last_success_at=excluded.last_success_at, last_snapshot_path=excluded.last_snapshot_path""",
-            (source, etag, cursor, at.isoformat(), path),
+               last_success_at=COALESCE(excluded.last_success_at, sync_state.last_success_at),
+               last_snapshot_path=excluded.last_snapshot_path,
+               completed_through=CASE
+                   WHEN excluded.completed_through IS NULL THEN sync_state.completed_through
+                   WHEN sync_state.completed_through IS NULL THEN excluded.completed_through
+                   WHEN excluded.completed_through > sync_state.completed_through THEN excluded.completed_through
+                   ELSE sync_state.completed_through
+               END,
+               window_from=COALESCE(excluded.window_from, sync_state.window_from),
+               window_until=COALESCE(excluded.window_until, sync_state.window_until)""",
+            (
+                source,
+                etag,
+                cursor,
+                at.isoformat() if mark_success else None,
+                path,
+                completed_through.isoformat() if completed_through else None,
+                window_from,
+                window_until,
+            ),
         )
         self._connection.commit()
+
+    @staticmethod
+    def _migration_files() -> list[tuple[int, Path]]:
+        root = Path(__file__).parent / "database" / "migrations"
+        migrations: list[tuple[int, Path]] = []
+        for path in sorted(root.glob("*.sql")):
+            match = _MIGRATION_PATTERN.fullmatch(path.name)
+            if match is None:
+                raise RuntimeError(f"invalid database migration filename: {path.name}")
+            migrations.append((int(match.group("version")), path))
+        expected = list(range(1, len(migrations) + 1))
+        actual = [version for version, _ in migrations]
+        if actual != expected:
+            raise RuntimeError(f"database migrations must be consecutive: {actual}")
+        return migrations
+
+    def _validate_database_version(self) -> None:
+        migrations = self._migration_files()
+        latest = migrations[-1][0] if migrations else 0
+        current = int(self._connection.execute("PRAGMA user_version").fetchone()[0])
+        if current > latest:
+            raise RuntimeError(
+                f"database version {current} is newer than supported version {latest}"
+            )
+
+    def _apply_migrations(self) -> None:
+        current = int(self._connection.execute("PRAGMA user_version").fetchone()[0])
+        for version, path in self._migration_files():
+            if version <= current:
+                continue
+            script = path.read_text(encoding="utf-8")
+            try:
+                self._connection.executescript(
+                    "BEGIN IMMEDIATE;\n"
+                    + script
+                    + f"\nPRAGMA user_version = {version};\nCOMMIT;"
+                )
+            except sqlite3.DatabaseError as error:
+                if self._connection.in_transaction:
+                    self._connection.rollback()
+                raise RuntimeError(
+                    f"database migration {path.name} failed: {error}"
+                ) from error
+            current = version
 
     def get_sync_state(self, source: str) -> dict[str, str | None]:
         row = self._connection.execute("SELECT * FROM sync_state WHERE source = ?", (source,)).fetchone()
         if not row:
-            return {"etag": None, "cursor": None, "last_success_at": None, "last_snapshot_path": None}
+            return {
+                "etag": None,
+                "cursor": None,
+                "last_success_at": None,
+                "last_snapshot_path": None,
+                "completed_through": None,
+                "window_from": None,
+                "window_until": None,
+            }
         return dict(row)
+
+    def latest_source_update(self, source: str) -> datetime | None:
+        row = self._connection.execute(
+            "SELECT MAX(source_updated_at) AS latest FROM source_observations WHERE source = ?",
+            (source,),
+        ).fetchone()
+        return parse_datetime(row["latest"]) if row and row["latest"] else None
 
     def record_batch(
         self,

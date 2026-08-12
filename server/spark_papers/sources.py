@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import time
 import urllib.error
@@ -72,7 +73,11 @@ class JsonFileSource:
 
 
 class JsonLinesFileSource(JsonFileSource):
-    """Imports a local arXiv-style JSONL dump without loading it as one object."""
+    """Legacy adapter for small JSONL fixtures.
+
+    The production-sized Spark arXiv dataset must use ``DatasetImporter`` so
+    records are checkpointed and written in bounded batches.
+    """
 
     def fetch(self, *, etag: str | None = None, cursor: str | None = None) -> FetchResult:
         with open(self.path, encoding="utf-8") as handle:
@@ -153,6 +158,7 @@ class HuggingFaceDailySource(HttpJsonSource):
         responses: list[Any] = []
         requests: list[Mapping[str, Any]] = []
         last_result: FetchResult | None = None
+        aggregate_etag = etag if len(self.dates) == 1 and self.max_pages == 1 else None
         for requested_date in self.dates:
             for page in range(self.max_pages):
                 page_query = dict(self.query)
@@ -160,7 +166,7 @@ class HuggingFaceDailySource(HttpJsonSource):
                     page_query["date"] = requested_date
                 page_query["p"] = str(page)
                 page_source = HttpJsonSource(self.name, self.endpoint, timeout=self.timeout, query=page_query, max_retries=self.max_retries, retry_backoff=self.retry_backoff)
-                result = page_source.fetch(etag=etag if page == 0 else None)
+                result = page_source.fetch(etag=aggregate_etag if page == 0 else None)
                 last_result = result
                 responses.append(result.raw_payload)
                 requests.append({"date": requested_date, "page": page, "query": page_query})
@@ -171,11 +177,25 @@ class HuggingFaceDailySource(HttpJsonSource):
                     break
         if last_result is None:
             return FetchResult(self.name, (), {"requests": requests, "responses": responses}, utc_now(), cursor=cursor, etag=etag)
-        return FetchResult(self.name, tuple(normalized), {"requests": requests, "responses": responses}, last_result.fetched_at, cursor=cursor, etag=last_result.etag, snapshot_key=(requested_date or "all") if self.dates else None, not_modified=last_result.not_modified and not normalized)
+        requested_dates = tuple(value for value in self.dates if value)
+        date_key = "_".join((requested_dates[0], requested_dates[-1])) if requested_dates else "current"
+        snapshot_key = f"{date_key}-{last_result.fetched_at.strftime('%Y%m%dT%H%M%SZ')}"
+        return FetchResult(
+            self.name,
+            tuple(normalized),
+            {"requests": requests, "responses": responses},
+            last_result.fetched_at,
+            cursor=max(requested_dates) if requested_dates else cursor,
+            etag=last_result.etag if aggregate_etag is not None else None,
+            snapshot_key=snapshot_key,
+            not_modified=last_result.not_modified and not normalized,
+        )
 
 
 class OpenAlexSource(HttpJsonSource):
     """Maps OpenAlex Works into enrichment observations."""
+
+    enrichment_only = True
 
     def __init__(self, endpoint: str = "https://api.openalex.org/works", **kwargs: Any) -> None:
         super().__init__("openalex", endpoint, **kwargs)
@@ -188,6 +208,8 @@ class OpenAlexSource(HttpJsonSource):
 
 class SemanticScholarSource(HttpJsonSource):
     """Maps Semantic Scholar graph records into enrichment observations."""
+
+    enrichment_only = True
 
     def __init__(self, endpoint: str = "https://api.semanticscholar.org/graph/v1/paper/search", **kwargs: Any) -> None:
         super().__init__("semantic_scholar", endpoint, **kwargs)
@@ -206,6 +228,8 @@ class GitHubEnrichmentSource(HttpJsonSource):
     offline curation step, so an unlinked repository cannot become a paper.
     """
 
+    enrichment_only = True
+
     def __init__(self, endpoint: str, **kwargs: Any) -> None:
         super().__init__("github", endpoint, **kwargs)
 
@@ -216,6 +240,167 @@ class GitHubEnrichmentSource(HttpJsonSource):
             if any(mapped.get(key) for key in ("arxiv_id", "doi", "openalex_id", "semantic_scholar_id"))
         )
         return FetchResult(result.source, records, result.raw_payload, result.fetched_at, result.cursor, result.etag, result.snapshot_key, result.not_modified)
+
+
+class SemanticScholarBatchSource:
+    """Fetches bounded Semantic Scholar enrichment by exact arXiv IDs."""
+
+    name = "semantic_scholar"
+    enrichment_only = True
+
+    def __init__(
+        self,
+        arxiv_ids: tuple[str, ...],
+        *,
+        endpoint: str = "https://api.semanticscholar.org/graph/v1/paper/batch",
+        api_key: str | None = None,
+        batch_size: int = 500,
+        timeout: float = 30.0,
+        max_retries: int = 3,
+        retry_backoff: float = 1.0,
+    ) -> None:
+        self.arxiv_ids = tuple(dict.fromkeys(value for value in arxiv_ids if value))
+        self.endpoint = endpoint
+        self.api_key = api_key
+        self.batch_size = max(1, min(int(batch_size), 500))
+        self.timeout = timeout
+        self.max_retries = max(0, max_retries)
+        self.retry_backoff = max(0.0, retry_backoff)
+
+    def fetch(self, *, etag: str | None = None, cursor: str | None = None) -> FetchResult:
+        fields = (
+            "paperId,title,abstract,authors,year,publicationDate,externalIds,"
+            "citationCount,influentialCitationCount,referenceCount,fieldsOfStudy"
+        )
+        endpoint = self.endpoint + "?" + urllib.parse.urlencode({"fields": fields})
+        responses: list[Any] = []
+        records: list[Mapping[str, Any]] = []
+        fetched_at = utc_now()
+        for start in range(0, len(self.arxiv_ids), self.batch_size):
+            chunk = self.arxiv_ids[start : start + self.batch_size]
+            body = json.dumps({"ids": [f"ARXIV:{value}" for value in chunk]}).encode("utf-8")
+            headers = {
+                "Accept": "application/json",
+                "Content-Type": "application/json",
+                "User-Agent": "SparkPaperPlatform/0.1",
+            }
+            if self.api_key:
+                headers["x-api-key"] = self.api_key
+            request = urllib.request.Request(endpoint, data=body, headers=headers, method="POST")
+            payload, _ = _request_json(
+                request,
+                name=self.name,
+                timeout=self.timeout,
+                max_retries=self.max_retries,
+                retry_backoff=self.retry_backoff,
+            )
+            if not isinstance(payload, list):
+                raise SourceError("semantic_scholar batch response is not a list")
+            responses.append({"requested_ids": list(chunk), "response": payload})
+            records.extend(item for item in payload if isinstance(item, Mapping))
+        normalized = tuple(_normalize_semantic_scholar_record(item) for item in records)
+        identity_digest = hashlib.sha256("\n".join(self.arxiv_ids).encode("utf-8")).hexdigest()[:12]
+        snapshot_key = (
+            f"arxiv-batch-{fetched_at.strftime('%Y%m%dT%H%M%SZ')}-"
+            f"{len(self.arxiv_ids)}-{identity_digest}"
+        )
+        return FetchResult(
+            self.name,
+            normalized,
+            {"endpoint": self.endpoint, "batches": responses},
+            fetched_at,
+            snapshot_key=snapshot_key,
+        )
+
+
+class GitHubRepositorySource:
+    """Fetches repository metrics only for papers with an exact arXiv link."""
+
+    name = "github"
+    enrichment_only = True
+
+    def __init__(
+        self,
+        candidates: tuple[Mapping[str, str], ...],
+        *,
+        token: str | None = None,
+        api_root: str = "https://api.github.com",
+        timeout: float = 20.0,
+        max_retries: int = 2,
+        retry_backoff: float = 1.0,
+    ) -> None:
+        self.candidates = candidates
+        self.token = token
+        self.api_root = api_root.rstrip("/")
+        self.timeout = timeout
+        self.max_retries = max(0, max_retries)
+        self.retry_backoff = max(0.0, retry_backoff)
+
+    def fetch(self, *, etag: str | None = None, cursor: str | None = None) -> FetchResult:
+        fetched_at = utc_now()
+        normalized: list[Mapping[str, Any]] = []
+        responses: list[Any] = []
+        seen: set[tuple[str, str]] = set()
+        for candidate in self.candidates:
+            arxiv_id = str(candidate.get("arxiv_id") or "").strip()
+            repo_name = _github_repository_name(candidate.get("github_url"))
+            if not arxiv_id or not repo_name or (arxiv_id, repo_name) in seen:
+                continue
+            seen.add((arxiv_id, repo_name))
+            headers = {
+                "Accept": "application/vnd.github+json",
+                "User-Agent": "SparkPaperPlatform/0.1",
+                "X-GitHub-Api-Version": "2022-11-28",
+            }
+            if self.token:
+                headers["Authorization"] = f"Bearer {self.token}"
+            request = urllib.request.Request(
+                f"{self.api_root}/repos/{repo_name}",
+                headers=headers,
+            )
+            try:
+                payload, response_headers = _request_json(
+                    request,
+                    name=self.name,
+                    timeout=self.timeout,
+                    max_retries=self.max_retries,
+                    retry_backoff=self.retry_backoff,
+                )
+            except RetryableSourceError:
+                raise
+            except SourceError as error:
+                responses.append({"arxiv_id": arxiv_id, "repository": repo_name, "error": str(error)})
+                continue
+            if not isinstance(payload, Mapping):
+                responses.append({"arxiv_id": arxiv_id, "repository": repo_name, "error": "invalid_response"})
+                continue
+            item = {
+                "paper": {"arxiv_id": arxiv_id},
+                "repository": payload,
+                "stars_updated_at": fetched_at.isoformat(),
+            }
+            normalized.append(_normalize_github_record(item))
+            responses.append(
+                {
+                    "arxiv_id": arxiv_id,
+                    "repository": repo_name,
+                    "rate_limit_remaining": response_headers.get("X-RateLimit-Remaining"),
+                    "response": payload,
+                }
+            )
+        identity_digest = hashlib.sha256(
+            "\n".join(f"{arxiv_id}:{repo_name}" for arxiv_id, repo_name in sorted(seen)).encode("utf-8")
+        ).hexdigest()[:12]
+        return FetchResult(
+            self.name,
+            tuple(normalized),
+            {"api_root": self.api_root, "repositories": responses},
+            fetched_at,
+            snapshot_key=(
+                f"repositories-{fetched_at.strftime('%Y%m%dT%H%M%SZ')}-"
+                f"{len(normalized)}-{identity_digest}"
+            ),
+        )
 
 
 class ArxivAtomSource:
@@ -252,19 +437,80 @@ class ArxivOaiSource:
 
     name = "arxiv"
 
-    def __init__(self, endpoint: str = "https://export.arxiv.org/oai2", *, set_name: str = "", timeout: float = 30.0) -> None:
+    def __init__(
+        self,
+        endpoint: str = "https://oaipmh.arxiv.org/oai",
+        *,
+        from_date: str | None = None,
+        until_date: str | None = None,
+        timeout: float = 30.0,
+        min_interval_seconds: float = 3.0,
+    ) -> None:
         self.endpoint = endpoint
-        self.set_name = set_name
+        self.from_date = from_date
+        self.until_date = until_date
         self.timeout = timeout
+        self.min_interval_seconds = max(0.0, min_interval_seconds)
+        self._last_request_at: float | None = None
 
     def fetch(self, *, etag: str | None = None, cursor: str | None = None) -> FetchResult:
+        checkpoint = decode_arxiv_oai_cursor(cursor)
+        token = checkpoint.get("token")
+        from_date = checkpoint.get("from_date") or self.from_date
+        until_date = checkpoint.get("until_date") or self.until_date
         params = {"verb": "ListRecords", "metadataPrefix": "arXiv"}
-        if self.set_name:
-            params["set"] = self.set_name
-        if cursor:
-            params = {"verb": "ListRecords", "resumptionToken": cursor}
-        request = urllib.request.Request(self.endpoint + "?" + urllib.parse.urlencode(params), headers={"Accept": "application/xml"})
+        if from_date:
+            params["from"] = from_date
+        if until_date:
+            params["until"] = until_date
+        if token:
+            params = {"verb": "ListRecords", "resumptionToken": token}
+        body = self._request(params)
         try:
+            root = ET.fromstring(body)
+        except ET.ParseError as error:
+            raise RetryableSourceError(f"arxiv OAI invalid XML: {error}") from error
+        oai_error = root.find(".//{http://www.openarchives.org/OAI/2.0/}error")
+        if oai_error is not None:
+            code = oai_error.attrib.get("code", "unknown")
+            message = (oai_error.text or "").strip()
+            if code == "noRecordsMatch":
+                return FetchResult(self.name, (), body.decode("utf-8"), utc_now(), cursor=None, etag=None)
+            if code == "badResumptionToken" and token and from_date and until_date:
+                body = self._request(
+                    {
+                        "verb": "ListRecords",
+                        "metadataPrefix": "arXiv",
+                        "from": from_date,
+                        "until": until_date,
+                    }
+                )
+                try:
+                    root = ET.fromstring(body)
+                except ET.ParseError as error:
+                    raise RetryableSourceError(f"arxiv OAI invalid XML: {error}") from error
+                oai_error = root.find(".//{http://www.openarchives.org/OAI/2.0/}error")
+                if oai_error is not None:
+                    code = oai_error.attrib.get("code", "unknown")
+                    message = (oai_error.text or "").strip()
+                    if code == "noRecordsMatch":
+                        return FetchResult(self.name, (), body.decode("utf-8"), utc_now(), cursor=None, etag=None)
+                    raise SourceError(f"arxiv OAI error {code}: {message}")
+            else:
+                raise SourceError(f"arxiv OAI error {code}: {message}")
+        records = tuple(_parse_oai_record(record) for record in root.findall(".//{http://www.openarchives.org/OAI/2.0/}record"))
+        next_token = root.findtext(".//{http://www.openarchives.org/OAI/2.0/}resumptionToken") or None
+        next_cursor = encode_arxiv_oai_cursor(from_date, until_date, next_token) if next_token else None
+        return FetchResult(self.name, records, body.decode("utf-8"), utc_now(), cursor=next_cursor, etag=None)
+
+    def _request(self, params: Mapping[str, str]) -> bytes:
+        request = urllib.request.Request(self.endpoint + "?" + urllib.parse.urlencode(params), headers={"Accept": "application/xml"})
+        if self._last_request_at is not None:
+            remaining = self.min_interval_seconds - (time.monotonic() - self._last_request_at)
+            if remaining > 0:
+                time.sleep(remaining)
+        try:
+            self._last_request_at = time.monotonic()
             with urllib.request.urlopen(request, timeout=self.timeout) as response:
                 body = response.read()
         except urllib.error.HTTPError as error:
@@ -273,14 +519,62 @@ class ArxivOaiSource:
             raise SourceError(f"arxiv OAI returned HTTP {error.code}") from error
         except OSError as error:
             raise RetryableSourceError(f"arxiv OAI fetch failed: {error}") from error
-        root = ET.fromstring(body)
-        records = tuple(_parse_oai_record(record) for record in root.findall(".//{http://www.openarchives.org/OAI/2.0/}record"))
-        token = root.findtext(".//{http://www.openarchives.org/OAI/2.0/}resumptionToken") or None
-        return FetchResult(self.name, records, body.decode("utf-8"), utc_now(), cursor=token, etag=None)
+        return body
+
+
+def decode_arxiv_oai_cursor(cursor: str | None) -> dict[str, str | None]:
+    if not cursor:
+        return {"from_date": None, "until_date": None, "token": None}
+    try:
+        value = json.loads(cursor)
+    except (TypeError, ValueError, json.JSONDecodeError):
+        return {"from_date": None, "until_date": None, "token": cursor}
+    if not isinstance(value, Mapping):
+        return {"from_date": None, "until_date": None, "token": cursor}
+    return {
+        "from_date": str(value.get("from")) if value.get("from") else None,
+        "until_date": str(value.get("until")) if value.get("until") else None,
+        "token": str(value.get("token")) if value.get("token") else None,
+    }
+
+
+def encode_arxiv_oai_cursor(from_date: str | None, until_date: str | None, token: str) -> str:
+    return json.dumps(
+        {"from": from_date, "until": until_date, "token": token},
+        separators=(",", ":"),
+        sort_keys=True,
+    )
 
 
 def _normalize_huggingface_record(item: Mapping[str, Any], paper: Mapping[str, Any]) -> dict[str, Any]:
     authors = paper.get("authors") or item.get("authors") or []
+    github_url = _first_present(paper, "githubRepo", "github_url") or _first_present(
+        item,
+        "githubRepo",
+        "github_url",
+    )
+    github_stars = _first_present(paper, "githubStars", "github_stars")
+    heat = _first_present(item, "upvotes", "heat")
+    if heat is None:
+        heat = paper.get("upvotes")
+    signals: dict[str, dict[str, Any]] = {
+        "huggingface": {
+            "daily_selected": True,
+            "heat": heat,
+            "comments": _first_present(item, "numComments", "comments"),
+            "submitted_on_daily_at": paper.get("submittedOnDailyAt")
+            or item.get("submittedOnDailyAt"),
+        }
+    }
+    if github_url:
+        signals["github"] = {
+            "url": github_url,
+            "stars": github_stars,
+            "forks": None,
+            "last_updated_at": None,
+            "stars_updated_at": None,
+            "star_velocity": None,
+        }
     return {
         "external_id": str(paper.get("id") or paper.get("arxiv_id") or item.get("id") or ""),
         "id": paper.get("id") or paper.get("arxiv_id") or item.get("id"),
@@ -291,8 +585,17 @@ def _normalize_huggingface_record(item: Mapping[str, Any], paper: Mapping[str, A
         "updated_at": paper.get("updatedAt") or paper.get("updated_at"),
         "arxiv_id": paper.get("arxiv_id") or paper.get("id"),
         "subjects": paper.get("categories") or item.get("categories") or (),
-        "heat": _first_present(item, "upvotes", "heat") if _first_present(item, "upvotes", "heat") is not None else paper.get("upvotes"),
-        "metadata": {"hf_rank": _first_present(item, "rank") if _first_present(item, "rank") is not None else paper.get("rank")},
+        "heat": heat,
+        "signals": signals,
+        "metadata": {
+            "hf_rank": _first_present(item, "rank")
+            if _first_present(item, "rank") is not None
+            else paper.get("rank"),
+            "hf_submitted_on_daily_at": paper.get("submittedOnDailyAt")
+            or item.get("submittedOnDailyAt"),
+            "hf_project_page": paper.get("projectPage") or item.get("projectPage"),
+            "github_url": github_url,
+        },
     }
 
 
@@ -356,8 +659,16 @@ def _normalize_semantic_scholar_record(item: Mapping[str, Any]) -> dict[str, Any
 def _normalize_github_record(item: Mapping[str, Any]) -> dict[str, Any]:
     identity = item.get("paper") if isinstance(item.get("paper"), Mapping) else item
     repository = item.get("repository") if isinstance(item.get("repository"), Mapping) else item
+    repository_id = str(repository.get("full_name") or repository.get("html_url") or "")
+    paper_identity = str(
+        identity.get("arxiv_id")
+        or identity.get("doi")
+        or identity.get("openalex_id")
+        or identity.get("semantic_scholar_id")
+        or ""
+    )
     return {
-        "external_id": str(repository.get("full_name") or repository.get("html_url") or ""),
+        "external_id": f"{repository_id}#{paper_identity}" if paper_identity else repository_id,
         "arxiv_id": identity.get("arxiv_id"),
         "doi": identity.get("doi"),
         "openalex_id": identity.get("openalex_id"),
@@ -409,7 +720,65 @@ def _retry_delay(headers: Mapping[str, str], attempt: int, base: float) -> float
         return base * (2**attempt)
 
 
+def _request_json(
+    request: urllib.request.Request,
+    *,
+    name: str,
+    timeout: float,
+    max_retries: int,
+    retry_backoff: float,
+) -> tuple[Any, Mapping[str, str]]:
+    for attempt in range(max_retries + 1):
+        try:
+            with urllib.request.urlopen(request, timeout=timeout) as response:
+                payload = json.loads(response.read().decode("utf-8"))
+                return payload, dict(response.headers.items())
+        except urllib.error.HTTPError as error:
+            if error.code == 403 and error.headers.get("X-RateLimit-Remaining") == "0":
+                raise RetryableSourceError(f"{name} rate limit exhausted") from error
+            if error.code == 429 or 500 <= error.code < 600:
+                if attempt < max_retries:
+                    time.sleep(_retry_delay(error.headers, attempt, retry_backoff))
+                    continue
+                raise RetryableSourceError(f"{name} returned HTTP {error.code}") from error
+            raise SourceError(f"{name} returned HTTP {error.code}") from error
+        except (OSError, json.JSONDecodeError) as error:
+            if attempt < max_retries:
+                time.sleep(retry_backoff * (2**attempt))
+                continue
+            raise RetryableSourceError(f"{name} fetch failed: {error}") from error
+    raise RetryableSourceError(f"{name} fetch failed")
+
+
+def _github_repository_name(value: str | None) -> str | None:
+    if not value:
+        return None
+    parsed = urllib.parse.urlparse(value)
+    if parsed.scheme not in {"http", "https"} or parsed.netloc.lower() not in {
+        "github.com",
+        "www.github.com",
+    }:
+        return None
+    parts = [part for part in parsed.path.split("/") if part]
+    if len(parts) < 2:
+        return None
+    owner = parts[0]
+    repository = parts[1][:-4] if parts[1].lower().endswith(".git") else parts[1]
+    return f"{owner}/{repository}" if owner and repository else None
+
+
 def _parse_oai_record(record: ET.Element) -> dict[str, Any]:
+    oai = "{http://www.openarchives.org/OAI/2.0/}"
+    header = record.find(oai + "header")
+    if header is not None and header.attrib.get("status") == "deleted":
+        identifier = (header.findtext(oai + "identifier") or "").strip()
+        arxiv_id = identifier.removeprefix("oai:arXiv.org:")
+        return {
+            "external_id": arxiv_id,
+            "arxiv_id": arxiv_id,
+            "withdrawn": True,
+            "deleted_at": (header.findtext(oai + "datestamp") or "").strip() or None,
+        }
     ns = "{http://arxiv.org/OAI/arXiv/}"
     metadata = record.find(".//" + ns + "arXiv")
     if metadata is None:
@@ -432,7 +801,11 @@ def _parse_oai_record(record: ET.Element) -> dict[str, Any]:
         "updated_at": text("updated"),
         "subjects": categories,
         "doi": text("doi") or None,
-        "metadata": {"journal_ref": text("journal-ref") or None},
+        "metadata": {
+            "journal_ref": text("journal-ref") or None,
+            "abs_url": f"https://arxiv.org/abs/{arxiv_id}",
+            "pdf_url": f"https://arxiv.org/pdf/{arxiv_id}",
+        },
     }
 
 

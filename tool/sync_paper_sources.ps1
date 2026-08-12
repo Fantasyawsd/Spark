@@ -1,0 +1,55 @@
+[CmdletBinding()]
+param(
+    [string]$Database = (Join-Path $env:LOCALAPPDATA 'Spark\paper-api\dataset-v1\papers.sqlite3'),
+    [string]$Snapshots = (Join-Path $env:LOCALAPPDATA 'Spark\paper-api\dataset-v1\snapshots'),
+    [ValidateRange(1, 31)]
+    [int]$HfDays = 7,
+    [ValidateRange(1, 20)]
+    [int]$HfMaxPages = 10,
+    [ValidateRange(1, 5000)]
+    [int]$SemanticScholarLimit = 500,
+    [ValidateRange(1, 500)]
+    [int]$GithubLimit = 50,
+    [string]$ArxivFromDate,
+    [string]$ArxivUntilDate,
+    [ValidateRange(1, 10000)]
+    [int]$ArxivMaxPages = 100
+)
+
+$repoRoot = Split-Path -Parent $PSScriptRoot
+$env:PYTHONPATH = Join-Path $repoRoot 'server'
+$python = (Get-Command python -ErrorAction Stop).Source
+
+$arxivArguments = @(
+    '-m', 'spark_papers.cli',
+    '--db', $Database,
+    '--snapshots', $Snapshots,
+    'sync-arxiv-oai',
+    '--max-pages', $ArxivMaxPages,
+    '--skip-index-refresh'
+)
+if ($ArxivFromDate) {
+    $arxivArguments += @('--from-date', $ArxivFromDate)
+}
+if ($ArxivUntilDate) {
+    $arxivArguments += @('--until-date', $ArxivUntilDate)
+}
+
+& $python @arxivArguments
+
+if ($LASTEXITCODE -ne 0) {
+    throw "Spark arXiv OAI sync failed with exit code $LASTEXITCODE"
+}
+
+& $python -m spark_papers.cli `
+    --db $Database `
+    --snapshots $Snapshots `
+    sync-external `
+    --hf-days $HfDays `
+    --hf-max-pages $HfMaxPages `
+    --semantic-scholar-limit $SemanticScholarLimit `
+    --github-limit $GithubLimit
+
+if ($LASTEXITCODE -ne 0) {
+    throw "Spark external paper source sync failed with exit code $LASTEXITCODE"
+}

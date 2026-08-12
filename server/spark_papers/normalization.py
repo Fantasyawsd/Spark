@@ -76,7 +76,18 @@ def normalize_record(
         signals.setdefault("huggingface", {}).update(
             {key: record[key] for key in ("heat", "upvotes", "rank") if record.get(key) is not None}
         )
-    metadata = dict(record.get("metadata") or {})
+    metadata = {
+        "venue_name": None,
+        "venue_type": None,
+        "venue_year": None,
+        "venue_url": None,
+        "venue_matches": [],
+        "venue_label": None,
+        "track": None,
+        "pdf_url": None,
+        "abs_url": None,
+        **dict(record.get("metadata") or {}),
+    }
     for key in ("venue_name", "venue_type", "venue_year", "venue_url", "track", "pdf_url", "abs_url"):
         if record.get(key) is not None:
             metadata[key] = record[key]

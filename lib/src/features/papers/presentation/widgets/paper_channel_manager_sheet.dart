@@ -5,6 +5,7 @@ import '../../../../core/theme/spark_font_sizes.dart';
 import '../../../../core/theme/spark_theme.dart';
 import '../../domain/arxiv_subject_catalog.dart';
 import '../../domain/paper_channel.dart';
+import '../../domain/paper_conference_catalog.dart';
 
 Future<void> showPaperChannelManagerSheet(
   BuildContext context, {
@@ -140,7 +141,7 @@ class _PaperChannelManagerSheetState extends State<PaperChannelManagerSheet> {
                               ),
                               padding: const EdgeInsets.fromLTRB(
                                 SparkDesignTokens.space5,
-                                SparkDesignTokens.space4,
+                                SparkDesignTokens.space1,
                                 SparkDesignTokens.space5,
                                 SparkDesignTokens.space5,
                               ),
@@ -148,13 +149,14 @@ class _PaperChannelManagerSheetState extends State<PaperChannelManagerSheet> {
                                 mainAxisSize: MainAxisSize.min,
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(
-                                    '会议频道尚未开放，真实会议数据源接入后可编辑。',
-                                    style: TextStyle(
-                                      color: SparkColors.of(context).muted,
-                                      fontSize: SparkFontSizes.footnote,
+                                  for (final conference
+                                      in PaperConferenceCatalog.conferences)
+                                    _ConferenceRow(
+                                      conference: conference,
+                                      added: _isConferenceAdded(conference.id),
+                                      onToggle: () =>
+                                          _toggleConference(conference),
                                     ),
-                                  ),
                                 ],
                               ),
                             ),
@@ -175,6 +177,32 @@ class _PaperChannelManagerSheetState extends State<PaperChannelManagerSheet> {
         (channel) =>
             channel.kind == PaperChannelKind.subject && channel.id == code,
       );
+
+  bool _isConferenceAdded(String id) => _channels.any(
+        (channel) =>
+            channel.kind == PaperChannelKind.conference && channel.id == id,
+      );
+
+  void _toggleConference(PaperConference conference) {
+    setState(() {
+      if (_isConferenceAdded(conference.id)) {
+        _channels.removeWhere(
+          (channel) =>
+              channel.kind == PaperChannelKind.conference &&
+              channel.id == conference.id,
+        );
+      } else {
+        _channels.add(
+          UserPaperChannel(
+            kind: PaperChannelKind.conference,
+            id: conference.id,
+            displayName: conference.displayName,
+          ),
+        );
+      }
+    });
+    _publish();
+  }
 
   void _toggleSubject(ArxivSubject subject) {
     setState(() {
@@ -223,6 +251,43 @@ class _SubjectRow extends StatelessWidget {
       title: Text(subject.displayName),
       subtitle: Text(
         subject.code,
+        style: TextStyle(
+          color: SparkColors.of(context).muted,
+          fontSize: SparkFontSizes.caption,
+        ),
+      ),
+      trailing: Icon(
+        added ? Icons.check_circle_rounded : Icons.add_circle_outline_rounded,
+        color: added
+            ? SparkColors.of(context).primary
+            : SparkColors.of(context).muted,
+        size: 20,
+      ),
+    );
+  }
+}
+
+class _ConferenceRow extends StatelessWidget {
+  const _ConferenceRow({
+    required this.conference,
+    required this.added,
+    required this.onToggle,
+  });
+
+  final PaperConference conference;
+  final bool added;
+  final VoidCallback onToggle;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      key: ValueKey('paper-channel-conference-${conference.id}'),
+      dense: true,
+      contentPadding: EdgeInsets.zero,
+      onTap: onToggle,
+      title: Text(conference.displayName),
+      subtitle: Text(
+        '会议频道',
         style: TextStyle(
           color: SparkColors.of(context).muted,
           fontSize: SparkFontSizes.caption,

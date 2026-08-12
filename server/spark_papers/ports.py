@@ -10,6 +10,13 @@ class PaperRepository(Protocol):
     def get(self, paper_id: str) -> PaperRecord | None: ...
     def count(self) -> int: ...
     def all_candidates(self) -> list[PaperRecord]: ...
+    def recommendation_candidates(
+        self,
+        *,
+        read_ids: Iterable[str] = (),
+        per_pool_limit: int = 500,
+        as_of: datetime | None = None,
+    ) -> list[PaperRecord]: ...
 
     def list_papers(
         self,
@@ -49,11 +56,35 @@ class PipelineRepository(PaperRepository, Protocol):
         fetched_at: datetime,
         source_updated_at: datetime | None = None,
         etag: str | None = None,
-    ) -> str: ...
+        allow_create: bool = True,
+    ) -> str | None: ...
+
+    def withdraw_by_external_id(
+        self,
+        *,
+        source: str,
+        external_id: str,
+        raw_payload: Mapping[str, Any],
+        fetched_at: datetime,
+        source_updated_at: datetime | None = None,
+    ) -> bool: ...
 
     def get_sync_state(self, source: str) -> dict[str, str | None]: ...
     def record_snapshot(self, source: str, snapshot_key: str, **kwargs: Any) -> None: ...
-    def set_sync_state(self, source: str, etag: str | None, cursor: str | None, path: str | None, at: datetime) -> None: ...
+    def set_sync_state(
+        self,
+        source: str,
+        etag: str | None,
+        cursor: str | None,
+        path: str | None,
+        at: datetime,
+        *,
+        completed_through: datetime | None = None,
+        window_from: str | None = None,
+        window_until: str | None = None,
+        mark_success: bool = True,
+    ) -> None: ...
+    def latest_source_update(self, source: str) -> datetime | None: ...
     def refresh_indexes(self, generated_at: datetime | None = None) -> None: ...
 
 

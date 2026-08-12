@@ -5,9 +5,6 @@ import 'package:spark/spark.dart';
 void main() {
   final config = AppConfig.fromEnvironment(platformFlavor: appFlavor);
   runApp(
-    SparkApp(
-      config: config,
-      dependencies: SparkDependencies.production(),
-    ),
+    SparkApp(config: config, dependencies: SparkDependencies.forConfig(config)),
   );
 }

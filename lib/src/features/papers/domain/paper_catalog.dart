@@ -1,14 +1,11 @@
 import 'paper.dart';
 import 'paper_time_range.dart';
 
-enum PaperPageSource { remote, cache, seed }
+enum PaperPageSource { paperApi, remote, cache, seed }
 
-enum PaperCatalogErrorKind {
-  network,
-  timeout,
-  invalidResponse,
-  unavailable,
-}
+enum PaperFeedChannel { recommended, following, latest, subject, conference }
+
+enum PaperCatalogErrorKind { network, timeout, invalidResponse, unavailable }
 
 class PaperCatalogError {
   const PaperCatalogError({required this.kind, required this.message});
@@ -19,25 +16,49 @@ class PaperCatalogError {
 
 class PaperFeedQuery {
   const PaperFeedQuery({
+    this.channel = PaperFeedChannel.latest,
     this.category,
+    this.followingAuthors = const [],
+    this.readPaperIds = const [],
     this.timeRange = const PaperTimeRange.all(),
     this.offset = 0,
+    this.cursor,
     this.limit = 20,
     this.forceRefresh = false,
   })  : assert(offset >= 0),
         assert(limit > 0);
 
+  final PaperFeedChannel channel;
   final String? category;
+  final List<String> followingAuthors;
+  final List<String> readPaperIds;
   final PaperTimeRange timeRange;
   final int offset;
+  final String? cursor;
   final int limit;
   final bool forceRefresh;
 
   PaperFeedQuery nextPage(int nextOffset) {
     return PaperFeedQuery(
+      channel: channel,
       category: category,
+      followingAuthors: followingAuthors,
+      readPaperIds: readPaperIds,
       timeRange: timeRange,
       offset: nextOffset,
+      limit: limit,
+      forceRefresh: forceRefresh,
+    );
+  }
+
+  PaperFeedQuery nextCursorPage(String nextCursor) {
+    return PaperFeedQuery(
+      channel: channel,
+      category: category,
+      followingAuthors: followingAuthors,
+      readPaperIds: readPaperIds,
+      timeRange: timeRange,
+      cursor: nextCursor,
       limit: limit,
       forceRefresh: forceRefresh,
     );
@@ -73,6 +94,7 @@ class PaperPage {
     required List<Paper> papers,
     required this.source,
     this.nextOffset,
+    this.nextCursor,
     this.isStale = false,
     this.isOffline = false,
     this.error,
@@ -82,12 +104,13 @@ class PaperPage {
   final List<Paper> papers;
   final PaperPageSource source;
   final int? nextOffset;
+  final String? nextCursor;
   final bool isStale;
   final bool isOffline;
   final PaperCatalogError? error;
   final DateTime? fetchedAt;
 
-  bool get hasMore => nextOffset != null;
+  bool get hasMore => nextOffset != null || nextCursor != null;
 }
 
 abstract interface class PaperCatalogRepository {

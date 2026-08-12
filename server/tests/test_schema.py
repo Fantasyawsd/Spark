@@ -16,6 +16,10 @@ class SchemaContractTest(unittest.TestCase):
         schema_path = Path(__file__).parents[1] / "schema" / "paper.v1.json"
         schema = json.loads(schema_path.read_text(encoding="utf-8"))
         self.assertEqual(schema["properties"]["schema_version"]["const"], "paper.v1")
+        metadata = schema["properties"]["metadata"]["properties"]
+        self.assertIn("venue_matches", metadata)
+        self.assertIn("arxiv", metadata)
+        self.assertIn("openalex", schema["properties"]["signals"]["properties"])
         with _StoreContext() as store, tempfile.TemporaryDirectory() as directory:
             SyncRunner(store, SnapshotStore(directory)).sync(
                 StaticSource(

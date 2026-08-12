@@ -549,8 +549,7 @@ void main() {
       expect(catalog.queries.last.offset, 20);
     });
 
-    test('a pending pagination page cannot repopulate a refreshed empty feed',
-        () async {
+    test('a pending pagination page cannot pollute a refreshed feed', () async {
       final catalog = _ConcurrentRefreshCatalogRepository();
       final feed = PaperFeedController.fromPapers(
         const [],
@@ -568,7 +567,7 @@ void main() {
       catalog.completePagination();
       await pagination;
 
-      expect(feed.papers, isEmpty);
+      expect(feed.papers.map((paper) => paper.id), ['initial-page']);
       expect(feed.catalogHasMore, isFalse);
     });
 
@@ -642,7 +641,7 @@ void main() {
       expect(feed.papers.map((paper) => paper.id).toSet(), hasLength(35));
     });
 
-    test('refresh prepends unseen papers without discarding the buffer',
+    test('refresh appends unseen papers without discarding the buffer',
         () async {
       final catalog = _PagedPaperCatalogRepository(
         firstPage: List.generate(20, (index) => _catalogPaper('p$index')),
@@ -661,8 +660,14 @@ void main() {
 
       await feed.refreshCatalog();
 
-      expect(feed.papers.first.id, 'new-paper');
-      expect(feed.papers[1].title, 'Updated paper');
+      expect(
+        feed.papers.map((paper) => paper.id),
+        orderedEquals(<String>[
+          for (var index = 0; index < 20; index++) 'p$index',
+          'new-paper',
+        ]),
+      );
+      expect(feed.papers.first.title, 'Updated paper');
       expect(feed.papers, hasLength(21));
       expect(
         feed.papers.where((paper) => paper.id == 'p0'),
@@ -670,8 +675,113 @@ void main() {
       );
     });
 
-    test('an empty first page clears papers from the previous refresh',
+    test('recommended refresh keeps ten papers and appends twenty new ones',
         () async {
+      final catalog = _IncrementalRecommendationCatalogRepository();
+      final feed = PaperFeedController.fromPapers(
+        const [],
+        catalogRepository: catalog,
+        readPaperIdsProvider: () => const <String>{},
+      );
+      addTearDown(feed.dispose);
+
+      await feed.initializeCatalog();
+      expect(feed.papers, hasLength(10));
+
+      await feed.refreshCatalog();
+
+      expect(feed.papers, hasLength(30));
+      expect(
+        feed.papers.take(10).map((paper) => paper.id),
+        orderedEquals(<String>[
+          for (var index = 0; index < 10; index++) 'old-$index',
+        ]),
+      );
+      expect(
+        feed.papers.skip(10).map((paper) => paper.id),
+        orderedEquals(<String>[
+          for (var index = 0; index < 20; index++) 'new-$index',
+        ]),
+      );
+      expect(
+        catalog.queries.last.readPaperIds,
+        orderedEquals(<String>[
+          for (var index = 0; index < 10; index++) 'old-$index',
+        ]),
+      );
+    });
+
+    test('recommended refresh excludes the current channel buffer', () async {
+      final catalog = _PagedPaperCatalogRepository(
+        firstPage: List.generate(10, (index) => _catalogPaper('p$index')),
+      );
+      final feed = PaperFeedController.fromPapers(
+        const [],
+        catalogRepository: catalog,
+        readPaperIdsProvider: () => const {'p0', 'p1'},
+      );
+      addTearDown(feed.dispose);
+
+      await feed.initializeCatalog();
+      await feed.refreshCatalog();
+
+      expect(
+        catalog.queries.last.readPaperIds,
+        containsAll(<String>[
+          for (var index = 0; index < 10; index++) 'p$index',
+        ]),
+      );
+    });
+
+    test('recommended requests include a bounded live read-id set', () async {
+      final readIds = <String>{
+        for (var index = 0; index < 205; index++) 'read-$index',
+      };
+      final catalog = _PagedPaperCatalogRepository(firstPage: const []);
+      final feed = PaperFeedController.fromPapers(
+        const [],
+        catalogRepository: catalog,
+        readPaperIdsProvider: () => readIds,
+      );
+      addTearDown(feed.dispose);
+
+      await feed.initializeCatalog();
+
+      final expectedReadIds = readIds.toList()..sort();
+      expect(catalog.queries.single.channel, PaperFeedChannel.recommended);
+      expect(catalog.queries.single.readPaperIds, hasLength(200));
+      expect(
+        catalog.queries.single.readPaperIds,
+        orderedEquals(expectedReadIds.take(200)),
+      );
+
+      readIds
+        ..clear()
+        ..addAll({'read-new', 'read-second'});
+      await feed.refreshCatalog();
+
+      expect(
+        catalog.queries.last.readPaperIds,
+        orderedEquals(['read-new', 'read-second']),
+      );
+    });
+
+    test('first successful catalog page replaces fallback papers', () async {
+      final catalog = _PagedPaperCatalogRepository(
+        firstPage: [_catalogPaper('remote-paper')],
+      );
+      final feed = PaperFeedController.fromPapers(
+        [_catalogPaper('seed-paper')],
+        catalogRepository: catalog,
+      );
+      addTearDown(feed.dispose);
+
+      await feed.initializeCatalog();
+
+      expect(feed.papers.map((paper) => paper.id), ['remote-paper']);
+    });
+
+    test('an empty refresh keeps papers from the previous batch', () async {
       final catalog = _PagedPaperCatalogRepository(
         firstPage: [_catalogPaper('old-paper')],
       );
@@ -687,7 +797,7 @@ void main() {
       catalog.firstPage = const [];
       await feed.refreshCatalog();
 
-      expect(feed.papers, isEmpty);
+      expect(feed.papers.map((paper) => paper.id), ['old-paper']);
       expect(feed.catalogHasMore, isFalse);
     });
   });
@@ -871,6 +981,32 @@ class _FlakyPaperPreferenceRepository implements PaperPreferenceRepository {
     saveCalls++;
     if (saveCalls == 1) throw StateError('disk unavailable');
   }
+}
+
+class _IncrementalRecommendationCatalogRepository
+    implements PaperCatalogRepository {
+  final List<PaperFeedQuery> queries = [];
+
+  @override
+  Future<Paper?> findById(String paperId) async => null;
+
+  @override
+  Future<PaperPage> loadFeed(PaperFeedQuery query) async {
+    queries.add(query);
+    final prefix = queries.length == 1 ? 'old' : 'new';
+    final count = queries.length == 1 ? 10 : 20;
+    return PaperPage(
+      papers: [
+        for (var index = 0; index < count; index++)
+          _catalogPaper('$prefix-$index')
+      ],
+      source: PaperPageSource.remote,
+    );
+  }
+
+  @override
+  Future<PaperPage> search(PaperSearchQuery query) async =>
+      PaperPage(papers: const [], source: PaperPageSource.remote);
 }
 
 class _PagedPaperCatalogRepository implements PaperCatalogRepository {

@@ -19,11 +19,13 @@ class PaperFeedController extends ChangeNotifier {
     PaperPreferenceRepository? preferenceRepository,
     PaperCatalogRepository? catalogRepository,
     PaperChannelPreferenceRepository? channelPreferenceRepository,
+    Iterable<String> Function()? readPaperIdsProvider,
   }) : this.fromPapers(
           repository.getAll(),
           preferenceRepository: preferenceRepository,
           catalogRepository: catalogRepository,
           channelPreferenceRepository: channelPreferenceRepository,
+          readPaperIdsProvider: readPaperIdsProvider,
         );
 
   PaperFeedController.fromPapers(
@@ -31,8 +33,10 @@ class PaperFeedController extends ChangeNotifier {
     PaperPreferenceRepository? preferenceRepository,
     PaperCatalogRepository? catalogRepository,
     PaperChannelPreferenceRepository? channelPreferenceRepository,
+    Iterable<String> Function()? readPaperIdsProvider,
   })  : _allPapers = List.unmodifiable(papers),
         _catalogRepository = catalogRepository,
+        _readPaperIdsProvider = readPaperIdsProvider,
         _preferences = PaperFeedPreferenceCoordinator(
           preferenceRepository: preferenceRepository,
           channelPreferenceRepository: channelPreferenceRepository,
@@ -45,12 +49,14 @@ class PaperFeedController extends ChangeNotifier {
   static const _defaultArxivCategories =
       'cs.CL|cs.AI|cs.CV|cs.DC|cs.OS|cs.PF|math.OC|math.ST|q-bio.QM|q-bio.BM';
   static const _catalogPrefetchThreshold = 10;
+  static const _maxReadPaperIdsPerRequest = 200;
 
   List<Paper> _allPapers;
   late final List<Paper> _initialPapers;
   late List<Paper> _visiblePapers;
   Set<String> _followedPaperIds = {};
   final PaperCatalogRepository? _catalogRepository;
+  final Iterable<String> Function()? _readPaperIdsProvider;
   final PaperFeedPreferenceCoordinator _preferences;
   final Set<String> _loadedChannelKeys = {};
   final Map<String, List<Paper>> _channelPapers = {};
@@ -82,7 +88,7 @@ class PaperFeedController extends ChangeNotifier {
   PaperPageSource get catalogSource =>
       _currentCatalogState?.source ?? PaperPageSource.seed;
   DateTime? get catalogFetchedAt => _currentCatalogState?.fetchedAt;
-  bool get catalogHasMore => _currentCatalogState?.nextOffset != null;
+  bool get catalogHasMore => _currentCatalogState?.hasMore ?? false;
   PaperCatalogError? get catalogError => _currentCatalogState?.error;
   PaperTimeRange get timeRange => _preferences.timeRangeFor(currentChannelKey);
 
@@ -121,13 +127,16 @@ class PaperFeedController extends ChangeNotifier {
     if (_disposed ||
         repository == null ||
         _catalogLoading ||
-        _channelMode == PaperFeedMode.following) {
+        !_canLoadCurrentChannel) {
       return Future.value();
     }
     final channelKey = currentChannelKey;
     final queryRevision = _advanceCatalogQueryRevision();
     final query = PaperFeedQuery(
+      channel: _catalogChannel,
       category: _catalogCategory,
+      followingAuthors: _followingAuthors,
+      readPaperIds: _readPaperIdsForRequest(),
       timeRange: timeRange,
       limit: 20,
       forceRefresh: forceRefresh,
@@ -153,7 +162,11 @@ class PaperFeedController extends ChangeNotifier {
     try {
       final page = await repository.loadFeed(query);
       if (!_disposed && queryRevision == _catalogQueryRevision) {
-        _applyCatalogPage(page, channelKey: channelKey, append: false);
+        _applyCatalogPage(
+          page,
+          channelKey: channelKey,
+          append: _loadedChannelKeys.contains(channelKey),
+        );
       }
     } on Object catch (_) {
       if (!_disposed && queryRevision == _catalogQueryRevision) {
@@ -167,7 +180,7 @@ class PaperFeedController extends ChangeNotifier {
       _notify();
       if (!_disposed &&
           queryRevision != _catalogQueryRevision &&
-          _channelMode != PaperFeedMode.following) {
+          _canLoadCurrentChannel) {
         _ensureCurrentChannelLoaded();
       }
     }
@@ -176,20 +189,25 @@ class PaperFeedController extends ChangeNotifier {
   Future<void> loadMoreCatalog() {
     final repository = _catalogRepository;
     final channelKey = currentChannelKey;
-    final nextOffset = _catalogStates[channelKey]?.nextOffset;
+    final state = _catalogStates[channelKey];
+    final nextOffset = state?.nextOffset;
+    final nextCursor = state?.nextCursor;
     if (_disposed ||
         repository == null ||
-        nextOffset == null ||
+        (nextOffset == null && nextCursor == null) ||
         _catalogLoading ||
-        _catalogLoadingMore ||
-        _channelMode == PaperFeedMode.following) {
+        _catalogLoadingMore) {
       return Future.value();
     }
     final queryRevision = _catalogQueryRevision;
     final query = PaperFeedQuery(
+      channel: _catalogChannel,
       category: _catalogCategory,
+      followingAuthors: _followingAuthors,
+      readPaperIds: _readPaperIdsForRequest(),
       timeRange: timeRange,
-      offset: nextOffset,
+      offset: nextOffset ?? 0,
+      cursor: nextCursor,
       limit: 20,
     );
     return _trackCatalogOperation(
@@ -301,7 +319,7 @@ class PaperFeedController extends ChangeNotifier {
     _refreshVisiblePapers();
     notifyListeners();
     _queuePreferencePersistence();
-    if (_channelMode != PaperFeedMode.following) {
+    if (_canLoadCurrentChannel) {
       _ensureCurrentChannelLoaded();
     }
   }
@@ -317,7 +335,7 @@ class PaperFeedController extends ChangeNotifier {
     _queuePreferencePersistence();
     _queueChannelPreferencePersistence();
     _advanceCatalogQueryRevision();
-    if (_channelMode != PaperFeedMode.following) {
+    if (_canLoadCurrentChannel) {
       _ensureCurrentChannelLoaded();
     }
   }
@@ -345,7 +363,7 @@ class PaperFeedController extends ChangeNotifier {
     _queuePreferencePersistence();
     _queueChannelPreferencePersistence();
     _advanceCatalogQueryRevision();
-    if (_channelMode != PaperFeedMode.following) {
+    if (_canLoadCurrentChannel) {
       _ensureCurrentChannelLoaded();
     }
   }
@@ -359,8 +377,14 @@ class PaperFeedController extends ChangeNotifier {
     _followedPaperIds = next;
     if (_channelMode != PaperFeedMode.following) return;
     _rememberPosition();
+    final key = currentChannelKey;
+    _catalogStates.remove(key);
+    _loadedChannelKeys.remove(key);
+    _channelPapers.remove(key);
+    _advanceCatalogQueryRevision();
     _restorePosition();
     notifyListeners();
+    if (_canLoadCurrentChannel) _ensureCurrentChannelLoaded();
   }
 
   void _applySelectedChannelKey(String? key) {
@@ -389,10 +413,9 @@ class PaperFeedController extends ChangeNotifier {
       _currentPaperIndex = 0;
       return;
     }
-    _currentPaperIndex = _preferences.positionFor(currentChannelKey).clamp(
-          0,
-          _visiblePapers.length - 1,
-        );
+    _currentPaperIndex = _preferences
+        .positionFor(currentChannelKey)
+        .clamp(0, _visiblePapers.length - 1);
   }
 
   void _refreshVisiblePapers() {
@@ -434,7 +457,11 @@ class PaperFeedController extends ChangeNotifier {
         ? null
         : _visiblePapers[_currentPaperIndex.clamp(0, _visiblePapers.length - 1)]
             .id;
-    final existing = _papersForChannel(channelKey);
+    // Replace seed papers after the first successful remote page. Later
+    // refreshes append to the loaded remote buffer.
+    final existing = append
+        ? _papersForChannel(channelKey)
+        : (_channelPapers[channelKey] ?? const <Paper>[]);
     _channelPapers[channelKey] = PaperFeedProjector.mergeCatalogPage(
       existing: existing,
       incoming: page.papers,
@@ -462,7 +489,6 @@ class PaperFeedController extends ChangeNotifier {
   }
 
   void _prefetchCatalogForIndex(int index) {
-    if (_channelMode == PaperFeedMode.following) return;
     final remaining = _visiblePapers.length - index - 1;
     if (remaining <= _catalogPrefetchThreshold) {
       unawaited(loadMoreCatalog());
@@ -479,18 +505,70 @@ class PaperFeedController extends ChangeNotifier {
     return PaperFeedMode.recommended;
   }
 
-  String? get _channelSubjectCode {
-    final channel = userChannelAt(_channelIndex);
-    if (channel == null || channel.kind != PaperChannelKind.subject) {
-      return null;
-    }
-    return channel.id;
+  String? get _catalogCategory {
+    final userChannel = userChannelAt(_channelIndex);
+    if (userChannel != null) return userChannel.id;
+    if (_channelMode == PaperFeedMode.following) return null;
+    return _defaultArxivCategories;
   }
 
-  String? get _catalogCategory {
-    if (_channelMode == PaperFeedMode.following) return null;
-    return _channelSubjectCode ?? _defaultArxivCategories;
+  PaperFeedChannel get _catalogChannel {
+    final userChannel = userChannelAt(_channelIndex);
+    if (userChannel != null) {
+      return switch (userChannel.kind) {
+        PaperChannelKind.subject => PaperFeedChannel.subject,
+        PaperChannelKind.conference => PaperFeedChannel.conference,
+      };
+    }
+    return switch (_channelMode) {
+      PaperFeedMode.recommended => PaperFeedChannel.recommended,
+      PaperFeedMode.following => PaperFeedChannel.following,
+      PaperFeedMode.latest => PaperFeedChannel.latest,
+    };
   }
+
+  List<String> get _followingAuthors {
+    final authors = <String>{};
+    for (final identity in _followedPaperIds) {
+      if (identity.startsWith('author:')) {
+        final author = identity.substring('author:'.length).trim();
+        if (author.isNotEmpty) authors.add(author);
+        continue;
+      }
+      for (final paper in _allPapers) {
+        if (paper.id != identity) continue;
+        final author = paper.firstAuthor.trim().toLowerCase();
+        if (author.isNotEmpty) authors.add(author);
+        break;
+      }
+    }
+    return authors.toList(growable: false)..sort();
+  }
+
+  List<String> _readPaperIdsForRequest() {
+    if (_channelMode != PaperFeedMode.recommended) return const [];
+    final seen = <String>{};
+    final excluded = <String>[];
+    void add(String value) {
+      final paperId = value.trim();
+      if (paperId.isNotEmpty && seen.add(paperId)) excluded.add(paperId);
+    }
+
+    for (final paper in _channelPapers[currentChannelKey] ?? const <Paper>[]) {
+      add(paper.id);
+    }
+    final readIds = (_readPaperIdsProvider?.call() ?? const <String>[])
+        .map((paperId) => paperId.trim())
+        .where((paperId) => paperId.isNotEmpty)
+        .toSet()
+        .toList(growable: false)
+      ..sort();
+    readIds.forEach(add);
+    return excluded.take(_maxReadPaperIdsPerRequest).toList(growable: false);
+  }
+
+  bool get _canLoadCurrentChannel =>
+      _channelMode != PaperFeedMode.following || _followingAuthors.isNotEmpty;
 
   Future<void> flushPreferenceWrites() => _preferences.flushFeedWrites();
 
@@ -532,7 +610,7 @@ class PaperFeedController extends ChangeNotifier {
       await initializePreferences();
       await initializeChannels();
     }
-    if (!_disposed && _channelMode != PaperFeedMode.following) {
+    if (!_disposed && _canLoadCurrentChannel) {
       await refreshCatalog(forceRefresh: false);
     }
   }
@@ -546,9 +624,7 @@ class PaperFeedController extends ChangeNotifier {
   }
 
   void _queuePreferencePersistence() {
-    _preferences.queueFeedPersistence(
-      primaryCategoryIndex: _channelMode.index,
-    );
+    _preferences.queueFeedPersistence(primaryCategoryIndex: _channelMode.index);
   }
 
   void _queueChannelPreferencePersistence() {
@@ -570,14 +646,18 @@ class PaperFeedController extends ChangeNotifier {
 
 class _CatalogChannelState {
   int? nextOffset;
+  String? nextCursor;
   bool offline = false;
   bool stale = false;
   PaperPageSource source = PaperPageSource.seed;
   DateTime? fetchedAt;
   PaperCatalogError? error;
 
+  bool get hasMore => nextOffset != null || nextCursor != null;
+
   void apply(PaperPage page) {
     nextOffset = page.nextOffset;
+    nextCursor = page.nextCursor;
     offline = page.isOffline;
     stale = page.isStale;
     source = page.source;

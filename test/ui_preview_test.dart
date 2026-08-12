@@ -323,6 +323,40 @@ void main() {
     );
   });
 
+  testWidgets(
+      'selected paper navigation refreshes while returning to papers only navigates',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(378, 810));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final catalog = _NavigationRefreshPaperCatalogRepository();
+
+    await tester.pumpWidget(
+      SparkApp(
+        showSplash: false,
+        dependencies: SparkDependencies.preview(
+          paperCatalogRepository: catalog,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(catalog.queries, hasLength(1));
+    expect(catalog.queries.single.forceRefresh, isFalse);
+
+    await tester.tap(find.byKey(const ValueKey('bottom-nav-0')));
+    await tester.pumpAndSettle();
+
+    expect(catalog.queries, hasLength(2));
+    expect(catalog.queries.last.forceRefresh, isTrue);
+
+    await tester.tap(find.byKey(const ValueKey('bottom-nav-1')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('bottom-nav-0')));
+    await tester.pumpAndSettle();
+
+    expect(catalog.queries, hasLength(2));
+  });
+
   testWidgets('favorite tap uses default group and long press selects groups',
       (tester) async {
     await tester.binding.setSurfaceSize(const Size(378, 810));
@@ -1199,6 +1233,27 @@ class _GridPagedPaperCatalogRepository implements PaperCatalogRepository {
       papers: List.generate(20, (index) => _gridPaper(start + index)),
       source: PaperPageSource.remote,
       nextOffset: start == 0 ? 20 : null,
+    );
+  }
+
+  @override
+  Future<PaperPage> search(PaperSearchQuery query) async =>
+      PaperPage(papers: const [], source: PaperPageSource.remote);
+}
+
+class _NavigationRefreshPaperCatalogRepository
+    implements PaperCatalogRepository {
+  final List<PaperFeedQuery> queries = [];
+
+  @override
+  Future<Paper?> findById(String paperId) async => null;
+
+  @override
+  Future<PaperPage> loadFeed(PaperFeedQuery query) async {
+    queries.add(query);
+    return PaperPage(
+      papers: [_gridPaper(queries.length)],
+      source: PaperPageSource.remote,
     );
   }
 

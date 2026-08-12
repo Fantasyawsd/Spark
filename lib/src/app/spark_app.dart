@@ -497,6 +497,10 @@ class _SparkShellState extends State<SparkShell> {
   }
 
   void _handleNavigation(int index) {
+    if (index == 0 && _selectedIndex == 0) {
+      unawaited(_paperController.feed.refreshCatalog());
+      return;
+    }
     setState(() => _selectedIndex = index);
   }
 

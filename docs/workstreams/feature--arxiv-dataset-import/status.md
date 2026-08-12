@@ -8,8 +8,8 @@
 - Worktree：`C:\Users\Fantasy\Desktop\Spark-worktrees\feature--arxiv-dataset-import`
 - 基线提交：`c01a6d252135cdfe82261a9c60be9fb0a137a62a`
 - 负责人：Fantasy（编排者）
-- 状态：验收中
-- 最近更新：2026-08-12
+- 状态：待合并
+- 最近更新：2026-08-13
 
 ## 目标
 
@@ -30,7 +30,7 @@
 - [x] `openalex-ai-top.jsonl` 只增强已存在论文，记录精确匹配、未匹配和异常信号数量，不创建残缺论文。
 - [x] SQLite 索引构建和推荐候选查询不把约 67.5 万篇论文一次性加载进 Python 内存。
 - [x] 健康、详情、最新、主题、会议、关注和推荐 API 在真实数据库上通过；不同 seed 生成不同可重放推荐 batch。
-- [ ] Windows development App 展示真实论文，推荐刷新返回新 batch 并与现有列表合并，由编排者人工验收。
+- [x] Windows development App 展示真实论文，推荐刷新返回新 batch 并与现有列表合并，由编排者人工验收。
 - [x] 服务端测试、Flutter 定向测试、格式检查和静态分析通过；真实导入数量、耗时、数据库大小和接口检查有记录。
 - [x] HF Daily、Semantic Scholar 与 GitHub 完成有界的真实同步、快照和落库验证；同步失败保留最近成功状态。
 - [x] 推荐年龄桶、批次标识和异常引用排除满足可回放契约，并在真实库复验。
@@ -88,9 +88,9 @@
 - 已完成：真实同步 `2026-07-31` 至 `2026-08-12` 共 18 页；AI 准入 8,864 条、非 AI 排除 13,516 条、0 unmatched、0 rejected、0 failed page，论文总数从 675,168 增至 680,199。
 - 已完成：SQLite OAI 状态已通过不可变迁移升级到数据库版本 1，真实库完成水位为 `2026-08-12T00:00:00+00:00`，迁移前后论文数量不变，Paper API 健康检查仍返回 680,199。
 - 已完成：修正推荐刷新合并方向；首次远程加载仍替换 seed，后续刷新保留旧 batch 和当前论文位置，将去重后的新 batch 追加到列表下方。
-- 下一步：启动 Windows development App，由编排者人工复验会议频道和推荐刷新 `10 → 30` 净增量；通过后再由编排者决定是否进入 `/finish` 合并收尾。
-- 阻塞项：无代码阻塞；等待编排者确认启动 Windows App。
-- 验收反馈：推荐刷新前插不符合竖向刷论文交互；现已改为旧 batch 在前、新 batch 在后，等待重新人工验收。
+- 下一步：按编排者指令进入 `/finish`，合入 `main` 后执行集成回归、双目标构建和最终归档。
+- 阻塞项：无。
+- 验收反馈：推荐刷新前插不符合竖向刷论文交互；已改为旧 batch 在前、新 batch 在后。编排者在修复版 Windows development App 启动后确认可以进入 `/finish`，本轮人工验收通过。
 
 ## 决策记录
 
@@ -155,13 +155,14 @@
 | `/test` 目标构建 | 本阶段按规范不重复执行；development APK 与 Windows release 构建留到 `/finish` 合入 `main` 后统一执行 | 2026-08-12 |
 | 推荐刷新追加方向红绿回归 | 修复前测试准确失败：前 10 篇为新 batch；修复后旧 10 篇保持在前、新 20 篇追加到下方，当前论文位置保持不变 | 2026-08-12 |
 | 推荐刷新追加方向完整静态门禁 | 通过；Dart 格式检查 22 个文件、`flutter analyze` 无问题、Flutter 429 项全部通过 | 2026-08-12 |
+| Windows development App 最终人工验收 | 通过；修复版 App 使用 680,199 篇真实数据库启动，编排者确认可以进入 `/finish`；推荐刷新保留旧 batch 并将新 batch 追加到下方 | 2026-08-13 |
 
 ## 审查结论
 
 - 审查日期：2026-08-12
 - 阻断项：最终双轴复审无阻断项；早期发现的集合水位污染、旧数量、缺阅读链接、未来窗口、坏页推进水位、内联迁移、迁移未打包、外部失败被吞和 checkpoint 污染成功时间均已修复。
 - 缺陷：无未关闭缺陷。
-- 结论：arXiv OAI 日增量、版本化迁移和统一定时入口的 Spec / Standards 复审无阻断项，本轮 `/test` 自动化门禁已通过；Phase 2/2.5 仍保留会议频道与推荐净增量的 Windows App 人工验收。
+- 结论：arXiv OAI 日增量、版本化迁移和统一定时入口的 Spec / Standards 双轴复审无阻断项；审查后新增的推荐刷新追加修复已完成只读增量复核及 429 项 Flutter 回归，无新增阻断项。自动化门禁和 Windows App 人工验收均已通过，可进入 `/finish`。
 
 ## 检查点与提交
 
@@ -179,7 +180,7 @@
 
 ### 交付摘要
 
-完成本地真实论文底库、会议/OpenAlex 增强、arXiv OAI 可恢复日增量、版本化 SQLite 迁移、全量索引与 Paper API 规模验证；development Flutter Client 已接入推荐新 batch、增量合并和已读过滤，等待会议频道与推荐净增量的最终 Windows App 人工验收。
+完成本地真实论文底库、会议/OpenAlex 增强、arXiv OAI 可恢复日增量、版本化 SQLite 迁移、全量索引与 Paper API 规模验证；development Flutter Client 已接入推荐新 batch、向下增量合并和已读过滤，Windows App 人工验收通过。
 
 ### 实际变更
 
@@ -202,12 +203,11 @@
 
 ### 文档更新建议
 
-- Phase 2.5 的真实来源、会议入口和推荐净增量回归已经通过；只剩 Windows development App 人工复验与本轮代码对应的 profile/release 重建，不能在用户未确认前关闭 Phase 2/2.5。
+- Phase 2.5 的真实来源、会议入口和推荐净增量回归及 Windows development App 人工验收已经通过；合入 `main` 后按 `/finish` 运行双目标构建并更新开发计划。
 
 ### 未完成与后续工作
 
-- Windows development App 的论文导航刷新人工验收已通过；会议频道和推荐净增量仍待分别确认。
-- `tool/sync_paper_sources.ps1` 已提供定时调用入口，部署后的 Task Scheduler 注册在合并到 `main` 后执行；Phase 3–5 保持后续阶段。
+- Windows development App 人工验收已通过；`tool/sync_paper_sources.ps1` 已提供定时调用入口，目标环境 Task Scheduler 注册在合并到 `main` 后按部署计划执行；Phase 3–5 保持后续阶段。
 
 ## 合并归档（合并后在 main 补齐）
 

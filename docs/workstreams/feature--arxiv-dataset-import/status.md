@@ -8,7 +8,7 @@
 - Worktree：`C:\Users\Fantasy\Desktop\Spark-worktrees\feature--arxiv-dataset-import`
 - 基线提交：`c01a6d252135cdfe82261a9c60be9fb0a137a62a`
 - 负责人：Fantasy（编排者）
-- 状态：待合并
+- 状态：已合并
 - 最近更新：2026-08-13
 
 ## 目标
@@ -88,7 +88,7 @@
 - 已完成：真实同步 `2026-07-31` 至 `2026-08-12` 共 18 页；AI 准入 8,864 条、非 AI 排除 13,516 条、0 unmatched、0 rejected、0 failed page，论文总数从 675,168 增至 680,199。
 - 已完成：SQLite OAI 状态已通过不可变迁移升级到数据库版本 1，真实库完成水位为 `2026-08-12T00:00:00+00:00`，迁移前后论文数量不变，Paper API 健康检查仍返回 680,199。
 - 已完成：修正推荐刷新合并方向；首次远程加载仍替换 seed，后续刷新保留旧 batch 和当前论文位置，将去重后的新 batch 追加到列表下方。
-- 下一步：按编排者指令进入 `/finish`，合入 `main` 后执行集成回归、双目标构建和最终归档。
+- 下一步：按部署计划在目标环境注册 `tool/sync_paper_sources.ps1` 的 Task Scheduler；产品能力继续进入 Phase 3–5。
 - 阻塞项：无。
 - 验收反馈：推荐刷新前插不符合竖向刷论文交互；已改为旧 batch 在前、新 batch 在后。编排者在修复版 Windows development App 启动后确认可以进入 `/finish`，本轮人工验收通过。
 
@@ -119,7 +119,7 @@
 | 两个推荐 seed + 第二批 `read_ids` | 通过；产生不同 `batch_id`，第二批与第一批 10 个已读 ID 交集为 0 | 2026-08-12 |
 | `PYTHONPATH=server; python -m unittest discover -s server/tests -v` | 通过；18 项全部通过 | 2026-08-12 |
 | 推荐可回放修复后的服务端全量测试 | 通过；19 项全部通过，覆盖年龄桶标签、批次请求隔离和异常引用排除 | 2026-08-12 |
-| `flutter test test/paper_controller_test.dart` | 通过；32 项全部通过，覆盖首次远程替换 seed、刷新前插去重、200 个已读 ID 上限和实时集合更新 | 2026-08-12 |
+| `flutter test test/paper_controller_test.dart` | 通过；32 项全部通过，覆盖首次远程替换 seed、刷新批次合并去重、200 个已读 ID 上限和实时集合更新 | 2026-08-12 |
 | `.\tool\verify_changed_dart_format.ps1` | 通过；18 个改动 Dart 文件均符合当前 formatter | 2026-08-12 |
 | `flutter analyze` | 通过；No issues found | 2026-08-12 |
 | `flutter test` | 通过；426 项全部通过 | 2026-08-12 |
@@ -156,6 +156,14 @@
 | 推荐刷新追加方向红绿回归 | 修复前测试准确失败：前 10 篇为新 batch；修复后旧 10 篇保持在前、新 20 篇追加到下方，当前论文位置保持不变 | 2026-08-12 |
 | 推荐刷新追加方向完整静态门禁 | 通过；Dart 格式检查 22 个文件、`flutter analyze` 无问题、Flutter 429 项全部通过 | 2026-08-12 |
 | Windows development App 最终人工验收 | 通过；修复版 App 使用 680,199 篇真实数据库启动，编排者确认可以进入 `/finish`；推荐刷新保留旧 batch 并将新 batch 追加到下方 | 2026-08-13 |
+| `main` 任务提交可达性 | 通过；`git merge-base --is-ancestor e364d07 main` 返回成功 | 2026-08-13 |
+| `main` 服务端集成回归 | 通过；配置 `PYTHONPATH=server` 后 48 项全部通过；首次未配置路径的调用仅在收集阶段找不到本地包，未执行测试 | 2026-08-13 |
+| `main` Dart 格式检查 | 通过；任务分支 22 个改动 Dart 文件已通过，合并后 `main` 无额外未提交 Dart 文件需格式化 | 2026-08-13 |
+| `main` `flutter analyze` | 通过；No issues found | 2026-08-13 |
+| `main` `flutter test` | 通过；440 项全部通过 | 2026-08-13 |
+| `main` development Android AOT 构建 | 通过；无 `android/key.properties`，按规范构建 profile APK：`build/app/outputs/flutter-apk/app-development-profile.apk`，119,409,548 bytes，SHA-256 `DEF090ABF1C957332AF11F2159A0CD223EB9E78E0A5D5B20FE680DEE80CF1117` | 2026-08-13 |
+| `main` Windows release 构建 | 通过；`build/windows/x64/runner/Release/spark.exe`，101,888 bytes，SHA-256 `CDFCDE6D1129AA3B01FAF6DDCBC8FEAAB9D92B647A6B7BD00B9C712E579BA28A` | 2026-08-13 |
+| `main` `git diff --check` | 通过 | 2026-08-13 |
 
 ## 审查结论
 
@@ -184,9 +192,9 @@
 
 ### 实际变更
 
-- 领域与业务逻辑：推荐引擎按有界候选、年龄桶、High Impact/Trending 池和 seed 生成批次；客户端刷新前插新论文并按 `paper_id` 去重，推荐请求携带有界已读集合。
+- 领域与业务逻辑：推荐引擎按有界候选、年龄桶、High Impact/Trending 池和 seed 生成批次；客户端刷新保留旧 batch 并将新论文去重后追加到阅读流下方，推荐请求携带有界已读集合。
 - 数据与基础设施：新增可恢复的 JSONL 批量导入器、租约/断点/拒绝记录、外部 ID 索引、会议/OpenAlex 增强、集合式索引和物化推荐池；补充 arXiv OAI 独立窗口水位、分页 checkpoint、逐页快照、删除处理与 wheel 内版本化迁移。
-- 界面与交互：无视觉改动；development App 首次远程成功替换内置 seed，后续刷新合并新 batch；已选中的底部论文导航键同时作为当前频道刷新入口。
+- 界面与交互：无视觉改动；development App 首次远程成功替换内置 seed，后续刷新将新 batch 追加到阅读流下方；已选中的底部论文导航键同时作为当前频道刷新入口。
 - 测试与工具：新增导入恢复、并发租约、字段映射、只增强已有论文、有界候选、客户端刷新/已读过滤、论文导航刷新、OAI 分页恢复、失败退出、数据库迁移和 wheel 安装测试；服务端 48 项、Flutter、格式、分析和既有双目标 development 构建证据均通过。
 - 文档：Phase 1/2 状态与 Phase 2.5 进度。
 
@@ -198,12 +206,12 @@
 
 ### 已知风险与回滚
 
-- 已知风险：会议增强只覆盖 `99,577/680,199`，来自 comments/journal-ref 正则匹配，未标注不代表未录用；OpenAlex 高引数据输入 2,901 条且 29 条异常引用已排除 quality pool；HF/Semantic Scholar/GitHub 按免费接口预算做有界同步；定时任务注册仍待合并后在目标环境执行。
+- 已知风险：会议增强只覆盖 `99,577/680,199`，来自 comments/journal-ref 正则匹配，未标注不代表未录用；OpenAlex 高引数据输入 2,901 条且 29 条异常引用已排除 quality pool；HF/Semantic Scholar/GitHub 按免费接口预算做有界同步；目标环境尚未注册定时同步任务。
 - 回滚方式：停止新 API 进程并重新指向旧 SQLite；代码按任务提交 `git revert`。
 
 ### 文档更新建议
 
-- Phase 2.5 的真实来源、会议入口和推荐净增量回归及 Windows development App 人工验收已经通过；合入 `main` 后按 `/finish` 运行双目标构建并更新开发计划。
+- Phase 2.5 的真实来源、会议入口、推荐净增量回归和 Windows development App 人工验收均已通过；双目标构建与开发计划更新已在 `/finish` 完成。
 
 ### 未完成与后续工作
 
@@ -211,11 +219,11 @@
 
 ## 合并归档（合并后在 main 补齐）
 
-- 最终状态：待合并
+- 最终状态：已合并
 - 合入分支：`main`
-- 最终集成提交：待填写
+- 最终集成提交：`31f5555100bdd30794885769a9542aed7894c1a1`
 - Pull Request：无
-- 合并时间：待填写
-- main 集成验证：待填写
-- 开发计划更新：待填写
-- 最终后续项：待填写
+- 合并时间：`2026-08-13T00:25:44+08:00`
+- main 集成验证：任务 tip 可达；服务端 48 项、Flutter 440 项和静态分析通过；development profile APK 与 Windows release EXE 均成功构建，路径、大小和 SHA-256 已记录。
+- 开发计划更新：`docs/development.md` 已将 Phase 2/2.5 标记为已完成，并保留 production Client 仍使用 arXiv Atom 的真实边界。
+- 最终后续项：在目标环境注册论文同步 Task Scheduler；Phase 3–5 分别继续热点、个性化与高级推荐能力。

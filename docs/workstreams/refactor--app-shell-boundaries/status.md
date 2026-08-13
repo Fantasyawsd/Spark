@@ -1,7 +1,7 @@
 # 应用壳边界重构任务台账
 
-> 状态：`/develop` 实现完成，待 `/test`
-> 最近更新：2026-08-13 20:20
+> 状态：`/review` 已通过，保留为下一批串行基线
+> 最近更新：2026-08-13 20:45
 
 ## 1. 任务信息
 
@@ -14,7 +14,7 @@
 | worktree | `C:\Users\Fantasy\Desktop\Spark-worktrees\agent-7` |
 | 基线 | `5e4dd9c2a65a9e9230c83990a8dd7c309a5da30a`（上一批 `fix/runtime-diagnostics` 最终审查提交） |
 | 负责人 | Fantasy（编排）；Codex（执行） |
-| 当前阶段 | `/develop` 已完成；下一步为 `/test` 完整门禁 |
+| 当前阶段 | `/review` 已完成；下一步基于最终审查提交创建新的串行 worktree |
 
 ## 2. 问题与边界
 
@@ -131,10 +131,20 @@ DeepSeek 报告指出 `lib/src/app/spark_app.dart` 同时承担应用根、闪�
 | 2026-08-13 | `/develop` 迭代 4 | `flutter analyze` | 通过，无问题。 |
 | 2026-08-13 | `/develop` 迭代 4 | `.\tool\verify_changed_dart_format.ps1` | 通过，共检查 99 个变更相关 Dart 文件。 |
 | 2026-08-13 | `/develop` 迭代 4 | 源码结构搜索与 `test/app_shell_boundaries_test.dart` | `SparkApp` 参数面为 `key/config/showSplash/dependencies`；`SparkShell` 参数面为 `key/required dependencies/features`；应用生产源码只有 `spark_app.dart` 调用一次 `SparkDependencies.preview(...)`。 |
+| 2026-08-13 | `/test` | `git branch --show-current; git status --short` | 分支为 `refactor/app-shell-boundaries`；进入门禁前工作区干净。 |
+| 2026-08-13 | `/test` | `.\tool\verify_changed_dart_format.ps1` | 通过，共检查 99 个变更相关 Dart 文件。 |
+| 2026-08-13 | `/test` | `flutter analyze` | 通过，无问题。 |
+| 2026-08-13 | `/test` | `flutter test` | 通过，共 532 项测试；无失败、错误或超时。 |
 
 ## 8. 审查与交付
 
-- 审查结论：尚未进入 `/review`。
+- 审查范围：`5e4dd9c2a65a9e9230c83990a8dd7c309a5da30a..HEAD`，9 个改动文件，新增 1118 行、删除 750 行；前序累计改动沿用各自已审查台账结论。
+- 规格核对：8 项验收标准全部满足；`spark_app.dart` 62 行，闪屏/会话/导航已迁出；完整依赖仅根解析一次；两个构造参数面已收口；行为与生命周期定向及全量测试均覆盖。
+- 结构核对：提交前结构清单逐项检查；Widget/Controller 基础设施直连、领域层外部依赖、公共模块反向依赖、循环依赖、业务 utils、深层继承、超大页面继续加入独立流程、只能依赖完整 UI 验证等 10 条阻断条件均未触发。
+- 阻断项：无。
+- 缺陷：无。
+- 建议：无。
+- 审查结论：通过；不执行 `/finish`，不合入 `main`，当前 HEAD 作为下一批 worktree 基线。
 - 兼容性：目标为纯应用层结构重构；不得改变用户可见行为、数据或 API。
 - 风险：控制器初始化/销毁顺序、异步任务存活期、本地数据清理编排、路由回调遗漏、测试装配迁移。
 - 回滚：本批次保持原子提交，可在该独立分支按提交回退；不触碰 `main`。
@@ -152,5 +162,6 @@ DeepSeek 报告指出 `lib/src/app/spark_app.dart` 同时承担应用根、闪�
 ## 10. 当前状态
 
 - 已完成：闪屏/bootstrap、应用运行期会话及导航展示壳均已迁出；`spark_app.dart` 由基线 781 行降至 72 行，只保留主题、一次依赖解析和根装配。`SparkApp` 与 `SparkShell` 的仓储/服务镜像参数及壳内 fallback 已删除，所有直接测试装配均改为完整 `SparkDependencies`，两条既有导入路径继续兼容。
-- 下一步：进入 `/test`，执行变更 Dart 格式检查、`flutter analyze` 与完整 `flutter test`，记录完整门禁证据。
+- 下一步：进入 `/review`，只读审查完整累计 diff；通过后保留最终审查提交作为下一批 worktree 的串行基线。
+- 下一步：基于本批最终审查提交创建新的独立 worktree，重新读取 DeepSeek 报告与全部相关台账，继续修复尚未处理的有效问题。
 - 阻塞项：无。

@@ -8,8 +8,8 @@
 - Worktree：`C:\Users\Fantasy\Desktop\Spark-worktrees\agent-6`
 - 基线提交：`4474bcffd8a1e9c49baba0be9bfe1b7398d35c5c`
 - 负责人：Fantasy（编排者）
-- 状态：规划中
-- 最近更新：2026-08-13 17:17
+- 状态：开发中
+- 最近更新：2026-08-13 17:27
 
 ## 目标
 
@@ -26,8 +26,8 @@
 
 ## 验收标准
 
-- [ ] 客户端提供跨 feature 复用、可替换测试 sink 的诊断接口；默认输出只包含固定 operation、severity、异常运行时类型和 stack trace，不调用异常 `toString()`，不接受任意上下文 payload。
-- [ ] Flutter framework、platform/async 顶层未处理错误进入同一诊断边界，并保持 Flutter 默认错误呈现与进程级错误传播契约。
+- [x] 客户端提供跨 feature 复用、可替换测试 sink 的诊断接口；默认输出只包含固定 operation、severity、异常运行时类型和 stack trace，不调用异常 `toString()`，不接受任意上下文 payload。
+- [x] Flutter framework、platform/async 顶层未处理错误进入同一诊断边界，并保持 Flutter 默认错误呈现与进程级错误传播契约。
 - [ ] `lib/` 内现有 25 处匿名 `catch (_)` 与 16 处无绑定变量的 `on Object` 完成逐项分类：最终消费的意外异常被报告；预期控制流或已继续上抛路径有明确代码语义且不产生重复日志。
 - [ ] Feed、搜索、离线仓储、缓存、本地 JSON、PDF、聊天持久化与展示操作的既有 fallback/错误提示不变，并由定向回归覆盖诊断事件和业务结果。
 - [ ] 服务端使用 Python 标准 logging 在 HTTP/CLI/同步边界记录安全的操作事件与 stack trace；已写入同步报告或拒绝计数的预期数据问题不泄露原始记录。
@@ -61,19 +61,20 @@
 
 ## 实施计划
 
-1. 增加客户端隐私安全诊断模型、默认 sink、测试捕获能力和顶层未处理错误接线。
-2. 按“最终消费 / 预期控制流 / 转换后上抛”分类改造客户端 broad catch，先覆盖 Feed、搜索、离线仓储和本地存储，再覆盖 PDF、ChatPaper 与展示操作。
-3. 增加服务端标准 logging 配置与 HTTP/CLI/同步边界事件，固定 500 响应并避免记录数据型动态值。
-4. 补齐业务结果、事件字段、stack trace、去重和隐私脱敏回归，并增加匿名 broad catch 静态门禁。
-5. 执行定向验证，更新台账并形成原子实现提交；随后按 `/test` 与 `/review` 阶段完成全量门禁和只读审查。
+1. 第一轮：在 `lib/src/core/diagnostics/` 建立固定 operation、最小事件模型、默认 sink、Zone 测试 sink 与 Flutter 顶层绑定；修改 `lib/main.dart`，以 `test/runtime_diagnostics_test.dart` 覆盖隐私和原错误处理器传播。
+2. 第二轮：按“最终消费 / 预期控制流 / 转换后上抛”分类改造客户端 broad catch，先覆盖 Feed、搜索、离线仓储和本地存储，再覆盖 PDF、ChatPaper 与展示操作。
+3. 第三轮：增加服务端标准 logging 配置与 HTTP/CLI/同步边界事件，固定 500 响应并避免记录数据型动态值。
+4. 第四轮：补齐跨模块业务结果、事件去重和隐私回归，增加匿名 broad catch 静态门禁。
+5. 实现完成后执行 `/test` 全量门禁并进入 `/review` 只读审查。
 
 ## 当前进度
 
 - 已完成：读取强制文档、原分析报告及 Paper API、真实数据导入、历史稳健性修复台账。
 - 已完成：基于 agent-5 最终审查提交创建 `fix/runtime-diagnostics` 与 `agent-6`，确认 `main` 保持 `5578a77d12dd3779940d2352d216e1f766ab47fa`。
 - 已完成：扫描确认客户端存在 25 处匿名 catch、16 处无绑定 broad catch，服务端业务包存在 35 处 exception handler；现有客户端无顶层诊断接线，服务端无标准 logging 调用。
-- 正在进行：固化问题分类、验收条件与独占/共享写入边界。
-- 下一步：等待编排者触发 `/develop`，从客户端诊断核心与隐私测试开始实现。
+- 已完成：第一轮 `/develop` 建立固定 operation 与最小事件模型，默认 sink 不接收异常文本或任意 payload；测试可通过 Zone 注入捕获 sink。
+- 已完成：`main.dart` 在同一受保护 Zone 内初始化 Flutter binding 与 `runApp`；framework、platform 和 Dart 未处理错误统一报告，且原 handler 返回值与父 Zone 传播保持不变。
+- 下一步：第二轮 `/develop` 迁移 Feed、搜索、离线仓储和本地存储中最终消费异常的 broad catch，并保留现有用户可见 fallback。
 - 阻塞项：无。
 
 ## 决策记录
@@ -84,6 +85,7 @@
 | 2026-08-13 | 只在异常被最终消费的边界记录，转换后上抛不重复记录 | 避免同一故障多层重复日志，同时保留根因 stack trace | 每个 catch 必须明确属于最终消费、预期控制流或继续传播之一 |
 | 2026-08-13 | 诊断事件拒绝任意 payload 和异常文本，只接受固定 operation、异常类型与 stack trace | 根因可追踪不能以泄露 BYOK、请求内容或论文/聊天数据为代价 | 测试 sink 与默认 sink 使用相同的最小事件模型 |
 | 2026-08-13 | HTTP 500 使用固定客户端消息，详细根因只进入服务端诊断 | 当前实现把 `str(error)` 返回给客户端，可能暴露数据库或本机信息 | 500 契约更安全；400 仍返回可操作的参数错误 |
+| 2026-08-13 | Zone handler 记录后以原 error/stack 继续向父 Zone 传播；platform handler 沿用原 handler 返回值 | 把错误标记为已处理会改变崩溃、stderr fallback 与宿主监控语义 | 新诊断只增加证据，不吞掉原有顶层错误 |
 
 ## 验证记录
 
@@ -93,6 +95,9 @@
 | `rg` 客户端异常扫描 | 25 处匿名 catch、16 处无绑定 `on Object`；需在实现阶段逐项分类 | 2026-08-13 |
 | `rg` 服务端异常与日志扫描 | 业务包 35 处 handler；同步失败已有结构化报告/计数，但 HTTP 防御边界会暴露异常文本且全包无标准 logging | 2026-08-13 |
 | Git/worktree 预检 | 控制工作树与 agent-5 干净；目标分支和 `agent-6` 未占用；基线为 `4474bcf` | 2026-08-13 |
+| `flutter test test/runtime_diagnostics_test.dart` | 通过；6 项覆盖最小事件、异常不字符串化、同步/异步父 Zone 传播、framework 原 handler 与 platform handled 结果 | 2026-08-13 |
+| `.\tool\verify_changed_dart_format.ps1` | 通过；跨串联基线识别的 56 个 Dart 文件均无需格式化 | 2026-08-13 |
+| `flutter analyze` | 通过；No issues found | 2026-08-13 |
 
 ## 审查结论
 
@@ -107,6 +112,8 @@
 
 | SHA | 提交信息 | 对应阶段 | 验证摘要 |
 | --- | --- | --- | --- |
+| `7657d68` | `新增（诊断）：接入客户端运行时错误边界` | 第一轮 `/develop` 实现 | 诊断最小事件、Zone/default sink、Flutter 顶层绑定与 main 接线；5 项初始定向测试、格式和 analyze 通过 |
+| `0dea59d` | `测试（诊断）：覆盖异步错误继续传播` | 第一轮 `/develop` 补强 | 证明异步未处理错误只记录一次并以原对象继续进入父 Zone；定向测试增至 6 项 |
 
 ## 交付准备（合并前收集）
 

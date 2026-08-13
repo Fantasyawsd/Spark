@@ -17,6 +17,7 @@ from .identity_resolution import (
     needs_fuzzy_lookup,
     resolve_identity,
 )
+from .index_storage import IndexStorage
 from .models import PaperRecord, parse_datetime, utc_now
 from .ports import IngestOutcome, IngestStatus
 from .paper_record_merger import merge_paper_records
@@ -43,6 +44,10 @@ class PaperStore:
             self._connection.close()
             raise
         self._dataset_storage = DatasetStorage(
+            self._connection,
+            timestamp_factory=utc_now,
+        )
+        self._index_storage = IndexStorage(
             self._connection,
             timestamp_factory=utc_now,
         )
@@ -442,100 +447,7 @@ class PaperStore:
         return bounded, next_cursor
 
     def refresh_indexes(self, generated_at: datetime | None = None) -> None:
-        generated_at = generated_at or utc_now()
-        generated = generated_at.isoformat()
-        with self.transaction() as connection:
-            connection.execute("DELETE FROM latest_index")
-            connection.execute(
-                """INSERT INTO latest_index(paper_id, published_at, generated_at)
-                   SELECT paper_id, published_at, ? FROM papers
-                   WHERE admitted = 1 AND withdrawn = 0
-                     AND EXISTS (
-                       SELECT 1 FROM json_each(papers.discovery_sources_json)
-                       WHERE value IN ('arxiv', 'huggingface')
-                     )""",
-                (generated,),
-            )
-        with self.transaction() as connection:
-            connection.execute("DELETE FROM channel_index")
-            connection.execute("DELETE FROM author_index")
-            connection.execute("DELETE FROM venue_index")
-            connection.execute(
-                """INSERT OR REPLACE INTO channel_index(channel_key, paper_id, sort_key, generated_at)
-                   SELECT 'subject:' || lower(subjects.value), papers.paper_id, papers.published_at, ?
-                   FROM papers JOIN json_each(papers.subjects_json) AS subjects
-                   WHERE papers.admitted = 1 AND papers.withdrawn = 0""",
-                (generated,),
-            )
-            connection.execute(
-                """INSERT OR REPLACE INTO author_index(author_key, paper_id, published_at)
-                   SELECT lower(authors.value), papers.paper_id, papers.published_at
-                   FROM papers JOIN json_each(papers.authors_json) AS authors
-                   WHERE papers.admitted = 1 AND papers.withdrawn = 0
-                     AND trim(CAST(authors.value AS TEXT)) != ''"""
-            )
-            connection.execute(
-                """INSERT OR REPLACE INTO venue_index(venue_key, paper_id, published_at)
-                   SELECT lower(json_extract(metadata_json, '$.venue_name')), paper_id, published_at
-                   FROM papers
-                   WHERE admitted = 1 AND withdrawn = 0
-                     AND json_extract(metadata_json, '$.venue_name') IS NOT NULL"""
-            )
-        with self.transaction() as connection:
-            connection.execute("DELETE FROM candidate_index")
-            connection.execute(
-                """INSERT INTO candidate_index(pool, paper_id, generated_at, sort_key, published_at)
-                   SELECT 'all', paper_id, ?, 0, published_at FROM papers
-                   WHERE admitted = 1 AND withdrawn = 0""",
-                (generated,),
-            )
-            boundaries = (
-                ("0-1y", generated_at - timedelta(days=365.25), generated_at),
-                ("1-3y", generated_at - timedelta(days=365.25 * 3), generated_at - timedelta(days=365.25)),
-                ("3-5y", generated_at - timedelta(days=365.25 * 5), generated_at - timedelta(days=365.25 * 3)),
-                ("5y+", None, generated_at - timedelta(days=365.25 * 5)),
-            )
-            quality_sort = """CASE
-                WHEN json_extract(signals_json, '$.openalex.citation_count_outlier') = 1
-                THEN 0
-                ELSE COALESCE(
-                    json_extract(signals_json, '$.openalex.citation_count'),
-                    json_extract(signals_json, '$.semantic_scholar.citation_count'),
-                    0
-                )
-            END"""
-            for bucket, lower, upper in boundaries:
-                clauses = ["admitted = 1", "withdrawn = 0", "published_at < ?"]
-                date_params: list[Any] = [upper.isoformat()]
-                if lower is not None:
-                    clauses.append("published_at >= ?")
-                    date_params.append(lower.isoformat())
-                where = " AND ".join(clauses)
-                quality_where = (
-                    f"{where} AND "
-                    "(json_extract(signals_json, '$.openalex.citation_count_outlier') IS NULL "
-                    "OR json_extract(signals_json, '$.openalex.citation_count_outlier') != 1)"
-                )
-                connection.execute(
-                    f"""INSERT INTO candidate_index(pool, paper_id, generated_at, sort_key, published_at)
-                        SELECT ?, paper_id, ?,
-                               {quality_sort},
-                               published_at
-                        FROM papers WHERE {quality_where}
-                        ORDER BY {quality_sort} DESC,
-                                 published_at DESC, paper_id DESC LIMIT 5000""",
-                    (f"quality:{bucket}", generated, *date_params),
-                )
-                connection.execute(
-                    f"""INSERT INTO candidate_index(pool, paper_id, generated_at, sort_key, published_at)
-                        SELECT ?, paper_id, ?,
-                               COALESCE(json_extract(signals_json, '$.huggingface.heat'), 0),
-                               published_at
-                        FROM papers WHERE {where}
-                        ORDER BY COALESCE(json_extract(signals_json, '$.huggingface.heat'), 0) DESC,
-                                 published_at DESC, paper_id DESC LIMIT 5000""",
-                    (f"trending:{bucket}", generated, *date_params),
-                )
+        self._index_storage.refresh(generated_at)
 
     def all_candidates(self) -> list[PaperRecord]:
         rows = self._connection.execute(
@@ -812,24 +724,7 @@ class PaperStore:
         )
 
     def indexes_ready(self) -> bool:
-        admitted = int(
-            self._connection.execute(
-                "SELECT COUNT(*) FROM papers WHERE admitted = 1 AND withdrawn = 0"
-            ).fetchone()[0]
-        )
-        latest = int(self._connection.execute("SELECT COUNT(*) FROM latest_index").fetchone()[0])
-        candidates = int(
-            self._connection.execute(
-                "SELECT COUNT(*) FROM candidate_index WHERE pool = 'all'"
-            ).fetchone()[0]
-        )
-        recommendation_pools = int(
-            self._connection.execute(
-                "SELECT COUNT(*) FROM candidate_index WHERE pool LIKE 'quality:%' OR pool LIKE 'trending:%'"
-            ).fetchone()[0]
-        )
-        author_rows = int(self._connection.execute("SELECT COUNT(*) FROM author_index").fetchone()[0])
-        return admitted == latest == candidates and recommendation_pools > 0 and author_rows > 0
+        return self._index_storage.is_ready()
 
     def record_snapshot(
         self,

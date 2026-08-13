@@ -6,6 +6,7 @@ import 'package:spark/src/features/chat/domain/chat_context.dart';
 import 'package:spark/src/features/chat/domain/chat_message.dart';
 import 'package:spark/src/features/chat/domain/chat_session_repository.dart';
 import 'package:spark/src/features/chat/presentation/paper_ai_chat_screen.dart';
+import 'package:spark/src/features/chat/presentation/platform/paper_ai_keyboard_dismissal.dart';
 
 void main() {
   testWidgets('desktop keeps composer focused after sending', (tester) async {
@@ -50,9 +51,11 @@ void main() {
 
   testWidgets('selection mode keeps no focus and exiting does not pop keyboard',
       (tester) async {
+    final keyboardDismissal = _RecordingKeyboardDismissal();
     await tester.pumpWidget(
       _buildScreen(
         messages: const [ChatMessage(fromUser: false, content: '历史回答')],
+        keyboardDismissal: keyboardDismissal,
       ),
     );
     await tester.pumpAndSettle();
@@ -73,6 +76,7 @@ void main() {
     );
     expect(FocusManager.instance.primaryFocus, isNot(same(composerNode)));
     expect(composerNode.hasFocus, isFalse);
+    expect(keyboardDismissal.calls, 1);
 
     await tester.tap(find.text('取消'));
     await tester.pumpAndSettle();
@@ -82,7 +86,10 @@ void main() {
   });
 }
 
-Widget _buildScreen({List<ChatMessage> messages = const []}) {
+Widget _buildScreen({
+  List<ChatMessage> messages = const [],
+  PaperAiKeyboardDismissal keyboardDismissal = platformPaperAiKeyboardDismissal,
+}) {
   return MaterialApp(
     home: PaperAiChatScreen(
       chatContext: const ChatContext(
@@ -92,9 +99,21 @@ Widget _buildScreen({List<ChatMessage> messages = const []}) {
       ),
       aiService: const _FakeChatAiService(),
       sessionRepository: _FakeChatSessionRepository(messages: messages),
+      keyboardDismissal: keyboardDismissal,
       screenTitle: '键盘交互测试',
     ),
   );
+}
+
+class _RecordingKeyboardDismissal implements PaperAiKeyboardDismissal {
+  int calls = 0;
+
+  @override
+  void dismiss(FocusNode composerFocusNode) {
+    calls++;
+    composerFocusNode.unfocus();
+    FocusManager.instance.primaryFocus?.unfocus();
+  }
 }
 
 FocusNode _composerFocusNode(WidgetTester tester) {

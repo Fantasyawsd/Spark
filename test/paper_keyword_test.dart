@@ -1,10 +1,12 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:spark/src/core/diagnostics/diagnostics.dart';
 import 'package:spark/src/features/chat/chat.dart';
 import 'package:spark/src/features/papers/application/paper_keyword_controller.dart';
 import 'package:spark/src/features/papers/application/paper_keyword_service.dart';
 import 'package:spark/src/features/papers/data/in_memory_paper_keyword_repository.dart';
 import 'package:spark/src/features/papers/domain/paper.dart';
 import 'package:spark/src/features/papers/domain/paper_keyword_record.dart';
+import 'package:spark/src/features/papers/domain/paper_keyword_repository.dart';
 
 void main() {
   group('PaperKeywordParser', () {
@@ -75,6 +77,71 @@ void main() {
     expect(stored, isNotNull);
     expect(isPaperKeywordRecordFresh(stored!, paper), isTrue);
   });
+
+  test('keyword cache load failures report while retaining empty fallback',
+      () async {
+    final controller = PaperKeywordController(
+      paper: _paper(),
+      service: const _FakeAiService('[]'),
+      repository: _ThrowingKeywordRepository(loadFailure: true),
+    );
+    addTearDown(controller.dispose);
+    final events = <SparkDiagnosticEvent>[];
+
+    await SparkDiagnostics.runWithSink(events.add, controller.initialize);
+
+    expect(controller.keywords, isEmpty);
+    expect(controller.error, '无法读取关键词缓存。');
+    expect(
+      events.map((event) => event.operation),
+      [SparkDiagnosticOperation.paperKeywordsLoad],
+    );
+  });
+
+  test('keyword generation and cache save use distinct operations', () async {
+    final generationController = PaperKeywordController(
+      paper: _paper(),
+      service: const _FakeAiService('[]'),
+    );
+    final saveController = PaperKeywordController(
+      paper: _paper(),
+      service: const _FakeAiService('["A", "B", "C", "D", "E"]'),
+      repository: _ThrowingKeywordRepository(saveFailure: true),
+    );
+    addTearDown(generationController.dispose);
+    addTearDown(saveController.dispose);
+    final events = <SparkDiagnosticEvent>[];
+
+    await SparkDiagnostics.runWithSink(events.add, () async {
+      await generationController.generate();
+      await saveController.generate();
+    });
+
+    expect(generationController.error, '关键词数量应为 5 至 12 个，请重试。');
+    expect(saveController.keywords, ['A', 'B', 'C', 'D', 'E']);
+    expect(saveController.error, '关键词保存失败');
+    expect(
+      events.map((event) => event.operation),
+      [
+        SparkDiagnosticOperation.paperKeywordsGenerate,
+        SparkDiagnosticOperation.paperKeywordsSave,
+      ],
+    );
+  });
+
+  test('keyword cancellation remains expected control flow', () async {
+    final controller = PaperKeywordController(
+      paper: _paper(),
+      service: const _ThrowingAiService(ChatAiCancelledException()),
+    );
+    addTearDown(controller.dispose);
+    final events = <SparkDiagnosticEvent>[];
+
+    await SparkDiagnostics.runWithSink(events.add, controller.generate);
+
+    expect(controller.error, isNull);
+    expect(events, isEmpty);
+  });
 }
 
 Paper _paper({String title = 'Paper title'}) => Paper(
@@ -97,5 +164,45 @@ class _FakeAiService implements ChatAiService {
     required List<ChatMessage> conversation,
   }) async {
     return response;
+  }
+}
+
+class _ThrowingAiService implements ChatAiService {
+  const _ThrowingAiService(this.error);
+
+  final Object error;
+
+  @override
+  Future<String> answer({
+    required ChatContext context,
+    required List<ChatMessage> conversation,
+  }) async {
+    throw error;
+  }
+}
+
+class _ThrowingKeywordRepository implements PaperKeywordRepository {
+  const _ThrowingKeywordRepository({
+    this.loadFailure = false,
+    this.saveFailure = false,
+  });
+
+  final bool loadFailure;
+  final bool saveFailure;
+
+  @override
+  Future<void> clear(String paperId) async {}
+
+  @override
+  Future<PaperKeywordRecord?> load(String paperId) async {
+    if (loadFailure) throw StateError('private-keyword-cache');
+    return null;
+  }
+
+  @override
+  Future<void> save(PaperKeywordRecord record) async {
+    if (saveFailure) {
+      throw const PaperKeywordPersistenceException('关键词保存失败');
+    }
   }
 }

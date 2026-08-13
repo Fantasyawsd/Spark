@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
+import '../../../core/diagnostics/diagnostics.dart';
 import '../domain/favorite_group.dart';
 import '../domain/paper.dart';
 import '../domain/paper_interaction_repository.dart';
@@ -101,11 +102,21 @@ class PaperInteractionController extends ChangeNotifier {
       _initialized = true;
       _persistenceError = null;
       if (pendingMutations.isNotEmpty) _queuePersistence();
-    } on PaperInteractionPersistenceException catch (error) {
+    } on PaperInteractionPersistenceException catch (error, stackTrace) {
+      _reportPersistenceFailure(
+        SparkDiagnosticOperation.paperInteractionsLoad,
+        error,
+        stackTrace,
+      );
       if (_disposed) return;
       _persistenceError = error.message;
       _errorRevision++;
-    } on Object {
+    } on Object catch (error, stackTrace) {
+      _reportPersistenceFailure(
+        SparkDiagnosticOperation.paperInteractionsLoad,
+        error,
+        stackTrace,
+      );
       if (_disposed) return;
       _persistenceError = '论文交互状态读取失败，请稍后重试。';
       _errorRevision++;
@@ -310,13 +321,23 @@ class PaperInteractionController extends ChangeNotifier {
         if (_disposed) return;
         _committedSnapshot = snapshot;
         if (revision == _revision) _persistenceError = null;
-      } on PaperInteractionPersistenceException catch (error) {
+      } on PaperInteractionPersistenceException catch (error, stackTrace) {
+        _reportPersistenceFailure(
+          SparkDiagnosticOperation.paperInteractionsSave,
+          error,
+          stackTrace,
+        );
         if (!_disposed && revision == _revision) {
           _restore(_committedSnapshot);
           _persistenceError = error.message;
           _errorRevision++;
         }
-      } on Object {
+      } on Object catch (error, stackTrace) {
+        _reportPersistenceFailure(
+          SparkDiagnosticOperation.paperInteractionsSave,
+          error,
+          stackTrace,
+        );
         if (!_disposed && revision == _revision) {
           _restore(_committedSnapshot);
           _persistenceError = '论文交互状态保存失败，请稍后重试。';
@@ -334,6 +355,19 @@ class PaperInteractionController extends ChangeNotifier {
         followedPaperIds: _followedPaperIds.value,
         shareCountDeltas: _shareCountDeltas,
       );
+
+  static void _reportPersistenceFailure(
+    SparkDiagnosticOperation operation,
+    Object error,
+    StackTrace stackTrace,
+  ) {
+    SparkDiagnostics.reportUnexpected(
+      operation: operation,
+      error: error,
+      stackTrace: stackTrace,
+      severity: SparkDiagnosticSeverity.warning,
+    );
+  }
 
   void _restore(PaperInteractionSnapshot snapshot) {
     _likedPaperIds

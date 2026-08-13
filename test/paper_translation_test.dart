@@ -1,8 +1,10 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:spark/src/core/diagnostics/diagnostics.dart';
 import 'package:spark/src/features/chat/data/deepseek_chat_ai_service.dart';
 import 'package:spark/src/features/papers/application/paper_translation_controller.dart';
 import 'package:spark/src/features/papers/application/paper_translation_service.dart';
@@ -145,6 +147,79 @@ void main() {
 
     expect(controller.hasTranslation, isFalse);
   });
+
+  test('translation cache load failures report while retaining fallback',
+      () async {
+    final controller = PaperTranslationController(
+      paper: _paper(),
+      service: _FakeTranslationService(),
+      repository: _ThrowingTranslationRepository(loadFailure: true),
+    );
+    addTearDown(controller.dispose);
+    final events = <SparkDiagnosticEvent>[];
+
+    await SparkDiagnostics.runWithSink(events.add, controller.initialize);
+
+    expect(controller.markdown, isEmpty);
+    expect(controller.error, '无法读取中文摘要缓存。');
+    expect(
+      events.map((event) => event.operation),
+      [SparkDiagnosticOperation.paperTranslationLoad],
+    );
+  });
+
+  test('translation generation and cache save use distinct operations',
+      () async {
+    final generationController = PaperTranslationController(
+      paper: _paper(),
+      service: _FailingTranslationService(),
+    );
+    final saveController = PaperTranslationController(
+      paper: _paper(),
+      service: _FakeTranslationService(),
+      repository: _ThrowingTranslationRepository(saveFailure: true),
+    );
+    addTearDown(generationController.dispose);
+    addTearDown(saveController.dispose);
+    final events = <SparkDiagnosticEvent>[];
+
+    await SparkDiagnostics.runWithSink(events.add, () async {
+      await generationController.translate();
+      await saveController.translate();
+    });
+
+    expect(generationController.error, '翻译服务失败');
+    expect(saveController.markdown, '第一段中文翻译');
+    expect(saveController.error, '翻译保存失败');
+    expect(
+      events.map((event) => event.operation),
+      [
+        SparkDiagnosticOperation.paperTranslationGenerate,
+        SparkDiagnosticOperation.paperTranslationSave,
+      ],
+    );
+  });
+
+  test('translation cancellation does not emit a failure event', () async {
+    final service = _CancellableTranslationService();
+    final controller = PaperTranslationController(
+      paper: _paper(),
+      service: service,
+    );
+    addTearDown(controller.dispose);
+    final events = <SparkDiagnosticEvent>[];
+
+    await SparkDiagnostics.runWithSink(events.add, () async {
+      final translation = controller.translate();
+      await service.started.future;
+      controller.cancel();
+      await translation;
+    });
+
+    expect(controller.translating, isFalse);
+    expect(controller.error, isNull);
+    expect(events, isEmpty);
+  });
 }
 
 Paper _paper({
@@ -182,4 +257,57 @@ class _FakeTranslationService implements PaperTranslationService {
 
   @override
   void cancelActiveTranslation() {}
+}
+
+class _FailingTranslationService implements PaperTranslationService {
+  @override
+  Stream<String> translateAbstract(Paper paper) async* {
+    throw const PaperTranslationException('翻译服务失败');
+  }
+
+  @override
+  void cancelActiveTranslation() {}
+}
+
+class _CancellableTranslationService implements PaperTranslationService {
+  final started = Completer<void>();
+  final cancelled = Completer<void>();
+
+  @override
+  Stream<String> translateAbstract(Paper paper) async* {
+    started.complete();
+    await cancelled.future;
+    throw const PaperTranslationException('已取消');
+  }
+
+  @override
+  void cancelActiveTranslation() {
+    if (!cancelled.isCompleted) cancelled.complete();
+  }
+}
+
+class _ThrowingTranslationRepository implements PaperTranslationRepository {
+  const _ThrowingTranslationRepository({
+    this.loadFailure = false,
+    this.saveFailure = false,
+  });
+
+  final bool loadFailure;
+  final bool saveFailure;
+
+  @override
+  Future<void> clear(String paperId) async {}
+
+  @override
+  Future<PaperTranslationRecord?> load(String paperId) async {
+    if (loadFailure) throw StateError('private-translation-cache');
+    return null;
+  }
+
+  @override
+  Future<void> save(PaperTranslationRecord record) async {
+    if (saveFailure) {
+      throw const PaperTranslationPersistenceException('翻译保存失败');
+    }
+  }
 }

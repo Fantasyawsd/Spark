@@ -52,7 +52,28 @@ enum SparkDiagnosticOperation {
   paperReaderOpenLink('papers.reader.open_link'),
   paperReaderShare('papers.reader.share'),
   chatOpenSource('chat.sources.open'),
-  chatLoadFullText('chat.full_text.load');
+  chatLoadFullText('chat.full_text.load'),
+  localDataInspect('local_data.inspect'),
+  localDataClear('local_data.clear'),
+  localDataAfterClear('local_data.after_clear'),
+  localDataInspectAfterClear('local_data.inspect_after_clear'),
+  paperCommentsLoad('papers.comments.load'),
+  paperCommentsSave('papers.comments.save'),
+  paperFeedPreferencesLoad('papers.feed_preferences.load'),
+  paperFeedPreferencesSave('papers.feed_preferences.save'),
+  paperChannelPreferencesLoad('papers.channel_preferences.load'),
+  paperChannelPreferencesSave('papers.channel_preferences.save'),
+  paperInteractionsLoad('papers.interactions.load'),
+  paperInteractionsSave('papers.interactions.save'),
+  paperKeywordsLoad('papers.keywords.load'),
+  paperKeywordsGenerate('papers.keywords.generate'),
+  paperKeywordsSave('papers.keywords.save'),
+  paperChatContextKeywordsLoad('papers.chat_context.keywords.load'),
+  paperReadingLoad('papers.reading.load'),
+  paperReadingSave('papers.reading.save'),
+  paperTranslationLoad('papers.translation.load'),
+  paperTranslationGenerate('papers.translation.generate'),
+  paperTranslationSave('papers.translation.save');
 
   const SparkDiagnosticOperation(this.code);
 

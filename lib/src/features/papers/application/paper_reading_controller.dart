@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
+import '../../../core/diagnostics/diagnostics.dart';
 import '../domain/paper_reading_repository.dart';
 
 class PaperReadingController extends ChangeNotifier {
@@ -73,9 +74,19 @@ class PaperReadingController extends ChangeNotifier {
       _persistenceError = null;
       _notify();
       if (pendingMutations.isNotEmpty) _queuePersistence();
-    } on PaperReadingPersistenceException catch (error) {
+    } on PaperReadingPersistenceException catch (error, stackTrace) {
+      _reportPersistenceFailure(
+        SparkDiagnosticOperation.paperReadingLoad,
+        error,
+        stackTrace,
+      );
       _finishFailedInitialization(error.message);
-    } on Object {
+    } on Object catch (error, stackTrace) {
+      _reportPersistenceFailure(
+        SparkDiagnosticOperation.paperReadingLoad,
+        error,
+        stackTrace,
+      );
       _finishFailedInitialization('阅读记录读取失败，请稍后重试。');
     }
   }
@@ -192,11 +203,21 @@ class PaperReadingController extends ChangeNotifier {
         if (!_disposed && revision == _writeRevision) {
           _persistenceError = null;
         }
-      } on PaperReadingPersistenceException catch (error) {
+      } on PaperReadingPersistenceException catch (error, stackTrace) {
+        _reportPersistenceFailure(
+          SparkDiagnosticOperation.paperReadingSave,
+          error,
+          stackTrace,
+        );
         if (!_disposed && revision == _writeRevision) {
           _persistenceError = error.message;
         }
-      } on Object {
+      } on Object catch (error, stackTrace) {
+        _reportPersistenceFailure(
+          SparkDiagnosticOperation.paperReadingSave,
+          error,
+          stackTrace,
+        );
         if (!_disposed && revision == _writeRevision) {
           _persistenceError = '阅读记录保存失败，请稍后重试。';
         }
@@ -234,6 +255,19 @@ class PaperReadingController extends ChangeNotifier {
         abstractScrollOffsets: _abstractScrollOffsets,
         dwellMilliseconds: _dwellMilliseconds,
       );
+
+  static void _reportPersistenceFailure(
+    SparkDiagnosticOperation operation,
+    Object error,
+    StackTrace stackTrace,
+  ) {
+    SparkDiagnostics.reportUnexpected(
+      operation: operation,
+      error: error,
+      stackTrace: stackTrace,
+      severity: SparkDiagnosticSeverity.warning,
+    );
+  }
 
   void _notify() {
     if (!_disposed) notifyListeners();

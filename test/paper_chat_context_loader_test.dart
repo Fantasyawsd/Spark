@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:spark/src/core/diagnostics/diagnostics.dart';
 import 'package:spark/src/features/papers/application/paper_chat_context_loader.dart';
 import 'package:spark/src/features/papers/application/paper_keyword_service.dart';
 import 'package:spark/src/features/papers/domain/paper.dart';
@@ -13,10 +14,18 @@ void main() {
       keywordRepository: _ThrowingKeywordRepository(),
       pdfContentProvider: _FakePdfContentProvider(),
     );
+    final events = <SparkDiagnosticEvent>[];
 
-    final context = await loader.load(_paper);
+    final context = await SparkDiagnostics.runWithSink(
+      events.add,
+      () => loader.load(_paper),
+    );
 
     expect(context.systemPrompt, contains('内容关键词：未知'));
+    expect(
+      events.map((event) => event.operation),
+      [SparkDiagnosticOperation.paperChatContextKeywordsLoad],
+    );
   });
 
   test('full text context combines fresh keywords and cached PDF chunks',

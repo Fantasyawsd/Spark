@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:spark/src/core/diagnostics/diagnostics.dart';
 import 'package:spark/src/features/papers/application/paper_reading_controller.dart';
 import 'package:spark/src/features/papers/data/in_memory_paper_reading_repository.dart';
 import 'package:spark/src/features/papers/domain/paper_reading_repository.dart';
@@ -112,16 +113,19 @@ void main() {
     final repository = _BlockingPaperReadingRepository();
     final controller = PaperReadingController(repository: repository);
     addTearDown(controller.dispose);
+    final events = <SparkDiagnosticEvent>[];
 
-    final initialization = controller.initialize();
-    controller.recordOpened('paper-new');
-    controller.toggleReadLater('paper-later');
-    repository.failLoad(
-      const PaperReadingPersistenceException('读取失败'),
-    );
+    await SparkDiagnostics.runWithSink(events.add, () async {
+      final initialization = controller.initialize();
+      controller.recordOpened('paper-new');
+      controller.toggleReadLater('paper-later');
+      repository.failLoad(
+        const PaperReadingPersistenceException('读取失败'),
+      );
 
-    await initialization;
-    await controller.flushPendingWrites();
+      await initialization;
+      await controller.flushPendingWrites();
+    });
 
     expect(controller.initialized, isTrue);
     expect(controller.isRead('paper-new'), isTrue);
@@ -132,12 +136,40 @@ void main() {
       repository.savedSnapshots.single.readLaterPaperIds,
       {'paper-later'},
     );
+    expect(
+      events.map((event) => event.operation),
+      [SparkDiagnosticOperation.paperReadingLoad],
+    );
+  });
+
+  test('unexpected reading save failures keep the queue usable and report',
+      () async {
+    final repository = _BlockingPaperReadingRepository()
+      ..throwUnexpectedOnSave = true;
+    final controller = PaperReadingController(repository: repository);
+    addTearDown(controller.dispose);
+    final events = <SparkDiagnosticEvent>[];
+
+    await SparkDiagnostics.runWithSink(events.add, () async {
+      final initialization = controller.initialize();
+      repository.completeLoad(PaperReadingSnapshot());
+      await initialization;
+      controller.recordOpened('paper-new');
+      await controller.flushPendingWrites();
+    });
+
+    expect(controller.persistenceError, '阅读记录保存失败，请稍后重试。');
+    expect(
+      events.map((event) => event.operation),
+      [SparkDiagnosticOperation.paperReadingSave],
+    );
   });
 }
 
 class _BlockingPaperReadingRepository implements PaperReadingRepository {
   final _load = Completer<PaperReadingSnapshot>();
   final List<PaperReadingSnapshot> savedSnapshots = [];
+  bool throwUnexpectedOnSave = false;
 
   void completeLoad(PaperReadingSnapshot snapshot) => _load.complete(snapshot);
 
@@ -148,6 +180,10 @@ class _BlockingPaperReadingRepository implements PaperReadingRepository {
 
   @override
   Future<void> save(PaperReadingSnapshot snapshot) async {
+    if (throwUnexpectedOnSave) {
+      throwUnexpectedOnSave = false;
+      throw StateError('private-reading-save');
+    }
     savedSnapshots.add(snapshot);
   }
 }

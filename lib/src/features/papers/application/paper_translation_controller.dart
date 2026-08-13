@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
+import '../../../core/diagnostics/diagnostics.dart';
 import '../domain/paper.dart';
 import 'paper_translation_service.dart';
 
@@ -52,9 +53,19 @@ class PaperTranslationController extends ChangeNotifier {
       if (record != null && isPaperTranslationRecordFresh(record, paper)) {
         _markdown = record.markdown;
       }
-    } on PaperTranslationPersistenceException catch (error) {
+    } on PaperTranslationPersistenceException catch (error, stackTrace) {
+      _reportPersistenceFailure(
+        SparkDiagnosticOperation.paperTranslationLoad,
+        error,
+        stackTrace,
+      );
       _error = error.message;
-    } on Object {
+    } on Object catch (error, stackTrace) {
+      _reportPersistenceFailure(
+        SparkDiagnosticOperation.paperTranslationLoad,
+        error,
+        stackTrace,
+      );
       _error = '无法读取中文摘要缓存。';
     } finally {
       if (!_disposed) {
@@ -95,9 +106,11 @@ class PaperTranslationController extends ChangeNotifier {
       _notifyTimer?.cancel();
       _notify();
       await _save();
-    } on PaperTranslationException catch (error) {
+    } on PaperTranslationException catch (error, stackTrace) {
+      _reportGenerationFailure(requestVersion, error, stackTrace);
       _handleError(requestVersion, error.message, previous);
-    } on Exception {
+    } on Exception catch (error, stackTrace) {
+      _reportGenerationFailure(requestVersion, error, stackTrace);
       _handleError(requestVersion, '中文翻译失败，请稍后重试。', previous);
     }
   }
@@ -133,12 +146,43 @@ class PaperTranslationController extends ChangeNotifier {
           generatedAt: _clock().toUtc(),
         ),
       );
-    } on PaperTranslationPersistenceException catch (error) {
+    } on PaperTranslationPersistenceException catch (error, stackTrace) {
+      _reportPersistenceFailure(
+        SparkDiagnosticOperation.paperTranslationSave,
+        error,
+        stackTrace,
+      );
       if (!_disposed) {
         _error = error.message;
         _notify();
       }
     }
+  }
+
+  void _reportGenerationFailure(
+    int requestVersion,
+    Object error,
+    StackTrace stackTrace,
+  ) {
+    if (_disposed || requestVersion != _requestVersion) return;
+    SparkDiagnostics.reportUnexpected(
+      operation: SparkDiagnosticOperation.paperTranslationGenerate,
+      error: error,
+      stackTrace: stackTrace,
+    );
+  }
+
+  static void _reportPersistenceFailure(
+    SparkDiagnosticOperation operation,
+    Object error,
+    StackTrace stackTrace,
+  ) {
+    SparkDiagnostics.reportUnexpected(
+      operation: operation,
+      error: error,
+      stackTrace: stackTrace,
+      severity: SparkDiagnosticSeverity.warning,
+    );
   }
 
   void _scheduleNotify() {

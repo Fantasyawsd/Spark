@@ -138,8 +138,11 @@ class DeepSeekWebSearchChatAiService
         throw const ChatAiException('DeepSeek 联网搜索响应超时，请稍后重试。');
       }
       throw const ChatAiException('无法连接 DeepSeek 联网搜索，请检查网络后重试。');
-    } on Exception {
-      throw const ChatAiException('无法连接 DeepSeek 联网搜索，请检查网络后重试。');
+    } on Exception catch (error, stackTrace) {
+      Error.throwWithStackTrace(
+        const ChatAiException('无法连接 DeepSeek 联网搜索，请检查网络后重试。'),
+        stackTrace,
+      );
     } finally {
       request.dispose();
       if (_injectedClient == null) client.close();

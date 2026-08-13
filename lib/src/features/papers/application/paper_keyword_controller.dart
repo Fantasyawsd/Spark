@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 
+import '../../../core/diagnostics/diagnostics.dart';
 import '../domain/paper.dart';
 import '../domain/paper_keyword_repository.dart';
 import '../domain/paper_keyword_record.dart';
@@ -51,9 +52,19 @@ class PaperKeywordController extends ChangeNotifier {
       if (record != null && isPaperKeywordRecordFresh(record, paper)) {
         _keywords = record.keywords;
       }
-    } on PaperKeywordPersistenceException catch (error) {
+    } on PaperKeywordPersistenceException catch (error, stackTrace) {
+      _reportPersistenceFailure(
+        SparkDiagnosticOperation.paperKeywordsLoad,
+        error,
+        stackTrace,
+      );
       _error = error.message;
-    } on Object {
+    } on Object catch (error, stackTrace) {
+      _reportPersistenceFailure(
+        SparkDiagnosticOperation.paperKeywordsLoad,
+        error,
+        stackTrace,
+      );
       _error = '无法读取关键词缓存。';
     } finally {
       if (!_disposed) {
@@ -77,13 +88,16 @@ class PaperKeywordController extends ChangeNotifier {
       _generating = false;
       _notify();
       await _save();
-    } on PaperKeywordGenerationException catch (error) {
+    } on PaperKeywordGenerationException catch (error, stackTrace) {
+      _reportGenerationFailure(requestVersion, error, stackTrace);
       _handleError(requestVersion, error.message, previous);
     } on ChatAiCancelledException {
       _handleError(requestVersion, null, previous);
-    } on ChatAiException {
+    } on ChatAiException catch (error, stackTrace) {
+      _reportGenerationFailure(requestVersion, error, stackTrace);
       _handleError(requestVersion, '关键词生成失败，请稍后重试。', previous);
-    } on Exception {
+    } on Exception catch (error, stackTrace) {
+      _reportGenerationFailure(requestVersion, error, stackTrace);
       _handleError(requestVersion, '关键词生成失败，请稍后重试。', previous);
     }
   }
@@ -120,12 +134,43 @@ class PaperKeywordController extends ChangeNotifier {
           generatedAt: DateTime.now().toUtc(),
         ),
       );
-    } on PaperKeywordPersistenceException catch (error) {
+    } on PaperKeywordPersistenceException catch (error, stackTrace) {
+      _reportPersistenceFailure(
+        SparkDiagnosticOperation.paperKeywordsSave,
+        error,
+        stackTrace,
+      );
       if (!_disposed) {
         _error = error.message;
         _notify();
       }
     }
+  }
+
+  void _reportGenerationFailure(
+    int requestVersion,
+    Object error,
+    StackTrace stackTrace,
+  ) {
+    if (_disposed || requestVersion != _requestVersion) return;
+    SparkDiagnostics.reportUnexpected(
+      operation: SparkDiagnosticOperation.paperKeywordsGenerate,
+      error: error,
+      stackTrace: stackTrace,
+    );
+  }
+
+  static void _reportPersistenceFailure(
+    SparkDiagnosticOperation operation,
+    Object error,
+    StackTrace stackTrace,
+  ) {
+    SparkDiagnostics.reportUnexpected(
+      operation: operation,
+      error: error,
+      stackTrace: stackTrace,
+      severity: SparkDiagnosticSeverity.warning,
+    );
   }
 
   void _notify() {

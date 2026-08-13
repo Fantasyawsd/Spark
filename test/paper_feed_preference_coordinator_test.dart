@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:spark/src/core/diagnostics/diagnostics.dart';
 import 'package:spark/src/features/papers/application/paper_feed_preference_coordinator.dart';
 import 'package:spark/src/features/papers/domain/paper_channel.dart';
 import 'package:spark/src/features/papers/domain/paper_channel_preference_repository.dart';
@@ -36,11 +37,18 @@ void main() {
     addTearDown(coordinator.dispose);
     var changes = 0;
     coordinator.onChanged = () => changes++;
+    final events = <SparkDiagnosticEvent>[];
 
     coordinator.rememberPosition('fixed:recommended', 1);
-    coordinator.queueFeedPersistence(primaryCategoryIndex: 0);
-    await coordinator.flushFeedWrites();
+    await SparkDiagnostics.runWithSink(events.add, () async {
+      coordinator.queueFeedPersistence(primaryCategoryIndex: 0);
+      await coordinator.flushFeedWrites();
+    });
     expect(coordinator.preferenceError, isNotNull);
+    expect(
+      events.map((event) => event.operation),
+      [SparkDiagnosticOperation.paperFeedPreferencesSave],
+    );
 
     coordinator.rememberPosition('fixed:recommended', 2);
     coordinator.queueFeedPersistence(primaryCategoryIndex: 0);
@@ -65,9 +73,16 @@ void main() {
 
     coordinator.replaceUserChannels(const [channel, channel]);
     coordinator.selectChannel(channel.storageKey);
-    coordinator.queueChannelPersistence();
-    await coordinator.flushChannelWrites();
+    final events = <SparkDiagnosticEvent>[];
+    await SparkDiagnostics.runWithSink(events.add, () async {
+      coordinator.queueChannelPersistence();
+      await coordinator.flushChannelWrites();
+    });
     expect(coordinator.channelPreferenceError, isNotNull);
+    expect(
+      events.map((event) => event.operation),
+      [SparkDiagnosticOperation.paperChannelPreferencesSave],
+    );
 
     coordinator.queueChannelPersistence();
     await coordinator.flushChannelWrites();
@@ -76,6 +91,31 @@ void main() {
     expect(repository.savedChannelCounts, [1, 1]);
     expect(repository.selectedKeys, ['subject:cs.CL', 'subject:cs.CL']);
     expect(coordinator.channelPreferenceError, isNull);
+  });
+
+  test('feed and channel load failures use distinct diagnostic operations',
+      () async {
+    final coordinator = PaperFeedPreferenceCoordinator(
+      preferenceRepository: _ThrowingPaperPreferenceRepository(),
+      channelPreferenceRepository: _ThrowingChannelPreferenceRepository(),
+    );
+    addTearDown(coordinator.dispose);
+    final events = <SparkDiagnosticEvent>[];
+
+    await SparkDiagnostics.runWithSink(events.add, () async {
+      await coordinator.initializeFeedPreferences();
+      await coordinator.initializeChannelPreferences();
+    });
+
+    expect(coordinator.preferenceError, '论文浏览偏好读取失败，请稍后重试。');
+    expect(coordinator.channelPreferenceError, '论文频道设置读取失败，请稍后重试。');
+    expect(
+      events.map((event) => event.operation),
+      [
+        SparkDiagnosticOperation.paperFeedPreferencesLoad,
+        SparkDiagnosticOperation.paperChannelPreferencesLoad,
+      ],
+    );
   });
 
   test('pending preference load cannot commit after dispose', () async {
@@ -200,6 +240,27 @@ class _SeedPaperPreferenceRepository implements PaperPreferenceRepository {
 
   @override
   Future<void> save(PaperPreferences preferences) async {}
+}
+
+class _ThrowingPaperPreferenceRepository implements PaperPreferenceRepository {
+  @override
+  Future<PaperPreferences> load() async {
+    throw StateError('private-feed-preference');
+  }
+
+  @override
+  Future<void> save(PaperPreferences preferences) async {}
+}
+
+class _ThrowingChannelPreferenceRepository
+    implements PaperChannelPreferenceRepository {
+  @override
+  Future<PaperChannelPreferences> load() async {
+    throw StateError('private-channel-preference');
+  }
+
+  @override
+  Future<void> save(PaperChannelPreferences preferences) async {}
 }
 
 class _SeedChannelPreferenceRepository

@@ -114,4 +114,29 @@ void main() {
 
     expect(violations, isEmpty, reason: violations.join('\n'));
   });
+
+  test('production code contains no anonymous broad catch', () {
+    final patterns = <String, RegExp>{
+      'anonymous catch variable': RegExp(r'catch\s*\(\s*_{1,}\s*(?:,|\))'),
+      'unbound broad on-clause': RegExp(r'on\s+(?:Object|Exception)\s*\{'),
+    };
+    final violations = <String>[];
+    final dartFiles = Directory('lib')
+        .listSync(recursive: true)
+        .whereType<File>()
+        .where((file) => file.path.endsWith('.dart'));
+
+    for (final file in dartFiles) {
+      final source = file.readAsStringSync();
+      for (final entry in patterns.entries) {
+        for (final match in entry.value.allMatches(source)) {
+          final line =
+              '\n'.allMatches(source.substring(0, match.start)).length + 1;
+          violations.add('${file.path}:$line: ${entry.key}');
+        }
+      }
+    }
+
+    expect(violations, isEmpty, reason: violations.join('\n'));
+  });
 }

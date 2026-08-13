@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 
+import '../../../core/diagnostics/diagnostics.dart';
 import '../domain/paper_comment_repository.dart';
 
 enum PaperCommentSort { newest, hottest }
@@ -85,6 +86,7 @@ class PaperCommentController extends ChangeNotifier {
   }
 
   Future<void> _loadPaper(String paperId) async {
+    var diagnosticOperation = SparkDiagnosticOperation.paperCommentsLoad;
     try {
       final repository = _repository;
       final snapshot = repository == null
@@ -99,12 +101,15 @@ class PaperCommentController extends ChangeNotifier {
       _persistenceErrorsByPaper.remove(paperId);
       if (repository != null &&
           _commentsByPaper[paperId]!.length != snapshot.comments.length) {
+        diagnosticOperation = SparkDiagnosticOperation.paperCommentsSave;
         await repository.save(paperId, _rawCommentsFor(paperId));
       }
-    } on PaperCommentPersistenceException catch (error) {
+    } on PaperCommentPersistenceException catch (error, stackTrace) {
+      _reportPersistenceFailure(diagnosticOperation, error, stackTrace);
       if (_disposed) return;
       _persistenceErrorsByPaper[paperId] = error.message;
-    } on Object {
+    } on Object catch (error, stackTrace) {
+      _reportPersistenceFailure(diagnosticOperation, error, stackTrace);
       if (_disposed) return;
       _persistenceErrorsByPaper[paperId] = '评论读取失败，请稍后重试。';
     }
@@ -226,7 +231,12 @@ class PaperCommentController extends ChangeNotifier {
           _persistenceErrorsByPaper.remove(paperId);
         }
         saved = true;
-      } on PaperCommentPersistenceException catch (error) {
+      } on PaperCommentPersistenceException catch (error, stackTrace) {
+        _reportPersistenceFailure(
+          SparkDiagnosticOperation.paperCommentsSave,
+          error,
+          stackTrace,
+        );
         if (!_disposed && _revisionByPaper[paperId] == revision) {
           _commentsByPaper[paperId] = List.of(
             _committedCommentsByPaper[paperId] ?? const [],
@@ -234,7 +244,12 @@ class PaperCommentController extends ChangeNotifier {
           _persistenceErrorsByPaper[paperId] = error.message;
         }
         saved = false;
-      } on Object {
+      } on Object catch (error, stackTrace) {
+        _reportPersistenceFailure(
+          SparkDiagnosticOperation.paperCommentsSave,
+          error,
+          stackTrace,
+        );
         if (!_disposed && _revisionByPaper[paperId] == revision) {
           _commentsByPaper[paperId] = List.of(
             _committedCommentsByPaper[paperId] ?? const [],
@@ -251,6 +266,19 @@ class PaperCommentController extends ChangeNotifier {
 
   List<PaperCommentRecord> _rawCommentsFor(String paperId) =>
       List.unmodifiable(_commentsByPaper[paperId] ?? const []);
+
+  static void _reportPersistenceFailure(
+    SparkDiagnosticOperation operation,
+    Object error,
+    StackTrace stackTrace,
+  ) {
+    SparkDiagnostics.reportUnexpected(
+      operation: operation,
+      error: error,
+      stackTrace: stackTrace,
+      severity: SparkDiagnosticSeverity.warning,
+    );
+  }
 
   void _notifyListeners() {
     if (!_disposed) notifyListeners();

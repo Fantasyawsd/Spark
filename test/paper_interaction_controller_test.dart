@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:spark/src/core/diagnostics/diagnostics.dart';
 import 'package:spark/src/features/papers/application/paper_interaction_controller.dart';
 import 'package:spark/src/features/papers/domain/favorite_group.dart';
 import 'package:spark/src/features/papers/domain/paper_interaction_repository.dart';
@@ -46,18 +47,43 @@ void main() {
     final controller = PaperInteractionController(repository: repository);
     addTearDown(controller.dispose);
     await controller.initialize();
+    final events = <SparkDiagnosticEvent>[];
 
-    controller.toggleLike('paper-1');
-    await expectLater(controller.flushPendingWrites(), completes);
+    await SparkDiagnostics.runWithSink(events.add, () async {
+      controller.toggleLike('paper-1');
+      await expectLater(controller.flushPendingWrites(), completes);
+    });
 
     expect(controller.isLiked('paper-1'), isFalse);
     expect(controller.persistenceError, isNotNull);
+    expect(
+      events.map((event) => event.operation),
+      [SparkDiagnosticOperation.paperInteractionsSave],
+    );
 
     controller.toggleLike('paper-1');
     await expectLater(controller.flushPendingWrites(), completes);
     expect(controller.isLiked('paper-1'), isTrue);
     expect(repository.saveCalls, 2);
     expect(controller.persistenceError, isNull);
+  });
+
+  test('unexpected interaction load failures remain recoverable and report',
+      () async {
+    final repository = _ControlledInteractionRepository()
+      ..throwUnexpectedOnLoad = true;
+    final controller = PaperInteractionController(repository: repository);
+    addTearDown(controller.dispose);
+    final events = <SparkDiagnosticEvent>[];
+
+    await SparkDiagnostics.runWithSink(events.add, controller.initialize);
+
+    expect(controller.initialized, isFalse);
+    expect(controller.persistenceError, '论文交互状态读取失败，请稍后重试。');
+    expect(
+      events.map((event) => event.operation),
+      [SparkDiagnosticOperation.paperInteractionsLoad],
+    );
   });
 
   test('interaction during delayed load merges with persisted state', () async {
@@ -154,6 +180,7 @@ class _ControlledInteractionRepository implements PaperInteractionRepository {
   PaperInteractionSnapshot snapshot;
   final Set<int> failSaveCalls = {};
   bool failNextSave = false;
+  bool throwUnexpectedOnLoad = false;
   bool throwUnexpectedOnNextSave = false;
   bool holdLoad = false;
   int _saveCalls = 0;
@@ -163,6 +190,10 @@ class _ControlledInteractionRepository implements PaperInteractionRepository {
 
   @override
   Future<PaperInteractionSnapshot> load() async {
+    if (throwUnexpectedOnLoad) {
+      throwUnexpectedOnLoad = false;
+      throw StateError('private-interaction-load');
+    }
     if (holdLoad) {
       _loadCompleter = Completer<void>();
       await _loadCompleter!.future;

@@ -1,3 +1,4 @@
+import '../../../core/diagnostics/diagnostics.dart';
 import '../domain/paper_channel.dart';
 import '../domain/paper_channel_preference_repository.dart';
 import '../domain/paper_preference_repository.dart';
@@ -103,9 +104,19 @@ class PaperFeedPreferenceCoordinator {
           (_deferredPrimaryIndex ?? preferences.primaryCategoryIndex)
               .clamp(0, FixedPaperChannel.values.length - 1);
       _preferenceError = null;
-    } on PaperPreferencePersistenceException catch (error) {
+    } on PaperPreferencePersistenceException catch (error, stackTrace) {
+      _reportPersistenceFailure(
+        SparkDiagnosticOperation.paperFeedPreferencesLoad,
+        error,
+        stackTrace,
+      );
       if (!_disposed) _preferenceError = error.message;
-    } on Object {
+    } on Object catch (error, stackTrace) {
+      _reportPersistenceFailure(
+        SparkDiagnosticOperation.paperFeedPreferencesLoad,
+        error,
+        stackTrace,
+      );
       if (!_disposed) {
         _preferenceError = '论文浏览偏好读取失败，请稍后重试。';
       }
@@ -146,9 +157,19 @@ class PaperFeedPreferenceCoordinator {
         _selectedChannelKey = preferences.selectedChannelKey;
       }
       _channelPreferenceError = null;
-    } on PaperChannelPreferencePersistenceException catch (error) {
+    } on PaperChannelPreferencePersistenceException catch (error, stackTrace) {
+      _reportPersistenceFailure(
+        SparkDiagnosticOperation.paperChannelPreferencesLoad,
+        error,
+        stackTrace,
+      );
       if (!_disposed) _channelPreferenceError = error.message;
-    } on Object {
+    } on Object catch (error, stackTrace) {
+      _reportPersistenceFailure(
+        SparkDiagnosticOperation.paperChannelPreferencesLoad,
+        error,
+        stackTrace,
+      );
       if (!_disposed) {
         _channelPreferenceError = '论文频道设置读取失败，请稍后重试。';
       }
@@ -236,10 +257,20 @@ class PaperFeedPreferenceCoordinator {
       await _preferenceRepository!.save(preferences);
       if (_disposed) return;
       _preferenceError = null;
-    } on PaperPreferencePersistenceException catch (error) {
+    } on PaperPreferencePersistenceException catch (error, stackTrace) {
+      _reportPersistenceFailure(
+        SparkDiagnosticOperation.paperFeedPreferencesSave,
+        error,
+        stackTrace,
+      );
       if (_disposed) return;
       _preferenceError = error.message;
-    } on Object {
+    } on Object catch (error, stackTrace) {
+      _reportPersistenceFailure(
+        SparkDiagnosticOperation.paperFeedPreferencesSave,
+        error,
+        stackTrace,
+      );
       if (_disposed) return;
       _preferenceError = '论文浏览偏好保存失败，请稍后重试。';
     }
@@ -253,10 +284,20 @@ class PaperFeedPreferenceCoordinator {
       await _channelPreferenceRepository!.save(preferences);
       if (_disposed) return;
       _channelPreferenceError = null;
-    } on PaperChannelPreferencePersistenceException catch (error) {
+    } on PaperChannelPreferencePersistenceException catch (error, stackTrace) {
+      _reportPersistenceFailure(
+        SparkDiagnosticOperation.paperChannelPreferencesSave,
+        error,
+        stackTrace,
+      );
       if (_disposed) return;
       _channelPreferenceError = error.message;
-    } on Object {
+    } on Object catch (error, stackTrace) {
+      _reportPersistenceFailure(
+        SparkDiagnosticOperation.paperChannelPreferencesSave,
+        error,
+        stackTrace,
+      );
       if (_disposed) return;
       _channelPreferenceError = '论文频道设置保存失败，请稍后重试。';
     }
@@ -297,6 +338,19 @@ class PaperFeedPreferenceCoordinator {
   Future<void> flushChannelWrites() async {
     await _channelInitialization;
     await _channelWriteQueue;
+  }
+
+  static void _reportPersistenceFailure(
+    SparkDiagnosticOperation operation,
+    Object error,
+    StackTrace stackTrace,
+  ) {
+    SparkDiagnostics.reportUnexpected(
+      operation: operation,
+      error: error,
+      stackTrace: stackTrace,
+      severity: SparkDiagnosticSeverity.warning,
+    );
   }
 
   void reset() {

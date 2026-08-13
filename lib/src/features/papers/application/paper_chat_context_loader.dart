@@ -1,3 +1,4 @@
+import '../../../core/diagnostics/diagnostics.dart';
 import '../../chat/chat.dart';
 import '../domain/paper.dart';
 import '../domain/paper_keyword_repository.dart';
@@ -36,7 +37,13 @@ final class PaperChatContextLoader {
         return const [];
       }
       return record.keywords;
-    } on Exception {
+    } on Exception catch (error, stackTrace) {
+      SparkDiagnostics.reportUnexpected(
+        operation: SparkDiagnosticOperation.paperChatContextKeywordsLoad,
+        error: error,
+        stackTrace: stackTrace,
+        severity: SparkDiagnosticSeverity.warning,
+      );
       return const [];
     }
   }

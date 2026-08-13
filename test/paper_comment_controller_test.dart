@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:spark/src/core/diagnostics/diagnostics.dart';
 import 'package:spark/src/features/papers/application/paper_comment_controller.dart';
 import 'package:spark/src/features/papers/data/in_memory_paper_comment_repository.dart';
 import 'package:spark/src/features/papers/domain/paper_comment_repository.dart';
@@ -65,11 +66,22 @@ void main() {
     final controller = PaperCommentController(repository: repository);
     addTearDown(controller.dispose);
     await controller.loadPaper('paper-1');
+    final events = <SparkDiagnosticEvent>[];
 
-    expect(await controller.addComment('paper-1', 'first'), isFalse);
+    expect(
+      await SparkDiagnostics.runWithSink(
+        events.add,
+        () => controller.addComment('paper-1', 'first'),
+      ),
+      isFalse,
+    );
     expect(controller.commentsFor('paper-1'), isEmpty);
     expect(controller.sendStatusFor('paper-1'), PaperCommentSendStatus.failed);
     expect(controller.persistenceErrorFor('paper-1'), '保存评论失败');
+    expect(
+      events.map((event) => event.operation),
+      [SparkDiagnosticOperation.paperCommentsSave],
+    );
 
     expect(await controller.addComment('paper-1', 'first'), isTrue);
     expect(controller.commentsFor('paper-1').single.body, 'first');
@@ -83,10 +95,21 @@ void main() {
     final controller = PaperCommentController(repository: repository);
     addTearDown(controller.dispose);
     await controller.loadPaper('paper-1');
+    final events = <SparkDiagnosticEvent>[];
 
-    expect(await controller.addComment('paper-1', 'first'), isFalse);
+    expect(
+      await SparkDiagnostics.runWithSink(
+        events.add,
+        () => controller.addComment('paper-1', 'first'),
+      ),
+      isFalse,
+    );
     expect(controller.commentsFor('paper-1'), isEmpty);
     expect(controller.persistenceErrorFor('paper-1'), isNotNull);
+    expect(
+      events.map((event) => event.operation),
+      [SparkDiagnosticOperation.paperCommentsSave],
+    );
 
     expect(await controller.addComment('paper-1', 'second'), isTrue);
     expect(controller.commentsFor('paper-1').single.body, 'second');
@@ -112,12 +135,23 @@ void main() {
     final repository = _ControlledCommentRepository()..failNextLoad = true;
     final controller = PaperCommentController(repository: repository);
     addTearDown(controller.dispose);
+    final events = <SparkDiagnosticEvent>[];
 
-    expect(await controller.addComment('paper-1', 'first'), isFalse);
+    expect(
+      await SparkDiagnostics.runWithSink(
+        events.add,
+        () => controller.addComment('paper-1', 'first'),
+      ),
+      isFalse,
+    );
 
     expect(controller.commentsFor('paper-1'), isEmpty);
     expect(controller.persistenceErrorFor('paper-1'), '读取评论失败');
     expect(repository.saveCalls, 0);
+    expect(
+      events.map((event) => event.operation),
+      [SparkDiagnosticOperation.paperCommentsLoad],
+    );
   });
 }
 

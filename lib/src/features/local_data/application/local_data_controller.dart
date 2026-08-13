@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 
+import '../../../core/diagnostics/diagnostics.dart';
 import '../domain/local_data_repository.dart';
 
 typedef LocalDataMutationCallback = Future<void> Function(
@@ -37,7 +38,12 @@ class LocalDataController extends ChangeNotifier {
     _notify();
     try {
       _usage = await _repository.inspect();
-    } on LocalDataException catch (error) {
+    } on LocalDataException catch (error, stackTrace) {
+      _reportFailure(
+        SparkDiagnosticOperation.localDataInspect,
+        error,
+        stackTrace,
+      );
       _error = error.message;
     } finally {
       _loading = false;
@@ -72,25 +78,50 @@ class LocalDataController extends ChangeNotifier {
     try {
       await beforeClear?.call(target);
       await operation();
-    } on LocalDataException catch (error) {
+    } on LocalDataException catch (error, stackTrace) {
+      _reportFailure(
+        SparkDiagnosticOperation.localDataClear,
+        error,
+        stackTrace,
+      );
       _error = error.message;
       succeeded = false;
-    } on Object {
+    } on Object catch (error, stackTrace) {
+      _reportFailure(
+        SparkDiagnosticOperation.localDataClear,
+        error,
+        stackTrace,
+      );
       _error = '本地数据操作失败，请稍后重试。';
       succeeded = false;
     } finally {
       try {
         await afterClear?.call(target);
-      } on Object {
+      } on Object catch (error, stackTrace) {
+        _reportFailure(
+          SparkDiagnosticOperation.localDataAfterClear,
+          error,
+          stackTrace,
+        );
         _error ??= '本地数据已变更，但页面状态刷新失败，请重启应用。';
         succeeded = false;
       }
       try {
         _usage = await _repository.inspect();
-      } on LocalDataException catch (error) {
+      } on LocalDataException catch (error, stackTrace) {
+        _reportFailure(
+          SparkDiagnosticOperation.localDataInspectAfterClear,
+          error,
+          stackTrace,
+        );
         _error ??= error.message;
         succeeded = false;
-      } on Object {
+      } on Object catch (error, stackTrace) {
+        _reportFailure(
+          SparkDiagnosticOperation.localDataInspectAfterClear,
+          error,
+          stackTrace,
+        );
         _error ??= '无法重新统计本地数据占用。';
         succeeded = false;
       }
@@ -98,6 +129,19 @@ class LocalDataController extends ChangeNotifier {
       _notify();
     }
     return succeeded;
+  }
+
+  static void _reportFailure(
+    SparkDiagnosticOperation operation,
+    Object error,
+    StackTrace stackTrace,
+  ) {
+    SparkDiagnostics.reportUnexpected(
+      operation: operation,
+      error: error,
+      stackTrace: stackTrace,
+      severity: SparkDiagnosticSeverity.warning,
+    );
   }
 
   void _notify() {

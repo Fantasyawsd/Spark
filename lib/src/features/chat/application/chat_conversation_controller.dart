@@ -9,6 +9,7 @@ import '../domain/chat_message.dart';
 import '../domain/chat_session_repository.dart';
 import '../domain/chat_session_settings.dart';
 import 'chat_prompt_assembler.dart';
+import 'chat_conversation_write_queue.dart';
 
 enum ChatRequestStatus { idle, sending, completed, cancelled, failed }
 
@@ -47,7 +48,10 @@ class ChatConversationController extends ChangeNotifier {
   ChatAiService? _activeService;
   ChatRequestCancellation? _activeCancellation;
   Future<void>? _initialization;
-  Future<void> _writeQueue = Future.value();
+  late final ChatConversationWriteQueue _writeQueue =
+      ChatConversationWriteQueue(
+    onQueueError: reportChatConversationWriteQueueError,
+  );
   Timer? _streamNotifyTimer;
 
   List<ChatMessage> get messages => List.unmodifiable(_messages);
@@ -282,7 +286,7 @@ class ChatConversationController extends ChangeNotifier {
     final repository = _sessionRepository;
     if (repository == null) return;
     final writeVersion = ++_writeVersion;
-    final operation = _enqueueWrite(() async {
+    final operation = _writeQueue.enqueue(() async {
       try {
         await repository.clear(context.id);
       } on ChatSessionPersistenceException catch (error, stackTrace) {
@@ -419,9 +423,7 @@ class ChatConversationController extends ChangeNotifier {
       if (assistantIndex == null) {
         assistantIndex = _messages.length;
         _activeAssistantIndex = assistantIndex;
-        _messages.add(
-          const ChatMessage(fromUser: false, content: ''),
-        );
+        _messages.add(const ChatMessage(fromUser: false, content: ''));
       }
       final current = _messages[assistantIndex];
       final sourcesByUrl = <String, ChatSource>{
@@ -451,7 +453,7 @@ class ChatConversationController extends ChangeNotifier {
     final writeVersion = ++_writeVersion;
     _persistenceError = null;
     final snapshot = List<ChatMessage>.from(_messages);
-    _enqueueWrite(() async {
+    _writeQueue.enqueue(() async {
       try {
         await repository.save(context.id, snapshot);
       } on ChatSessionPersistenceException catch (error, stackTrace) {
@@ -478,21 +480,6 @@ class ChatConversationController extends ChangeNotifier {
     });
   }
 
-  Future<void> _enqueueWrite(Future<void> Function() operation) {
-    final queued = _writeQueue.then((_) => operation());
-    _writeQueue = queued.then<void>(
-      (_) {},
-      onError: (Object error, StackTrace stackTrace) {
-        _reportPersistenceFailure(
-          SparkDiagnosticOperation.chatConversationWriteQueue,
-          error,
-          stackTrace,
-        );
-      },
-    );
-    return queued;
-  }
-
   static void _reportPersistenceFailure(
     SparkDiagnosticOperation operation,
     Object error,
@@ -506,7 +493,7 @@ class ChatConversationController extends ChangeNotifier {
     );
   }
 
-  Future<void> flushPendingWrites() => _writeQueue;
+  Future<void> flushPendingWrites() => _writeQueue.flush();
 
   void _notify() {
     if (!_disposed) notifyListeners();
@@ -520,15 +507,11 @@ class ChatConversationController extends ChangeNotifier {
   void _markActiveAssistant(ChatMessageStatus status) {
     final assistantIndex = _activeAssistantIndex;
     if (assistantIndex == null || assistantIndex >= _messages.length) {
-      _messages.add(
-        ChatMessage(fromUser: false, content: '', status: status),
-      );
+      _messages.add(ChatMessage(fromUser: false, content: '', status: status));
       return;
     }
     final assistant = _messages[assistantIndex];
-    _messages[assistantIndex] = assistant.copyWith(
-      status: status,
-    );
+    _messages[assistantIndex] = assistant.copyWith(status: status);
   }
 
   void _removeTrailingEmptyTerminalMessage() {

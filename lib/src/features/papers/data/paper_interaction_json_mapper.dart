@@ -1,5 +1,6 @@
 import '../domain/favorite_group.dart';
 import '../domain/paper_interaction_repository.dart';
+import 'paper_json_value_reader.dart';
 
 class PaperInteractionJsonMapper {
   const PaperInteractionJsonMapper._();
@@ -10,9 +11,9 @@ class PaperInteractionJsonMapper {
         'Paper interaction payload must be an object.',
       );
     }
-    _stringList(payload, 'likedPaperIds');
-    _stringList(payload, 'followedPaperIds');
-    _intMap(payload, 'shareCountDeltas');
+    PaperJsonValueReader.stringList(payload, 'likedPaperIds');
+    PaperJsonValueReader.stringList(payload, 'followedPaperIds');
+    PaperJsonValueReader.intMap(payload, 'shareCountDeltas');
     if (_usesGroupedFavorites(payload)) {
       final groups = _favoriteGroups(payload);
       final memberships = _favoriteMemberships(payload);
@@ -26,7 +27,7 @@ class PaperInteractionJsonMapper {
         );
       }
     } else {
-      _stringList(payload, 'savedPaperIds');
+      PaperJsonValueReader.stringList(payload, 'savedPaperIds');
     }
   }
 
@@ -36,38 +37,54 @@ class PaperInteractionJsonMapper {
         'Paper interaction payload must be an object.',
       );
     }
-    _stringList(payload, 'likedPaperIds');
-    final savedPaperIds = _stringList(payload, 'savedPaperIds');
-    _stringList(payload, 'followedPaperIds');
-    _intMap(payload, 'shareCountDeltas');
+    PaperJsonValueReader.stringList(payload, 'likedPaperIds');
+    final savedPaperIds = PaperJsonValueReader.stringList(
+      payload,
+      'savedPaperIds',
+    );
+    PaperJsonValueReader.stringList(payload, 'followedPaperIds');
+    PaperJsonValueReader.intMap(payload, 'shareCountDeltas');
     return {
-      'likedPaperIds': _stringList(payload, 'likedPaperIds'),
+      'likedPaperIds': PaperJsonValueReader.stringList(
+        payload,
+        'likedPaperIds',
+      ),
       'favoriteGroups': [
         {'id': defaultFavoriteGroupId, 'name': '默认收藏'},
       ],
-      'favoritePaperIdsByGroup': {
-        defaultFavoriteGroupId: savedPaperIds,
-      },
-      'followedPaperIds': _stringList(payload, 'followedPaperIds'),
-      'shareCountDeltas': _intMap(payload, 'shareCountDeltas'),
+      'favoritePaperIdsByGroup': {defaultFavoriteGroupId: savedPaperIds},
+      'followedPaperIds': PaperJsonValueReader.stringList(
+        payload,
+        'followedPaperIds',
+      ),
+      'shareCountDeltas': PaperJsonValueReader.intMap(
+        payload,
+        'shareCountDeltas',
+      ),
     };
   }
 
   static PaperInteractionSnapshot fromJson(Map<String, dynamic> json) {
     if (!_usesGroupedFavorites(json)) {
       return PaperInteractionSnapshot(
-        likedPaperIds: _stringList(json, 'likedPaperIds'),
-        savedPaperIds: _stringList(json, 'savedPaperIds'),
-        followedPaperIds: _stringList(json, 'followedPaperIds'),
-        shareCountDeltas: _intMap(json, 'shareCountDeltas'),
+        likedPaperIds: PaperJsonValueReader.stringList(json, 'likedPaperIds'),
+        savedPaperIds: PaperJsonValueReader.stringList(json, 'savedPaperIds'),
+        followedPaperIds: PaperJsonValueReader.stringList(
+          json,
+          'followedPaperIds',
+        ),
+        shareCountDeltas: PaperJsonValueReader.intMap(json, 'shareCountDeltas'),
       );
     }
     return PaperInteractionSnapshot(
-      likedPaperIds: _stringList(json, 'likedPaperIds'),
+      likedPaperIds: PaperJsonValueReader.stringList(json, 'likedPaperIds'),
       favoriteGroups: _favoriteGroups(json),
       favoritePaperIdsByGroup: _favoriteMemberships(json),
-      followedPaperIds: _stringList(json, 'followedPaperIds'),
-      shareCountDeltas: _intMap(json, 'shareCountDeltas'),
+      followedPaperIds: PaperJsonValueReader.stringList(
+        json,
+        'followedPaperIds',
+      ),
+      shareCountDeltas: PaperJsonValueReader.intMap(json, 'shareCountDeltas'),
     );
   }
 
@@ -116,9 +133,7 @@ class PaperInteractionJsonMapper {
   ) {
     final value = json['favoritePaperIdsByGroup'];
     if (value is! Map) {
-      throw const FormatException(
-        'favoritePaperIdsByGroup must be an object.',
-      );
+      throw const FormatException('favoritePaperIdsByGroup must be an object.');
     }
     final result = <String, Iterable<String>>{};
     for (final entry in value.entries) {
@@ -132,32 +147,5 @@ class PaperInteractionJsonMapper {
       result[entry.key as String] = paperIds.cast<String>();
     }
     return result;
-  }
-
-  static List<String> _stringList(
-    Map<String, dynamic> json,
-    String key,
-  ) {
-    final value = json[key];
-    if (value == null) return const [];
-    if (value is! List || value.any((item) => item is! String)) {
-      throw FormatException('$key must be a string list.');
-    }
-    return value.cast<String>().toList(growable: false);
-  }
-
-  static Map<String, int> _intMap(
-    Map<String, dynamic> json,
-    String key,
-  ) {
-    final value = json[key];
-    if (value == null) return const {};
-    if (value is! Map ||
-        value.entries.any(
-          (entry) => entry.key is! String || entry.value is! int,
-        )) {
-      throw FormatException('$key must map strings to integers.');
-    }
-    return Map<String, int>.from(value);
   }
 }

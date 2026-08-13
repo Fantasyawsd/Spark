@@ -1,4 +1,5 @@
 import '../domain/paper_preference_repository.dart';
+import 'paper_json_value_reader.dart';
 
 class PaperPreferenceJsonMapper {
   const PaperPreferenceJsonMapper._();
@@ -6,18 +7,22 @@ class PaperPreferenceJsonMapper {
   static void validatePayload(Object? payload) {
     if (payload is! Map<String, dynamic>) {
       throw const FormatException(
-          'Paper preference payload must be an object.');
+        'Paper preference payload must be an object.',
+      );
     }
     fromJson(payload);
   }
 
   static PaperPreferences fromJson(Map<String, dynamic> json) {
     return PaperPreferences(
-      extraTopics: _stringList(json, 'extraTopics'),
-      positions: _intMap(json, 'positions'),
-      timeRanges: _stringMap(json, 'timeRanges'),
-      primaryCategoryIndex: _optionalInt(json, 'primaryCategoryIndex'),
-      topicIndex: _optionalInt(json, 'topicIndex'),
+      extraTopics: PaperJsonValueReader.stringList(json, 'extraTopics'),
+      positions: PaperJsonValueReader.intMap(json, 'positions'),
+      timeRanges: PaperJsonValueReader.stringMap(json, 'timeRanges'),
+      primaryCategoryIndex: PaperJsonValueReader.optionalInt(
+        json,
+        'primaryCategoryIndex',
+      ),
+      topicIndex: PaperJsonValueReader.optionalInt(json, 'topicIndex'),
     );
   }
 
@@ -29,54 +34,5 @@ class PaperPreferenceJsonMapper {
       'primaryCategoryIndex': preferences.primaryCategoryIndex,
       'topicIndex': preferences.topicIndex,
     };
-  }
-
-  static List<String> _stringList(
-    Map<String, dynamic> json,
-    String key,
-  ) {
-    final value = json[key];
-    if (value == null) return const [];
-    if (value is! List || value.any((item) => item is! String)) {
-      throw FormatException('$key must be a string list.');
-    }
-    return value.cast<String>().toList(growable: false);
-  }
-
-  static Map<String, int> _intMap(
-    Map<String, dynamic> json,
-    String key,
-  ) {
-    final value = json[key];
-    if (value == null) return const {};
-    if (value is! Map ||
-        value.entries.any(
-          (entry) => entry.key is! String || entry.value is! int,
-        )) {
-      throw FormatException('$key must map strings to integers.');
-    }
-    return Map<String, int>.from(value);
-  }
-
-  static Map<String, String> _stringMap(
-    Map<String, dynamic> json,
-    String key,
-  ) {
-    final value = json[key];
-    if (value == null) return const {};
-    if (value is! Map ||
-        value.entries.any(
-          (entry) => entry.key is! String || entry.value is! String,
-        )) {
-      throw FormatException('$key must map strings to strings.');
-    }
-    return Map<String, String>.from(value);
-  }
-
-  static int _optionalInt(Map<String, dynamic> json, String key) {
-    final value = json[key];
-    if (value == null) return 0;
-    if (value is! int) throw FormatException('$key must be an integer.');
-    return value;
   }
 }

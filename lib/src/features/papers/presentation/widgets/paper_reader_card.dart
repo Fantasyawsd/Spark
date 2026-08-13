@@ -11,8 +11,6 @@ import '../../../../core/theme/spark_font_sizes.dart';
 import '../../../../core/theme/spark_theme.dart';
 import '../../../../core/widgets/spark_segmented_control.dart';
 import '../../../chat/chat.dart';
-import '../../application/paper_keyword_controller.dart';
-import '../../application/paper_translation_controller.dart';
 import '../../application/paper_translation_service.dart';
 import '../../domain/paper.dart';
 import '../../domain/paper_keyword_repository.dart';
@@ -23,6 +21,7 @@ import 'paper_pdf_button.dart';
 import 'paper_related_papers.dart';
 import 'paper_tab_body.dart';
 import 'paper_translation_content.dart';
+import 'paper_reader_card_lifecycle.dart';
 
 typedef PaperDiscussionOpener = void Function(List<String> keywords,
     {required bool keywordCacheFailed});
@@ -98,56 +97,44 @@ class _PaperReaderCardState extends State<PaperReaderCard> {
 
   late int _tabIndex;
   late final PageController _tabPageController;
-  late PaperTranslationController _translationController;
-  late PaperKeywordController _keywordController;
+  late PaperReaderCardControllerSet _controllers;
 
   @override
   void initState() {
     super.initState();
     _tabIndex = 0;
     _tabPageController = PageController();
-    _createTranslationController();
-    _createKeywordController();
+    _controllers = PaperReaderCardControllerSet(
+      paper: widget.paper,
+      translationServiceFactory: widget.translationServiceFactory,
+      keywordService: widget.keywordService,
+      translationRepository: widget.translationRepository,
+      keywordRepository: widget.keywordRepository,
+      onTranslationChanged: _handleTranslationChanged,
+      onKeywordChanged: _handleKeywordChanged,
+    );
   }
 
   @override
   void didUpdateWidget(covariant PaperReaderCard oldWidget) {
     super.didUpdateWidget(oldWidget);
-    final paperChanged = oldWidget.paper.id != widget.paper.id;
-    final translationDependencyChanged = !identical(
-          oldWidget.translationServiceFactory,
-          widget.translationServiceFactory,
-        ) ||
-        !identical(
-          oldWidget.translationRepository,
-          widget.translationRepository,
-        );
-    if (paperChanged || translationDependencyChanged) {
-      _translationController
-        ..removeListener(_handleTranslationChanged)
-        ..dispose();
-      _createTranslationController();
-    }
-    final keywordDependencyChanged =
-        !identical(oldWidget.keywordService, widget.keywordService) ||
-            !identical(oldWidget.keywordRepository, widget.keywordRepository);
-    if (paperChanged || keywordDependencyChanged) {
-      _keywordController
-        ..removeListener(_handleKeywordChanged)
-        ..dispose();
-      _createKeywordController();
-    }
+    final update = _controllers.update(
+      paper: widget.paper,
+      translationServiceFactory: widget.translationServiceFactory,
+      keywordService: widget.keywordService,
+      translationRepository: widget.translationRepository,
+      keywordRepository: widget.keywordRepository,
+    );
     if (oldWidget.active && !widget.active) {
-      _translationController.cancel();
-      _keywordController.cancel();
+      _controllers.cancel();
     }
-    if (paperChanged || (!oldWidget.active && widget.active)) {
+    if (update.paperChanged || (!oldWidget.active && widget.active)) {
       _resetToOriginal();
     }
     if (widget.active &&
-        (paperChanged ||
-            translationDependencyChanged ||
-            keywordDependencyChanged ||
+        (update.paperChanged ||
+            update.translationChanged ||
+            update.keywordChanged ||
             !oldWidget.active)) {
       unawaited(_initializeCurrentTab());
     }
@@ -156,12 +143,7 @@ class _PaperReaderCardState extends State<PaperReaderCard> {
   @override
   void dispose() {
     _tabPageController.dispose();
-    _translationController
-      ..removeListener(_handleTranslationChanged)
-      ..dispose();
-    _keywordController
-      ..removeListener(_handleKeywordChanged)
-      ..dispose();
+    _controllers.dispose();
     super.dispose();
   }
 
@@ -274,19 +256,19 @@ class _PaperReaderCardState extends State<PaperReaderCard> {
   Future<void> _initializeCurrentTab() async {
     if (!mounted || !widget.active) return;
     if (_tabIndex == 1) {
-      final controller = _translationController;
+      final controller = _controllers.translation;
       await controller.initialize();
       if (!mounted ||
           !widget.active ||
           _tabIndex != 1 ||
-          !identical(controller, _translationController)) {
+          !identical(controller, _controllers.translation)) {
         return;
       }
       await controller.ensureTranslated();
       return;
     }
     if (_tabIndex == 2) {
-      await _keywordController.initialize();
+      await _controllers.keywords.initialize();
     }
   }
 
@@ -310,29 +292,29 @@ class _PaperReaderCardState extends State<PaperReaderCard> {
     if (index == 1) {
       return PaperTranslationContent(
         key: ValueKey('${paper.id}-translation'),
-        markdown: _translationController.markdown,
-        loadingCache: _translationController.loadingCache,
-        translating: _translationController.translating,
-        error: _translationController.error,
-        onRetry: _translationController.translate,
-        onRefresh: () => _translationController.translate(force: true),
-        onCancel: _translationController.cancel,
+        markdown: _controllers.translation.markdown,
+        loadingCache: _controllers.translation.loadingCache,
+        translating: _controllers.translation.translating,
+        error: _controllers.translation.error,
+        onRetry: _controllers.translation.translate,
+        onRefresh: () => _controllers.translation.translate(force: true),
+        onCancel: _controllers.translation.cancel,
         onExpand: () => _openFullReader(
           paper,
-          _translationController.markdown,
+          _controllers.translation.markdown,
           title: '摘要',
         ),
       );
     }
     if (index == 2) {
       return _KeywordContent(
-        keywords: _keywordController.keywords,
-        loadingCache: _keywordController.loadingCache,
-        generating: _keywordController.generating,
-        error: _keywordController.error,
-        onGenerate: _keywordController.generate,
-        onRefresh: () => _keywordController.generate(force: true),
-        onCancel: _keywordController.cancel,
+        keywords: _controllers.keywords.keywords,
+        loadingCache: _controllers.keywords.loadingCache,
+        generating: _controllers.keywords.generating,
+        error: _controllers.keywords.error,
+        onGenerate: _controllers.keywords.generate,
+        onRefresh: () => _controllers.keywords.generate(force: true),
+        onCancel: _controllers.keywords.cancel,
       );
     }
     if (index == 3) {
@@ -381,11 +363,11 @@ class _PaperReaderCardState extends State<PaperReaderCard> {
   }
 
   Future<void> _openDiscussion(PaperDiscussionOpener open) async {
-    final controller = _keywordController;
+    final controller = _controllers.keywords;
     await controller.initialize();
     if (!mounted ||
         !widget.active ||
-        !identical(controller, _keywordController)) {
+        !identical(controller, _controllers.keywords)) {
       return;
     }
     open(
@@ -393,22 +375,6 @@ class _PaperReaderCardState extends State<PaperReaderCard> {
       keywordCacheFailed:
           controller.cacheLoadFailed && controller.keywords.isEmpty,
     );
-  }
-
-  void _createTranslationController() {
-    _translationController = PaperTranslationController(
-      paper: widget.paper,
-      service: widget.translationServiceFactory.create(),
-      repository: widget.translationRepository,
-    )..addListener(_handleTranslationChanged);
-  }
-
-  void _createKeywordController() {
-    _keywordController = PaperKeywordController(
-      paper: widget.paper,
-      service: widget.keywordService,
-      repository: widget.keywordRepository,
-    )..addListener(_handleKeywordChanged);
   }
 
   void _handleTranslationChanged() {

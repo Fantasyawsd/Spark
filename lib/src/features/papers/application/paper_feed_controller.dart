@@ -12,6 +12,7 @@ import '../domain/paper_feed_filter.dart';
 import '../domain/paper_preference_repository.dart';
 import '../domain/paper_repository.dart';
 import '../domain/paper_time_range.dart';
+import 'paper_feed_catalog_operations.dart';
 import 'paper_feed_preference_coordinator.dart';
 import 'paper_feed_projector.dart';
 
@@ -49,6 +50,14 @@ class PaperFeedController extends ChangeNotifier {
         ) {
     _initialPapers = _allPapers;
     _preferences.onChanged = _notify;
+    _catalogOperations = PaperFeedCatalogOperations(
+      repository: _catalogRepository,
+      isDisposed: () => _disposed,
+      notify: _notify,
+      onStaleRefresh: _ensureCurrentChannelLoaded,
+      onPage: _handleCatalogPage,
+      onError: _handleCatalogError,
+    );
     _followedPaperIdsListenable?.addListener(_handleFollowedPaperIdsChanged);
     _refreshVisiblePapers();
   }
@@ -64,16 +73,13 @@ class PaperFeedController extends ChangeNotifier {
   final Iterable<String> Function()? _readPaperIdsProvider;
   final ValueListenable<Set<String>>? _followedPaperIdsListenable;
   final PaperFeedPreferenceCoordinator _preferences;
+  late final PaperFeedCatalogOperations _catalogOperations;
   final Set<String> _loadedChannelKeys = {};
   final Map<String, List<Paper>> _channelPapers = {};
   final Map<String, _CatalogChannelState> _catalogStates = {};
   int _channelIndex = 0;
   int _currentPaperIndex = 0;
   bool _gridMode = false;
-  bool _catalogLoading = false;
-  bool _catalogLoadingMore = false;
-  final Set<Future<void>> _catalogOperations = {};
-  int _catalogQueryRevision = 0;
   bool _disposed = false;
 
   List<Paper> get papers => _visiblePapers;
@@ -87,8 +93,8 @@ class PaperFeedController extends ChangeNotifier {
   bool get gridMode => _gridMode;
   String? get preferenceError => _preferences.preferenceError;
   String? get channelPreferenceError => _preferences.channelPreferenceError;
-  bool get catalogLoading => _catalogLoading;
-  bool get catalogLoadingMore => _catalogLoadingMore;
+  bool get catalogLoading => _catalogOperations.loading;
+  bool get catalogLoadingMore => _catalogOperations.loadingMore;
   bool get catalogOffline => _currentCatalogState?.offline ?? false;
   bool get catalogStale => _currentCatalogState?.stale ?? false;
   PaperPageSource get catalogSource =>
@@ -132,15 +138,13 @@ class PaperFeedController extends ChangeNotifier {
   }
 
   Future<void> refreshCatalog({bool forceRefresh = true}) {
-    final repository = _catalogRepository;
     if (_disposed ||
-        repository == null ||
-        _catalogLoading ||
+        _catalogRepository == null ||
+        _catalogOperations.loading ||
         !_canLoadCurrentChannel) {
       return Future.value();
     }
     final channelKey = currentChannelKey;
-    final queryRevision = _advanceCatalogQueryRevision();
     final query = PaperFeedQuery(
       channel: _catalogChannel,
       category: _catalogCategory,
@@ -150,31 +154,24 @@ class PaperFeedController extends ChangeNotifier {
       limit: 20,
       forceRefresh: forceRefresh,
     );
-    return _trackCatalogOperation(
-      _runCatalogRequest(
-        repository,
-        channelKey: channelKey,
-        query: query,
-        queryRevision: queryRevision,
-        append: false,
-      ),
+    return _catalogOperations.refresh(
+      channelKey: channelKey,
+      query: query,
+      queryRevision: _catalogOperations.advanceQueryRevision(),
     );
   }
 
   Future<void> loadMoreCatalog() {
-    final repository = _catalogRepository;
     final channelKey = currentChannelKey;
     final state = _catalogStates[channelKey];
     final nextOffset = state?.nextOffset;
     final nextCursor = state?.nextCursor;
     if (_disposed ||
-        repository == null ||
         (nextOffset == null && nextCursor == null) ||
-        _catalogLoading ||
-        _catalogLoadingMore) {
+        _catalogOperations.loading ||
+        _catalogOperations.loadingMore) {
       return Future.value();
     }
-    final queryRevision = _catalogQueryRevision;
     final query = PaperFeedQuery(
       channel: _catalogChannel,
       category: _catalogCategory,
@@ -185,66 +182,45 @@ class PaperFeedController extends ChangeNotifier {
       cursor: nextCursor,
       limit: 20,
     );
-    return _trackCatalogOperation(
-      _runCatalogRequest(
-        repository,
-        channelKey: channelKey,
-        query: query,
-        queryRevision: queryRevision,
-        append: true,
-      ),
+    return _catalogOperations.loadMore(
+      channelKey: channelKey,
+      query: query,
+      queryRevision: _catalogOperations.currentRevision,
     );
   }
 
-  Future<void> _runCatalogRequest(
-    PaperCatalogRepository repository, {
+  void _handleCatalogPage(
+    PaperPage page, {
     required String channelKey,
-    required PaperFeedQuery query,
-    required int queryRevision,
     required bool append,
-  }) async {
-    if (append) {
-      _catalogLoadingMore = true;
-    } else {
-      _catalogLoading = true;
-    }
-    _notify();
-    try {
-      final page = await repository.loadFeed(query);
-      if (!_disposed && queryRevision == _catalogQueryRevision) {
-        _applyCatalogPage(
-          page,
-          channelKey: channelKey,
-          append: append || _loadedChannelKeys.contains(channelKey),
-        );
-      }
-    } on Object catch (error, stackTrace) {
-      SparkDiagnostics.reportUnexpected(
-        operation: append
-            ? SparkDiagnosticOperation.paperFeedLoadMore
-            : SparkDiagnosticOperation.paperFeedRefresh,
-        error: error,
-        stackTrace: stackTrace,
+    required int queryRevision,
+  }) {
+    _applyCatalogPage(
+      page,
+      channelKey: channelKey,
+      append: append || _loadedChannelKeys.contains(channelKey),
+    );
+  }
+
+  void _handleCatalogError(
+    Object error,
+    StackTrace stackTrace, {
+    required String channelKey,
+    required bool append,
+    required int queryRevision,
+  }) {
+    SparkDiagnostics.reportUnexpected(
+      operation: append
+          ? SparkDiagnosticOperation.paperFeedLoadMore
+          : SparkDiagnosticOperation.paperFeedRefresh,
+      error: error,
+      stackTrace: stackTrace,
+    );
+    if (!_disposed && queryRevision == _catalogOperations.currentRevision) {
+      _catalogStateFor(channelKey).error = PaperCatalogError(
+        kind: PaperCatalogErrorKind.unavailable,
+        message: append ? '无法加载更多论文，请稍后重试。' : '论文目录暂时不可用，请稍后重试。',
       );
-      if (!_disposed && queryRevision == _catalogQueryRevision) {
-        _catalogStateFor(channelKey).error = PaperCatalogError(
-          kind: PaperCatalogErrorKind.unavailable,
-          message: append ? '无法加载更多论文，请稍后重试。' : '论文目录暂时不可用，请稍后重试。',
-        );
-      }
-    } finally {
-      if (append) {
-        _catalogLoadingMore = false;
-      } else {
-        _catalogLoading = false;
-      }
-      _notify();
-      if (!append &&
-          !_disposed &&
-          queryRevision != _catalogQueryRevision &&
-          _canLoadCurrentChannel) {
-        _ensureCurrentChannelLoaded();
-      }
     }
   }
 
@@ -575,16 +551,7 @@ class PaperFeedController extends ChangeNotifier {
       _preferences.flushChannelWrites();
 
   Future<void> flushCatalogOperations() async {
-    while (_catalogOperations.isNotEmpty) {
-      await Future.wait(_catalogOperations.toList(growable: false));
-    }
-  }
-
-  Future<void> _trackCatalogOperation(Future<void> operation) {
-    late final Future<void> tracked;
-    tracked = operation.whenComplete(() => _catalogOperations.remove(tracked));
-    _catalogOperations.add(tracked);
-    return tracked;
+    await _catalogOperations.flush();
   }
 
   Future<void> reloadPreferences() async {
@@ -618,8 +585,7 @@ class PaperFeedController extends ChangeNotifier {
       _catalogStates.putIfAbsent(channelKey, _CatalogChannelState.new);
 
   int _advanceCatalogQueryRevision() {
-    _catalogLoadingMore = false;
-    return ++_catalogQueryRevision;
+    return _catalogOperations.advanceQueryRevision();
   }
 
   void _queuePreferencePersistence() {

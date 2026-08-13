@@ -10,8 +10,8 @@
 - Worktree：`C:\Users\Fantasy\Desktop\Spark-worktrees\agent-1`
 - 基线提交：`5578a77d12dd3779940d2352d216e1f766ab47fa`
 - 负责人：Codex（Fantasy 编排）
-- 状态：开发中（实现完成，待 `/test`）
-- 最近更新：`2026-08-13 14:29`（Asia/Shanghai）
+- 状态：待审查
+- 最近更新：`2026-08-13 14:33`（Asia/Shanghai）
 
 ## 目标
 
@@ -74,8 +74,9 @@
 - 已完成：从本地最新 `main@5578a77` 创建 `fix/report-data-correctness` 与 `agent-1`。
 - 已完成：六类边界均先增加失败回归，再完成实现；代码与测试已形成 `5ea6778` 原子提交。
 - 已完成：服务端全量 55 项、Flutter 定向与架构 20 项、格式、静态分析、Python 编译和 diff 检查通过。
-- 正在进行：等待编排者触发 `/test` 完整门禁。
-- 下一步：执行 `/test`；通过后再进入 `/review`，不执行会合入 `main` 的常规 `/finish`。
+- 已完成：`/test` 完整门禁通过；Dart 格式、静态分析、448 项 Flutter 全量测试、55 项服务端测试和 Python 编译均成功。
+- 正在进行：等待编排者触发只读 `/review`。
+- 下一步：执行 `/review`；通过后保留本分支，并从其最终提交创建下一批修复 worktree。
 - 阻塞项：无。
 
 ## 决策记录
@@ -104,6 +105,14 @@
 | `flutter analyze` | `No issues found` | 2026-08-13 |
 | `python -m compileall -q server` | 通过 | 2026-08-13 |
 | `git diff --cached --check` 与敏感词检查 | 通过；无空白错误、密钥或异常生成文件进入提交 | 2026-08-13 |
+| `/test` `.\tool\verify_changed_dart_format.ps1` | 通过；2 个任务 Dart 文件，0 个需格式化 | 2026-08-13 |
+| `/test` `flutter analyze` | `No issues found` | 2026-08-13 |
+| `/test` `flutter test` | 448 项全部通过 | 2026-08-13 |
+| `/test` `$env:PYTHONPATH=(Resolve-Path server).Path; python -m unittest discover -s server/tests -v` | 55 项全部通过 | 2026-08-13 |
+| `/test` `python -m compileall -q server` | 通过 | 2026-08-13 |
+| `/test` `git diff --check` | 通过 | 2026-08-13 |
+| `/test` 目标构建 | 按阶段规范不运行；APK 与 Windows release 构建仅属于常规 `/finish` 合并后门禁，本修复链不合入 `main` | 2026-08-13 |
+| `/test` 人工验收 | 按编排者明确指示不运行；本批无 UI 交互变更 | 2026-08-13 |
 
 ## 审查结论
 
@@ -117,12 +126,13 @@
 | SHA | 提交信息 | 对应阶段 | 验证摘要 |
 | --- | --- | --- | --- |
 | `5ea6778` | `修复（论文数据）：校正缓存与同步边界语义` | `/develop` | 服务端 55 项、Flutter 定向与架构 20 项、格式、analyze、compileall 和 diff 检查通过 |
+| `e72a91e` | `文档（台账）：记录数据正确性修复` | `/develop` | 记录实现、定向验证、兼容性和串联 worktree 约束 |
 
 ## 交付准备（合并前收集）
 
 ### 交付摘要
 
-已实现六项数据正确性与非法输入边界修复；完整 `/test` 和只读 `/review` 尚未执行。
+已实现六项数据正确性与非法输入边界修复，完整 `/test` 已通过；只读 `/review` 尚未执行。
 
 ### 实际变更
 
@@ -140,7 +150,7 @@
 
 ### 已知风险与回滚
 
-- 已知风险：完整 Flutter 全量测试尚留给 `/test`；当前改动不触及 UI 或外部服务。
+- 已知风险：本批自动化门禁无已知失败；按编排者要求不做人工验收，且本修复链不执行合入 `main` 后的双目标构建。
 - 回滚方式：在修复链分支上对 `5ea6778` 执行 `git revert`；无数据 schema 回滚步骤。
 
 ### 文档更新建议

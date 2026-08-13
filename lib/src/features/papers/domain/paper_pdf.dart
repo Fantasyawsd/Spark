@@ -38,3 +38,12 @@ class PaperPdfExtract {
 
   int get charCount => chunks.fold(0, (sum, chunk) => sum + chunk.charCount);
 }
+
+class PaperPdfException implements Exception {
+  const PaperPdfException(this.message);
+
+  final String message;
+
+  @override
+  String toString() => message;
+}

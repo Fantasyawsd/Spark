@@ -6,12 +6,12 @@ import 'paper_reading_record.dart';
 
 class FilePaperReadingRepository implements PaperReadingRepository {
   FilePaperReadingRepository({LocalJsonStore? store})
-    : _persistence = PaperFilePersistence(
-        fileName: 'paper_reading.json',
-        schemaId: 'papers.reading',
-        validatePayload: PaperReadingJsonMapper.validatePayload,
-        store: store,
-      );
+      : _persistence = PaperFilePersistence(
+          fileName: 'paper_reading.json',
+          schemaId: 'papers.reading',
+          validatePayload: PaperReadingJsonMapper.validatePayload,
+          store: store,
+        );
 
   final PaperFilePersistence _persistence;
 

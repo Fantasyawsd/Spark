@@ -22,8 +22,8 @@ import 'paper_translation_content.dart';
 import 'paper_reader_card_lifecycle.dart';
 import 'paper_reader_content.dart';
 
-typedef PaperDiscussionOpener =
-    void Function(List<String> keywords, {required bool keywordCacheFailed});
+typedef PaperDiscussionOpener = void Function(List<String> keywords,
+    {required bool keywordCacheFailed});
 
 class PaperReaderCard extends StatefulWidget {
   const PaperReaderCard({
@@ -150,8 +150,7 @@ class _PaperReaderCardState extends State<PaperReaderCard> {
   Widget build(BuildContext context) {
     final paper = widget.paper;
     final safePadding = MediaQuery.paddingOf(context);
-    final hasPaperLink =
-        widget.onOpenPaper != null &&
+    final hasPaperLink = widget.onOpenPaper != null &&
         (validExternalHttpUri(paper.pdfUrl) != null ||
             validExternalHttpUri(paper.paperUrl) != null);
     return ColoredBox(
@@ -353,12 +352,10 @@ class _PaperReaderCardState extends State<PaperReaderCard> {
           paper: paper,
           markdown: markdown,
           title: title,
-          initialScrollOffset: title == 'Abstract'
-              ? widget.initialAbstractScrollOffset
-              : 0,
-          onScrollOffsetChanged: title == 'Abstract'
-              ? widget.onAbstractScrollChanged
-              : null,
+          initialScrollOffset:
+              title == 'Abstract' ? widget.initialAbstractScrollOffset : 0,
+          onScrollOffsetChanged:
+              title == 'Abstract' ? widget.onAbstractScrollChanged : null,
         ),
       ),
     );

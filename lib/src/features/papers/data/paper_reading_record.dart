@@ -9,12 +9,12 @@ class PaperReadingRecord {
     Map<String, int> tabIndices = const {},
     Map<String, double> abstractScrollOffsets = const {},
     Map<String, int> dwellMilliseconds = const {},
-  }) : readPaperIds = List.unmodifiable(readPaperIds),
-       readLaterPaperIds = List.unmodifiable(readLaterPaperIds),
-       historyPaperIds = List.unmodifiable(historyPaperIds),
-       tabIndices = Map.unmodifiable(tabIndices),
-       abstractScrollOffsets = Map.unmodifiable(abstractScrollOffsets),
-       dwellMilliseconds = Map.unmodifiable(dwellMilliseconds);
+  })  : readPaperIds = List.unmodifiable(readPaperIds),
+        readLaterPaperIds = List.unmodifiable(readLaterPaperIds),
+        historyPaperIds = List.unmodifiable(historyPaperIds),
+        tabIndices = Map.unmodifiable(tabIndices),
+        abstractScrollOffsets = Map.unmodifiable(abstractScrollOffsets),
+        dwellMilliseconds = Map.unmodifiable(dwellMilliseconds);
 
   factory PaperReadingRecord.fromDomain(PaperReadingSnapshot snapshot) {
     return PaperReadingRecord(

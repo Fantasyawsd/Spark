@@ -39,8 +39,8 @@ class PaperReaderKeywordContent extends StatelessWidget {
         actionLabel: generating
             ? '停止'
             : error == null
-            ? '生成'
-            : '重试',
+                ? '生成'
+                : '重试',
         onAction: generating ? onCancel : onGenerate,
       );
     }

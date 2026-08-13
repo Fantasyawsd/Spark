@@ -9,9 +9,9 @@ class ChatConversationSettingsState {
     required ChatSessionSettingsRepository? repository,
     required bool Function() isDisposed,
     required VoidCallback notify,
-  }) : _repository = repository,
-       _isDisposed = isDisposed,
-       _notify = notify;
+  })  : _repository = repository,
+        _isDisposed = isDisposed,
+        _notify = notify;
 
   final String contextId;
   final ChatSessionSettingsRepository? _repository;

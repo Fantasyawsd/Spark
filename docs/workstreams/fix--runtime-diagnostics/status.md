@@ -8,8 +8,8 @@
 - Worktree：`C:\Users\Fantasy\Desktop\Spark-worktrees\agent-6`
 - 基线提交：`4474bcffd8a1e9c49baba0be9bfe1b7398d35c5c`
 - 负责人：Fantasy（编排者）
-- 状态：审查回修完成，待重新测试
-- 最近更新：2026-08-13 18:42
+- 状态：审查回修复测通过，待重新审查
+- 最近更新：2026-08-13 18:45
 
 ## 目标
 
@@ -33,7 +33,7 @@
 - [x] 服务端使用 Python 标准 logging 在 HTTP/CLI/同步边界记录安全的操作事件与 stack trace；已写入同步报告或拒绝计数的预期数据问题不重复记录原始记录。
 - [x] Paper API 未预期分发及响应序列化异常返回固定 `internal_error` 响应，不再向客户端暴露底层异常文本；400 参数错误契约保持不变。审查回修后只有专用请求校验异常返回 400，内部 `ValueError` 进入固定 500。
 - [x] 客户端与服务端隐私回归证明密钥、提示词、论文/聊天内容、请求查询、CLI 参数和原始数据不会进入捕获的诊断文本；内部 `ValueError` 文本也不会进入响应或日志。
-- [ ] 静态门禁禁止新增匿名 broad catch；Dart 格式检查、`flutter analyze`、Flutter 全量测试、服务端全量测试、Python 编译和 `git diff --check` 通过。审查回修后需重新执行 `/test` 全量门禁。
+- [x] 静态门禁禁止新增匿名 broad catch；Dart 格式检查、`flutter analyze`、Flutter 全量测试、服务端全量测试、Python 编译和 `git diff --check` 通过；审查回修后的第二次 `/test` 全量门禁亦通过。
 
 ## 写入范围
 
@@ -95,7 +95,8 @@
 - 已完成：PDF 下载与 worker 只映射友好异常并保留原 stack，不在中间层记录；全文入口成为唯一报告边界，四个失去生产调用方的 PDF 中间层 operation 已删除。
 - 已完成：新增真实 PDF 下载/worker 到全文入口的串联回归，分别证明中间层零事件、最终边界恰好一条事件；服务端新增内部 `ValueError` 隐私回归。
 - 已完成：补强 PDF worker 栈契约；服务级回归锁定 isolate 内 `_extractSynchronously` 根因，最终消费级回归锁定 `_runExtractionWorker` 异步完成边界，避免只断言非空栈而放过证据退化。
-- 下一步：重新执行 `/test` 全量门禁；通过后重新进入 `/review`。
+- 已完成：审查回修后的第二次 `/test` 全量门禁通过；Flutter 524 项、服务端 63 项、格式、静态分析、Python 编译与空白检查均成功。
+- 下一步：重新进入 `/review`，只读复核两个原阻断项、完整 diff 与最新测试证据。
 - 阻塞项：无。
 
 ## 决策记录
@@ -164,6 +165,14 @@
 | 审查回修 Python 编译、`flutter analyze` 与 Dart 格式 | 通过；Python 包与测试可编译，Flutter 无静态问题，92 个 Dart 文件格式通过 | 2026-08-13 |
 | 审查回修 `git diff --check` 与失效 operation 扫描 | 通过；无空白错误，四个 PDF 中间层 operation 在生产与测试中均无残留引用 | 2026-08-13 |
 | 审查回修 PDF 根因栈定向测试 | 通过；`paper_pdf_test.dart` 与 `paper_ai_chat_app_bar_test.dart` 共 24 项，分别锁定 isolate 根因栈与最终消费异步边界栈；随后 92 文件格式、`flutter analyze` 与 `git diff --check` 通过 | 2026-08-13 |
+| 回修后 `/test` 预检 | 通过；`fix/runtime-diagnostics@7e826fd89c00` 工作区干净，控制工作树 `main` 仍为 `5578a77d12dd` | 2026-08-13 |
+| 回修后 `/test` `.\tool\verify_changed_dart_format.ps1` | 通过；跨串联基线识别的 92 个 Dart 文件均无需格式化 | 2026-08-13 |
+| 回修后 `/test` `flutter analyze` | 通过；No issues found | 2026-08-13 |
+| 回修后 `/test` `flutter test --reporter compact` | 通过；Flutter 全量 524 项 | 2026-08-13 |
+| 回修后 `/test` `python -m unittest discover -s tests`（`server` 工作目录） | 通过；服务端全量 63 项 | 2026-08-13 |
+| 回修后 `/test` `python -m compileall -q spark_papers tests`（`server` 工作目录） | 通过；生产包与测试均可编译 | 2026-08-13 |
+| 回修后 `/test` `git diff --check` | 通过；测试前工作区干净，无空白错误 | 2026-08-13 |
+| 回修后 `/test` 目标构建与人工验收 | 未运行；APK/Windows release 构建属于 `/finish`，本任务明确不合入 `main`；编排者明确无需人工验收 | 2026-08-13 |
 
 ## 审查结论
 
@@ -174,7 +183,7 @@
 - 缺陷：现有回归分别覆盖 PDF 服务与全文入口，但缺少串联两层的单事件测试；修复阻断项时必须补充。
 - 建议：为当前仅由枚举总测试覆盖的 `chatConversationSessionLoad`、`chatSessionPin` 等分支逐步增加操作级回归，但不单独阻断本任务；PDF worker 中间层 operation 已在回修中删除并改由真实串联测试覆盖。
 - 结论：需修复；返回 `/develop`，修复后重新执行 `/test` 与 `/review`。
-- 回修状态：两个阻断项已在 `795937d` 修复并通过定向验证；原审查结论保留为历史，待重新 `/test` 后复审。
+- 回修状态：两个阻断项已在 `795937d` 修复，并通过定向验证与第二次 `/test` 全量门禁；原审查结论保留为历史，待重新 `/review` 复审。
 
 ## 检查点与提交
 
@@ -194,7 +203,7 @@
 
 ### 交付摘要
 
-客户端与 Paper API 服务端现已具备统一、可测试且不接收动态 payload 的运行时诊断边界；所有已分类的最终消费异常使用固定 operation 记录异常类型和 stack trace，预期取消/数据拒绝不记录，HTTP 500 不再暴露底层错误文本。首次 `/test` 已通过，首次 `/review` 的两个阻断项已回修并完成定向验证，待重新 `/test` 与 `/review`。
+客户端与 Paper API 服务端现已具备统一、可测试且不接收动态 payload 的运行时诊断边界；所有已分类的最终消费异常使用固定 operation 记录异常类型和 stack trace，预期取消/数据拒绝不记录，HTTP 500 不再暴露底层错误文本。首次 `/review` 的两个阻断项已回修，第二次 `/test` 全量门禁通过，待重新 `/review`。
 
 ### 实际变更
 
@@ -234,4 +243,4 @@
 - 合并时间：不适用
 - main 集成验证：不适用
 - 开发计划更新：不适用；本任务仅修复结构性技术债
-- 最终后续项：完成 `/test` 与 `/review` 后，以最终审查提交为下一批 worktree 基线
+- 最终后续项：完成重新 `/review` 后，以最终审查提交为下一批 worktree 基线

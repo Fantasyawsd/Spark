@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import re
 import sqlite3
+from dataclasses import replace
 from contextlib import contextmanager
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -13,6 +14,7 @@ from .identity import fuzzy_identity_score, normalize_external_ids, stable_paper
 from .db_mapper import paper_from_row, paper_values
 from .models import PaperRecord, parse_datetime, utc_now
 from .ports import IngestOutcome, IngestStatus
+from .paper_record_merger import merge_paper_records
 
 
 def _json(value: Any) -> str:
@@ -425,25 +427,13 @@ class PaperStore:
                 return IngestOutcome(IngestStatus.UNMATCHED)
         current = self.get(target_id)
         if current is None:
-            merged = paper if target_id == paper.paper_id else PaperRecord(
+            merged = paper if target_id == paper.paper_id else replace(
+                paper,
                 paper_id=target_id,
-                title=paper.title,
-                abstract=paper.abstract,
-                authors=paper.authors,
-                published_at=paper.published_at,
-                updated_at=paper.updated_at,
-                subjects=paper.subjects,
-                external_ids=paper.external_ids,
-                discovery_sources=paper.discovery_sources,
-                signals=paper.signals,
-                metadata=paper.metadata,
-                admitted=paper.admitted,
-                admission_reason=paper.admission_reason,
-                withdrawn=paper.withdrawn,
             )
             created_at = fetched_at
         else:
-            merged = self._merge(
+            merged = merge_paper_records(
                 current,
                 paper,
                 target_id,
@@ -575,59 +565,6 @@ class PaperStore:
                 ),
             )
         return True
-
-    def _merge(
-        self,
-        current: PaperRecord,
-        incoming: PaperRecord,
-        target_id: str,
-        *,
-        preserve_canonical: bool,
-        add_discovery_source: bool,
-    ) -> PaperRecord:
-        external_ids = dict(current.external_ids)
-        external_ids.update({key: value for key, value in incoming.external_ids.items() if value})
-        signals = {key: dict(value) for key, value in current.signals.items()}
-        for key, value in incoming.signals.items():
-            signals.setdefault(key, {}).update({field: val for field, val in value.items() if val is not None})
-        metadata = dict(current.metadata)
-        metadata.update({key: value for key, value in incoming.metadata.items() if value is not None})
-        title = current.title if preserve_canonical or current.title.strip() else incoming.title
-        abstract = current.abstract or incoming.abstract if preserve_canonical else incoming.abstract or current.abstract
-        authors = current.authors or incoming.authors
-        published_at = current.published_at if preserve_canonical else min(current.published_at, incoming.published_at)
-        updated_at = (
-            current.updated_at
-            if preserve_canonical
-            else max(filter(None, (current.updated_at, incoming.updated_at)), default=None)
-        )
-        subjects = (
-            current.subjects
-            if preserve_canonical
-            else tuple(dict.fromkeys((*current.subjects, *incoming.subjects)))
-        )
-        sources = (
-            tuple(dict.fromkeys((*current.discovery_sources, *incoming.discovery_sources)))
-            if add_discovery_source
-            else current.discovery_sources
-        )
-        return PaperRecord(
-            paper_id=target_id,
-            title=title,
-            abstract=abstract,
-            authors=authors,
-            published_at=published_at,
-            updated_at=updated_at,
-            subjects=subjects,
-            external_ids=external_ids,
-            discovery_sources=sources,
-            signals=signals,
-            metadata=metadata,
-            admitted=current.admitted or incoming.admitted,
-            admission_reason=(incoming.admission_reason if incoming.admitted and not current.admitted else current.admission_reason or incoming.admission_reason),
-            withdrawn=current.withdrawn or incoming.withdrawn,
-            schema_version=PAPER_SCHEMA_VERSION,
-        )
 
     def list_papers(
         self,

@@ -10,8 +10,8 @@
 - Worktree：`C:\Users\Fantasy\Desktop\Spark-worktrees\agent-4`
 - 基线提交：`2d23c6c955f682dccae4383fb447ff994c27877d`
 - 负责人：Codex（Fantasy 编排）
-- 状态：规划中
-- 最近更新：`2026-08-13 16:15`（Asia/Shanghai）
+- 状态：开发实现完成，待 `/test`
+- 最近更新：`2026-08-13 16:27`（Asia/Shanghai）
 
 ## 目标
 
@@ -30,13 +30,13 @@
 
 ## 验收标准
 
-- [ ] `paper_ai_chat_screen.dart` 只保留页面组合、会话控制器生命周期与少量跨组件协调；不再内嵌 Android IME 类、会话设置 sheet、标题/全文 AppBar 实现或消息多选控件，文件规模显著下降且主要 `build` 可一次理解。
-- [ ] `paper_ai_chat_screen.dart` 不再 import `flutter/services.dart`、访问 `SystemChannels` 或直接 `invokeMethod('TextInput.hide')`；系统键盘兜底位于 chat presentation 的窄平台适配器，并可由测试替换。
-- [ ] 四个 Android IME 布局/滚动类迁移到单一职责文件；Android 顶栏与消息视口固定、底栏随 inset 平移、长对话滚动按差值锚定以及非 Android 默认 inset 行为完全保持。
-- [ ] 标题编辑与全文加载状态由聚合 AppBar 组件拥有；消息选择集合/启停由独立 presentation controller 拥有；屏幕 State 不再同时持有这三类独立流程的字段。
-- [ ] 会话设置 sheet 拆为独立组件并将 138 行 `build` 分解为短区块；自定义 prompt、回答风格、Skills 选择与保存契约不变。
-- [ ] 原有 ValueKey、可访问性语义、移动/桌面发送焦点、编辑最新提示、多选配对与批量删除、预览切换、清空确认、全文三条反馈路径均保持。
-- [ ] 新增或扩充独立测试覆盖键盘适配器、消息选择 controller 与拆分组件；既有 Android IME、键盘交互、移动聊天 UI 和后台续答定向测试通过。
+- [x] `paper_ai_chat_screen.dart` 只保留页面组合、会话控制器生命周期与少量跨组件协调；不再内嵌 Android IME 类、会话设置 sheet、标题/全文 AppBar 实现或消息多选控件，文件规模显著下降且主要 `build` 可一次理解。
+- [x] `paper_ai_chat_screen.dart` 不再 import `flutter/services.dart`、访问 `SystemChannels` 或直接 `invokeMethod('TextInput.hide')`；系统键盘兜底位于 chat presentation 的窄平台适配器，并可由测试替换。
+- [x] 四个 Android IME 布局/滚动类迁移到单一职责文件；Android 顶栏与消息视口固定、底栏随 inset 平移、长对话滚动按差值锚定以及非 Android 默认 inset 行为完全保持。
+- [x] 标题编辑与全文加载状态由聚合 AppBar 组件拥有；消息选择集合/启停由独立 presentation controller 拥有；屏幕 State 不再同时持有这三类独立流程的字段。
+- [x] 会话设置 sheet 拆为独立组件并将 138 行 `build` 分解为短区块；自定义 prompt、回答风格、Skills 选择与保存契约不变。
+- [x] 原有 ValueKey、可访问性语义、移动/桌面发送焦点、编辑最新提示、多选配对与批量删除、预览切换、清空确认、全文三条反馈路径均保持。
+- [x] 新增或扩充独立测试覆盖键盘适配器、消息选择 controller 与拆分组件；既有 Android IME、键盘交互、移动聊天 UI 和后台续答定向测试通过。
 - [ ] 相关定向测试、Dart 格式、`flutter analyze`、`flutter test` 和 `git diff --check` 通过。
 
 ## 写入范围
@@ -81,8 +81,14 @@
 - 已完成：确认报告条目仍成立：目标文件现为 909 行，内嵌 4 个 Android IME 类，页面直接调用 `SystemChannels.textInput`，State 同时维护标题、全文、多选、预览与编辑流程，设置 sheet 的 build 仍为约 138 行。
 - 已完成：确认现有回归基础覆盖 Android 8 帧 inset 几何与滚动锚定、桌面/移动发送焦点、多选收键盘、标题编辑、设置保存、全文成功/context mismatch/异常和跨界面续答。
 - 已完成：从第三批最终审查提交 `2d23c6c` 创建 `agent-4` 与 `refactor/chat-screen-boundaries`；`main@5578a77` 未变化。
-- 正在进行：第四批任务台账初始化，尚未修改功能代码。
-- 下一步：触发 `/develop`，先补键盘适配器与消息选择 controller 的边界测试，再按 IME、选择、AppBar、设置顺序拆分。
+- 已完成：拆分前 characterization 基线 25 项通过；新增红测准确暴露键盘适配器、选择 controller 与构造注入缺失。
+- 已完成：将 `TextInput.hide` 三层关闭语义集中到可注入的 `PaperAiKeyboardDismissal`，页面移除 `flutter/services.dart` 与平台通道访问。
+- 已完成：将 Android 底栏平移、IME spacer、滚动 controller/position 原样迁移到 `paper_ai_ime_layout.dart`，160px 阈值和差值修正未改变。
+- 已完成：将消息配对选择规则迁入独立 `PaperAiMessageSelectionController`，选择态 AppBar 与底栏迁入专用组件。
+- 已完成：聚合 AppBar 自持标题与全文 loading/enabled 状态，并在内部切换多选外观，避免进入多选导致状态丢失；会话设置 sheet 已拆为短区块组件。
+- 已完成：主页面由 909 行降至 343 行；新增边界与组件测试，定向套件 31 项、架构测试 23 项及 `flutter analyze` 均通过。
+- 正在进行：`/develop` 已完成并形成原子代码提交，等待独立 `/test` 完整门禁。
+- 下一步：触发 `/test`，执行 changed Dart format、`flutter analyze` 与完整 `flutter test`，记录证据后再进入只读 `/review`。
 - 阻塞项：无。
 
 ## 决策记录
@@ -94,6 +100,7 @@
 | 2026-08-13 | `TextInput.hide` 保留但通过窄 presentation 平台适配器调用 | 历史任务确认它是 Android 焦点转移后的必要兜底；问题是 Widget 直接触碰通道，不是兜底能力本身 | 页面可注入 fake，平台通道集中在单一文件，不下沉到业务 domain |
 | 2026-08-13 | 标题/全文状态由 AppBar 子组件拥有，消息选择由独立 controller 拥有 | 三类状态分别只影响 AppBar 或选择模式，放在页面 State 会让任一修改触碰无关流程 | 页面仅保留会话生命周期、Composer 编辑/发送与预览协调 |
 | 2026-08-13 | 不进行人工验收或合并 | 编排者明确要求自动修复链保留在 worktree | 以自动化测试和只读审查作为证据，完成后串联下一 worktree |
+| 2026-08-13 | 聚合 AppBar 内部切换普通/选择外观，不在 Scaffold 层替换组件类型 | 标题与全文状态下沉后仍必须跨多选模式存续；父级替换 AppBar 会销毁其 State | 新增组件测试锁定标题和全文已加载状态在多选往返后保持 |
 
 ## 验证记录
 
@@ -103,6 +110,15 @@
 | `git worktree add ..\agent-4 -b refactor/chat-screen-boundaries 2d23c6c...` | 成功；第四批完整继承前三批修复，`main` 未变化 | 2026-08-13 |
 | 报告与源码定向检索 | 909 行、4 个内嵌 IME 类、页面平台通道、5 类 UI 流程与超长 settings build 均仍存在 | 2026-08-13 |
 | 重叠历史台账核对 | 锁定 `fix/android-keyboard-jank` 的 IME 算法、`feature/chat-keyboard-interactions` 的焦点/三层关闭、`feature/chat-background-completion` 的控制器所有权契约 | 2026-08-13 |
+| 拆分前 characterization：4 个 ChatPaper 测试文件 | 25 项通过；覆盖 Android IME、桌面/移动焦点、标题/设置/全文、多选与后台续答 | 2026-08-13 |
+| 新增边界红测 | 按预期编译失败：缺少键盘适配器、选择 controller 与 `PaperAiChatScreen.keyboardDismissal` 注入点 | 2026-08-13 |
+| 新增键盘适配器、选择 controller 与键盘交互测试 | 8 项通过；确认三层关闭调用、助手配对前一用户消息、选择切换/清空及注入调用 | 2026-08-13 |
+| AppBar 状态生命周期组件测试 | 1 项通过；编辑标题与全文已加载状态在普通/多选外观往返后保持 | 2026-08-13 |
+| ChatPaper 最终定向套件 | 31 项通过；Android 几何/锚定、键盘、移动 UI、后台续答及三个新增边界文件均通过 | 2026-08-13 |
+| `flutter test test/architecture_test_support_test.dart test/architecture_boundaries_test.dart` | 23 项通过；依赖方向、循环、公共入口与跨 feature 边界均无回归 | 2026-08-13 |
+| `flutter analyze` | 通过，No issues found | 2026-08-13 |
+| 结构与规模检查 | 页面 343 行；AppBar 223 行、设置 sheet 222 行、IME 文件 111 行；页面无 `flutter/services`、`SystemChannels`、内嵌 IME/settings/selection 状态符号 | 2026-08-13 |
+| `git diff --check` | 通过 | 2026-08-13 |
 
 ## 审查结论
 
@@ -117,30 +133,32 @@
 
 | SHA | 提交信息 | 对应阶段 | 验证摘要 |
 | --- | --- | --- | --- |
+| `020cf3a` | `文档（台账）：启动聊天屏幕边界重构` | `/start` | 基于第三批最终提交建立第四批 worktree、范围、验收与风险台账 |
+| `142e8b9` | `重构（ChatPaper）：拆分会话页展示与平台边界` | `/develop` | 定向 31 项、架构 23 项、analyze 与 diff check 通过；页面 909→343 行 |
 
 ## 交付准备（合并前收集）
 
 ### 交付摘要
 
-本批尚未进入实现阶段。目标交付结果为 ChatPaper 页面职责收敛、Android IME 与系统通道隔离、标题/全文/选择/设置状态各归其主，同时所有既有交互与键盘性能契约保持；真实结果将在各检查点持续更新。
+ChatPaper 页面已收敛为会话控制器生命周期、Composer 编辑/发送和少量跨组件协调入口；Android IME、系统键盘通道、标题/全文 AppBar、消息选择及设置 sheet 已按职责拆分，既有交互、键盘几何和后台续答契约由 31 项定向测试保持。当前代码提交为 `142e8b9`，尚待独立完整 `/test` 与 `/review`。
 
 ### 实际变更
 
-- 领域与业务逻辑：预计无变化。
-- 数据与基础设施：预计只新增 chat presentation 平台适配文件，不改变外部服务或持久化。
-- 界面与交互：预期无可观察变化，仅迁移组件和 UI 状态所有权。
-- 测试与工具：计划新增平台适配器与选择 controller 测试，并扩充既有拆分回归。
-- 文档：持续更新本台账。
+- 领域与业务逻辑：无变化；消息选择配对规则从页面 State 原样迁入 presentation controller。
+- 数据与基础设施：无变化；新增 chat presentation 键盘平台适配器，不改变外部服务或持久化。
+- 界面与交互：无预期可观察变化；AppBar、选择栏与设置 sheet 原样组件化，IME 算法原样迁移。
+- 测试与工具：新增键盘适配器、选择 controller 和 AppBar 生命周期测试，并扩充键盘交互测试的注入断言。
+- 文档：本台账已记录实现、验证与提交证据。
 
 ### 兼容性与迁移
 
 - 本地数据迁移：无。
-- API 或领域契约变化：预计 `PaperAiChatScreen` 增加可选键盘关闭适配器注入；不改变 Chat domain/application 契约。
+- API 或领域契约变化：`PaperAiChatScreen` 增加带生产默认值的可选键盘关闭适配器注入；不改变 Chat domain/application 契约或现有调用方。
 - 旧版本兼容性：无持久化或网络协议影响；生产默认适配器保持原行为。
 
 ### 已知风险与回滚
 
-- 已知风险：IME 类搬移可能改变 Flutter Element/ScrollPosition 生命周期；状态下沉可能导致标题、全文、选择或 sheet 在父重建时丢失；必须由现有高价值测试和新增独立测试锁定。
+- 已知风险：IME 类虽保持算法等价，仍需由 `/test` 完整回归与 `/review` 复核；标题/全文在多选切换时的状态易失风险已由聚合 AppBar 内部切换和新增组件测试消除。
 - 回滚方式：按检查点逆序 `git revert`；无数据迁移。
 
 ### 文档更新建议
@@ -156,7 +174,7 @@
 
 > 编排者明确要求本修复链不合入 `main`，因此本节当前不适用；不预填集成提交、合并时间或 main 验证。
 
-- 最终状态：未合并，第四批规划中
+- 最终状态：未合并，第四批开发完成、待 `/test`
 - 合入分支：不适用
 - 最终集成提交：不适用
 - Pull Request：不适用

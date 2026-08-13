@@ -1,4 +1,4 @@
-import '../domain/paper_reading_repository.dart';
+import 'paper_reading_record.dart';
 import 'paper_json_value_reader.dart';
 
 class PaperReadingJsonMapper {
@@ -11,8 +11,8 @@ class PaperReadingJsonMapper {
     fromJson(payload);
   }
 
-  static PaperReadingSnapshot fromJson(Map<String, dynamic> json) {
-    return PaperReadingSnapshot(
+  static PaperReadingRecord fromJson(Map<String, dynamic> json) {
+    return PaperReadingRecord(
       readPaperIds: PaperJsonValueReader.stringList(json, 'readPaperIds'),
       readLaterPaperIds: PaperJsonValueReader.stringList(
         json,
@@ -28,7 +28,7 @@ class PaperReadingJsonMapper {
     );
   }
 
-  static Map<String, dynamic> toJson(PaperReadingSnapshot snapshot) {
+  static Map<String, dynamic> toJson(PaperReadingRecord snapshot) {
     return {
       'readPaperIds': snapshot.readPaperIds.toList(),
       'readLaterPaperIds': snapshot.readLaterPaperIds.toList(),

@@ -83,6 +83,48 @@ void main() {
     ]);
   });
 
+  test('an inactive loaded following channel reloads after follow changes',
+      () async {
+    final interactions = PaperInteractionController();
+    final catalog = _RecordingCatalog();
+    final feed = PaperFeedController(
+      const ArxivSeedRepository(),
+      catalogRepository: catalog,
+      followedPaperIdsListenable: interactions.followedPaperIdsListenable,
+    );
+    addTearDown(feed.dispose);
+    addTearDown(interactions.dispose);
+
+    await feed.initializeCatalog();
+    final first = feed.allPapers.first;
+    final second = feed.allPapers.firstWhere(
+      (paper) => paper.authorKey != first.authorKey,
+    );
+    interactions.toggleFollowAuthor(first);
+    feed.selectChannel(FixedPaperChannel.following.index);
+    await feed.flushCatalogOperations();
+    expect(catalog.queries, hasLength(2));
+    expect(catalog.queries.last.followingAuthors, [
+      first.firstAuthor.toLowerCase(),
+    ]);
+
+    feed.selectChannel(FixedPaperChannel.recommended.index);
+    interactions.toggleFollowAuthor(second);
+    await feed.flushCatalogOperations();
+    expect(catalog.queries, hasLength(2));
+
+    feed.selectChannel(FixedPaperChannel.following.index);
+    await feed.flushCatalogOperations();
+    expect(catalog.queries, hasLength(3));
+    expect(
+      catalog.queries.last.followingAuthors,
+      [
+        first.firstAuthor.toLowerCase(),
+        second.firstAuthor.toLowerCase(),
+      ]..sort(),
+    );
+  });
+
   test('legacy paper ids still resolve authors from the single source',
       () async {
     final papers = const ArxivSeedRepository().getAll();

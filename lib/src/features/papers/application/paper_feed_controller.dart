@@ -380,12 +380,14 @@ class PaperFeedController extends ChangeNotifier {
       _preferences.hasUserChannel(storageKey);
 
   void _handleFollowedPaperIdsChanged() {
-    if (_disposed || _channelMode != PaperFeedMode.following) return;
-    _rememberPosition();
-    final key = currentChannelKey;
+    if (_disposed) return;
+    final followingIsActive = _channelMode == PaperFeedMode.following;
+    if (followingIsActive) _rememberPosition();
+    final key = channelKeyAt(FixedPaperChannel.following.index);
     _catalogStates.remove(key);
     _loadedChannelKeys.remove(key);
     _channelPapers.remove(key);
+    if (!followingIsActive) return;
     _advanceCatalogQueryRevision();
     _restorePosition();
     notifyListeners();

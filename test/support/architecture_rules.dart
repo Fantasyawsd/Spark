@@ -140,22 +140,26 @@ extension ArchitectureRules on ArchitectureSourceGraph {
     final filesByIdentity = {
       for (final file in sourceFiles) identity(file): file,
     };
-    final importersByTarget = <String, Set<String>>{};
-    for (final source in sourceFiles) {
-      final usageDirectives = [
-        ...imports(source),
-        if (_isCoreSource(source)) ...exports(source),
-      ];
-      for (final directive in usageDirectives) {
-        final target = resolve(source, directive);
-        if (target == null) continue;
-        final targetId = identity(target);
-        if (!filesByIdentity.containsKey(targetId)) continue;
-        importersByTarget.putIfAbsent(targetId, () => <String>{}).add(
-              identity(source),
-            );
+    Map<String, Set<String>> reverseEdges(
+      List<String> Function(File source) directivesFor,
+    ) {
+      final sourcesByTarget = <String, Set<String>>{};
+      for (final source in sourceFiles) {
+        for (final directive in directivesFor(source)) {
+          final target = resolve(source, directive);
+          if (target == null) continue;
+          final targetId = identity(target);
+          if (!filesByIdentity.containsKey(targetId)) continue;
+          sourcesByTarget
+              .putIfAbsent(targetId, () => <String>{})
+              .add(identity(source));
+        }
       }
+      return sourcesByTarget;
     }
+
+    final importersByTarget = reverseEdges(imports);
+    final exportersByTarget = reverseEdges(exports);
 
     final violations = <String>[];
     for (final candidate in sourceFiles.where(_isCoreWidget)) {
@@ -165,13 +169,15 @@ extension ArchitectureRules on ArchitectureSourceGraph {
 
       while (pending.isNotEmpty) {
         final targetId = pending.removeLast();
+        for (final exporterId in exportersByTarget[targetId] ?? const {}) {
+          if (visited.add(exporterId)) pending.add(exporterId);
+        }
         for (final importerId in importersByTarget[targetId] ?? const {}) {
-          if (!visited.add(importerId)) continue;
           final importer = filesByIdentity[importerId]!;
           final feature = featureName(importer);
           if (feature != null) {
             features.add(feature);
-          } else if (_isCoreSource(importer)) {
+          } else if (_isCoreSource(importer) && visited.add(importerId)) {
             pending.add(importerId);
           }
         }

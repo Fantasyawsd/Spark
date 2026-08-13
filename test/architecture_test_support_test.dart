@@ -226,6 +226,32 @@ void main() {
     expect(violations.single, contains('features: none'));
   });
 
+  test('counts real feature use through imported feature barrels', () {
+    source('core/widgets/shared.dart', 'class Shared {}\n');
+    source(
+      'features/papers/papers.dart',
+      "export '../../core/widgets/shared.dart';\n",
+    );
+    source(
+      'features/papers/presentation/screen.dart',
+      "import '../papers.dart';\n",
+    );
+    source(
+      'features/chat/shared.dart',
+      "export '../../core/widgets/shared.dart';\n",
+    );
+    source(
+      'features/chat/chat.dart',
+      "export 'shared.dart';\n",
+    );
+    source(
+      'features/chat/presentation/screen.dart',
+      "import '../chat.dart';\n",
+    );
+
+    expect(graph().coreWidgetReuseViolations(), isEmpty);
+  });
+
   test('parses every branch of a conditional import', () {
     final entry = source(
       'entry.dart',

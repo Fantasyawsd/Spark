@@ -10,8 +10,8 @@
 - Worktree：`C:\Users\Fantasy\Desktop\Spark-worktrees\agent-2`
 - 基线提交：`e61d320939fba18b58b489ed99d140b4c84e57aa`
 - 负责人：Codex（Fantasy 编排）
-- 状态：待重新审查（第二次审查阻断修复后的 `/test` 已通过）
-- 最近更新：`2026-08-13 15:36`（Asia/Shanghai）
+- 状态：已审查通过（不合入 `main`，可作为下一批基线）
+- 最近更新：`2026-08-13 15:40`（Asia/Shanghai）
 
 ## 目标
 
@@ -86,8 +86,9 @@
 - 已完成：分别建立 import/export 反向边；export 只将 exporter 加入待遍历集合，import 才把 importer 所属 feature 计为真实消费者，同时保留 core wrapper 透传；形成 `db35c03` 检查点。
 - 已完成：修复后 23 项架构测试、20 文件格式门禁和 `flutter analyze` 通过。
 - 已完成：第二次审查阻断修复后的 `/test` 完整门禁通过；20 文件格式、静态分析、463 项 Flutter 测试、55 项服务端测试、Python 编译与 Git 一致性检查均成功。
-- 正在进行：最终代码与完整验证证据已就绪，等待重新执行只读 `/review`。
-- 下一步：触发 `/review`，复核 `e61d320` 至当前任务 tip，重点确认 feature barrel 的假阴性与假阳性均已闭环。
+- 已完成：最终 `/review` 复核 13 个提交、19 个文件、全部验收标准和结构阻断条件；feature barrel 假阴性与假阳性均已闭环，未发现阻断项、缺陷或建议项。
+- 正在进行：第二批任务已审查通过，按编排者要求保留 worktree 且不合入 `main`。
+- 下一步：以本批最终台账提交为基线创建第三批修复 worktree，继续处理 DeepSeek 报告中的剩余问题。
 - 阻塞项：无。
 
 ## 决策记录
@@ -155,22 +156,23 @@
 | `/test` Git 一致性检查（第二次审查修复后完整复测） | 全任务与工作树 `git diff --check`、暂存区检查通过；验证后工作树和暂存区为空；`main` 仍为 `5578a77` | 2026-08-13 |
 | `/test` 目标构建（第二次审查修复后完整复测） | 按阶段规范不运行；本修复链明确不合入 `main`，不会进入常规 `/finish` 构建门禁 | 2026-08-13 |
 | `/test` 人工验收（第二次审查修复后完整复测） | 按编排者明确指示不运行；以自动化回归与只读审查作为验收证据 | 2026-08-13 |
+| 最终 `/review` `flutter test test/architecture_test_support_test.dart test/architecture_boundaries_test.dart` | 23 项全部通过；确认同 feature 分层、domain 纯净度、循环、core wrapper、无人 import barrel 与单级/多级真实 importer 语义 | 2026-08-13 |
+| 最终 `/review` 完整差异与结构检查 | 已核对 `e61d320...cf0c83f` 的 13 个提交、19 个文件，新增 1077 行、删除 387 行；7 项验收标准全部满足，未触发任何结构阻断条件 | 2026-08-13 |
+| 最终 `/review` 符号与 Git 检查 | 已删除符号和旧路径为 0 引用；全任务 `git diff --check` 通过，worktree 干净，`main@5578a77` 未变化 | 2026-08-13 |
 
 ## 审查结论
 
-- 审查日期：2026-08-13（重新审查）
-- 审查范围：`e61d320939fba18b58b489ed99d140b4c84e57aa...19e6a7a90ab822a323fbf00b73b4ed2fc1be871d`；9 个提交、19 个文件，新增 1019 行、删除 387 行。
-- 基线说明：`origin/main@948f3af` 比当前修复链落后 89 个提交；按编排者批准的上一批最终提交 `e61d320` 固定本批范围，避免混入第一批或无关历史。
-- 规格核对：同 feature 分层、domain 纯净度、循环检测、组件迁移/删除、行为保持和完整验证 6 项满足；core 真实复用可达性 1 项未满足。
-- 结构核对：逐项检查 19 个改动文件；未触发 Widget/Controller 基础设施直连、领域层外部依赖、多职数据类型、core 反向依赖、循环依赖、业务 utils、深继承、超大页面新增流程或只能依赖完整 UI 验证等其他阻断条件。
-- 已闭环的原阻断项：`4743ded` 使两个 feature 仅 export 同一 core widget 时不再被计为真实使用，原假阴性已由 fixture 覆盖。
-- 新阻断项：`test/support/architecture_rules.dart:145-176` 只保留 feature 的 import，完全不建立 feature export 的反向透传边。若 `papers.dart` 与 `chat.dart` 各自 export 同一 core widget，且各自 presentation 页面真实 import 对应 barrel，算法仍无法从 widget 到达这些页面并会误报 `features: none`。`test/architecture_test_support_test.dart:212-227` 仅覆盖“无人 import 的 feature barrel 不计数”，缺少“被真实 import 后应计数”的合法正例。
-- 修复方向：反向依赖图保留 import/export 边类型；遇到 export 只进入 exporter 继续遍历而不计 feature，遇到 import 才把 importer 所属 feature 记为真实使用，并覆盖多级 barrel、无人 import barrel 与两个真实 importer 三类 fixture。
-- 修复状态：`db35c03` 已按上述方向实现，修复前 fixture 精确失败，修复后 23 项架构定向测试与包含 463 项 Flutter、55 项服务端测试的完整 `/test` 均通过；待重新 `/review` 更新最终结论。
-- 缺陷：除上述阻断项外未发现其他缺陷或建议项。
-- `/test` 证据：格式、`flutter analyze`、462 项 Flutter 测试、55 项服务端测试、Python 编译与 Git 检查均通过；重新审查时 22 项架构定向测试再次通过，但现有集合未覆盖上述合法 barrel 透传路径。
-- 未验证项：按阶段未执行目标构建；按编排者要求未进行人工验收；两项均不是本次审查阻断原因。
-- 结论：重新审查当时要求返回 `/develop`；代码阻断与完整 `/test` 现已闭环，但完成重新 `/review` 前仍不得作为下一串联 worktree 基线。
+- 审查日期：2026-08-13（最终审查）
+- 审查范围：`e61d320939fba18b58b489ed99d140b4c84e57aa...cf0c83f2ca09e899334dfd23466fad346f405e88`；13 个提交、19 个文件，新增 1077 行、删除 387 行。
+- 基线说明：`origin/main@948f3af` 比当前修复链落后 93 个提交；按编排者批准的上一批最终提交 `e61d320` 固定本批范围，避免混入第一批或无关历史。
+- 规格核对：同 feature 分层、domain 默认拒绝、循环检测、core 真实复用、组件迁移/删除、行为保持和完整验证 7 项全部满足，证据充分。
+- 结构核对：逐项检查 19 个改动文件；未触发 Widget/Controller 基础设施直连、领域层外部依赖、多职数据类型、core 反向依赖、循环依赖、业务 utils、深继承、超大页面新增流程或只能依赖完整 UI 验证等阻断条件。
+- barrel 假阴性闭环：仅由两个 feature barrel export 同一 core widget 时仍报告 `features: none`，不会把 API 暴露误算为业务复用。
+- barrel 假阳性闭环：import/export 使用独立反向边；export 只透传，import 才计 feature，单级 papers 与多级 chat barrel 的真实 importer 正例通过。
+- 问题清单：阻断项 0、缺陷 0、建议 0。
+- `/test` 证据：20 文件格式门禁、`flutter analyze`、463 项 Flutter 测试、55 项服务端测试、Python 编译与 Git 一致性检查全部通过；最终审查时 23 项架构定向测试再次通过。
+- 未验证项：按阶段未执行目标构建；按编排者要求未进行人工验收；两项均不是审查阻断原因。
+- 结论：审查通过；按编排者要求不合入 `main`，本批最终台账提交可作为下一串联 worktree 基线。
 
 ## 检查点与提交
 
@@ -185,7 +187,7 @@
 
 ### 交付摘要
 
-同 feature 分层、domain 纯净度、循环检测和现存组件归属问题已修复；两轮 `/review` 发现的 feature barrel 假阴性与真实 import 链假阳性均已由 fixture 驱动修复，第二次审查修复后的完整 `/test` 已通过，当前等待重新 `/review`。本任务按编排者要求不合入 `main`。
+同 feature 分层、domain 纯净度、循环检测和现存组件归属问题已修复；两轮中间审查发现的 feature barrel 假阴性与真实 import 链假阳性均已由 fixture 驱动修复，完整 `/test` 与最终 `/review` 已通过。本任务按编排者要求不合入 `main`，最终台账提交可作为下一批基线。
 
 ### 实际变更
 
@@ -218,7 +220,7 @@
 
 > 编排者明确要求本修复链不合入 `main`，因此本节当前不适用；不预填集成提交、合并时间或 main 验证。
 
-- 最终状态：未合并，完整复测通过，待重新审查
+- 最终状态：未合并，第二批审查通过，可作为下一批基线
 - 合入分支：不适用
 - 最终集成提交：不适用
 - Pull Request：不适用

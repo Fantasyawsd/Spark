@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import '../../../core/diagnostics/diagnostics.dart';
+import '../domain/paper_comment.dart';
 import '../domain/paper_comment_repository.dart';
 
 enum PaperCommentSort { newest, hottest }
@@ -12,8 +13,8 @@ class PaperCommentController extends ChangeNotifier {
       : _repository = repository;
 
   final PaperCommentRepository? _repository;
-  final Map<String, List<PaperCommentRecord>> _commentsByPaper = {};
-  final Map<String, List<PaperCommentRecord>> _committedCommentsByPaper = {};
+  final Map<String, List<PaperComment>> _commentsByPaper = {};
+  final Map<String, List<PaperComment>> _committedCommentsByPaper = {};
   final Map<String, PaperCommentSort> _sortByPaper = {};
   final Map<String, PaperCommentSendStatus> _sendStatusByPaper = {};
   final Map<String, int> _revisionByPaper = {};
@@ -30,8 +31,8 @@ class PaperCommentController extends ChangeNotifier {
   bool isSending(String paperId) =>
       sendStatusFor(paperId) == PaperCommentSendStatus.sending;
 
-  List<PaperCommentRecord> commentsFor(String paperId) {
-    final comments = List<PaperCommentRecord>.of(
+  List<PaperComment> commentsFor(String paperId) {
+    final comments = List<PaperComment>.of(
       _commentsByPaper[paperId] ?? const [],
     );
     if (sortFor(paperId) == PaperCommentSort.hottest) {
@@ -131,7 +132,7 @@ class PaperCommentController extends ChangeNotifier {
     final comments = _commentsByPaper.putIfAbsent(paperId, () => []);
     comments.insert(
       0,
-      PaperCommentRecord(
+      PaperComment(
         id: 'local-${DateTime.now().microsecondsSinceEpoch}',
         paperId: paperId,
         name: 'Alex Chen',
@@ -160,7 +161,7 @@ class PaperCommentController extends ChangeNotifier {
     final index = comments.indexWhere((comment) => comment.id == commentId);
     if (index < 0) return;
     final current = comments[index];
-    comments[index] = PaperCommentRecord(
+    comments[index] = PaperComment(
       id: current.id,
       paperId: current.paperId,
       name: current.name,
@@ -264,7 +265,7 @@ class PaperCommentController extends ChangeNotifier {
     return operation.then((_) => saved);
   }
 
-  List<PaperCommentRecord> _rawCommentsFor(String paperId) =>
+  List<PaperComment> _rawCommentsFor(String paperId) =>
       List.unmodifiable(_commentsByPaper[paperId] ?? const []);
 
   static void _reportPersistenceFailure(

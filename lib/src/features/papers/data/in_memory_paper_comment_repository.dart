@@ -1,7 +1,8 @@
+import '../domain/paper_comment.dart';
 import '../domain/paper_comment_repository.dart';
 
 class InMemoryPaperCommentRepository implements PaperCommentRepository {
-  final Map<String, List<PaperCommentRecord>> _comments = {};
+  final Map<String, List<PaperComment>> _comments = {};
 
   @override
   Future<PaperCommentSnapshot> load(String paperId) async {
@@ -13,7 +14,7 @@ class InMemoryPaperCommentRepository implements PaperCommentRepository {
   }
 
   @override
-  Future<void> save(String paperId, List<PaperCommentRecord> comments) async {
+  Future<void> save(String paperId, List<PaperComment> comments) async {
     _comments[paperId] = List.of(comments);
   }
 }

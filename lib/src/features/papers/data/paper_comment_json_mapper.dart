@@ -1,4 +1,4 @@
-import '../domain/paper_comment_repository.dart';
+import 'paper_comment_record.dart';
 
 class PaperCommentJsonMapper {
   const PaperCommentJsonMapper._();

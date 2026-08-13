@@ -21,8 +21,9 @@ import 'package:spark/src/features/papers/presentation/widgets/paper_reader_view
 import 'package:spark/src/features/search/data/in_memory_paper_search_history_repository.dart';
 
 void main() {
-  testWidgets('paper title copies on tap while body remains selectable',
-      (tester) async {
+  testWidgets('paper title copies on tap while body remains selectable', (
+    tester,
+  ) async {
     await tester.binding.setSurfaceSize(const Size(378, 810));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     String? copiedText;
@@ -52,8 +53,9 @@ void main() {
     expect(find.byType(SelectableText), findsWidgets);
   });
 
-  testWidgets('paper metadata exposes the primary reading path',
-      (tester) async {
+  testWidgets('paper metadata exposes the primary reading path', (
+    tester,
+  ) async {
     await tester.binding.setSurfaceSize(const Size(378, 810));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     final linkService = _FakePaperLinkService();
@@ -91,8 +93,9 @@ void main() {
     expect(linkService.opened.single.toString(), contains('/pdf/2402.06734'));
   });
 
-  testWidgets('paper tabs animate content and actions keep shared state',
-      (tester) async {
+  testWidgets('paper tabs animate content and actions keep shared state', (
+    tester,
+  ) async {
     await tester.binding.setSurfaceSize(const Size(378, 810));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
@@ -128,8 +131,9 @@ void main() {
     expect(find.byIcon(Icons.bookmark_rounded), findsWidgets);
   });
 
-  testWidgets('each paper in the vertical feed starts on the original tab',
-      (tester) async {
+  testWidgets('each paper in the vertical feed starts on the original tab', (
+    tester,
+  ) async {
     await tester.binding.setSurfaceSize(const Size(378, 810));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
@@ -146,10 +150,7 @@ void main() {
     await tester.drag(tabs, const Offset(-520, 0));
     await tester.pumpAndSettle();
     await tester.tap(
-      find.descendant(
-        of: firstReader,
-        matching: find.text('相关论文'),
-      ),
+      find.descendant(of: firstReader, matching: find.text('相关论文')),
     );
     await tester.pumpAndSettle();
     expect(
@@ -202,8 +203,9 @@ void main() {
     );
   });
 
-  testWidgets('related paper opens a fullscreen detail and returns to feed',
-      (tester) async {
+  testWidgets('related paper opens a fullscreen detail and returns to feed', (
+    tester,
+  ) async {
     await tester.binding.setSurfaceSize(const Size(378, 810));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
@@ -221,9 +223,7 @@ void main() {
     await tester.tap(find.text('相关论文').first);
     await tester.pumpAndSettle();
 
-    final related = find.byKey(
-      const ValueKey('related-paper-2404.01356'),
-    );
+    final related = find.byKey(const ValueKey('related-paper-2404.01356'));
     expect(related, findsOneWidget);
     await tester.tap(related);
     await tester.pumpAndSettle();
@@ -250,9 +250,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('相关论文').first);
     await tester.pumpAndSettle();
-    await tester.tap(
-      find.byKey(const ValueKey('related-paper-2402.06734')),
-    );
+    await tester.tap(find.byKey(const ValueKey('related-paper-2402.06734')));
     await tester.pumpAndSettle();
     expect(
       find.byKey(const ValueKey('paper-detail-2402.06734')),
@@ -276,8 +274,9 @@ void main() {
     expect(find.byKey(const ValueKey('bottom-nav-0')), findsOneWidget);
   });
 
-  testWidgets('saved paper detail returns to profile without moving the feed',
-      (tester) async {
+  testWidgets('saved paper detail returns to profile without moving the feed', (
+    tester,
+  ) async {
     await tester.binding.setSurfaceSize(const Size(378, 810));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     final interactions = InMemoryPaperInteractionRepository(
@@ -329,41 +328,43 @@ void main() {
   });
 
   testWidgets(
-      'selected paper navigation refreshes while returning to papers only navigates',
-      (tester) async {
-    await tester.binding.setSurfaceSize(const Size(378, 810));
-    addTearDown(() => tester.binding.setSurfaceSize(null));
-    final catalog = _NavigationRefreshPaperCatalogRepository();
+    'selected paper navigation refreshes while returning to papers only navigates',
+    (tester) async {
+      await tester.binding.setSurfaceSize(const Size(378, 810));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      final catalog = _NavigationRefreshPaperCatalogRepository();
 
-    await tester.pumpWidget(
-      SparkApp(
-        showSplash: false,
-        dependencies: SparkDependencies.preview(
-          paperCatalogRepository: catalog,
+      await tester.pumpWidget(
+        SparkApp(
+          showSplash: false,
+          dependencies: SparkDependencies.preview(
+            paperCatalogRepository: catalog,
+          ),
         ),
-      ),
-    );
-    await tester.pumpAndSettle();
+      );
+      await tester.pumpAndSettle();
 
-    expect(catalog.queries, hasLength(1));
-    expect(catalog.queries.single.forceRefresh, isFalse);
+      expect(catalog.queries, hasLength(1));
+      expect(catalog.queries.single.forceRefresh, isFalse);
 
-    await tester.tap(find.byKey(const ValueKey('bottom-nav-0')));
-    await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('bottom-nav-0')));
+      await tester.pumpAndSettle();
 
-    expect(catalog.queries, hasLength(2));
-    expect(catalog.queries.last.forceRefresh, isTrue);
+      expect(catalog.queries, hasLength(2));
+      expect(catalog.queries.last.forceRefresh, isTrue);
 
-    await tester.tap(find.byKey(const ValueKey('bottom-nav-1')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const ValueKey('bottom-nav-0')));
-    await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('bottom-nav-1')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('bottom-nav-0')));
+      await tester.pumpAndSettle();
 
-    expect(catalog.queries, hasLength(2));
-  });
+      expect(catalog.queries, hasLength(2));
+    },
+  );
 
-  testWidgets('favorite tap uses default group and long press selects groups',
-      (tester) async {
+  testWidgets('favorite tap uses default group and long press selects groups', (
+    tester,
+  ) async {
     await tester.binding.setSurfaceSize(const Size(378, 810));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     final repository = InMemoryPaperInteractionRepository();
@@ -430,8 +431,9 @@ void main() {
     );
   });
 
-  testWidgets('read later and reading history appear in profile',
-      (tester) async {
+  testWidgets('read later and reading history appear in profile', (
+    tester,
+  ) async {
     await tester.binding.setSurfaceSize(const Size(378, 810));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     final repository = InMemoryPaperReadingRepository();
@@ -439,9 +441,7 @@ void main() {
     await tester.pumpWidget(
       SparkApp(
         showSplash: false,
-        dependencies: SparkDependencies.preview(
-          readingRepository: repository,
-        ),
+        dependencies: SparkDependencies.preview(readingRepository: repository),
       ),
     );
     await tester.pumpAndSettle();
@@ -492,8 +492,9 @@ void main() {
     );
   });
 
-  testWidgets('long Chinese interpretation can open the full reader',
-      (tester) async {
+  testWidgets('long Chinese interpretation can open the full reader', (
+    tester,
+  ) async {
     await tester.binding.setSurfaceSize(const Size(378, 810));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
@@ -524,8 +525,9 @@ void main() {
     expect(find.text('摘要'), findsOneWidget);
   });
 
-  testWidgets('translation action stays bottom-left while refreshing',
-      (tester) async {
+  testWidgets('translation action stays bottom-left while refreshing', (
+    tester,
+  ) async {
     await tester.binding.setSurfaceSize(const Size(378, 810));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
@@ -553,9 +555,7 @@ void main() {
     );
     expect(pagesBottom - actionBounds.center.dy, closeTo(18, 0.1));
 
-    await tester.tap(
-      find.byKey(const ValueKey('paper-translation-refresh')),
-    );
+    await tester.tap(find.byKey(const ValueKey('paper-translation-refresh')));
     await tester.pump();
 
     expect(find.text('停止'), findsOneWidget);
@@ -564,90 +564,93 @@ void main() {
     );
     expect(pagesBottom - actionBounds.center.dy, closeTo(18, 0.1));
 
-    await tester.tap(
-      find.byKey(const ValueKey('paper-translation-refresh')),
-    );
+    await tester.tap(find.byKey(const ValueKey('paper-translation-refresh')));
     await tester.pump();
     expect(find.text('停止'), findsNothing);
     await tester.pump(const Duration(seconds: 1));
   });
 
-  testWidgets('abstract expansion appears only when text exceeds its viewport',
-      (tester) async {
-    await tester.binding.setSurfaceSize(const Size(378, 810));
-    addTearDown(() => tester.binding.setSurfaceSize(null));
+  testWidgets(
+    'abstract expansion appears only when text exceeds its viewport',
+    (tester) async {
+      await tester.binding.setSurfaceSize(const Size(378, 810));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
 
-    final longController = PaperController(
-      _TestPaperRepository(_testPaper(List.filled(120, 'LoRA').join(' '))),
-    );
-    final longComments = PaperCommentController();
-    addTearDown(longController.dispose);
-    addTearDown(longComments.dispose);
-    await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: PapersScreen(
-            readingController: PaperReadingController(),
-            feedController: longController.feed,
-            interactionController: longController.interactions,
-            commentController: longComments,
-            aiDiscussionBuilder: _paperAiDiscussionBuilder(
-              const _FakeChatAiService(),
+      final longController = PaperController(
+        _TestPaperRepository(_testPaper(List.filled(120, 'LoRA').join(' '))),
+      );
+      final longComments = PaperCommentController();
+      addTearDown(longController.dispose);
+      addTearDown(longComments.dispose);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: PapersScreen(
+              readingController: PaperReadingController(),
+              feedController: longController.feed,
+              interactionController: longController.interactions,
+              commentController: longComments,
+              aiDiscussionBuilder: _paperAiDiscussionBuilder(
+                const _FakeChatAiService(),
+              ),
+              keywordService: const _FakeChatAiService(),
+              translationServiceFactory:
+                  const _FakePaperTranslationServiceFactory(),
             ),
-            keywordService: const _FakeChatAiService(),
-            translationServiceFactory:
-                const _FakePaperTranslationServiceFactory(),
           ),
         ),
-      ),
-    );
-    await tester.pump();
+      );
+      await tester.pump();
 
-    expect(find.text('展开全文'), findsOneWidget);
-    await tester.tap(find.text('展开全文'));
-    await tester.pumpAndSettle();
-    expect(find.byKey(const ValueKey('paper-full-reader')), findsOneWidget);
-    expect(find.text('Abstract'), findsOneWidget);
+      expect(find.text('展开全文'), findsOneWidget);
+      await tester.tap(find.text('展开全文'));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('paper-full-reader')), findsOneWidget);
+      expect(find.text('Abstract'), findsOneWidget);
 
-    final shortController = PaperController(
-      _TestPaperRepository(_testPaper('A short abstract.')),
-    );
-    final shortComments = PaperCommentController();
-    addTearDown(shortController.dispose);
-    addTearDown(shortComments.dispose);
-    await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: PapersScreen(
-            readingController: PaperReadingController(),
-            feedController: shortController.feed,
-            interactionController: shortController.interactions,
-            commentController: shortComments,
-            aiDiscussionBuilder: _paperAiDiscussionBuilder(
-              const _FakeChatAiService(),
+      final shortController = PaperController(
+        _TestPaperRepository(_testPaper('A short abstract.')),
+      );
+      final shortComments = PaperCommentController();
+      addTearDown(shortController.dispose);
+      addTearDown(shortComments.dispose);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: PapersScreen(
+              readingController: PaperReadingController(),
+              feedController: shortController.feed,
+              interactionController: shortController.interactions,
+              commentController: shortComments,
+              aiDiscussionBuilder: _paperAiDiscussionBuilder(
+                const _FakeChatAiService(),
+              ),
+              keywordService: const _FakeChatAiService(),
+              translationServiceFactory:
+                  const _FakePaperTranslationServiceFactory(),
             ),
-            keywordService: const _FakeChatAiService(),
-            translationServiceFactory:
-                const _FakePaperTranslationServiceFactory(),
           ),
         ),
-      ),
-    );
-    await tester.pump();
+      );
+      await tester.pump();
 
-    expect(find.text('展开全文'), findsNothing);
-  });
+      expect(find.text('展开全文'), findsNothing);
+    },
+  );
 
-  testWidgets('paper layout switches between fullscreen and grid',
-      (tester) async {
+  testWidgets('paper layout switches between fullscreen and grid', (
+    tester,
+  ) async {
     await tester.binding.setSurfaceSize(const Size(378, 810));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
     await tester.pumpWidget(const SparkApp(showSplash: false));
     await tester.pump();
 
-    expect(tester.getSize(find.byKey(const ValueKey('paper-feed'))).height,
-        greaterThan(700));
+    expect(
+      tester.getSize(find.byKey(const ValueKey('paper-feed'))).height,
+      greaterThan(700),
+    );
     expect(find.textContaining('被引'), findsNothing);
     expect(find.text('摘要'), findsWidgets);
 
@@ -706,8 +709,9 @@ void main() {
     final halfHeight = tester
         .getSize(find.byKey(const ValueKey('paper-comments-sheet')))
         .height;
-    final contentSize =
-        tester.getSize(find.byKey(const ValueKey('paper-sheet-pages')));
+    final contentSize = tester.getSize(
+      find.byKey(const ValueKey('paper-sheet-pages')),
+    );
     expect(halfHeight, inInclusiveRange(350, 450));
 
     await tester.drag(find.byType(SparkSheetHandle), const Offset(0, -220));
@@ -746,8 +750,9 @@ void main() {
     expect(find.byKey(const ValueKey('paper-ai-input')), findsOneWidget);
   });
 
-  testWidgets('comments and local AI messages complete their send flow',
-      (tester) async {
+  testWidgets('comments and local AI messages complete their send flow', (
+    tester,
+  ) async {
     await tester.binding.setSurfaceSize(const Size(378, 810));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
@@ -792,8 +797,9 @@ void main() {
     expect(find.textContaining('DeepSeek Markdown'), findsOneWidget);
   });
 
-  testWidgets('failed comment restores only the comment composer',
-      (tester) async {
+  testWidgets('failed comment restores only the comment composer', (
+    tester,
+  ) async {
     await tester.binding.setSurfaceSize(const Size(378, 810));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     final repository = _ControlledCommentWidgetRepository();
@@ -844,8 +850,9 @@ void main() {
     expect(find.text('需要重试的评论'), findsOneWidget);
   });
 
-  testWidgets('interaction failure is reported after papers reactivate',
-      (tester) async {
+  testWidgets('interaction failure is reported after papers reactivate', (
+    tester,
+  ) async {
     await tester.binding.setSurfaceSize(const Size(378, 810));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     final repository = _ControlledInteractionWidgetRepository();
@@ -875,8 +882,9 @@ void main() {
     expect(find.text('保存互动失败'), findsOneWidget);
   });
 
-  testWidgets('paper action count updates after a local comment is sent',
-      (tester) async {
+  testWidgets('paper action count updates after a local comment is sent', (
+    tester,
+  ) async {
     await tester.binding.setSurfaceSize(const Size(378, 810));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     final repository = InMemoryPaperCommentRepository();
@@ -884,16 +892,16 @@ void main() {
     await tester.pumpWidget(
       SparkApp(
         showSplash: false,
-        dependencies: SparkDependencies.preview(
-          commentRepository: repository,
-        ),
+        dependencies: SparkDependencies.preview(commentRepository: repository),
       ),
     );
     await tester.pumpAndSettle();
 
     final action = find.byKey(const ValueKey('paper-action-comment'));
     expect(
-        find.descendant(of: action, matching: find.text('0')), findsOneWidget);
+      find.descendant(of: action, matching: find.text('0')),
+      findsOneWidget,
+    );
 
     await tester.tap(action);
     await tester.pumpAndSettle();
@@ -907,7 +915,9 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(
-        find.descendant(of: action, matching: find.text('1')), findsOneWidget);
+      find.descendant(of: action, matching: find.text('1')),
+      findsOneWidget,
+    );
   });
 
   testWidgets('comments, replies and likes persist per paper', (tester) async {
@@ -980,8 +990,9 @@ void main() {
     expect(find.text('我的本地评论'), findsNothing);
   });
 
-  testWidgets('sharing a paper calls the service and updates its count',
-      (tester) async {
+  testWidgets('sharing a paper calls the service and updates its count', (
+    tester,
+  ) async {
     await tester.binding.setSurfaceSize(const Size(378, 810));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     final feed = PaperFeedController(const ArxivSeedRepository());
@@ -1022,8 +1033,9 @@ void main() {
     expect(find.text('分享内容已复制'), findsOneWidget);
   });
 
-  testWidgets('paper grid loads the next page near the scroll boundary',
-      (tester) async {
+  testWidgets('paper grid loads the next page near the scroll boundary', (
+    tester,
+  ) async {
     await tester.binding.setSurfaceSize(const Size(378, 810));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     final catalog = _GridPagedPaperCatalogRepository();
@@ -1073,39 +1085,52 @@ void main() {
     expect(feed.papers, hasLength(40));
   });
 
-  testWidgets('channel bar keeps fixed channels and opens the channel manager',
-      (tester) async {
-    await tester.binding.setSurfaceSize(const Size(378, 810));
-    addTearDown(() => tester.binding.setSurfaceSize(null));
+  testWidgets(
+    'channel bar keeps fixed channels and opens the channel manager',
+    (tester) async {
+      await tester.binding.setSurfaceSize(const Size(378, 810));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
 
-    await tester.pumpWidget(const SparkApp(showSplash: false));
-    await tester.pump();
+      await tester.pumpWidget(const SparkApp(showSplash: false));
+      await tester.pump();
 
-    expect(find.text('推荐'), findsOneWidget);
-    expect(find.byKey(const ValueKey('paper-channel-manage')), findsOneWidget);
-    await tester.tap(find.byKey(const ValueKey('paper-channel-1')));
-    await tester.pumpAndSettle();
-    expect(find.text('还没有关注作者'), findsOneWidget);
-    expect(find.byKey(const ValueKey('paper-channel-manage')), findsOneWidget);
-    await tester.tap(find.byKey(const ValueKey('paper-channel-0')));
-    await tester.pumpAndSettle();
+      expect(find.text('推荐'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('paper-channel-manage')),
+        findsOneWidget,
+      );
+      await tester.tap(find.byKey(const ValueKey('paper-channel-1')));
+      await tester.pumpAndSettle();
+      expect(find.text('还没有关注作者'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('paper-channel-manage')),
+        findsOneWidget,
+      );
+      await tester.tap(find.byKey(const ValueKey('paper-channel-0')));
+      await tester.pumpAndSettle();
 
-    await tester.tap(find.byKey(const ValueKey('paper-channel-manage')));
-    await tester.pumpAndSettle();
-    expect(find.text('频道管理'), findsOneWidget);
-    await tester.tap(find.byKey(const ValueKey('paper-channel-subject-cs.AI')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const ValueKey('paper-channel-manager-close')));
-    await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('paper-channel-manage')));
+      await tester.pumpAndSettle();
+      expect(find.text('频道管理'), findsOneWidget);
+      await tester.tap(
+        find.byKey(const ValueKey('paper-channel-subject-cs.AI')),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(const ValueKey('paper-channel-manager-close')),
+      );
+      await tester.pumpAndSettle();
 
-    expect(find.text('人工智能'), findsOneWidget);
-    await tester.tap(find.byKey(const ValueKey('paper-channel-3')));
-    await tester.pumpAndSettle();
-    expect(find.byKey(const ValueKey('paper-feed')), findsOneWidget);
-  });
+      expect(find.text('人工智能'), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey('paper-channel-3')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('paper-feed')), findsOneWidget);
+    },
+  );
 
-  testWidgets('search detail returns to search and keeps its history',
-      (tester) async {
+  testWidgets('search detail returns to search and keeps its history', (
+    tester,
+  ) async {
     await tester.binding.setSurfaceSize(const Size(378, 810));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     final historyRepository = InMemoryPaperSearchHistoryRepository();
@@ -1162,8 +1187,9 @@ void main() {
     expect(find.text('Milmer'), findsOneWidget);
   });
 
-  testWidgets('paper AI sessions appear in the global chat entry',
-      (tester) async {
+  testWidgets('paper AI sessions appear in the global chat entry', (
+    tester,
+  ) async {
     await tester.binding.setSurfaceSize(const Size(378, 810));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     final repository = InMemoryChatSessionRepository();
@@ -1191,9 +1217,7 @@ void main() {
     expect(find.text('Spark 主聊天'), findsOneWidget);
     expect(find.text(paper.title), findsOneWidget);
 
-    await tester.tap(
-      find.byKey(ValueKey('ai-session-${paper.id}')),
-    );
+    await tester.tap(find.byKey(ValueKey('ai-session-${paper.id}')));
     await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey('global-paper-ai-chat')), findsOneWidget);
   });
@@ -1250,10 +1274,7 @@ void main() {
     final sessionCard = find.byKey(ValueKey('ai-session-${paper.id}'));
     await tester.drag(sessionCard, const Offset(-180, 0));
     await tester.pumpAndSettle();
-    expect(
-      find.byKey(ValueKey('ai-session-pin-${paper.id}')),
-      findsOneWidget,
-    );
+    expect(find.byKey(ValueKey('ai-session-pin-${paper.id}')), findsOneWidget);
     expect(
       find.byKey(ValueKey('ai-session-delete-${paper.id}')),
       findsOneWidget,
@@ -1275,9 +1296,7 @@ void main() {
     await tester.tap(find.byKey(ValueKey('ai-session-delete-${paper.id}')));
     await tester.pumpAndSettle();
     expect(find.text('删除对话？'), findsOneWidget);
-    await tester.tap(
-      find.byKey(const ValueKey('confirm-delete-ai-session')),
-    );
+    await tester.tap(find.byKey(const ValueKey('confirm-delete-ai-session')));
     await tester.pumpAndSettle();
 
     expect(await repository.listSessions(), isEmpty);
@@ -1360,10 +1379,7 @@ class _ControlledCommentWidgetRepository implements PaperCommentRepository {
       const PaperCommentSnapshot(comments: [], hasStoredValue: false);
 
   @override
-  Future<void> save(
-    String paperId,
-    List<PaperCommentRecord> comments,
-  ) async {
+  Future<void> save(String paperId, List<PaperComment> comments) async {
     await _saveCompleter.future;
     throw const PaperCommentPersistenceException('保存评论失败');
   }
@@ -1442,17 +1458,12 @@ class _FakePaperTranslationServiceFactory
   final Duration delay;
 
   @override
-  PaperTranslationService create() => _FakePaperTranslationService(
-        content,
-        delay: delay,
-      );
+  PaperTranslationService create() =>
+      _FakePaperTranslationService(content, delay: delay);
 }
 
 class _FakePaperTranslationService implements PaperTranslationService {
-  const _FakePaperTranslationService(
-    this.content, {
-    required this.delay,
-  });
+  const _FakePaperTranslationService(this.content, {required this.delay});
 
   final String content;
   final Duration delay;

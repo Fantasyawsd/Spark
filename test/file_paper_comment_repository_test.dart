@@ -27,7 +27,7 @@ void main() {
     expect(empty.hasStoredValue, isFalse);
 
     await first.save('paper-1', const [
-      PaperCommentRecord(
+      PaperComment(
         id: 'comment-1',
         paperId: 'paper-1',
         name: 'Alex Chen',
@@ -65,19 +65,21 @@ void main() {
   });
 
   test('quarantines comments with invalid record fields', () async {
-    await file.writeAsString(jsonEncode({
-      'paper-1': [
-        {
-          'id': 'comment-1',
-          'paperId': 'paper-1',
-          'name': 'Alex Chen',
-          'initials': 'AC',
-          'time': '刚刚',
-          'body': 'invalid likes',
-          'likes': 'three',
-        },
-      ],
-    }));
+    await file.writeAsString(
+      jsonEncode({
+        'paper-1': [
+          {
+            'id': 'comment-1',
+            'paperId': 'paper-1',
+            'name': 'Alex Chen',
+            'initials': 'AC',
+            'time': '刚刚',
+            'body': 'invalid likes',
+            'likes': 'three',
+          },
+        ],
+      }),
+    );
     final repository = FilePaperCommentRepository(
       store: LocalJsonStore(fileName: 'unused.json', file: file),
     );
@@ -89,10 +91,9 @@ void main() {
 
     expect(await file.exists(), isFalse);
     expect(
-      directory
-          .listSync()
-          .whereType<File>()
-          .where((item) => item.path.contains('.corrupt.')),
+      directory.listSync().whereType<File>().where(
+            (item) => item.path.contains('.corrupt.'),
+          ),
       hasLength(1),
     );
   });

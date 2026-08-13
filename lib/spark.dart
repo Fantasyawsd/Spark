@@ -38,6 +38,7 @@ export 'src/features/papers/domain/favorite_group.dart';
 export 'src/features/papers/domain/paper_channel.dart';
 export 'src/features/papers/domain/paper_channel_preference_repository.dart';
 export 'src/features/papers/domain/paper_comment_repository.dart';
+export 'src/features/papers/domain/paper_comment.dart';
 export 'src/features/papers/domain/paper_interaction_repository.dart';
 export 'src/features/papers/domain/paper_keyword_repository.dart';
 export 'src/features/papers/domain/paper_link_service.dart';

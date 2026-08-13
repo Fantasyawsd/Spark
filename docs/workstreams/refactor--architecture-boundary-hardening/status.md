@@ -10,8 +10,8 @@
 - Worktree：`C:\Users\Fantasy\Desktop\Spark-worktrees\agent-2`
 - 基线提交：`e61d320939fba18b58b489ed99d140b4c84e57aa`
 - 负责人：Codex（Fantasy 编排）
-- 状态：开发中（审查阻断项已修复，待重新 `/test`）
-- 最近更新：`2026-08-13 15:13`（Asia/Shanghai）
+- 状态：待重新审查（审查阻断修复后的 `/test` 已通过）
+- 最近更新：`2026-08-13 15:19`（Asia/Shanghai）
 
 ## 目标
 
@@ -33,7 +33,7 @@
 - [x] `core/widgets` 的业务复用检查以真实 feature 可达性为依据，不把测试或 barrel export 误算为业务复用；少于两个独立业务模块使用的组件会失败或具有明确、可审查的基础设施例外。
 - [x] 报告指出的生产零调用 `CherryButton` 被删除，`ProfileAvatar` 与 `TopicChip` 回归各自业务模块；新守卫发现的其他同类现存问题须修正或记录符合规范的例外理由。
 - [x] 组件移动后的导入、公开入口与测试同步更新，用户可观察行为不变。
-- [ ] 架构定向测试、相关 Widget 测试、Dart 格式、`flutter analyze`、`flutter test` 和 `git diff --check` 通过。
+- [x] 架构定向测试、相关 Widget 测试、Dart 格式、`flutter analyze`、`flutter test` 和 `git diff --check` 通过。
 
 ## 写入范围
 
@@ -79,8 +79,9 @@
 - 已完成：`/review` 审查批准基线 `e61d320...e3a8ac6` 的 5 个提交、19 个文件和全部验收标准，发现 1 个 core 复用守卫假阴性。
 - 已完成：新增两个 feature barrel 只 export 同一 core widget 的失败 fixture；旧实现返回 0 违规，新实现正确报告 `features: none`。
 - 已完成：源码图暴露 typed imports；core 复用图只将 feature import 计为使用，core import/export 均可继续内部可达性追踪；形成 `4743ded` 检查点。
-- 正在进行：审查阻断项已修复，等待重新执行 `/test` 完整门禁。
-- 下一步：重新触发 `/test`，验证最终文件状态后再进行 `/review`。
+- 已完成：审查阻断修复后的 `/test` 完整门禁通过；20 个 Dart 文件格式、静态分析、462 项 Flutter 测试、55 项服务端测试、Python 编译与 Git 检查均成功。
+- 正在进行：代码与完整验证证据已就绪，等待重新执行只读 `/review`。
+- 下一步：重新触发 `/review`，复核 `e61d320` 至当前任务 tip，重点确认 feature barrel 假复用阻断项已闭环。
 - 阻塞项：无。
 
 ## 决策记录
@@ -122,6 +123,14 @@
 | `flutter test test/architecture_test_support_test.dart test/architecture_boundaries_test.dart`（审查修复后） | 22 项全部通过；feature barrel export 报告 `features: none`，core 内部包装器仍可正确透传两个真实 feature import | 2026-08-13 |
 | `.\tool\verify_changed_dart_format.ps1`（审查修复后） | 通过；20 个任务相关 Dart 文件均无需格式化 | 2026-08-13 |
 | `flutter analyze`（审查修复后） | `No issues found` | 2026-08-13 |
+| `/test` `.\tool\verify_changed_dart_format.ps1`（审查修复后完整复测） | 通过；20 个任务相关 Dart 文件，0 个需格式化 | 2026-08-13 |
+| `/test` `flutter analyze`（审查修复后完整复测） | `No issues found` | 2026-08-13 |
+| `/test` `flutter test`（审查修复后完整复测） | 462 项全部通过，退出码 0 | 2026-08-13 |
+| `/test` `$env:PYTHONPATH=(Resolve-Path server).Path; python -m unittest discover -s server/tests -v`（审查修复后完整复测） | 55 项服务端测试全部通过 | 2026-08-13 |
+| `/test` `python -m compileall -q server`（审查修复后完整复测） | 通过 | 2026-08-13 |
+| `/test` Git 一致性检查（审查修复后完整复测） | `git diff --check`、`git diff --cached --check` 通过；工作树与暂存区为空；`main` 仍为 `5578a77` | 2026-08-13 |
+| `/test` 目标构建（审查修复后完整复测） | 按阶段规范不运行；本修复链明确不合入 `main`，不会进入常规 `/finish` 构建门禁 | 2026-08-13 |
+| `/test` 人工验收（审查修复后完整复测） | 按编排者明确指示不运行；以自动化回归与只读审查作为验收证据 | 2026-08-13 |
 
 ## 审查结论
 
@@ -150,7 +159,7 @@
 
 ### 交付摘要
 
-同 feature 分层、domain 纯净度、循环检测、core 真实复用和现存组件归属问题均已修复；首轮完整 `/test` 通过，`/review` 阻断项已由 `4743ded` 修复，待重新 `/test` 与 `/review` 后交付。本任务按编排者要求不合入 `main`。
+同 feature 分层、domain 纯净度、循环检测、core 真实复用和现存组件归属问题均已修复；`/review` 阻断项已由 `4743ded` 修复，审查修复后的第二次完整 `/test` 已通过，待重新 `/review` 后交付。本任务按编排者要求不合入 `main`。
 
 ### 实际变更
 
@@ -183,7 +192,7 @@
 
 > 编排者明确要求本修复链不合入 `main`，因此本节当前不适用；不预填集成提交、合并时间或 main 验证。
 
-- 最终状态：未合并，修复链开发中
+- 最终状态：未合并，待重新审查
 - 合入分支：不适用
 - 最终集成提交：不适用
 - Pull Request：不适用

@@ -9,7 +9,7 @@
 - 基线提交：`4474bcffd8a1e9c49baba0be9bfe1b7398d35c5c`
 - 负责人：Fantasy（编排者）
 - 状态：开发中
-- 最近更新：2026-08-13 18:07
+- 最近更新：2026-08-13 18:16
 
 ## 目标
 
@@ -30,9 +30,9 @@
 - [x] Flutter framework、platform/async 顶层未处理错误进入同一诊断边界，并保持 Flutter 默认错误呈现与进程级错误传播契约。
 - [x] `lib/` 内现有 25 处匿名 `catch (_)` 与 16 处无绑定变量的 `on Object` 完成逐项分类；另修复报告漏检的 5 处无绑定变量 `on Exception`：最终消费的意外异常被报告，取消等预期控制流不记录，转换后继续上抛路径保留原 stack 且不重复记录。
 - [x] Feed、搜索、离线仓储、缓存、本地 JSON、PDF、聊天持久化与展示操作的既有 fallback/错误提示不变，并由定向回归覆盖诊断事件和业务结果。
-- [ ] 服务端使用 Python 标准 logging 在 HTTP/CLI/同步边界记录安全的操作事件与 stack trace；已写入同步报告或拒绝计数的预期数据问题不泄露原始记录。
-- [ ] Paper API 未预期异常返回固定 `internal_error` 响应，不再向客户端暴露底层异常文本；400 参数错误契约保持不变。
-- [ ] 客户端与服务端隐私回归证明密钥、提示词、论文/聊天内容、请求查询和原始数据不会进入捕获的诊断文本。
+- [x] 服务端使用 Python 标准 logging 在 HTTP/CLI/同步边界记录安全的操作事件与 stack trace；已写入同步报告或拒绝计数的预期数据问题不重复记录原始记录。
+- [x] Paper API 未预期分发及响应序列化异常返回固定 `internal_error` 响应，不再向客户端暴露底层异常文本；400 参数错误契约保持不变。
+- [x] 客户端与服务端隐私回归证明密钥、提示词、论文/聊天内容、请求查询、CLI 参数和原始数据不会进入捕获的诊断文本。
 - [ ] 静态门禁禁止新增匿名 broad catch；Dart 格式检查、`flutter analyze`、Flutter 全量测试、服务端全量测试、Python 编译和 `git diff --check` 通过。
 
 ## 写入范围
@@ -65,7 +65,7 @@
 2. 第二轮：扩展 `runtime_diagnostics.dart` 固定 operation；改造 `paper_feed_controller.dart`、`paper_search_controller.dart`、`offline_first_paper_catalog_repository.dart`、`paper_api_catalog_repository.dart` 和 `local_json_store.dart`，并在四个既有测试文件中同时断言诊断事件与原 fallback。
 3. 第三轮：扩展 PDF/Chat/外链固定 operation；改造 PDF provider/service、Chat conversation/session controller、DeepSeek SSE request、Reader、Sources panel 与 Chat app bar，并在对应定向测试中区分用户取消和取消清理失败。
 4. 第四轮：扩展本地数据、评论、频道偏好、交互、关键词、阅读和翻译固定 operation；改造 7 个状态控制器的读取、保存、清理和生成失败边界，在对应 7 个测试文件中同时断言诊断事件与原 fallback；在 `architecture_boundaries_test.dart` 增加匿名 broad catch 静态门禁。
-5. 第五轮：增加服务端标准 logging 配置与 HTTP/CLI/同步边界事件，固定 500 响应并避免记录数据型动态值。
+5. 第五轮：新增 `server/spark_papers/diagnostics.py`，以固定 operation、异常类型和不含异常文本/局部变量的文件名-行号-函数 stack 使用 Python 标准 logging；HTTP 防御边界固定 500 响应，CLI 按固定子命令记录未预期失败；`SourceError`、逐记录拒绝和导入失败状态保持原报告/计数及继续传播语义，不重复日志；在 API、CLI、pipeline 与独立诊断测试中覆盖事件、stack、400/500 和隐私。
 6. 实现完成后补齐跨模块隐私回归，执行 `/test` 全量门禁并进入 `/review` 只读审查。
 
 ## 当前进度
@@ -83,7 +83,10 @@
 - 已完成：第四轮为本地数据、评论、频道偏好、交互、关键词、ChatPaper 上下文、阅读和翻译增加固定 operation；15 处无绑定 `on Object` 与报告漏检的 5 处无绑定 `on Exception` 已全部归零。
 - 已完成：DeepSeek 普通/联网服务的异常转换路径使用原 stack 继续上抛，由最终会话控制器统一记录；关键词与翻译取消保持零诊断事件。
 - 已完成：架构测试新增生产 Dart 代码 broad-catch 门禁，同时禁止匿名 catch 变量及无绑定 `on Object`/`on Exception`。
-- 下一步：第五轮增加服务端标准 logging、HTTP/CLI/同步边界诊断和固定 500 响应，并覆盖服务端隐私回归。
+- 已完成：第五轮新增仅接受固定枚举 operation 的服务端诊断模块；日志只含 operation、异常运行时类型及最多 20 帧的文件名/行号/函数 stack，不持有异常对象且不调用异常字符串化。
+- 已完成：Paper API 分发和 JSON 序列化异常统一记录一次并返回固定 500；400 仍保留原 `invalid_request` 契约，默认 HTTP access log 继续关闭以免泄露查询。
+- 已完成：CLI 按五个固定子命令记录最终未预期异常并固定退出 1；显式 `SystemExit`、`KeyboardInterrupt`、`SourceError` 报告、分页拒绝和数据集坏行计数不重复记录。
+- 下一步：第六轮补齐跨模块隐私与事件去重总回归，然后执行 `/test` 全量门禁和 `/review` 只读审查。
 - 阻塞项：无。
 
 ## 决策记录
@@ -123,6 +126,12 @@
 | 第四轮 `flutter analyze` | 通过；No issues found | 2026-08-13 |
 | 第四轮 `.\tool\verify_changed_dart_format.ps1` | 通过；跨串联基线识别的 92 个 Dart 文件均无需格式化 | 2026-08-13 |
 | 第四轮 `git diff --check` | 通过；实现与测试提交无空白错误 | 2026-08-13 |
+| 第五轮服务端定向测试 | 通过；diagnostics、API、CLI、pipeline、dataset 共 35 项，覆盖固定 operation、脱敏 stack、400/500、CLI 退出和预期同步零日志 | 2026-08-13 |
+| `python -m unittest discover -s server/tests` | 通过；服务端全量 60 项 | 2026-08-13 |
+| `python -m compileall -q server/spark_papers server/tests` | 通过；生产包与测试均可编译 | 2026-08-13 |
+| 第五轮 `flutter analyze` | 通过；No issues found | 2026-08-13 |
+| 第五轮 `.\tool\verify_changed_dart_format.ps1` | 通过；跨串联基线识别的 92 个 Dart 文件均无需格式化 | 2026-08-13 |
+| 第五轮 `git diff --check` | 通过；实现与测试提交无空白错误 | 2026-08-13 |
 
 ## 审查结论
 
@@ -142,6 +151,7 @@
 | `e60bf30` | `修复（论文目录）：记录降级链路异常` | 第二轮 `/develop` | Feed/Search/Paper API/arXiv/cache 分层事件与 LocalJsonStack 保真；92 项定向测试、62 文件格式与 analyze 通过 |
 | `5cb07d9` | `修复（诊断）：覆盖 PDF 与聊天异常边界` | 第三轮 `/develop` | PDF/Chat/展示层最终消费异常可诊断；71 项定向测试、75 文件格式、analyze 与 diff check 通过 |
 | `5889fa7` | `修复（诊断）：覆盖本地状态异常边界` | 第四轮 `/develop` | 客户端 broad catch 归零并加入静态门禁；58 项状态/架构测试、13 项 DeepSeek 回归、92 文件格式与 analyze 通过 |
+| `d3f52ca` | `修复（服务端诊断）：脱敏异常日志与固定 500 响应` | 第五轮 `/develop` | HTTP/CLI 安全诊断、固定 500 与预期同步零日志；35 项定向、60 项服务端全量、Python 编译、Flutter analyze 与格式通过 |
 
 ## 交付准备（合并前收集）
 

@@ -8,6 +8,7 @@ import '../domain/chat_ai_service.dart';
 import '../domain/chat_message.dart';
 import '../domain/chat_session_repository.dart';
 import '../domain/chat_session_settings.dart';
+import 'chat_conversation_settings_state.dart';
 import 'chat_prompt_assembler.dart';
 import 'chat_conversation_write_queue.dart';
 
@@ -20,17 +21,22 @@ class ChatConversationController extends ChangeNotifier {
     ChatAiService? webSearchService,
     ChatSessionRepository? sessionRepository,
     ChatSessionSettingsRepository? settingsRepository,
-  })  : _service = service,
-        _webSearchService = webSearchService,
-        _sessionRepository = sessionRepository,
-        _settingsRepository = settingsRepository;
+  }) : _service = service,
+       _webSearchService = webSearchService,
+       _sessionRepository = sessionRepository {
+    _settingsState = ChatConversationSettingsState(
+      contextId: context.id,
+      repository: settingsRepository,
+      isDisposed: () => _disposed,
+      notify: _notify,
+    );
+  }
   ChatContext context;
   final ChatAiService _service;
   final ChatAiService? _webSearchService;
   final ChatSessionRepository? _sessionRepository;
-  final ChatSessionSettingsRepository? _settingsRepository;
   final List<ChatMessage> _messages = [];
-  ChatSessionSettings _settings = ChatSessionSettings.empty;
+  late final ChatConversationSettingsState _settingsState;
 
   bool _sending = false;
   bool _loading = false;
@@ -42,7 +48,6 @@ class ChatConversationController extends ChangeNotifier {
   String? _requestError;
   String? _persistenceError;
   int _requestVersion = 0;
-  int _settingsRevision = 0;
   int _writeVersion = 0;
   int? _activeAssistantIndex;
   ChatAiService? _activeService;
@@ -50,17 +55,18 @@ class ChatConversationController extends ChangeNotifier {
   Future<void>? _initialization;
   late final ChatConversationWriteQueue _writeQueue =
       ChatConversationWriteQueue(
-    onQueueError: reportChatConversationWriteQueueError,
-  );
+        onQueueError: reportChatConversationWriteQueueError,
+      );
   Timer? _streamNotifyTimer;
 
   List<ChatMessage> get messages => List.unmodifiable(_messages);
   bool get sending => _sending;
   bool get loading => _loading;
-  ChatSessionSettings get settings => _settings;
+  ChatSessionSettings get settings => _settingsState.value;
   ChatContext get effectiveContext =>
-      ChatPromptAssembler.applySettings(context, _settings);
-  String? get error => _requestError ?? _persistenceError;
+      ChatPromptAssembler.applySettings(context, _settingsState.value);
+  String? get error =>
+      _requestError ?? _persistenceError ?? _settingsState.persistenceError;
   bool get canRetry =>
       !_sending &&
       _messages.isNotEmpty &&
@@ -106,21 +112,7 @@ class ChatConversationController extends ChangeNotifier {
   }
 
   Future<void> updateSettings(ChatSessionSettings settings) async {
-    _settingsRevision++;
-    _settings = settings;
-    _notify();
-    final repository = _settingsRepository;
-    if (repository == null) return;
-    try {
-      await repository.save(context.id, settings);
-    } on ChatSessionSettingsPersistenceException catch (error, stackTrace) {
-      _reportPersistenceFailure(
-        SparkDiagnosticOperation.chatConversationSettingsSave,
-        error,
-        stackTrace,
-      );
-      if (!_disposed) _persistenceError = error.message;
-    }
+    await _settingsState.update(settings);
   }
 
   Future<void> initialize() {
@@ -137,7 +129,6 @@ class ChatConversationController extends ChangeNotifier {
   }
 
   Future<void> _initialize() async {
-    final settingsRevision = _settingsRevision;
     _loading = true;
     _notify();
     try {
@@ -161,24 +152,10 @@ class ChatConversationController extends ChangeNotifier {
         }
       }
 
-      final settingsRepository = _settingsRepository;
-      if (settingsRepository != null) {
-        final storedSettings = await settingsRepository.load(context.id);
-        if (_disposed) return;
-        if (settingsRevision == _settingsRevision) {
-          _settings = storedSettings;
-        }
-      }
+      await _settingsState.load();
     } on ChatSessionPersistenceException catch (error, stackTrace) {
       _reportPersistenceFailure(
         SparkDiagnosticOperation.chatConversationSessionLoad,
-        error,
-        stackTrace,
-      );
-      if (!_disposed) _persistenceError = error.message;
-    } on ChatSessionSettingsPersistenceException catch (error, stackTrace) {
-      _reportPersistenceFailure(
-        SparkDiagnosticOperation.chatConversationSettingsLoad,
         error,
         stackTrace,
       );
@@ -234,11 +211,12 @@ class ChatConversationController extends ChangeNotifier {
 
   void deleteMessagesAt(Iterable<int> indexes) {
     if (_sending) return;
-    final selected = indexes
-        .where((index) => index >= 0 && index < _messages.length)
-        .toSet()
-        .toList()
-      ..sort((a, b) => b.compareTo(a));
+    final selected =
+        indexes
+            .where((index) => index >= 0 && index < _messages.length)
+            .toSet()
+            .toList()
+          ..sort((a, b) => b.compareTo(a));
     if (selected.isEmpty) return;
 
     for (final index in selected) {
@@ -528,11 +506,11 @@ class ChatConversationController extends ChangeNotifier {
   }
 
   List<ChatMessage> _conversationForRequest() => List.unmodifiable(
-        _messages.where(
-          (message) =>
-              message.fromUser || message.status == ChatMessageStatus.complete,
-        ),
-      );
+    _messages.where(
+      (message) =>
+          message.fromUser || message.status == ChatMessageStatus.complete,
+    ),
+  );
 
   @override
   void dispose() {

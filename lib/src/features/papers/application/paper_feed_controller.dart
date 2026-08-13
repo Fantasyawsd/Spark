@@ -151,53 +151,14 @@ class PaperFeedController extends ChangeNotifier {
       forceRefresh: forceRefresh,
     );
     return _trackCatalogOperation(
-      _refreshCatalog(
+      _runCatalogRequest(
         repository,
         channelKey: channelKey,
         query: query,
         queryRevision: queryRevision,
+        append: false,
       ),
     );
-  }
-
-  Future<void> _refreshCatalog(
-    PaperCatalogRepository repository, {
-    required String channelKey,
-    required PaperFeedQuery query,
-    required int queryRevision,
-  }) async {
-    _catalogLoading = true;
-    _notify();
-    try {
-      final page = await repository.loadFeed(query);
-      if (!_disposed && queryRevision == _catalogQueryRevision) {
-        _applyCatalogPage(
-          page,
-          channelKey: channelKey,
-          append: _loadedChannelKeys.contains(channelKey),
-        );
-      }
-    } on Object catch (error, stackTrace) {
-      SparkDiagnostics.reportUnexpected(
-        operation: SparkDiagnosticOperation.paperFeedRefresh,
-        error: error,
-        stackTrace: stackTrace,
-      );
-      if (!_disposed && queryRevision == _catalogQueryRevision) {
-        _catalogStateFor(channelKey).error = const PaperCatalogError(
-          kind: PaperCatalogErrorKind.unavailable,
-          message: '论文目录暂时不可用，请稍后重试。',
-        );
-      }
-    } finally {
-      _catalogLoading = false;
-      _notify();
-      if (!_disposed &&
-          queryRevision != _catalogQueryRevision &&
-          _canLoadCurrentChannel) {
-        _ensureCurrentChannelLoaded();
-      }
-    }
   }
 
   Future<void> loadMoreCatalog() {
@@ -225,44 +186,64 @@ class PaperFeedController extends ChangeNotifier {
       limit: 20,
     );
     return _trackCatalogOperation(
-      _loadMoreCatalog(
+      _runCatalogRequest(
         repository,
         channelKey: channelKey,
         query: query,
         queryRevision: queryRevision,
+        append: true,
       ),
     );
   }
 
-  Future<void> _loadMoreCatalog(
+  Future<void> _runCatalogRequest(
     PaperCatalogRepository repository, {
     required String channelKey,
     required PaperFeedQuery query,
     required int queryRevision,
+    required bool append,
   }) async {
-    _catalogLoadingMore = true;
+    if (append) {
+      _catalogLoadingMore = true;
+    } else {
+      _catalogLoading = true;
+    }
     _notify();
     try {
       final page = await repository.loadFeed(query);
       if (!_disposed && queryRevision == _catalogQueryRevision) {
-        _applyCatalogPage(page, channelKey: channelKey, append: true);
+        _applyCatalogPage(
+          page,
+          channelKey: channelKey,
+          append: append || _loadedChannelKeys.contains(channelKey),
+        );
       }
     } on Object catch (error, stackTrace) {
       SparkDiagnostics.reportUnexpected(
-        operation: SparkDiagnosticOperation.paperFeedLoadMore,
+        operation: append
+            ? SparkDiagnosticOperation.paperFeedLoadMore
+            : SparkDiagnosticOperation.paperFeedRefresh,
         error: error,
         stackTrace: stackTrace,
       );
       if (!_disposed && queryRevision == _catalogQueryRevision) {
-        _catalogStateFor(channelKey).error = const PaperCatalogError(
+        _catalogStateFor(channelKey).error = PaperCatalogError(
           kind: PaperCatalogErrorKind.unavailable,
-          message: '无法加载更多论文，请稍后重试。',
+          message: append ? '无法加载更多论文，请稍后重试。' : '论文目录暂时不可用，请稍后重试。',
         );
       }
     } finally {
-      if (queryRevision == _catalogQueryRevision) {
+      if (append) {
         _catalogLoadingMore = false;
-        _notify();
+      } else {
+        _catalogLoading = false;
+      }
+      _notify();
+      if (!append &&
+          !_disposed &&
+          queryRevision != _catalogQueryRevision &&
+          _canLoadCurrentChannel) {
+        _ensureCurrentChannelLoaded();
       }
     }
   }
@@ -657,9 +638,7 @@ class PaperFeedController extends ChangeNotifier {
   @override
   void dispose() {
     _disposed = true;
-    _followedPaperIdsListenable?.removeListener(
-      _handleFollowedPaperIdsChanged,
-    );
+    _followedPaperIdsListenable?.removeListener(_handleFollowedPaperIdsChanged);
     _preferences.dispose();
     super.dispose();
   }

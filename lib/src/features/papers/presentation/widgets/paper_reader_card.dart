@@ -1,12 +1,10 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../core/motion/motion_tokens.dart';
 import '../../../../core/platform/external_http_uri.dart';
 import '../../../../core/platform/spark_clipboard.dart';
-import '../../../../core/theme/spark_design_tokens.dart';
 import '../../../../core/theme/spark_font_sizes.dart';
 import '../../../../core/theme/spark_theme.dart';
 import '../../../../core/widgets/spark_segmented_control.dart';
@@ -22,9 +20,10 @@ import 'paper_related_papers.dart';
 import 'paper_tab_body.dart';
 import 'paper_translation_content.dart';
 import 'paper_reader_card_lifecycle.dart';
+import 'paper_reader_content.dart';
 
-typedef PaperDiscussionOpener = void Function(List<String> keywords,
-    {required bool keywordCacheFailed});
+typedef PaperDiscussionOpener =
+    void Function(List<String> keywords, {required bool keywordCacheFailed});
 
 class PaperReaderCard extends StatefulWidget {
   const PaperReaderCard({
@@ -151,7 +150,8 @@ class _PaperReaderCardState extends State<PaperReaderCard> {
   Widget build(BuildContext context) {
     final paper = widget.paper;
     final safePadding = MediaQuery.paddingOf(context);
-    final hasPaperLink = widget.onOpenPaper != null &&
+    final hasPaperLink =
+        widget.onOpenPaper != null &&
         (validExternalHttpUri(paper.pdfUrl) != null ||
             validExternalHttpUri(paper.paperUrl) != null);
     return ColoredBox(
@@ -217,7 +217,7 @@ class _PaperReaderCardState extends State<PaperReaderCard> {
           Positioned(
             right: 16,
             bottom: safePadding.bottom + widget.actionBarBottomInset + 56,
-            child: _AiInterpretButton(
+            child: PaperReaderAiInterpretButton(
               onPressed: () => unawaited(_openDiscussion(widget.onAnalyze)),
             ),
           ),
@@ -307,7 +307,7 @@ class _PaperReaderCardState extends State<PaperReaderCard> {
       );
     }
     if (index == 2) {
-      return _KeywordContent(
+      return PaperReaderKeywordContent(
         keywords: _controllers.keywords.keywords,
         loadingCache: _controllers.keywords.loadingCache,
         generating: _controllers.keywords.generating,
@@ -318,10 +318,10 @@ class _PaperReaderCardState extends State<PaperReaderCard> {
       );
     }
     if (index == 3) {
-      return _AuthorContent(paper: paper);
+      return PaperReaderAuthorContent(paper: paper);
     }
     if (index == 4) {
-      return _AiInterpretationContent(
+      return PaperReaderAiInterpretationContent(
         onOpen: () => unawaited(_openDiscussion(widget.onAnalyze)),
       );
     }
@@ -353,10 +353,12 @@ class _PaperReaderCardState extends State<PaperReaderCard> {
           paper: paper,
           markdown: markdown,
           title: title,
-          initialScrollOffset:
-              title == 'Abstract' ? widget.initialAbstractScrollOffset : 0,
-          onScrollOffsetChanged:
-              title == 'Abstract' ? widget.onAbstractScrollChanged : null,
+          initialScrollOffset: title == 'Abstract'
+              ? widget.initialAbstractScrollOffset
+              : 0,
+          onScrollOffsetChanged: title == 'Abstract'
+              ? widget.onAbstractScrollChanged
+              : null,
         ),
       ),
     );
@@ -383,239 +385,5 @@ class _PaperReaderCardState extends State<PaperReaderCard> {
 
   void _handleKeywordChanged() {
     if (mounted) setState(() {});
-  }
-}
-
-class _KeywordContent extends StatelessWidget {
-  const _KeywordContent({
-    required this.keywords,
-    required this.loadingCache,
-    required this.generating,
-    required this.error,
-    required this.onGenerate,
-    required this.onRefresh,
-    required this.onCancel,
-  });
-
-  final List<String> keywords;
-  final bool loadingCache;
-  final bool generating;
-  final String? error;
-  final VoidCallback onGenerate;
-  final VoidCallback onRefresh;
-  final VoidCallback onCancel;
-
-  @override
-  Widget build(BuildContext context) {
-    if (loadingCache && keywords.isEmpty) {
-      return const Center(child: CircularProgressIndicator(strokeWidth: 2));
-    }
-    if (keywords.isEmpty) {
-      return _ReaderEmptyState(
-        icon: Icons.key_rounded,
-        title: generating ? '正在生成关键词…' : '尚未生成关键词',
-        message: error ?? '关键词将从论文标题和 Abstract 中提取。',
-        actionLabel: generating
-            ? '停止'
-            : error == null
-                ? '生成'
-                : '重试',
-        onAction: generating ? onCancel : onGenerate,
-      );
-    }
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Align(
-          alignment: Alignment.centerRight,
-          child: TextButton(
-            key: const ValueKey('paper-keyword-refresh'),
-            onPressed: generating ? onCancel : onRefresh,
-            child: Text(generating ? '停止' : '重新生成'),
-          ),
-        ),
-        if (error != null)
-          Padding(
-            padding: const EdgeInsets.only(bottom: SparkDesignTokens.space2),
-            child: Text(
-              error!,
-              style: TextStyle(
-                color: SparkColors.of(context).danger,
-                fontSize: SparkFontSizes.footnote,
-              ),
-            ),
-          ),
-        Expanded(
-          child: SingleChildScrollView(
-            child: Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                for (final keyword in keywords) Chip(label: Text(keyword)),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _AuthorContent extends StatelessWidget {
-  const _AuthorContent({required this.paper});
-
-  final Paper paper;
-
-  @override
-  Widget build(BuildContext context) {
-    return ListView.separated(
-      itemCount: paper.authors.length,
-      separatorBuilder: (_, __) => const Divider(height: 1),
-      itemBuilder: (context, index) => ListTile(
-        contentPadding: EdgeInsets.zero,
-        leading: const Icon(Icons.person_outline_rounded),
-        title: Text(paper.authors[index]),
-      ),
-    );
-  }
-}
-
-class _AiInterpretationContent extends StatelessWidget {
-  const _AiInterpretationContent({required this.onOpen});
-
-  final VoidCallback onOpen;
-
-  @override
-  Widget build(BuildContext context) {
-    return _ReaderEmptyState(
-      icon: Icons.auto_awesome_rounded,
-      title: '围绕当前论文提问',
-      message: '当前对话基于论文元数据和摘要，不包含 PDF 全文。',
-      actionLabel: '打开 ChatPaper',
-      onAction: onOpen,
-    );
-  }
-}
-
-class _ReaderEmptyState extends StatelessWidget {
-  const _ReaderEmptyState({
-    required this.icon,
-    required this.title,
-    required this.message,
-    this.actionLabel,
-    this.onAction,
-  });
-
-  final IconData icon;
-  final String title;
-  final String message;
-  final String? actionLabel;
-  final VoidCallback? onAction;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(SparkDesignTokens.space6),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, color: SparkColors.of(context).muted, size: 28),
-            const SizedBox(height: 12),
-            Text(title, style: const TextStyle(fontWeight: FontWeight.w800)),
-            const SizedBox(height: 6),
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: SparkColors.of(context).muted,
-                height: 1.5,
-              ),
-            ),
-            if (actionLabel != null && onAction != null) ...[
-              const SizedBox(height: 16),
-              FilledButton(onPressed: onAction, child: Text(actionLabel!)),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _AiInterpretButton extends StatelessWidget {
-  const _AiInterpretButton({required this.onPressed});
-
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    return FilledButton.icon(
-      key: const ValueKey('paper-ai-entry'),
-      onPressed: onPressed,
-      style: FilledButton.styleFrom(
-        backgroundColor: SparkColors.of(context).primary,
-        foregroundColor: Colors.white,
-        minimumSize: const Size(0, 34),
-        padding: const EdgeInsets.symmetric(
-          horizontal: SparkDesignTokens.space3,
-        ),
-        visualDensity: VisualDensity.compact,
-        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-      ),
-      icon: const Icon(Icons.auto_awesome_rounded, size: 16),
-      label: const Text(
-        'AI 解读',
-        style: TextStyle(
-          fontSize: SparkFontSizes.footnote,
-          fontWeight: FontWeight.w800,
-        ),
-      ),
-    );
-  }
-}
-
-class MobileSelectableText extends StatelessWidget {
-  const MobileSelectableText({
-    super.key,
-    required this.text,
-    required this.style,
-    this.maxLines,
-    this.overflow,
-    this.onTap,
-  });
-
-  final String text;
-  final TextStyle style;
-  final int? maxLines;
-  final TextOverflow? overflow;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final mobile = switch (defaultTargetPlatform) {
-      TargetPlatform.android || TargetPlatform.iOS => true,
-      _ => false,
-    };
-    if (mobile) {
-      return SelectableText(
-        text,
-        maxLines: maxLines,
-        style: style,
-        onTap: onTap,
-      );
-    }
-    final child = Text(
-      text,
-      maxLines: maxLines,
-      overflow: overflow,
-      style: style,
-    );
-    if (onTap == null) return child;
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: onTap,
-      child: child,
-    );
   }
 }

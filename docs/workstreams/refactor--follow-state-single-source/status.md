@@ -10,8 +10,8 @@
 - Worktree：`C:\Users\Fantasy\Desktop\Spark-worktrees\agent-5`
 - 基线提交：`fee74bf4008d466e8af716ee6320de6f14a0c9e7`
 - 负责人：Codex（Fantasy 编排）
-- 状态：`/develop` 已完成，待 `/test`
-- 最近更新：`2026-08-13 16:50`（Asia/Shanghai）
+- 状态：`/test` 已通过，待 `/review`
+- 最近更新：`2026-08-13 16:53`（Asia/Shanghai）
 
 ## 目标
 
@@ -37,7 +37,7 @@
 - [x] 通过直接调用 `PaperInteractionController`（不经过 `PaperController.toggleFollow`）即可更新当前关注频道、切换后关注频道和远程 `followingAuthors` 查询，证明新增写入路径不依赖额外桥接。
 - [x] 初始化恢复、`reload()` 与持久化失败回滚更新唯一关注状态时，Feed 不保留旧集合；旧 paper id 记录仍可映射首位作者。
 - [x] 新增业务行为有可独立运行的 controller 测试；既有关注过滤、频道刷新、API 查询、互动持久化与页面集成测试保持通过。
-- [ ] 相关定向测试、Dart 格式、`flutter analyze`、`flutter test` 与 `git diff --check` 通过。
+- [x] 相关定向测试、Dart 格式、`flutter analyze`、`flutter test` 与 `git diff --check` 通过。
 
 ## 写入范围
 
@@ -83,7 +83,9 @@
 - 已完成：`PaperController` 改为工厂装配，先创建互动控制器、再向 Feed 注入同一来源；删除 `_handleInteractionsChanged`，保留 facade 通知和释放行为。
 - 已完成：新增 6 项单一来源测试；最终定向回归 78 项、架构边界 23 项、Dart 格式、`flutter analyze` 与 `git diff --check` 均通过。
 - 已完成：形成原子代码提交 `e67e5b8`；工作区在更新本台账前干净。
-- 下一步：由编排者触发 `/test`，执行完整格式、静态分析和全量测试门禁；通过后进入只读 `/review`。
+- 已完成：`/test` 独立完整门禁通过：增量格式检查 51 个文件、静态分析零问题、完整测试 485 项、`git diff --check` 均成功。
+- 正在进行：第五批已完成 `/start`→`/develop`→`/test`，按阶段边界停在只读 `/review` 前。
+- 下一步：执行 `/review`，只读审查相对第四批最终基线 `fee74bf` 的完整差异与验收证据；不进入 `/finish`。
 - 阻塞项：无。
 
 ## 决策记录
@@ -114,6 +116,12 @@
 | `.\tool\verify_changed_dart_format.ps1` | 51 个相关 Dart 文件格式检查通过 | 2026-08-13 |
 | `flutter analyze` | 通过，No issues found | 2026-08-13 |
 | `rg` 旧同步入口结构检索 + `git diff --check` | Feed 镜像、`setFollowedPaperIds` 与 `_handleInteractionsChanged` 均无残留；diff 检查通过 | 2026-08-13 |
+| `.\tool\verify_changed_dart_format.ps1`（`/test`） | 通过；检查 51 个相对第四批基线变化的 Dart 文件，0 个需要修改 | 2026-08-13 |
+| `flutter analyze`（`/test`） | 通过；No issues found | 2026-08-13 |
+| `flutter test`（`/test`） | 通过；485 项完整测试全部成功 | 2026-08-13 |
+| `git diff --check`（`/test`） | 通过；工作树保持干净 | 2026-08-13 |
+| APK / Windows release 构建 | 未运行；按项目规范仅由合入 `main` 的 `/finish` 执行，本修复链明确不合并 | 2026-08-13 |
+| Windows 应用人工验收 | 未运行；编排者明确无需人工验收，且本批为无预期界面变化的状态所有权重构 | 2026-08-13 |
 
 ## 审查结论
 
@@ -135,7 +143,7 @@
 
 ### 交付摘要
 
-本批已完成实现：论文关注集合只有 `PaperInteractionController` 一个可变事实源，Feed 通过不可变只读监听自动响应直接互动写入、初始化恢复、reload 与失败回滚，不再依靠 facade 复制集合。代码已在 `e67e5b8` 提交，等待完整 `/test` 门禁。
+本批已完成实现并通过完整 `/test`：论文关注集合只有 `PaperInteractionController` 一个可变事实源，Feed 通过不可变只读监听自动响应直接互动写入、初始化恢复、reload 与失败回滚，不再依靠 facade 复制集合。代码提交为 `e67e5b8`，完整测试 485 项通过，等待只读 `/review`。
 
 ### 实际变更
 
@@ -169,7 +177,7 @@
 
 > 编排者明确要求本修复链不合入 `main`，因此本节当前不适用；不预填集成提交、合并时间或 main 验证。
 
-- 最终状态：未合并，第五批 `/develop` 已完成，待 `/test`
+- 最终状态：未合并，第五批 `/test` 已通过，待 `/review`
 - 合入分支：不适用
 - 最终集成提交：不适用
 - Pull Request：不适用

@@ -1,3 +1,4 @@
+import '../../../core/diagnostics/diagnostics.dart';
 import '../domain/paper.dart';
 import '../domain/paper_catalog.dart';
 import '../domain/paper_repository.dart';
@@ -68,7 +69,13 @@ class OfflineFirstPaperCatalogRepository implements PaperCatalogRepository {
         fetchedAt,
       );
       return result;
-    } on Object catch (error) {
+    } on Object catch (error, stackTrace) {
+      SparkDiagnostics.reportUnexpected(
+        operation: SparkDiagnosticOperation.paperCatalogArxivLoadFeed,
+        error: error,
+        stackTrace: stackTrace,
+        severity: SparkDiagnosticSeverity.warning,
+      );
       final cached = await _readCachedPage(queryKey);
       if (cached != null) {
         return _stalePage(cached, error);
@@ -106,7 +113,13 @@ class OfflineFirstPaperCatalogRepository implements PaperCatalogRepository {
         fetchedAt,
       );
       return result;
-    } on Object catch (error) {
+    } on Object catch (error, stackTrace) {
+      SparkDiagnostics.reportUnexpected(
+        operation: SparkDiagnosticOperation.paperCatalogArxivSearch,
+        error: error,
+        stackTrace: stackTrace,
+        severity: SparkDiagnosticSeverity.warning,
+      );
       final cached = await _readCachedPage(queryKey);
       if (cached != null) {
         return _stalePage(cached, error);
@@ -129,7 +142,13 @@ class OfflineFirstPaperCatalogRepository implements PaperCatalogRepository {
           return cachedPaper;
         }
       }
-    } on Object catch (_) {
+    } on Object catch (error, stackTrace) {
+      SparkDiagnostics.reportUnexpected(
+        operation: SparkDiagnosticOperation.paperCatalogCacheReadPaper,
+        error: error,
+        stackTrace: stackTrace,
+        severity: SparkDiagnosticSeverity.warning,
+      );
       cachedPaper = null;
     }
     try {
@@ -140,11 +159,23 @@ class OfflineFirstPaperCatalogRepository implements PaperCatalogRepository {
         await _cacheStore.writePaper(
           _cacheMapper.toRecord(paper, cachedAt: _clock().toUtc()),
         );
-      } on Object catch (_) {
+      } on Object catch (error, stackTrace) {
+        SparkDiagnostics.reportUnexpected(
+          operation: SparkDiagnosticOperation.paperCatalogCacheWritePaper,
+          error: error,
+          stackTrace: stackTrace,
+          severity: SparkDiagnosticSeverity.warning,
+        );
         // A usable remote result must not depend on optional local caching.
       }
       return paper;
-    } on Object catch (_) {
+    } on Object catch (error, stackTrace) {
+      SparkDiagnostics.reportUnexpected(
+        operation: SparkDiagnosticOperation.paperCatalogArxivFindById,
+        error: error,
+        stackTrace: stackTrace,
+        severity: SparkDiagnosticSeverity.warning,
+      );
       return cachedPaper ?? _seedById(paperId);
     }
   }
@@ -157,7 +188,13 @@ class OfflineFirstPaperCatalogRepository implements PaperCatalogRepository {
   ) async {
     try {
       await _writePage(queryKey, papers, nextOffset, fetchedAt);
-    } on Object catch (_) {
+    } on Object catch (error, stackTrace) {
+      SparkDiagnostics.reportUnexpected(
+        operation: SparkDiagnosticOperation.paperCatalogCacheWritePage,
+        error: error,
+        stackTrace: stackTrace,
+        severity: SparkDiagnosticSeverity.warning,
+      );
       // A usable remote result must not depend on optional local caching.
     }
   }
@@ -185,7 +222,13 @@ class OfflineFirstPaperCatalogRepository implements PaperCatalogRepository {
   Future<CachedPaperPageRecord?> _readCachedPage(String queryKey) async {
     try {
       return await _cacheStore.readPage(queryKey);
-    } on Object catch (_) {
+    } on Object catch (error, stackTrace) {
+      SparkDiagnostics.reportUnexpected(
+        operation: SparkDiagnosticOperation.paperCatalogCacheReadPage,
+        error: error,
+        stackTrace: stackTrace,
+        severity: SparkDiagnosticSeverity.warning,
+      );
       return null;
     }
   }

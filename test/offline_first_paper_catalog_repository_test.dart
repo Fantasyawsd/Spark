@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:spark/src/core/diagnostics/diagnostics.dart';
 import 'package:spark/src/features/papers/data/cache/in_memory_paper_cache_store.dart';
 import 'package:spark/src/features/papers/data/cache/paper_cache_record.dart';
 import 'package:spark/src/features/papers/data/cache/paper_cache_store.dart';
@@ -110,15 +111,21 @@ void main() {
 
   test('remote failure without cache falls back to seed papers', () async {
     remote.error = StateError('offline');
+    final events = <SparkDiagnosticEvent>[];
 
-    final page = await repository.loadFeed(
-      const PaperFeedQuery(limit: 2),
+    final page = await SparkDiagnostics.runWithSink(
+      events.add,
+      () => repository.loadFeed(const PaperFeedQuery(limit: 2)),
     );
 
     expect(page.source, PaperPageSource.seed);
     expect(page.isOffline, isTrue);
     expect(page.papers, hasLength(2));
     expect(page.error, isNotNull);
+    expect(
+      events.map((event) => event.operation),
+      [SparkDiagnosticOperation.paperCatalogArxivLoadFeed],
+    );
   });
 
   test('server failures use a user-facing fallback message', () async {
@@ -137,13 +144,21 @@ void main() {
 
   test('search falls back to matching seed papers', () async {
     remote.error = StateError('offline');
+    final events = <SparkDiagnosticEvent>[];
 
-    final page = await repository.search(
-      const PaperSearchQuery(term: 'Milmer', limit: 20),
+    final page = await SparkDiagnostics.runWithSink(
+      events.add,
+      () => repository.search(
+        const PaperSearchQuery(term: 'Milmer', limit: 20),
+      ),
     );
 
     expect(page.source, PaperPageSource.seed);
     expect(page.papers.map((paper) => paper.id), contains('2502.00547'));
+    expect(
+      events.map((event) => event.operation),
+      [SparkDiagnosticOperation.paperCatalogArxivSearch],
+    );
   });
 
   test('findById uses cache before making a remote request', () async {
@@ -196,11 +211,19 @@ void main() {
     await repository.findById('2401.00001');
     now = DateTime.utc(2024, 3, 1, 2);
     remote.error = StateError('offline');
+    final events = <SparkDiagnosticEvent>[];
 
-    final fallback = await repository.findById('2401.00001');
+    final fallback = await SparkDiagnostics.runWithSink(
+      events.add,
+      () => repository.findById('2401.00001'),
+    );
 
     expect(fallback?.title, 'Cached title');
     expect(remote.detailRequests, 2);
+    expect(
+      events.map((event) => event.operation),
+      [SparkDiagnosticOperation.paperCatalogArxivFindById],
+    );
   });
 
   test('cache read failures do not prevent a remote detail result', () async {
@@ -211,11 +234,19 @@ void main() {
       seedRepository: const ArxivSeedRepository(),
     );
     remote.detail = _paper('2401.00001', title: 'Remote title');
+    final events = <SparkDiagnosticEvent>[];
 
-    final paper = await repository.findById('2401.00001');
+    final paper = await SparkDiagnostics.runWithSink(
+      events.add,
+      () => repository.findById('2401.00001'),
+    );
 
     expect(paper?.title, 'Remote title');
     expect(remote.detailRequests, 1);
+    expect(
+      events.map((event) => event.operation),
+      [SparkDiagnosticOperation.paperCatalogCacheReadPaper],
+    );
   });
 
   test('cache write failures do not discard a remote detail result', () async {
@@ -226,10 +257,18 @@ void main() {
       seedRepository: const ArxivSeedRepository(),
     );
     remote.detail = _paper('2401.00001', title: 'Remote title');
+    final events = <SparkDiagnosticEvent>[];
 
-    final paper = await repository.findById('2401.00001');
+    final paper = await SparkDiagnostics.runWithSink(
+      events.add,
+      () => repository.findById('2401.00001'),
+    );
 
     expect(paper?.title, 'Remote title');
+    expect(
+      events.map((event) => event.operation),
+      [SparkDiagnosticOperation.paperCatalogCacheWritePaper],
+    );
   });
 
   test('cache write failures do not discard a remote feed result', () async {
@@ -239,13 +278,46 @@ void main() {
       seedRepository: const ArxivSeedRepository(),
     );
     remote.feed = _page('2401.00001');
+    final events = <SparkDiagnosticEvent>[];
 
-    final page = await repository.loadFeed(
-      const PaperFeedQuery(category: 'cs.AI', limit: 10),
+    final page = await SparkDiagnostics.runWithSink(
+      events.add,
+      () => repository.loadFeed(
+        const PaperFeedQuery(category: 'cs.AI', limit: 10),
+      ),
     );
 
     expect(page.source, PaperPageSource.remote);
     expect(page.papers.single.id, '2401.00001');
+    expect(
+      events.map((event) => event.operation),
+      [SparkDiagnosticOperation.paperCatalogCacheWritePage],
+    );
+  });
+
+  test('cache page read failures are reported before the seed fallback',
+      () async {
+    repository = OfflineFirstPaperCatalogRepository(
+      remoteSource: remote,
+      cacheStore: _FailingPaperCacheStore(failReads: true),
+      seedRepository: const ArxivSeedRepository(),
+    );
+    remote.error = StateError('offline');
+    final events = <SparkDiagnosticEvent>[];
+
+    final page = await SparkDiagnostics.runWithSink(
+      events.add,
+      () => repository.loadFeed(const PaperFeedQuery(limit: 2)),
+    );
+
+    expect(page.source, PaperPageSource.seed);
+    expect(
+      events.map((event) => event.operation),
+      [
+        SparkDiagnosticOperation.paperCatalogArxivLoadFeed,
+        SparkDiagnosticOperation.paperCatalogCacheReadPage,
+      ],
+    );
   });
 }
 

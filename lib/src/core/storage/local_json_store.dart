@@ -231,14 +231,14 @@ class LocalJsonStoreTransaction {
         () => temporary.rename(_file.path),
         message: '无法保存本地数据。',
       );
-    } catch (_) {
+    } on Object catch (writeError, writeStackTrace) {
       if (!await _file.exists() && await _recoveryFile.exists()) {
         await _storageOperation(
           () => _recoveryFile.rename(_file.path),
           message: '无法恢复原有本地数据。',
         );
       }
-      rethrow;
+      Error.throwWithStackTrace(writeError, writeStackTrace);
     }
     await _deleteBestEffort(_recoveryFile);
   }

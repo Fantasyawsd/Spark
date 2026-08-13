@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:spark/src/core/diagnostics/diagnostics.dart';
 import 'package:spark/src/features/papers/data/paper_api_catalog_repository.dart';
 import 'package:spark/src/features/papers/data/providers/paper_api/paper_api_client.dart';
 import 'package:spark/src/features/papers/data/providers/paper_api/paper_api_dto.dart';
@@ -73,8 +74,12 @@ void main() {
         source: PaperPageSource.remote,
         nextOffset: 20,
       );
+      final events = <SparkDiagnosticEvent>[];
 
-      final page = await repository.loadFeed(const PaperFeedQuery());
+      final page = await SparkDiagnostics.runWithSink(
+        events.add,
+        () => repository.loadFeed(const PaperFeedQuery()),
+      );
 
       expect(page.papers.single.id, _fallbackPaper.id);
       expect(page.source, PaperPageSource.remote);
@@ -82,8 +87,31 @@ void main() {
       expect(page.error?.kind, PaperCatalogErrorKind.network);
       expect(page.error?.message, contains('Paper API'));
       expect(fallback.loadFeedCalls, 1);
+      expect(
+        events.map((event) => event.operation),
+        [SparkDiagnosticOperation.paperCatalogApiLoadFeed],
+      );
     },
   );
+
+  test('API detail failures are reported once before catalog fallback',
+      () async {
+    source.error = StateError('private-api-response');
+    final events = <SparkDiagnosticEvent>[];
+
+    final detail = await SparkDiagnostics.runWithSink(
+      events.add,
+      () => repository.findById(_fallbackPaper.id),
+    );
+
+    expect(detail?.id, _fallbackPaper.id);
+    expect(fallback.findByIdCalls, 1);
+    expect(
+      events.map((event) => event.operation),
+      [SparkDiagnosticOperation.paperCatalogApiFindById],
+    );
+    expect(events.single.summary, isNot(contains('private-api-response')));
+  });
 
   test(
     'search remains on the existing catalog and missing details fall back',

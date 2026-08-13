@@ -14,7 +14,23 @@ enum SparkDiagnosticSeverity {
 enum SparkDiagnosticOperation {
   flutterFramework('flutter.framework'),
   flutterPlatform('flutter.platform'),
-  dartUnhandled('dart.unhandled');
+  dartUnhandled('dart.unhandled'),
+  paperFeedRefresh('papers.feed.refresh'),
+  paperFeedLoadMore('papers.feed.load_more'),
+  paperSearchHistoryLoad('search.history.load'),
+  paperSearchHistorySave('search.history.save'),
+  paperSearchFindById('search.catalog.find_by_id'),
+  paperSearchLoad('search.catalog.load'),
+  paperSearchLoadMore('search.catalog.load_more'),
+  paperCatalogArxivLoadFeed('papers.catalog.arxiv.load_feed'),
+  paperCatalogArxivSearch('papers.catalog.arxiv.search'),
+  paperCatalogArxivFindById('papers.catalog.arxiv.find_by_id'),
+  paperCatalogCacheReadPaper('papers.catalog.cache.read_paper'),
+  paperCatalogCacheWritePaper('papers.catalog.cache.write_paper'),
+  paperCatalogCacheReadPage('papers.catalog.cache.read_page'),
+  paperCatalogCacheWritePage('papers.catalog.cache.write_page'),
+  paperCatalogApiLoadFeed('papers.catalog.api.load_feed'),
+  paperCatalogApiFindById('papers.catalog.api.find_by_id');
 
   const SparkDiagnosticOperation(this.code);
 

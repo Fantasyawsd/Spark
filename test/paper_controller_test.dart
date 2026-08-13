@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:spark/src/core/diagnostics/diagnostics.dart';
 import 'package:spark/src/features/papers/application/paper_controller.dart';
 import 'package:spark/src/features/papers/application/paper_feed_controller.dart';
 import 'package:spark/src/features/papers/data/arxiv_seed_repository.dart';
@@ -482,6 +483,53 @@ void main() {
       expect(catalog.queries, hasLength(3));
     });
 
+    test('catalog refresh failures report once and surface the existing error',
+        () async {
+      final feed = PaperFeedController.fromPapers(
+        const [],
+        catalogRepository: _FailingPaperCatalogRepository(),
+      );
+      addTearDown(feed.dispose);
+      final events = <SparkDiagnosticEvent>[];
+
+      await SparkDiagnostics.runWithSink(
+        events.add,
+        feed.initializeCatalog,
+      );
+
+      expect(feed.catalogError?.message, '论文目录暂时不可用，请稍后重试。');
+      expect(
+        events.map((event) => event.operation),
+        [SparkDiagnosticOperation.paperFeedRefresh],
+      );
+    });
+
+    test('catalog pagination failures report once and keep loaded papers',
+        () async {
+      final catalog = _FailingPaperCatalogRepository(
+        firstPage: [_catalogPaper('kept-paper')],
+      );
+      final feed = PaperFeedController.fromPapers(
+        const [],
+        catalogRepository: catalog,
+      );
+      addTearDown(feed.dispose);
+      await feed.initializeCatalog();
+      final events = <SparkDiagnosticEvent>[];
+
+      await SparkDiagnostics.runWithSink(
+        events.add,
+        feed.loadMoreCatalog,
+      );
+
+      expect(feed.papers.single.id, 'kept-paper');
+      expect(feed.catalogError?.message, '无法加载更多论文，请稍后重试。');
+      expect(
+        events.map((event) => event.operation),
+        [SparkDiagnosticOperation.paperFeedLoadMore],
+      );
+    });
+
     test('each channel keeps its own loaded papers', () async {
       final controller = PaperController(
         const ArxivSeedRepository(),
@@ -813,6 +861,33 @@ class _RecordingPaperCatalogRepository implements PaperCatalogRepository {
   Future<PaperPage> loadFeed(PaperFeedQuery query) async {
     queries.add(query);
     return PaperPage(papers: const [], source: PaperPageSource.remote);
+  }
+
+  @override
+  Future<PaperPage> search(PaperSearchQuery query) async =>
+      PaperPage(papers: const [], source: PaperPageSource.remote);
+}
+
+class _FailingPaperCatalogRepository implements PaperCatalogRepository {
+  _FailingPaperCatalogRepository({this.firstPage = const []});
+
+  final List<Paper> firstPage;
+  var loadCalls = 0;
+
+  @override
+  Future<Paper?> findById(String paperId) async => null;
+
+  @override
+  Future<PaperPage> loadFeed(PaperFeedQuery query) async {
+    loadCalls++;
+    if (loadCalls == 1 && firstPage.isNotEmpty) {
+      return PaperPage(
+        papers: firstPage,
+        source: PaperPageSource.remote,
+        nextOffset: 20,
+      );
+    }
+    throw StateError('catalog unavailable');
   }
 
   @override

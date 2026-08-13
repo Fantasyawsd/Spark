@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
+import '../../../core/diagnostics/diagnostics.dart';
 import '../../papers/papers.dart';
 import '../domain/arxiv_paper_id.dart';
 import '../domain/paper_search_history_repository.dart';
@@ -77,7 +78,13 @@ class PaperSearchController extends ChangeNotifier {
       _history = restored;
       _pendingHistoryMutations.clear();
       _historyError = null;
-    } on Object catch (error) {
+    } on Object catch (error, stackTrace) {
+      SparkDiagnostics.reportUnexpected(
+        operation: SparkDiagnosticOperation.paperSearchHistoryLoad,
+        error: error,
+        stackTrace: stackTrace,
+        severity: SparkDiagnosticSeverity.warning,
+      );
       if (_disposed) return;
       _pendingHistoryMutations.clear();
       _historyError = _historyErrorMessage(error, reading: true);
@@ -170,7 +177,12 @@ class PaperSearchController extends ChangeNotifier {
         if (!_isCurrent(generation)) return;
         _results = paper == null ? const [] : [paper];
         _nextOffset = null;
-      } on Object catch (_) {
+      } on Object catch (error, stackTrace) {
+        SparkDiagnostics.reportUnexpected(
+          operation: SparkDiagnosticOperation.paperSearchFindById,
+          error: error,
+          stackTrace: stackTrace,
+        );
         if (!_isCurrent(generation)) return;
         _results = const [];
         _nextOffset = null;
@@ -198,7 +210,12 @@ class PaperSearchController extends ChangeNotifier {
       _results = page.papers;
       _nextOffset = page.nextOffset;
       _resultsError = page.error;
-    } on Object catch (_) {
+    } on Object catch (error, stackTrace) {
+      SparkDiagnostics.reportUnexpected(
+        operation: SparkDiagnosticOperation.paperSearchLoad,
+        error: error,
+        stackTrace: stackTrace,
+      );
       if (!_isCurrent(generation)) return;
       _resultsError = const PaperCatalogError(
         kind: PaperCatalogErrorKind.unavailable,
@@ -241,7 +258,12 @@ class PaperSearchController extends ChangeNotifier {
       ];
       _nextOffset = page.nextOffset;
       _resultsError = page.error;
-    } on Object catch (_) {
+    } on Object catch (error, stackTrace) {
+      SparkDiagnostics.reportUnexpected(
+        operation: SparkDiagnosticOperation.paperSearchLoadMore,
+        error: error,
+        stackTrace: stackTrace,
+      );
       if (_isCurrent(generation)) {
         _resultsError = const PaperCatalogError(
           kind: PaperCatalogErrorKind.unavailable,
@@ -273,7 +295,13 @@ class PaperSearchController extends ChangeNotifier {
     String? errorMessage;
     try {
       await _historyRepository.save(history);
-    } on Object catch (error) {
+    } on Object catch (error, stackTrace) {
+      SparkDiagnostics.reportUnexpected(
+        operation: SparkDiagnosticOperation.paperSearchHistorySave,
+        error: error,
+        stackTrace: stackTrace,
+        severity: SparkDiagnosticSeverity.warning,
+      );
       errorMessage = _historyErrorMessage(error, reading: false);
     }
     if (_disposed || revision != _historyWriteRevision) return;

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
+import '../../../core/diagnostics/diagnostics.dart';
 import '../domain/paper.dart';
 import '../domain/paper_catalog.dart';
 import '../domain/paper_channel.dart';
@@ -176,7 +177,12 @@ class PaperFeedController extends ChangeNotifier {
           append: _loadedChannelKeys.contains(channelKey),
         );
       }
-    } on Object catch (_) {
+    } on Object catch (error, stackTrace) {
+      SparkDiagnostics.reportUnexpected(
+        operation: SparkDiagnosticOperation.paperFeedRefresh,
+        error: error,
+        stackTrace: stackTrace,
+      );
       if (!_disposed && queryRevision == _catalogQueryRevision) {
         _catalogStateFor(channelKey).error = const PaperCatalogError(
           kind: PaperCatalogErrorKind.unavailable,
@@ -241,7 +247,12 @@ class PaperFeedController extends ChangeNotifier {
       if (!_disposed && queryRevision == _catalogQueryRevision) {
         _applyCatalogPage(page, channelKey: channelKey, append: true);
       }
-    } on Object catch (_) {
+    } on Object catch (error, stackTrace) {
+      SparkDiagnostics.reportUnexpected(
+        operation: SparkDiagnosticOperation.paperFeedLoadMore,
+        error: error,
+        stackTrace: stackTrace,
+      );
       if (!_disposed && queryRevision == _catalogQueryRevision) {
         _catalogStateFor(channelKey).error = const PaperCatalogError(
           kind: PaperCatalogErrorKind.unavailable,

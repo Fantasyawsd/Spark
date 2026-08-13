@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:spark/src/core/diagnostics/diagnostics.dart';
 import 'package:spark/src/features/papers/data/demo_paper_repository.dart';
 import 'package:spark/src/features/papers/domain/paper.dart';
 import 'package:spark/src/features/papers/domain/paper_catalog.dart';
@@ -116,6 +117,33 @@ void main() {
       expect(catalog.findByIdCalls, isEmpty);
     });
 
+    test('a keyword failure reports once and keeps local fallback results',
+        () async {
+      catalog = _FakeCatalogRepository(
+        paperById: null,
+        throwOnSearch: true,
+      );
+      controller = PaperSearchController(
+        papers: const DemoPaperRepository().getAll(),
+        historyRepository: historyRepository,
+        catalogRepository: catalog,
+        debounceDuration: const Duration(milliseconds: 5),
+      );
+      final events = <SparkDiagnosticEvent>[];
+
+      await SparkDiagnostics.runWithSink(
+        events.add,
+        () => controller.submitQuery('LoRA'),
+      );
+
+      expect(controller.results, isNotEmpty);
+      expect(controller.resultsError?.message, '搜索服务暂时不可用。');
+      expect(
+        events.map((event) => event.operation),
+        [SparkDiagnosticOperation.paperSearchLoad],
+      );
+    });
+
     test('an unknown arXiv ID yields an empty result without an error',
         () async {
       catalog = _FakeCatalogRepository(paperById: null);
@@ -142,11 +170,46 @@ void main() {
         catalogRepository: catalog,
         debounceDuration: const Duration(milliseconds: 5),
       );
-      await controller.submitQuery('2306.12345');
+      final events = <SparkDiagnosticEvent>[];
+
+      await SparkDiagnostics.runWithSink(
+        events.add,
+        () => controller.submitQuery('2306.12345'),
+      );
 
       expect(controller.results, isEmpty);
       expect(controller.resultsError?.message, '按 arXiv ID 获取论文失败。');
+      expect(
+        events.map((event) => event.operation),
+        [SparkDiagnosticOperation.paperSearchFindById],
+      );
     });
+  });
+
+  test('pagination failures report once and preserve existing results',
+      () async {
+    final papers = const DemoPaperRepository().getAll();
+    final catalog = _FailingPaginationCatalogRepository(papers.first);
+    final controller = PaperSearchController(
+      papers: papers,
+      historyRepository: InMemoryPaperSearchHistoryRepository(),
+      catalogRepository: catalog,
+    );
+    addTearDown(controller.dispose);
+    await controller.submitQuery('remote query');
+    final events = <SparkDiagnosticEvent>[];
+
+    await SparkDiagnostics.runWithSink(
+      events.add,
+      controller.loadMoreResults,
+    );
+
+    expect(controller.results.single.id, papers.first.id);
+    expect(controller.resultsError?.message, '无法加载更多搜索结果。');
+    expect(
+      events.map((event) => event.operation),
+      [SparkDiagnosticOperation.paperSearchLoadMore],
+    );
   });
 
   test('ignores stale pagination from an older same-term search', () async {
@@ -324,10 +387,40 @@ void main() {
     );
     addTearDown(controller.dispose);
     await controller.initialize();
+    final events = <SparkDiagnosticEvent>[];
 
-    await expectLater(controller.submitQuery('LoRA'), completes);
+    await expectLater(
+      SparkDiagnostics.runWithSink(
+        events.add,
+        () => controller.submitQuery('LoRA'),
+      ),
+      completes,
+    );
 
     expect(controller.historyError, '无法保存搜索历史。');
+    expect(
+      events.map((event) => event.operation),
+      [SparkDiagnosticOperation.paperSearchHistorySave],
+    );
+    expect(events.single.severity, SparkDiagnosticSeverity.warning);
+  });
+
+  test('normalizes and reports an unexpected history load failure', () async {
+    final controller = PaperSearchController(
+      papers: const DemoPaperRepository().getAll(),
+      historyRepository: _UnexpectedLoadFailureSearchHistoryRepository(),
+    );
+    addTearDown(controller.dispose);
+    final events = <SparkDiagnosticEvent>[];
+
+    await SparkDiagnostics.runWithSink(events.add, controller.initialize);
+
+    expect(controller.historyError, '无法读取搜索历史。');
+    expect(
+      events.map((event) => event.operation),
+      [SparkDiagnosticOperation.paperSearchHistoryLoad],
+    );
+    expect(events.single.severity, SparkDiagnosticSeverity.warning);
   });
 
   test('ignores pending pagination after dispose', () async {
@@ -369,10 +462,12 @@ class _FakeCatalogRepository implements PaperCatalogRepository {
   _FakeCatalogRepository({
     required this.paperById,
     this.throwOnFindById = false,
+    this.throwOnSearch = false,
   });
 
   final Paper? paperById;
   final bool throwOnFindById;
+  final bool throwOnSearch;
   final List<String> searchTerms = [];
   final List<String> findByIdCalls = [];
 
@@ -383,6 +478,7 @@ class _FakeCatalogRepository implements PaperCatalogRepository {
   @override
   Future<PaperPage> search(PaperSearchQuery query) async {
     searchTerms.add(query.term);
+    if (throwOnSearch) throw StateError('search failed');
     return PaperPage(papers: const [], source: PaperPageSource.remote);
   }
 
@@ -391,6 +487,31 @@ class _FakeCatalogRepository implements PaperCatalogRepository {
     findByIdCalls.add(paperId);
     if (throwOnFindById) throw StateError('fetch failed');
     return paperById;
+  }
+}
+
+class _FailingPaginationCatalogRepository implements PaperCatalogRepository {
+  _FailingPaginationCatalogRepository(this.firstPaper);
+
+  final Paper firstPaper;
+  var searchCalls = 0;
+
+  @override
+  Future<Paper?> findById(String paperId) async => null;
+
+  @override
+  Future<PaperPage> loadFeed(PaperFeedQuery query) async =>
+      PaperPage(papers: const [], source: PaperPageSource.remote);
+
+  @override
+  Future<PaperPage> search(PaperSearchQuery query) async {
+    searchCalls++;
+    if (searchCalls > 1) throw StateError('pagination failed');
+    return PaperPage(
+      papers: [firstPaper],
+      source: PaperPageSource.remote,
+      nextOffset: 20,
+    );
   }
 }
 
@@ -501,6 +622,17 @@ class _UnexpectedFailureSearchHistoryRepository
   Future<void> save(List<String> queries) async {
     throw StateError('disk unavailable');
   }
+}
+
+class _UnexpectedLoadFailureSearchHistoryRepository
+    implements PaperSearchHistoryRepository {
+  @override
+  Future<List<String>> load() async {
+    throw StateError('disk unavailable');
+  }
+
+  @override
+  Future<void> save(List<String> queries) async {}
 }
 
 class _PendingFirstPageCatalogRepository implements PaperCatalogRepository {

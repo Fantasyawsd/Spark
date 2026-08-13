@@ -1,3 +1,4 @@
+import '../../../core/diagnostics/diagnostics.dart';
 import '../domain/paper.dart';
 import '../domain/paper_catalog.dart';
 import 'providers/paper_api/paper_api_client.dart';
@@ -36,7 +37,13 @@ final class PaperApiCatalogRepository implements PaperCatalogRepository {
         nextCursor: remote.nextCursor,
         fetchedAt: _clock().toUtc(),
       );
-    } on Object catch (error) {
+    } on Object catch (error, stackTrace) {
+      SparkDiagnostics.reportUnexpected(
+        operation: SparkDiagnosticOperation.paperCatalogApiLoadFeed,
+        error: error,
+        stackTrace: stackTrace,
+        severity: SparkDiagnosticSeverity.warning,
+      );
       final fallback = await _fallbackRepository.loadFeed(query);
       return PaperPage(
         papers: fallback.papers,
@@ -60,7 +67,13 @@ final class PaperApiCatalogRepository implements PaperCatalogRepository {
     try {
       final remote = await _remoteSource.findById(paperId);
       if (remote != null) return _mapper.toDomain(remote);
-    } on Object catch (_) {
+    } on Object catch (error, stackTrace) {
+      SparkDiagnostics.reportUnexpected(
+        operation: SparkDiagnosticOperation.paperCatalogApiFindById,
+        error: error,
+        stackTrace: stackTrace,
+        severity: SparkDiagnosticSeverity.warning,
+      );
       // Detail lookup retains the existing catalog as a transparent fallback.
     }
     return _fallbackRepository.findById(paperId);

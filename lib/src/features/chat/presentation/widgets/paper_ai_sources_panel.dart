@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/diagnostics/diagnostics.dart';
 import '../../../../core/platform/external_http_uri.dart';
 import '../../../../core/theme/spark_design_tokens.dart';
 import '../../../../core/theme/spark_font_sizes.dart';
@@ -179,7 +180,13 @@ class _SourceRow extends StatelessWidget {
       if (!await opener(uri) && context.mounted) {
         _showOpenFailure(context);
       }
-    } catch (_) {
+    } on Object catch (error, stackTrace) {
+      SparkDiagnostics.reportUnexpected(
+        operation: SparkDiagnosticOperation.chatOpenSource,
+        error: error,
+        stackTrace: stackTrace,
+        severity: SparkDiagnosticSeverity.warning,
+      );
       if (context.mounted) _showOpenFailure(context);
     }
   }

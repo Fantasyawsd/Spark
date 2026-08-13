@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:spark/spark.dart';
+import 'package:spark/src/core/diagnostics/diagnostics.dart';
 import 'package:spark/src/features/chat/application/chat_session_controller.dart';
 import 'package:spark/src/features/chat/data/in_memory_chat_session_settings_repository.dart';
 
@@ -105,12 +106,20 @@ void main() {
       );
       addTearDown(controller.dispose);
       await controller.refresh();
+      final events = <SparkDiagnosticEvent>[];
 
-      await controller.delete('paper-1');
+      await SparkDiagnostics.runWithSink(
+        events.add,
+        () => controller.delete('paper-1'),
+      );
 
       expect(repository.clearedIds, isEmpty);
       expect(controller.entries.single.context.id, 'paper-1');
       expect(controller.error, '无法删除会话设置。');
+      expect(
+        events.map((event) => event.operation),
+        [SparkDiagnosticOperation.chatSessionDelete],
+      );
     });
 
     test('exposes repository failures as controller errors', () async {
@@ -120,12 +129,18 @@ void main() {
       );
       final controller = _controller(repository);
       addTearDown(controller.dispose);
+      final events = <SparkDiagnosticEvent>[];
 
-      await controller.refresh();
+      await SparkDiagnostics.runWithSink(events.add, controller.refresh);
 
       expect(controller.error, '读取失败');
       expect(controller.loading, isFalse);
       expect(controller.entries, isEmpty);
+      expect(
+        events.map((event) => event.operation),
+        [SparkDiagnosticOperation.chatSessionLoad],
+      );
+      expect(events.single.severity, SparkDiagnosticSeverity.warning);
     });
 
     test('maps an unexpected refresh failure without leaking the future error',
@@ -133,11 +148,16 @@ void main() {
       final repository = _UnexpectedListFailureRepository();
       final controller = _controller(repository);
       addTearDown(controller.dispose);
+      final events = <SparkDiagnosticEvent>[];
 
-      await controller.refresh();
+      await SparkDiagnostics.runWithSink(events.add, controller.refresh);
 
       expect(controller.error, '无法读取 AI 会话列表。');
       expect(controller.loading, isFalse);
+      expect(
+        events.map((event) => event.operation),
+        [SparkDiagnosticOperation.chatSessionLoad],
+      );
     });
 
     test('does not notify after disposal while refresh is pending', () async {

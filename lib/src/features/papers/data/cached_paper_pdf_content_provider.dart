@@ -1,3 +1,4 @@
+import '../../../core/diagnostics/diagnostics.dart';
 import '../../../core/platform/external_http_uri.dart';
 import '../domain/paper.dart';
 import '../domain/paper_pdf.dart';
@@ -27,7 +28,13 @@ final class CachedPaperPdfContentProvider implements PaperPdfContentProvider {
     PaperPdfExtract? cached;
     try {
       cached = await repository.load(paper.id, version);
-    } catch (_) {
+    } on Object catch (error, stackTrace) {
+      SparkDiagnostics.reportUnexpected(
+        operation: SparkDiagnosticOperation.paperPdfCacheLoad,
+        error: error,
+        stackTrace: stackTrace,
+        severity: SparkDiagnosticSeverity.warning,
+      );
       cached = null;
     }
     if (cached != null &&
@@ -44,7 +51,13 @@ final class CachedPaperPdfContentProvider implements PaperPdfContentProvider {
     );
     try {
       await repository.save(extract);
-    } catch (_) {
+    } on Object catch (error, stackTrace) {
+      SparkDiagnostics.reportUnexpected(
+        operation: SparkDiagnosticOperation.paperPdfCacheSave,
+        error: error,
+        stackTrace: stackTrace,
+        severity: SparkDiagnosticSeverity.warning,
+      );
       // PDF extraction remains usable when the optional cache cannot persist.
     }
     return extract;

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/diagnostics/diagnostics.dart';
 import '../../../../core/theme/spark_font_sizes.dart';
 import '../../domain/chat_context.dart';
 import '../paper_ai_ui_tokens.dart';
@@ -209,7 +210,13 @@ class _PaperAiChatAppBarState extends State<PaperAiChatAppBar> {
       } else {
         errorMessage = '全文上下文与当前会话不匹配，请重试。';
       }
-    } catch (_) {
+    } on Object catch (error, stackTrace) {
+      SparkDiagnostics.reportUnexpected(
+        operation: SparkDiagnosticOperation.chatLoadFullText,
+        error: error,
+        stackTrace: stackTrace,
+        severity: SparkDiagnosticSeverity.warning,
+      );
       errorMessage = '无法读取论文全文，请稍后重试。';
     } finally {
       if (mounted) setState(() => _fullTextLoading = false);

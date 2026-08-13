@@ -30,7 +30,29 @@ enum SparkDiagnosticOperation {
   paperCatalogCacheReadPage('papers.catalog.cache.read_page'),
   paperCatalogCacheWritePage('papers.catalog.cache.write_page'),
   paperCatalogApiLoadFeed('papers.catalog.api.load_feed'),
-  paperCatalogApiFindById('papers.catalog.api.find_by_id');
+  paperCatalogApiFindById('papers.catalog.api.find_by_id'),
+  paperPdfCacheLoad('papers.pdf.cache.load'),
+  paperPdfCacheSave('papers.pdf.cache.save'),
+  paperPdfDownload('papers.pdf.download'),
+  paperPdfExtract('papers.pdf.extract'),
+  paperPdfWorkerProtocol('papers.pdf.worker_protocol'),
+  paperPdfWorkerSpawn('papers.pdf.worker_spawn'),
+  chatConversationSettingsSave('chat.conversation.settings.save'),
+  chatConversationSessionLoad('chat.conversation.session.load'),
+  chatConversationSettingsLoad('chat.conversation.settings.load'),
+  chatConversationClear('chat.conversation.clear'),
+  chatConversationSave('chat.conversation.save'),
+  chatConversationWriteQueue('chat.conversation.write_queue'),
+  chatConversationRequest('chat.conversation.request'),
+  chatSessionPin('chat.sessions.pin'),
+  chatSessionDelete('chat.sessions.delete'),
+  chatSessionLoad('chat.sessions.load'),
+  deepSeekCancelSubscription('chat.deepseek.cancel_subscription'),
+  paperReaderKeywordsLoad('papers.reader.keywords.load'),
+  paperReaderOpenLink('papers.reader.open_link'),
+  paperReaderShare('papers.reader.share'),
+  chatOpenSource('chat.sources.open'),
+  chatLoadFullText('chat.full_text.load');
 
   const SparkDiagnosticOperation(this.code);
 

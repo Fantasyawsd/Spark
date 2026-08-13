@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:spark/spark.dart';
+import 'package:spark/src/core/diagnostics/diagnostics.dart';
 import 'package:spark/src/features/chat/application/chat_conversation_controller.dart';
 import 'package:spark/src/features/chat/data/in_memory_chat_session_repository.dart';
 import 'package:spark/src/features/papers/application/paper_chat_context.dart';
@@ -19,12 +20,20 @@ void main() {
       paper: demoPapers.first,
       service: service,
     );
+    final events = <SparkDiagnosticEvent>[];
 
-    await controller.send('解释方法');
+    await SparkDiagnostics.runWithSink(
+      events.add,
+      () => controller.send('解释方法'),
+    );
     expect(controller.error, '网络失败');
     expect(controller.messages, hasLength(2));
     expect(controller.messages.last.status, ChatMessageStatus.failed);
     expect(controller.canRetryRequestError, isTrue);
+    expect(
+      events.map((event) => event.operation),
+      [SparkDiagnosticOperation.chatConversationRequest],
+    );
 
     await controller.retry();
     expect(controller.error, isNull);
@@ -269,17 +278,25 @@ void main() {
       service: service,
       sessionRepository: repository,
     );
+    final events = <SparkDiagnosticEvent>[];
 
-    final request = controller.send('问题');
-    controller.cancel();
-    await request;
-    await repository.cancelSaveFailed.future;
-    await Future<void>.delayed(Duration.zero);
+    await SparkDiagnostics.runWithSink(events.add, () async {
+      final request = controller.send('问题');
+      controller.cancel();
+      await request;
+      await repository.cancelSaveFailed.future;
+      await Future<void>.delayed(Duration.zero);
+    });
 
     expect(controller.requestStatus, ChatRequestStatus.cancelled);
     expect(controller.error, '无法保存取消状态');
     expect(controller.canRetry, isTrue);
     expect(controller.canRetryRequestError, isFalse);
+    expect(
+      events.map((event) => event.operation),
+      [SparkDiagnosticOperation.chatConversationSave],
+    );
+    expect(events.single.severity, SparkDiagnosticSeverity.warning);
     controller.dispose();
   });
 
@@ -295,12 +312,17 @@ void main() {
       sessionRepository: repository,
     );
     await controller.initialize();
+    final events = <SparkDiagnosticEvent>[];
 
-    await controller.clear();
+    await SparkDiagnostics.runWithSink(events.add, controller.clear);
 
     expect(controller.requestStatus, ChatRequestStatus.idle);
     expect(controller.canRetry, isFalse);
     expect(controller.error, '无法清空 AI 对话记录。');
+    expect(
+      events.map((event) => event.operation),
+      [SparkDiagnosticOperation.chatConversationClear],
+    );
     controller.dispose();
   });
 

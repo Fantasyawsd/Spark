@@ -5,6 +5,7 @@ import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
+import 'package:spark/src/core/diagnostics/diagnostics.dart';
 import 'package:spark/src/core/storage/local_json_store.dart';
 import 'package:spark/src/core/storage/versioned_local_json_store.dart';
 import 'package:spark/src/features/papers/application/paper_pdf_context_builder.dart';
@@ -76,14 +77,42 @@ void main() {
 
     test('rejects non-PDF bytes as invalid', () async {
       final service = PaperPdfExtractionService();
+      final events = <SparkDiagnosticEvent>[];
       expect(
-        () => service.extract(
-          paperId: 'paper-1',
-          version: 'v1',
-          bytes: [0, 1, 2, 3, 4, 5],
+        () => SparkDiagnostics.runWithSink(
+          events.add,
+          () => service.extract(
+            paperId: 'paper-1',
+            version: 'v1',
+            bytes: [0, 1, 2, 3, 4, 5],
+          ),
         ),
         throwsA(isA<PaperPdfException>()),
       );
+      expect(events, isEmpty);
+    });
+
+    test('reports unexpected parser failures returned by the worker', () async {
+      final service = PaperPdfExtractionService();
+      final events = <SparkDiagnosticEvent>[];
+
+      await expectLater(
+        SparkDiagnostics.runWithSink(
+          events.add,
+          () => service.extract(
+            paperId: 'paper-1',
+            version: 'v1',
+            bytes: const [0x25, 0x50, 0x44, 0x46, 0x2d],
+          ),
+        ),
+        throwsA(isA<PaperPdfException>()),
+      );
+
+      expect(
+        events.map((event) => event.operation),
+        [SparkDiagnosticOperation.paperPdfExtract],
+      );
+      expect(events.single.stackTrace.toString(), isNotEmpty);
     });
 
     test('accepts the input byte boundary and rejects one byte below it',
@@ -300,6 +329,25 @@ void main() {
       );
       expect(client.streamCancelled, isTrue);
     });
+
+    test('reports unexpected download failures before mapping them', () async {
+      final service = PaperPdfExtractionService(client: _ThrowingClient());
+      final events = <SparkDiagnosticEvent>[];
+
+      await expectLater(
+        SparkDiagnostics.runWithSink(
+          events.add,
+          () => service.download(Uri.parse('https://example.test/paper.pdf')),
+        ),
+        throwsA(isA<PaperPdfException>()),
+      );
+
+      expect(
+        events.map((event) => event.operation),
+        [SparkDiagnosticOperation.paperPdfDownload],
+      );
+      expect(events.single.errorType, 'StateError');
+    });
   });
 
   test('malformed cached PDF chunks are quarantined', () async {
@@ -479,6 +527,13 @@ class _StreamingClient extends http.BaseClient {
   void close() {
     closed = true;
     super.close();
+  }
+}
+
+class _ThrowingClient extends http.BaseClient {
+  @override
+  Future<http.StreamedResponse> send(http.BaseRequest request) async {
+    throw StateError('private-download-details');
   }
 }
 

@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:spark/src/core/diagnostics/diagnostics.dart';
 import 'package:spark/src/features/papers/data/cached_paper_pdf_content_provider.dart';
 import 'package:spark/src/features/papers/data/paper_pdf_extraction_service.dart';
 import 'package:spark/src/features/papers/domain/paper.dart';
@@ -50,12 +51,21 @@ void main() {
       repository: repository,
       extractionService: extractionService,
     );
+    final events = <SparkDiagnosticEvent>[];
 
-    final result = await provider.load(_paper);
+    final result = await SparkDiagnostics.runWithSink(
+      events.add,
+      () => provider.load(_paper),
+    );
 
     expect(result.chunks.single.text, 'body');
     expect(extractionService.downloadCalls, 1);
     expect(repository.saved, same(result));
+    expect(
+      events.map((event) => event.operation),
+      [SparkDiagnosticOperation.paperPdfCacheLoad],
+    );
+    expect(events.single.severity, SparkDiagnosticSeverity.warning);
   });
 
   test('cache save failures do not discard extracted text', () async {
@@ -65,11 +75,20 @@ void main() {
       repository: repository,
       extractionService: extractionService,
     );
+    final events = <SparkDiagnosticEvent>[];
 
-    final result = await provider.load(_paper);
+    final result = await SparkDiagnostics.runWithSink(
+      events.add,
+      () => provider.load(_paper),
+    );
 
     expect(result.chunks.single.text, 'body');
     expect(extractionService.extractCalls, 1);
+    expect(
+      events.map((event) => event.operation),
+      [SparkDiagnosticOperation.paperPdfCacheSave],
+    );
+    expect(events.single.severity, SparkDiagnosticSeverity.warning);
   });
 }
 

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
+import '../../../core/diagnostics/diagnostics.dart';
 import '../domain/chat_session_repository.dart';
 import '../domain/chat_session_settings.dart';
 
@@ -92,7 +93,12 @@ class ChatSessionController extends ChangeNotifier {
     try {
       await _repository.setPinned(contextId, !session.pinned);
       await _reloadAfterMutation();
-    } on ChatSessionPersistenceException catch (error) {
+    } on ChatSessionPersistenceException catch (error, stackTrace) {
+      _reportPersistenceFailure(
+        SparkDiagnosticOperation.chatSessionPin,
+        error,
+        stackTrace,
+      );
       _setError(error.message);
     }
   }
@@ -108,11 +114,26 @@ class ChatSessionController extends ChangeNotifier {
       _rebuildEntries(_rawSessions);
       _error = null;
       _notify();
-    } on ChatSessionPersistenceException catch (error) {
+    } on ChatSessionPersistenceException catch (error, stackTrace) {
+      _reportPersistenceFailure(
+        SparkDiagnosticOperation.chatSessionDelete,
+        error,
+        stackTrace,
+      );
       _setError(error.message);
-    } on ChatSessionSettingsPersistenceException catch (error) {
+    } on ChatSessionSettingsPersistenceException catch (error, stackTrace) {
+      _reportPersistenceFailure(
+        SparkDiagnosticOperation.chatSessionDelete,
+        error,
+        stackTrace,
+      );
       _setError(error.message);
-    } catch (_) {
+    } on Object catch (error, stackTrace) {
+      _reportPersistenceFailure(
+        SparkDiagnosticOperation.chatSessionDelete,
+        error,
+        stackTrace,
+      );
       _setError('无法删除 AI 会话。');
     }
   }
@@ -126,9 +147,19 @@ class ChatSessionController extends ChangeNotifier {
       _rawSessions = sessions;
       _rebuildEntries(sessions);
       _error = null;
-    } on ChatSessionPersistenceException catch (error) {
+    } on ChatSessionPersistenceException catch (error, stackTrace) {
+      _reportPersistenceFailure(
+        SparkDiagnosticOperation.chatSessionLoad,
+        error,
+        stackTrace,
+      );
       if (!_disposed) _error = error.message;
-    } catch (_) {
+    } on Object catch (error, stackTrace) {
+      _reportPersistenceFailure(
+        SparkDiagnosticOperation.chatSessionLoad,
+        error,
+        stackTrace,
+      );
       if (!_disposed) _error = '无法读取 AI 会话列表。';
     } finally {
       if (!_disposed) {
@@ -171,6 +202,19 @@ class ChatSessionController extends ChangeNotifier {
   void _setError(String message) {
     _error = message;
     _notify();
+  }
+
+  static void _reportPersistenceFailure(
+    SparkDiagnosticOperation operation,
+    Object error,
+    StackTrace stackTrace,
+  ) {
+    SparkDiagnostics.reportUnexpected(
+      operation: operation,
+      error: error,
+      stackTrace: stackTrace,
+      severity: SparkDiagnosticSeverity.warning,
+    );
   }
 
   void _notify() {

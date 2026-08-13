@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:spark/src/core/diagnostics/diagnostics.dart';
 import 'package:spark/src/features/chat/application/chat_conversation_controller.dart';
 import 'package:spark/src/features/chat/application/main_ai_chat_definition.dart';
 import 'package:spark/src/features/chat/domain/chat_ai_service.dart';
@@ -207,13 +208,20 @@ void main() {
       service: _QueueChatAiService(['回答']),
       sessionRepository: repository,
     );
+    final events = <SparkDiagnosticEvent>[];
 
-    await controller.send('问题');
-    await controller.clear();
+    await SparkDiagnostics.runWithSink(events.add, () async {
+      await controller.send('问题');
+      await controller.clear();
+    });
 
     expect(repository.saveCalls, 2);
     expect(repository.clearCalls, 1);
     expect(controller.messages, isEmpty);
+    expect(
+      events.map((event) => event.operation),
+      [SparkDiagnosticOperation.chatConversationSave],
+    );
     controller.dispose();
   });
 
@@ -287,6 +295,66 @@ void main() {
 
     expect(controller.settings.customSystemPrompt, '使用用户的新设置。');
     expect(controller.settings.responseStyle, ChatResponseStyle.detailed);
+  });
+
+  test('settings save failures report without reverting local settings',
+      () async {
+    const context = ChatContext(
+      id: 'settings-save-failure-test',
+      title: '设置保存失败测试',
+      systemPrompt: '回答问题。',
+    );
+    final controller = ChatConversationController(
+      context: context,
+      service: _CapturingChatAiService(),
+      settingsRepository: const _FailingChatSessionSettingsRepository(
+        failSave: true,
+      ),
+    );
+    addTearDown(controller.dispose);
+    final events = <SparkDiagnosticEvent>[];
+
+    await SparkDiagnostics.runWithSink(
+      events.add,
+      () => controller.updateSettings(
+        const ChatSessionSettings(
+          customSystemPrompt: '保留本地设置',
+        ),
+      ),
+    );
+
+    expect(controller.settings.customSystemPrompt, '保留本地设置');
+    expect(controller.error, '无法保存会话设置。');
+    expect(
+      events.map((event) => event.operation),
+      [SparkDiagnosticOperation.chatConversationSettingsSave],
+    );
+  });
+
+  test('settings load failures report and finish initialization', () async {
+    const context = ChatContext(
+      id: 'settings-load-failure-test',
+      title: '设置加载失败测试',
+      systemPrompt: '回答问题。',
+    );
+    final controller = ChatConversationController(
+      context: context,
+      service: _CapturingChatAiService(),
+      settingsRepository: const _FailingChatSessionSettingsRepository(
+        failLoad: true,
+      ),
+    );
+    addTearDown(controller.dispose);
+    final events = <SparkDiagnosticEvent>[];
+
+    await SparkDiagnostics.runWithSink(events.add, controller.initialize);
+
+    expect(controller.loading, isFalse);
+    expect(controller.error, '无法读取会话设置。');
+    expect(
+      events.map((event) => event.operation),
+      [SparkDiagnosticOperation.chatConversationSettingsLoad],
+    );
   });
 
   test('deleteMessagesAt removes selected messages in descending index order',
@@ -487,4 +555,36 @@ class _PendingChatSessionSettingsRepository
     String contextId,
     ChatSessionSettings settings,
   ) async {}
+}
+
+class _FailingChatSessionSettingsRepository
+    implements ChatSessionSettingsRepository {
+  const _FailingChatSessionSettingsRepository({
+    this.failLoad = false,
+    this.failSave = false,
+  });
+
+  final bool failLoad;
+  final bool failSave;
+
+  @override
+  Future<void> clear(String contextId) async {}
+
+  @override
+  Future<ChatSessionSettings> load(String contextId) async {
+    if (failLoad) {
+      throw const ChatSessionSettingsPersistenceException('无法读取会话设置。');
+    }
+    return ChatSessionSettings.empty;
+  }
+
+  @override
+  Future<void> save(
+    String contextId,
+    ChatSessionSettings settings,
+  ) async {
+    if (failSave) {
+      throw const ChatSessionSettingsPersistenceException('无法保存会话设置。');
+    }
+  }
 }

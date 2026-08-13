@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
+import '../../../core/diagnostics/diagnostics.dart';
 import '../domain/chat_context.dart';
 import '../domain/chat_ai_service.dart';
 import '../domain/chat_message.dart';
@@ -108,7 +109,12 @@ class ChatConversationController extends ChangeNotifier {
     if (repository == null) return;
     try {
       await repository.save(context.id, settings);
-    } on ChatSessionSettingsPersistenceException catch (error) {
+    } on ChatSessionSettingsPersistenceException catch (error, stackTrace) {
+      _reportPersistenceFailure(
+        SparkDiagnosticOperation.chatConversationSettingsSave,
+        error,
+        stackTrace,
+      );
       if (!_disposed) _persistenceError = error.message;
     }
   }
@@ -159,9 +165,19 @@ class ChatConversationController extends ChangeNotifier {
           _settings = storedSettings;
         }
       }
-    } on ChatSessionPersistenceException catch (error) {
+    } on ChatSessionPersistenceException catch (error, stackTrace) {
+      _reportPersistenceFailure(
+        SparkDiagnosticOperation.chatConversationSessionLoad,
+        error,
+        stackTrace,
+      );
       if (!_disposed) _persistenceError = error.message;
-    } on ChatSessionSettingsPersistenceException catch (error) {
+    } on ChatSessionSettingsPersistenceException catch (error, stackTrace) {
+      _reportPersistenceFailure(
+        SparkDiagnosticOperation.chatConversationSettingsLoad,
+        error,
+        stackTrace,
+      );
       if (!_disposed) _persistenceError = error.message;
     } finally {
       if (!_disposed) {
@@ -269,12 +285,22 @@ class ChatConversationController extends ChangeNotifier {
     final operation = _enqueueWrite(() async {
       try {
         await repository.clear(context.id);
-      } on ChatSessionPersistenceException catch (error) {
+      } on ChatSessionPersistenceException catch (error, stackTrace) {
+        _reportPersistenceFailure(
+          SparkDiagnosticOperation.chatConversationClear,
+          error,
+          stackTrace,
+        );
         if (!_disposed && writeVersion == _writeVersion) {
           _persistenceError = error.message;
           _notify();
         }
-      } catch (_) {
+      } on Object catch (error, stackTrace) {
+        _reportPersistenceFailure(
+          SparkDiagnosticOperation.chatConversationClear,
+          error,
+          stackTrace,
+        );
         if (!_disposed && writeVersion == _writeVersion) {
           _persistenceError = '无法清空 AI 对话记录。';
           _notify();
@@ -351,9 +377,19 @@ class ChatConversationController extends ChangeNotifier {
       _requestStatus = ChatRequestStatus.cancelled;
       _persist();
       _notify();
-    } on ChatAiException catch (error) {
+    } on ChatAiException catch (error, stackTrace) {
+      SparkDiagnostics.reportUnexpected(
+        operation: SparkDiagnosticOperation.chatConversationRequest,
+        error: error,
+        stackTrace: stackTrace,
+      );
       _setError(requestVersion, error.message);
-    } on Exception {
+    } on Exception catch (error, stackTrace) {
+      SparkDiagnostics.reportUnexpected(
+        operation: SparkDiagnosticOperation.chatConversationRequest,
+        error: error,
+        stackTrace: stackTrace,
+      );
       _setError(requestVersion, 'AI 服务发生未知错误，请稍后重试。');
     }
   }
@@ -418,12 +454,22 @@ class ChatConversationController extends ChangeNotifier {
     _enqueueWrite(() async {
       try {
         await repository.save(context.id, snapshot);
-      } on ChatSessionPersistenceException catch (error) {
+      } on ChatSessionPersistenceException catch (error, stackTrace) {
+        _reportPersistenceFailure(
+          SparkDiagnosticOperation.chatConversationSave,
+          error,
+          stackTrace,
+        );
         if (!_disposed && writeVersion == _writeVersion) {
           _persistenceError = error.message;
           _notify();
         }
-      } catch (_) {
+      } on Object catch (error, stackTrace) {
+        _reportPersistenceFailure(
+          SparkDiagnosticOperation.chatConversationSave,
+          error,
+          stackTrace,
+        );
         if (!_disposed && writeVersion == _writeVersion) {
           _persistenceError = '无法保存 AI 对话记录。';
           _notify();
@@ -436,9 +482,28 @@ class ChatConversationController extends ChangeNotifier {
     final queued = _writeQueue.then((_) => operation());
     _writeQueue = queued.then<void>(
       (_) {},
-      onError: (Object _, StackTrace __) {},
+      onError: (Object error, StackTrace stackTrace) {
+        _reportPersistenceFailure(
+          SparkDiagnosticOperation.chatConversationWriteQueue,
+          error,
+          stackTrace,
+        );
+      },
     );
     return queued;
+  }
+
+  static void _reportPersistenceFailure(
+    SparkDiagnosticOperation operation,
+    Object error,
+    StackTrace stackTrace,
+  ) {
+    SparkDiagnostics.reportUnexpected(
+      operation: operation,
+      error: error,
+      stackTrace: stackTrace,
+      severity: SparkDiagnosticSeverity.warning,
+    );
   }
 
   Future<void> flushPendingWrites() => _writeQueue;

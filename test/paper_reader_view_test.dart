@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:spark/src/core/diagnostics/diagnostics.dart';
 import 'package:spark/src/features/chat/chat.dart';
 import 'package:spark/src/features/papers/application/paper_comment_controller.dart';
 import 'package:spark/src/features/papers/application/paper_interaction_controller.dart';
@@ -9,6 +10,8 @@ import 'package:spark/src/features/papers/data/arxiv_seed_repository.dart';
 import 'package:spark/src/features/papers/domain/paper.dart';
 import 'package:spark/src/features/papers/domain/paper_keyword_record.dart';
 import 'package:spark/src/features/papers/domain/paper_keyword_repository.dart';
+import 'package:spark/src/features/papers/domain/paper_link_service.dart';
+import 'package:spark/src/features/papers/domain/paper_share.dart';
 import 'package:spark/src/features/papers/domain/paper_translation.dart';
 import 'package:spark/src/features/papers/presentation/widgets/paper_reader_card.dart';
 import 'package:spark/src/features/papers/presentation/widgets/paper_reader_view.dart';
@@ -98,36 +101,103 @@ void main() {
     addTearDown(interactions.dispose);
     addTearDown(comments.dispose);
     addTearDown(reading.dispose);
+    final events = <SparkDiagnosticEvent>[];
 
-    await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: PaperReaderView(
-            paper: const ArxivSeedRepository().getAll().first,
-            interactionController: interactions,
-            commentController: comments,
-            readingController: reading,
-            aiDiscussionBuilder: (
-              context, {
-              required paper,
-              required generatedKeywords,
-              required scrollController,
-            }) =>
-                const SizedBox.shrink(),
-            keywordService: const _FakeAiService(),
-            translationServiceFactory: const _FakeTranslationServiceFactory(),
-            keywordRepository: _ThrowingKeywordRepository(),
-            actionBarBottomInset: 0,
+    await SparkDiagnostics.runWithSink(events.add, () async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: PaperReaderView(
+              paper: const ArxivSeedRepository().getAll().first,
+              interactionController: interactions,
+              commentController: comments,
+              readingController: reading,
+              aiDiscussionBuilder: (
+                context, {
+                required paper,
+                required generatedKeywords,
+                required scrollController,
+              }) =>
+                  const SizedBox.shrink(),
+              keywordService: const _FakeAiService(),
+              translationServiceFactory: const _FakeTranslationServiceFactory(),
+              keywordRepository: _ThrowingKeywordRepository(),
+              actionBarBottomInset: 0,
+            ),
           ),
         ),
-      ),
-    );
+      );
 
-    await tester.tap(find.byKey(const ValueKey('paper-action-comment')));
-    await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('paper-action-comment')));
+      await tester.pumpAndSettle();
+    });
 
     expect(find.text('无法读取已生成的关键词，已使用空关键词继续'), findsOneWidget);
     expect(find.byKey(const ValueKey('paper-comments-sheet')), findsOneWidget);
+    expect(
+      events.map((event) => event.operation),
+      [SparkDiagnosticOperation.paperReaderKeywordsLoad],
+    );
+  });
+
+  testWidgets('reader reports link and share failures with existing messages',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(900, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final interactions = PaperInteractionController();
+    final comments = PaperCommentController();
+    final reading = PaperReadingController();
+    addTearDown(interactions.dispose);
+    addTearDown(comments.dispose);
+    addTearDown(reading.dispose);
+    final events = <SparkDiagnosticEvent>[];
+
+    await SparkDiagnostics.runWithSink(events.add, () async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: PaperReaderView(
+              paper: const ArxivSeedRepository().getAll().first,
+              interactionController: interactions,
+              commentController: comments,
+              readingController: reading,
+              aiDiscussionBuilder: (
+                context, {
+                required paper,
+                required generatedKeywords,
+                required scrollController,
+              }) =>
+                  const SizedBox.shrink(),
+              keywordService: const _FakeAiService(),
+              translationServiceFactory: const _FakeTranslationServiceFactory(),
+              linkService: const _ThrowingPaperLinkService(),
+              shareService: const _ThrowingPaperShareService(),
+              actionBarBottomInset: 0,
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.byKey(const ValueKey('paper-open-link')));
+      await tester.pump();
+      expect(find.text('无法打开论文链接'), findsOneWidget);
+      ScaffoldMessenger.of(
+        tester.element(find.byType(Scaffold)),
+      ).hideCurrentSnackBar();
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const ValueKey('paper-action-share')));
+      await tester.pumpAndSettle();
+      expect(find.text('无法分享论文。'), findsOneWidget);
+    });
+
+    expect(
+      events.map((event) => event.operation),
+      [
+        SparkDiagnosticOperation.paperReaderOpenLink,
+        SparkDiagnosticOperation.paperReaderShare,
+      ],
+    );
   });
 }
 
@@ -203,4 +273,22 @@ class _FakeAiService implements ChatAiService {
     required List<ChatMessage> conversation,
   }) async =>
       '["keyword 1", "keyword 2", "keyword 3", "keyword 4", "keyword 5"]';
+}
+
+class _ThrowingPaperLinkService implements PaperLinkService {
+  const _ThrowingPaperLinkService();
+
+  @override
+  Future<bool> open(Uri uri) async {
+    throw StateError('private-link-details');
+  }
+}
+
+class _ThrowingPaperShareService implements PaperShareService {
+  const _ThrowingPaperShareService();
+
+  @override
+  Future<PaperShareResult> share(PaperSharePayload payload) async {
+    throw const PaperShareException('无法分享论文。');
+  }
 }

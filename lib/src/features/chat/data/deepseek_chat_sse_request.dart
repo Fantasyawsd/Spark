@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:http/http.dart' as http;
 
+import '../../../core/diagnostics/diagnostics.dart';
 import '../domain/chat_ai_service.dart';
 
 class DeepSeekChatRequestTimeouts {
@@ -117,7 +118,13 @@ class DeepSeekChatSseRequest {
             if (finished) return;
             try {
               await subscription?.cancel();
-            } catch (_) {
+            } on Object catch (error, stackTrace) {
+              SparkDiagnostics.reportUnexpected(
+                operation: SparkDiagnosticOperation.deepSeekCancelSubscription,
+                error: error,
+                stackTrace: stackTrace,
+                severity: SparkDiagnosticSeverity.warning,
+              );
               // The canonical cancellation or timeout must still reach callers.
             }
             closeWithError(_errorFor(reason));

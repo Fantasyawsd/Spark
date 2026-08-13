@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/diagnostics/diagnostics.dart';
 import '../../../chat/chat.dart';
 import '../../application/paper_comment_controller.dart';
 import '../../application/paper_interaction_controller.dart';
@@ -100,7 +101,13 @@ class PaperReaderView extends StatelessWidget {
     List<String> keywords;
     try {
       keywords = await _loadGeneratedKeywords();
-    } on Object {
+    } on Object catch (error, stackTrace) {
+      SparkDiagnostics.reportUnexpected(
+        operation: SparkDiagnosticOperation.paperReaderKeywordsLoad,
+        error: error,
+        stackTrace: stackTrace,
+        severity: SparkDiagnosticSeverity.warning,
+      );
       if (!context.mounted) return;
       _showMessage(context, '无法读取已生成的关键词，已使用空关键词继续');
       keywords = const [];
@@ -140,7 +147,13 @@ class PaperReaderView extends StatelessWidget {
       if (!opened && context.mounted) {
         _showMessage(context, '无法打开论文链接');
       }
-    } catch (_) {
+    } on Object catch (error, stackTrace) {
+      SparkDiagnostics.reportUnexpected(
+        operation: SparkDiagnosticOperation.paperReaderOpenLink,
+        error: error,
+        stackTrace: stackTrace,
+        severity: SparkDiagnosticSeverity.warning,
+      );
       if (context.mounted) _showMessage(context, '无法打开论文链接');
     }
   }
@@ -155,7 +168,13 @@ class PaperReaderView extends StatelessWidget {
       if (result == PaperShareResult.copied) {
         _showMessage(context, '分享内容已复制');
       }
-    } on PaperShareException catch (error) {
+    } on PaperShareException catch (error, stackTrace) {
+      SparkDiagnostics.reportUnexpected(
+        operation: SparkDiagnosticOperation.paperReaderShare,
+        error: error,
+        stackTrace: stackTrace,
+        severity: SparkDiagnosticSeverity.warning,
+      );
       if (context.mounted) _showMessage(context, error.message);
     }
   }

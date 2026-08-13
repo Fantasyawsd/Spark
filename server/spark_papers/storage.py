@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 import sqlite3
 from dataclasses import replace
 from contextlib import contextmanager
@@ -9,6 +8,8 @@ from pathlib import Path
 from typing import Any, Iterable, Iterator, Mapping
 
 from . import PAPER_SCHEMA_VERSION
+from .database_values import encode_json, load_json
+from .dataset_storage import DatasetStorage
 from .db_mapper import paper_from_row, paper_values
 from .identity import fuzzy_identity_score, normalize_external_ids, stable_paper_id
 from .identity_resolution import (
@@ -20,29 +21,6 @@ from .models import PaperRecord, parse_datetime, utc_now
 from .ports import IngestOutcome, IngestStatus
 from .paper_record_merger import merge_paper_records
 from .storage_schema import StorageSchemaManager
-
-
-def _json(value: Any) -> str:
-    return json.dumps(value, ensure_ascii=True, sort_keys=True, separators=(",", ":"))
-
-
-def _load(value: str | None, fallback: Any) -> Any:
-    if value is None:
-        return fallback
-    return json.loads(value)
-
-
-def _merge_nested(current: Mapping[str, Any], incoming: Mapping[str, Any]) -> dict[str, Any]:
-    merged = dict(current)
-    for key, value in incoming.items():
-        if value is None:
-            continue
-        existing = merged.get(key)
-        if isinstance(existing, Mapping) and isinstance(value, Mapping):
-            merged[key] = _merge_nested(existing, value)
-        else:
-            merged[key] = value
-    return merged
 
 
 class PaperStore:
@@ -64,6 +42,10 @@ class PaperStore:
         except Exception:
             self._connection.close()
             raise
+        self._dataset_storage = DatasetStorage(
+            self._connection,
+            timestamp_factory=utc_now,
+        )
 
     def close(self) -> None:
         self._connection.close()
@@ -115,7 +97,7 @@ class PaperStore:
     def find_fuzzy_candidates(self, title: str, author: str, limit: int = 5) -> list[tuple[str, float]]:
         rows = self._connection.execute("SELECT paper_id, title, authors_json FROM papers").fetchall()
         scored = [
-            (row["paper_id"], fuzzy_identity_score(title, row["title"], author, (_load(row["authors_json"], [""]) or [""])[0]))
+            (row["paper_id"], fuzzy_identity_score(title, row["title"], author, (load_json(row["authors_json"], [""]) or [""])[0]))
             for row in rows
         ]
         return sorted(scored, key=lambda item: item[1], reverse=True)[:limit]
@@ -133,7 +115,7 @@ class PaperStore:
             """INSERT INTO match_queue
                (source, external_id, candidate_paper_id, confidence, reason, payload_json, created_at)
                VALUES (?, ?, ?, ?, ?, ?, ?)""",
-            (source, external_id, candidate_paper_id, confidence, reason, _json(payload), utc_now().isoformat()),
+            (source, external_id, candidate_paper_id, confidence, reason, encode_json(payload), utc_now().isoformat()),
         )
         self._connection.commit()
 
@@ -231,7 +213,7 @@ class PaperStore:
                     source,
                     external_id,
                     merged.paper_id,
-                    _json(raw_payload),
+                    encode_json(raw_payload),
                     source_updated_at.isoformat() if source_updated_at else None,
                     fetched_at.isoformat(),
                     etag,
@@ -272,7 +254,7 @@ class PaperStore:
                         source,
                         fetched_at.isoformat(),
                         source_updated_at.isoformat() if source_updated_at else None,
-                        _json(evidence),
+                        encode_json(evidence),
                     ),
                 )
         return IngestOutcome(IngestStatus.STORED, merged.paper_id)
@@ -315,7 +297,7 @@ class PaperStore:
                     source,
                     normalized,
                     paper_id,
-                    _json(raw_payload),
+                    encode_json(raw_payload),
                     source_updated_at.isoformat() if source_updated_at else None,
                     fetched_at.isoformat(),
                 ),
@@ -732,68 +714,22 @@ class PaperStore:
         run_token: str,
         lease_seconds: int = 120,
     ) -> dict[str, Any]:
-        existing = self.get_dataset_import(dataset_key)
-        lease_expires_at = started_at + timedelta(seconds=max(30, lease_seconds))
-        if existing is not None:
-            unchanged = (
-                existing["source_path"] == source_path
-                and int(existing["source_size"]) == source_size
-                and int(existing["source_mtime_ns"]) == source_mtime_ns
-            )
-            if not unchanged:
-                raise ValueError(f"dataset source changed after checkpoint: {dataset_key}")
-            if existing["status"] == "completed":
-                return existing
-            active_lease = parse_datetime(existing.get("lease_expires_at"))
-            if (
-                existing.get("run_token")
-                and existing["run_token"] != run_token
-                and active_lease is not None
-                and active_lease > started_at
-            ):
-                raise RuntimeError(f"dataset import already running: {dataset_key}")
-            self._connection.execute(
-                """UPDATE dataset_imports SET status = 'running', error = NULL,
-                   run_token = ?, lease_expires_at = ?, updated_at = ? WHERE dataset_key = ?""",
-                (run_token, lease_expires_at.isoformat(), started_at.isoformat(), dataset_key),
-            )
-            self._connection.commit()
-            return self.get_dataset_import(dataset_key) or existing
-        self._connection.execute(
-            """INSERT INTO dataset_imports(
-                   dataset_key, source, source_path, source_size, source_mtime_ns,
-                   status, started_at, updated_at, run_token, lease_expires_at
-               ) VALUES (?, ?, ?, ?, ?, 'running', ?, ?, ?, ?)""",
-            (
-                dataset_key,
-                source,
-                source_path,
-                source_size,
-                source_mtime_ns,
-                started_at.isoformat(),
-                started_at.isoformat(),
-                run_token,
-                lease_expires_at.isoformat(),
-            ),
+        return self._dataset_storage.start_import(
+            dataset_key=dataset_key,
+            source=source,
+            source_path=source_path,
+            source_size=source_size,
+            source_mtime_ns=source_mtime_ns,
+            started_at=started_at,
+            run_token=run_token,
+            lease_seconds=lease_seconds,
         )
-        self._connection.commit()
-        return self.get_dataset_import(dataset_key) or {}
 
     def get_dataset_import(self, dataset_key: str) -> dict[str, Any] | None:
-        row = self._connection.execute(
-            "SELECT * FROM dataset_imports WHERE dataset_key = ?", (dataset_key,)
-        ).fetchone()
-        return dict(row) if row else None
+        return self._dataset_storage.get_import(dataset_key)
 
     def list_dataset_imports(self, prefix: str = "") -> list[dict[str, Any]]:
-        if prefix:
-            rows = self._connection.execute(
-                "SELECT * FROM dataset_imports WHERE dataset_key LIKE ? ORDER BY dataset_key",
-                (prefix + "%",),
-            ).fetchall()
-        else:
-            rows = self._connection.execute("SELECT * FROM dataset_imports ORDER BY dataset_key").fetchall()
-        return [dict(row) for row in rows]
+        return self._dataset_storage.list_imports(prefix)
 
     def apply_dataset_paper_batch(
         self,
@@ -807,120 +743,16 @@ class PaperStore:
         run_token: str,
         lease_seconds: int = 120,
     ) -> dict[str, int]:
-        paper_ids = [str(item["paper"].paper_id) for item in records]
-        existing_ids: set[str] = set()
-        for start in range(0, len(paper_ids), 500):
-            chunk = paper_ids[start : start + 500]
-            if not chunk:
-                continue
-            placeholders = ",".join("?" for _ in chunk)
-            rows = self._connection.execute(
-                f"SELECT paper_id FROM papers WHERE paper_id IN ({placeholders})", chunk
-            ).fetchall()
-            existing_ids.update(row["paper_id"] for row in rows)
-        unique_ids = set(paper_ids)
-        imported = len(unique_ids - existing_ids)
-        duplicates = len(records) - imported
-        at = fetched_at.isoformat()
-        with self.transaction() as connection:
-            connection.executemany(
-                """INSERT INTO papers(
-                       paper_id, title, abstract, authors_json, published_at, updated_at,
-                       subjects_json, external_ids_json, discovery_sources_json, signals_json,
-                       metadata_json, admitted, admission_reason, withdrawn, created_at,
-                       last_seen_at, schema_version
-                   ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                   ON CONFLICT(paper_id) DO UPDATE SET
-                       title=excluded.title, abstract=excluded.abstract,
-                       authors_json=excluded.authors_json, published_at=excluded.published_at,
-                       updated_at=excluded.updated_at, subjects_json=excluded.subjects_json,
-                       external_ids_json=json_patch(papers.external_ids_json, excluded.external_ids_json),
-                       signals_json=json_patch(papers.signals_json, excluded.signals_json),
-                       metadata_json=json_patch(papers.metadata_json, excluded.metadata_json),
-                       admitted=excluded.admitted, admission_reason=excluded.admission_reason,
-                       withdrawn=excluded.withdrawn, last_seen_at=excluded.last_seen_at,
-                       schema_version=excluded.schema_version""",
-                (paper_values(item["paper"], fetched_at, fetched_at) for item in records),
-            )
-            identity_rows = [
-                (key, value, item["paper"].paper_id)
-                for item in records
-                for key, value in item["paper"].external_ids.items()
-            ]
-            connection.executemany(
-                """INSERT INTO paper_external_ids(id_type, id_value, paper_id)
-                   VALUES (?, ?, ?)
-                   ON CONFLICT(id_type, id_value) DO UPDATE SET paper_id=excluded.paper_id""",
-                identity_rows,
-            )
-            connection.executemany(
-                """INSERT INTO source_observations(
-                       source, external_id, paper_id, payload_json, source_updated_at, fetched_at, etag
-                   ) VALUES (?, ?, ?, ?, ?, ?, NULL)
-                   ON CONFLICT(source, external_id) DO UPDATE SET
-                       paper_id=excluded.paper_id, payload_json=excluded.payload_json,
-                       source_updated_at=excluded.source_updated_at, fetched_at=excluded.fetched_at""",
-                (
-                    (
-                        item["source"],
-                        item["external_id"],
-                        item["paper"].paper_id,
-                        _json(item["raw_payload"]),
-                        item["source_updated_at"].isoformat() if item.get("source_updated_at") else None,
-                        at,
-                    )
-                    for item in records
-                ),
-            )
-            provenance_rows = [
-                (
-                    item["paper"].paper_id,
-                    field_name,
-                    item["source"],
-                    at,
-                    item["source_updated_at"].isoformat() if item.get("source_updated_at") else None,
-                    _json(evidence),
-                )
-                for item in records
-                for field_name, evidence in item["provenance"].items()
-            ]
-            connection.executemany(
-                """INSERT INTO provenance(
-                       paper_id, field_name, source, fetched_at, source_updated_at, evidence_json
-                   ) VALUES (?, ?, ?, ?, ?, ?)
-                   ON CONFLICT(paper_id, field_name, source) DO UPDATE SET
-                       fetched_at=excluded.fetched_at,
-                       source_updated_at=excluded.source_updated_at,
-                       evidence_json=excluded.evidence_json""",
-                provenance_rows,
-            )
-            self._insert_dataset_rejections(connection, dataset_key, rejections, fetched_at)
-            updated = connection.execute(
-                """UPDATE dataset_imports SET
-                       byte_offset = ?, line_number = ?,
-                       processed_count = processed_count + ?,
-                       imported_count = imported_count + ?,
-                       duplicate_count = duplicate_count + ?,
-                       rejected_count = rejected_count + ?,
-                       status = 'running', updated_at = ?, error = NULL,
-                       lease_expires_at = ?
-                   WHERE dataset_key = ? AND run_token = ?""",
-                (
-                    byte_offset,
-                    line_number,
-                    len(records) + len(rejections),
-                    imported,
-                    duplicates,
-                    len(rejections),
-                    at,
-                    (fetched_at + timedelta(seconds=max(30, lease_seconds))).isoformat(),
-                    dataset_key,
-                    run_token,
-                ),
-            )
-            if updated.rowcount != 1:
-                raise RuntimeError(f"dataset import lease lost: {dataset_key}")
-        return {"imported": imported, "duplicates": duplicates, "rejected": len(rejections)}
+        return self._dataset_storage.apply_paper_batch(
+            dataset_key=dataset_key,
+            records=records,
+            rejections=rejections,
+            byte_offset=byte_offset,
+            line_number=line_number,
+            fetched_at=fetched_at,
+            run_token=run_token,
+            lease_seconds=lease_seconds,
+        )
 
     def apply_dataset_enrichment_batch(
         self,
@@ -934,145 +766,15 @@ class PaperStore:
         run_token: str,
         lease_seconds: int = 120,
     ) -> dict[str, int]:
-        lookup_values = tuple(dict.fromkeys(str(item["lookup_value"]) for item in records))
-        identities: dict[str, str] = {}
-        for start in range(0, len(lookup_values), 500):
-            chunk = lookup_values[start : start + 500]
-            if not chunk:
-                continue
-            placeholders = ",".join("?" for _ in chunk)
-            rows = self._connection.execute(
-                f"SELECT id_value, paper_id FROM paper_external_ids "
-                f"WHERE id_type = 'arxiv_id' AND id_value IN ({placeholders})",
-                chunk,
-            ).fetchall()
-            identities.update({row["id_value"]: row["paper_id"] for row in rows})
-        matched_records = [(item, identities.get(str(item["lookup_value"]))) for item in records]
-        matched_records = [(item, paper_id) for item, paper_id in matched_records if paper_id is not None]
-        paper_ids = tuple(dict.fromkeys(str(paper_id) for _, paper_id in matched_records))
-        current_rows: dict[str, sqlite3.Row] = {}
-        for start in range(0, len(paper_ids), 500):
-            chunk = paper_ids[start : start + 500]
-            if not chunk:
-                continue
-            placeholders = ",".join("?" for _ in chunk)
-            rows = self._connection.execute(
-                f"SELECT paper_id, external_ids_json, signals_json, metadata_json FROM papers "
-                f"WHERE paper_id IN ({placeholders})",
-                chunk,
-            ).fetchall()
-            current_rows.update({row["paper_id"]: row for row in rows})
-        at = fetched_at.isoformat()
-        updates: list[tuple[str, str, str, str, str]] = []
-        identity_rows: list[tuple[str, str, str]] = []
-        observation_rows: list[tuple[Any, ...]] = []
-        provenance_rows: list[tuple[Any, ...]] = []
-        for item, paper_id in matched_records:
-            current = current_rows[str(paper_id)]
-            external_ids = _merge_nested(_load(current["external_ids_json"], {}), item.get("external_ids") or {})
-            signals = _merge_nested(_load(current["signals_json"], {}), item.get("signals") or {})
-            metadata = _merge_nested(_load(current["metadata_json"], {}), item.get("metadata") or {})
-            updates.append((_json(external_ids), _json(signals), _json(metadata), at, str(paper_id)))
-            identity_rows.extend((key, value, str(paper_id)) for key, value in (item.get("external_ids") or {}).items())
-            observation_rows.append(
-                (
-                    item["source"],
-                    item["external_id"],
-                    str(paper_id),
-                    _json(item["raw_payload"]),
-                    at,
-                )
-            )
-            provenance_rows.extend(
-                (
-                    str(paper_id),
-                    field_name,
-                    item["source"],
-                    at,
-                    _json(evidence),
-                )
-                for field_name, evidence in item["provenance"].items()
-            )
-        unmatched = len(records) - len(matched_records)
-        with self.transaction() as connection:
-            connection.executemany(
-                """UPDATE papers SET external_ids_json = ?, signals_json = ?, metadata_json = ?,
-                   last_seen_at = ? WHERE paper_id = ?""",
-                updates,
-            )
-            connection.executemany(
-                """INSERT INTO paper_external_ids(id_type, id_value, paper_id)
-                   VALUES (?, ?, ?)
-                   ON CONFLICT(id_type, id_value) DO UPDATE SET paper_id=excluded.paper_id""",
-                identity_rows,
-            )
-            connection.executemany(
-                """INSERT INTO source_observations(
-                       source, external_id, paper_id, payload_json, source_updated_at, fetched_at, etag
-                   ) VALUES (?, ?, ?, ?, NULL, ?, NULL)
-                   ON CONFLICT(source, external_id) DO UPDATE SET
-                       paper_id=excluded.paper_id, payload_json=excluded.payload_json,
-                       fetched_at=excluded.fetched_at""",
-                observation_rows,
-            )
-            connection.executemany(
-                """INSERT INTO provenance(
-                       paper_id, field_name, source, fetched_at, source_updated_at, evidence_json
-                   ) VALUES (?, ?, ?, ?, NULL, ?)
-                   ON CONFLICT(paper_id, field_name, source) DO UPDATE SET
-                       fetched_at=excluded.fetched_at, evidence_json=excluded.evidence_json""",
-                provenance_rows,
-            )
-            self._insert_dataset_rejections(connection, dataset_key, rejections, fetched_at)
-            updated = connection.execute(
-                """UPDATE dataset_imports SET
-                       byte_offset = ?, line_number = ?,
-                       processed_count = processed_count + ?,
-                       imported_count = imported_count + ?,
-                       rejected_count = rejected_count + ?,
-                       unmatched_count = unmatched_count + ?,
-                       status = 'running', updated_at = ?, error = NULL,
-                       lease_expires_at = ?
-                   WHERE dataset_key = ? AND run_token = ?""",
-                (
-                    byte_offset,
-                    line_number,
-                    len(records) + len(rejections),
-                    len(matched_records),
-                    len(rejections),
-                    unmatched,
-                    at,
-                    (fetched_at + timedelta(seconds=max(30, lease_seconds))).isoformat(),
-                    dataset_key,
-                    run_token,
-                ),
-            )
-            if updated.rowcount != 1:
-                raise RuntimeError(f"dataset import lease lost: {dataset_key}")
-        return {"matched": len(matched_records), "unmatched": unmatched, "rejected": len(rejections)}
-
-    def _insert_dataset_rejections(
-        self,
-        connection: sqlite3.Connection,
-        dataset_key: str,
-        rejections: list[Mapping[str, Any]],
-        created_at: datetime,
-    ) -> None:
-        connection.executemany(
-            """INSERT OR REPLACE INTO dataset_rejections(
-                   dataset_key, line_number, byte_offset, error, payload_excerpt, created_at
-               ) VALUES (?, ?, ?, ?, ?, ?)""",
-            (
-                (
-                    dataset_key,
-                    int(item["line_number"]),
-                    int(item["byte_offset"]),
-                    str(item["error"]),
-                    str(item.get("payload_excerpt") or "")[:1000],
-                    created_at.isoformat(),
-                )
-                for item in rejections
-            ),
+        return self._dataset_storage.apply_enrichment_batch(
+            dataset_key=dataset_key,
+            records=records,
+            rejections=rejections,
+            byte_offset=byte_offset,
+            line_number=line_number,
+            fetched_at=fetched_at,
+            run_token=run_token,
+            lease_seconds=lease_seconds,
         )
 
     def complete_dataset_import(
@@ -1082,66 +784,32 @@ class PaperStore:
         *,
         run_token: str,
     ) -> dict[str, Any]:
-        updated = self._connection.execute(
-            """UPDATE dataset_imports SET status = 'completed', completed_at = ?,
-               updated_at = ?, error = NULL, run_token = NULL, lease_expires_at = NULL
-               WHERE dataset_key = ? AND run_token = ?""",
-            (completed_at.isoformat(), completed_at.isoformat(), dataset_key, run_token),
+        return self._dataset_storage.complete_import(
+            dataset_key,
+            completed_at,
+            run_token=run_token,
         )
-        if updated.rowcount != 1:
-            self._connection.rollback()
-            raise RuntimeError(f"dataset import lease lost: {dataset_key}")
-        self._connection.commit()
-        return self.get_dataset_import(dataset_key) or {}
 
     def pause_dataset_import(self, dataset_key: str, paused_at: datetime, *, run_token: str) -> dict[str, Any]:
-        updated = self._connection.execute(
-            """UPDATE dataset_imports SET run_token = NULL, lease_expires_at = NULL,
-               updated_at = ? WHERE dataset_key = ? AND run_token = ?""",
-            (paused_at.isoformat(), dataset_key, run_token),
+        return self._dataset_storage.pause_import(
+            dataset_key,
+            paused_at,
+            run_token=run_token,
         )
-        if updated.rowcount != 1:
-            self._connection.rollback()
-            raise RuntimeError(f"dataset import lease lost: {dataset_key}")
-        self._connection.commit()
-        return self.get_dataset_import(dataset_key) or {}
 
     def fail_dataset_import(self, dataset_key: str, error: str, failed_at: datetime, *, run_token: str) -> None:
-        self._connection.execute(
-            """UPDATE dataset_imports SET status = 'failed', error = ?, updated_at = ?,
-               run_token = NULL, lease_expires_at = NULL
-               WHERE dataset_key = ? AND run_token = ?""",
-            (error, failed_at.isoformat(), dataset_key, run_token),
+        self._dataset_storage.fail_import(
+            dataset_key,
+            error,
+            failed_at,
+            run_token=run_token,
         )
-        self._connection.commit()
 
     def reconcile_arxiv_dataset(self, dataset_key: str, source_path: str) -> dict[str, Any]:
-        state = self.get_dataset_import(dataset_key)
-        if state is None:
-            raise ValueError(f"unknown dataset import: {dataset_key}")
-        observations = int(
-            self._connection.execute(
-                """SELECT COUNT(*) FROM source_observations
-                   WHERE source = 'arxiv'
-                     AND json_extract(payload_json, '$.source_path') = ?""",
-                (source_path,),
-            ).fetchone()[0]
+        return self._dataset_storage.reconcile_arxiv_import(
+            dataset_key,
+            source_path,
         )
-        rejected = int(
-            self._connection.execute(
-                "SELECT COUNT(*) FROM dataset_rejections WHERE dataset_key = ?", (dataset_key,)
-            ).fetchone()[0]
-        )
-        processed = int(state["line_number"])
-        duplicates = max(processed - observations - rejected, 0)
-        self._connection.execute(
-            """UPDATE dataset_imports SET processed_count = ?, imported_count = ?,
-               duplicate_count = ?, rejected_count = ?, updated_at = ?
-               WHERE dataset_key = ?""",
-            (processed, observations, duplicates, rejected, utc_now().isoformat(), dataset_key),
-        )
-        self._connection.commit()
-        return self.get_dataset_import(dataset_key) or {}
 
     def indexes_ready(self) -> bool:
         admitted = int(
@@ -1264,7 +932,14 @@ class PaperStore:
             """INSERT OR REPLACE INTO recommendation_batches
                (batch_id, generated_at, score_version, sampling_seed, feature_snapshot_json, selected_paper_ids_json)
                VALUES (?, ?, ?, ?, ?, ?)""",
-            (batch_id, generated_at.isoformat(), score_version, sampling_seed, _json(feature_snapshot), _json(selected_paper_ids)),
+            (
+                batch_id,
+                generated_at.isoformat(),
+                score_version,
+                sampling_seed,
+                encode_json(feature_snapshot),
+                encode_json(selected_paper_ids),
+            ),
         )
         self._connection.commit()
 

@@ -10,8 +10,8 @@
 - Worktree：`C:\Users\Fantasy\Desktop\Spark-worktrees\agent-2`
 - 基线提交：`e61d320939fba18b58b489ed99d140b4c84e57aa`
 - 负责人：Codex（Fantasy 编排）
-- 状态：开发中（实现完成，待 `/test`）
-- 最近更新：`2026-08-13 15:00`（Asia/Shanghai）
+- 状态：待审查（`/test` 已通过）
+- 最近更新：`2026-08-13 15:04`（Asia/Shanghai）
 
 ## 目标
 
@@ -33,7 +33,7 @@
 - [x] `core/widgets` 的业务复用检查以真实 feature 可达性为依据，不把测试或 barrel export 误算为业务复用；少于两个独立业务模块使用的组件会失败或具有明确、可审查的基础设施例外。
 - [x] 报告指出的生产零调用 `CherryButton` 被删除，`ProfileAvatar` 与 `TopicChip` 回归各自业务模块；新守卫发现的其他同类现存问题须修正或记录符合规范的例外理由。
 - [x] 组件移动后的导入、公开入口与测试同步更新，用户可观察行为不变。
-- [ ] 架构定向测试、相关 Widget 测试、Dart 格式、`flutter analyze`、`flutter test` 和 `git diff --check` 通过。
+- [x] 架构定向测试、相关 Widget 测试、Dart 格式、`flutter analyze`、`flutter test` 和 `git diff --check` 通过。
 
 ## 写入范围
 
@@ -75,8 +75,9 @@
 - 已完成：新增 `core/widgets` 反向可达 feature 守卫；隔离 fixture 证明 core 包装器可透传真实使用，而测试导入和无人使用的 barrel 不计数。
 - 已完成：新守卫在修复前准确报告 `ProfileAvatar`、`TopicChip` 和 `SparkThemeSheet` 三项单 feature 归属；三者已移回 community、papers 和 profile。
 - 已完成：删除生产零调用的 `CherryButton` 及专用测试，保留仍有真实调用的 `CherryIconButton` 和 `CherrySurface`；形成 `6fc6a73` 检查点。
-- 正在进行：第二批实现已完成，等待执行 `/test` 完整验证门禁。
-- 下一步：触发 `/test`，运行改动格式、`flutter analyze` 和 `flutter test` 全量门禁并记录证据。
+- 已完成：`/test` 完整门禁通过；20 个 Dart 文件格式、静态分析、461 项 Flutter 测试、55 项服务端测试、Python 编译与 Git 检查均成功。
+- 正在进行：实现与完整验证已完成，等待只读 `/review`。
+- 下一步：触发 `/review`，对批准基线 `e61d320...当前任务 tip` 做规格与架构双轴审查；通过后保留为下一串联 worktree 基线，不合入 `main`。
 - 阻塞项：无。
 
 ## 决策记录
@@ -106,7 +107,14 @@
 | `.\tool\verify_changed_dart_format.ps1`（第二轮） | 通过；20 个当前任务 Dart 文件均无需格式化 | 2026-08-13 |
 | `flutter analyze`（第二轮） | `No issues found` | 2026-08-13 |
 | 删除符号与旧路径全量检索 | `CherryButton*`、`showSparkThemeSheet` 和三个旧 `core/widgets` 路径均为 0 引用 | 2026-08-13 |
-| 人工验收 | 按编排者明确指示不运行 | 2026-08-13 |
+| `/test` `.\tool\verify_changed_dart_format.ps1` | 通过；20 个任务相关 Dart 文件，0 个需格式化 | 2026-08-13 |
+| `/test` `flutter analyze` | `No issues found` | 2026-08-13 |
+| `/test` `flutter test` | 461 项全部通过 | 2026-08-13 |
+| `/test` `$env:PYTHONPATH=(Resolve-Path server).Path; python -m unittest discover -s server/tests -v` | 串联基线的 55 项服务端测试全部通过 | 2026-08-13 |
+| `/test` `python -m compileall -q server` | 通过 | 2026-08-13 |
+| `/test` `git diff --check`、`git diff --cached --check` 与工作区检查 | 通过；验证前后任务 worktree 干净，Flutter 生成文件内容未变化 | 2026-08-13 |
+| `/test` 目标构建 | 按阶段规范不运行；APK 与 Windows release 构建属于常规 `/finish` 合入 `main` 后门禁，本修复链明确不合入 `main` | 2026-08-13 |
+| `/test` 人工验收 | 按编排者明确指示不运行；本批不改变可观察交互 | 2026-08-13 |
 
 ## 审查结论
 
@@ -126,7 +134,7 @@
 
 ### 交付摘要
 
-四类架构盲区和新守卫直接揭示的组件归属问题均已修复；待 `/test` 与 `/review` 完成后补齐最终验证和审查结论。本任务按编排者要求不合入 `main`。
+四类架构盲区和新守卫直接揭示的组件归属问题均已修复，完整 `/test` 已通过；待 `/review` 补齐最终审查结论。本任务按编排者要求不合入 `main`。
 
 ### 实际变更
 
@@ -144,7 +152,7 @@
 
 ### 已知风险与回滚
 
-- 已知风险：当前 `core` 复用规则按文件级生产依赖判定；单个共享文件内部未来新增的未使用公开符号仍需 analyzer、引用检索和审查共同发现。
+- 已知风险：完整自动化门禁无已知失败；当前 `core` 复用规则按文件级生产依赖判定，单个共享文件内部未来新增的未使用公开符号仍需 analyzer、引用检索和审查共同发现。
 - 回滚方式：按逆序 `git revert 6fc6a73 d8f26ae`；无数据迁移。
 
 ### 文档更新建议

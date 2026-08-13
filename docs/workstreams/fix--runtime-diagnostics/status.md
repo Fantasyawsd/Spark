@@ -8,8 +8,8 @@
 - Worktree：`C:\Users\Fantasy\Desktop\Spark-worktrees\agent-6`
 - 基线提交：`4474bcffd8a1e9c49baba0be9bfe1b7398d35c5c`
 - 负责人：Fantasy（编排者）
-- 状态：审查发现阻断项，待修复
-- 最近更新：2026-08-13 18:31
+- 状态：审查回修完成，待重新测试
+- 最近更新：2026-08-13 18:42
 
 ## 目标
 
@@ -28,12 +28,12 @@
 
 - [x] 客户端提供跨 feature 复用、可替换测试 sink 的诊断接口；默认输出只包含固定 operation、severity、异常运行时类型和 stack trace，不调用异常 `toString()`，不接受任意上下文 payload。
 - [x] Flutter framework、platform/async 顶层未处理错误进入同一诊断边界，并保持 Flutter 默认错误呈现与进程级错误传播契约。
-- [ ] `lib/` 内现有 25 处匿名 `catch (_)` 与 16 处无绑定变量的 `on Object` 完成逐项分类；另修复报告漏检的 5 处无绑定变量 `on Exception`：最终消费的意外异常被报告，取消等预期控制流不记录，转换后继续上抛路径保留原 stack 且不重复记录。`/review` 发现 PDF 下载/worker 转换后会在全文入口重复记录。
+- [x] `lib/` 内现有 25 处匿名 `catch (_)` 与 16 处无绑定变量的 `on Object` 完成逐项分类；另修复报告漏检的 5 处无绑定变量 `on Exception`：最终消费的意外异常被报告，取消等预期控制流不记录，转换后继续上抛路径保留原 stack 且不重复记录。审查回修后 PDF 下载/worker 仅转换并保留 stack，由全文入口统一记录一次。
 - [x] Feed、搜索、离线仓储、缓存、本地 JSON、PDF、聊天持久化与展示操作的既有 fallback/错误提示不变，并由定向回归覆盖诊断事件和业务结果。
 - [x] 服务端使用 Python 标准 logging 在 HTTP/CLI/同步边界记录安全的操作事件与 stack trace；已写入同步报告或拒绝计数的预期数据问题不重复记录原始记录。
-- [ ] Paper API 未预期分发及响应序列化异常返回固定 `internal_error` 响应，不再向客户端暴露底层异常文本；400 参数错误契约保持不变。`/review` 证明内部 `ValueError` 仍被误判为 400 并原样暴露。
-- [ ] 客户端与服务端隐私回归证明密钥、提示词、论文/聊天内容、请求查询、CLI 参数和原始数据不会进入捕获的诊断文本。内部 `ValueError` 泄露路径尚未封闭。
-- [x] 静态门禁禁止新增匿名 broad catch；Dart 格式检查、`flutter analyze`、Flutter 全量测试、服务端全量测试、Python 编译和 `git diff --check` 通过。
+- [x] Paper API 未预期分发及响应序列化异常返回固定 `internal_error` 响应，不再向客户端暴露底层异常文本；400 参数错误契约保持不变。审查回修后只有专用请求校验异常返回 400，内部 `ValueError` 进入固定 500。
+- [x] 客户端与服务端隐私回归证明密钥、提示词、论文/聊天内容、请求查询、CLI 参数和原始数据不会进入捕获的诊断文本；内部 `ValueError` 文本也不会进入响应或日志。
+- [ ] 静态门禁禁止新增匿名 broad catch；Dart 格式检查、`flutter analyze`、Flutter 全量测试、服务端全量测试、Python 编译和 `git diff --check` 通过。审查回修后需重新执行 `/test` 全量门禁。
 
 ## 写入范围
 
@@ -67,6 +67,7 @@
 4. 第四轮：扩展本地数据、评论、频道偏好、交互、关键词、阅读和翻译固定 operation；改造 7 个状态控制器的读取、保存、清理和生成失败边界，在对应 7 个测试文件中同时断言诊断事件与原 fallback；在 `architecture_boundaries_test.dart` 增加匿名 broad catch 静态门禁。
 5. 第五轮：新增 `server/spark_papers/diagnostics.py`，以固定 operation、异常类型和不含异常文本/局部变量的文件名-行号-函数 stack 使用 Python 标准 logging；HTTP 防御边界固定 500 响应，CLI 按固定子命令记录未预期失败；`SourceError`、逐记录拒绝和导入失败状态保持原报告/计数及继续传播语义，不重复日志；在 API、CLI、pipeline 与独立诊断测试中覆盖事件、stack、400/500 和隐私。
 6. 第六轮：在客户端诊断总测试中校验全部固定 operation 的唯一性、安全字符集和异常零字符串化；在架构测试中禁止生产 Dart 代码绕过统一入口直接输出日志；在服务端诊断总测试中加入同等 operation/旁路日志门禁，并补强 HTTP/CLI 单次故障仅产生一个安全事件。定向验证通过后，另行执行 `/test` 全量门禁并进入 `/review` 只读审查。
+7. 审查回修：在 `server/spark_papers/api.py` 用专用请求校验异常隔离 400 与内部 500，并在 `server/tests/test_api.py` 锁定内部 `ValueError` 的固定响应、单事件和隐私；在 `paper_pdf_extraction_service.dart` 让下载/worker 转换仅保留原 stack 并继续传播，由全文入口作为唯一报告边界，移除失去生产调用方的 PDF 中间层 operation，在 `paper_pdf_test.dart` 与 `paper_ai_chat_app_bar_test.dart` 覆盖中间层零事件和真实串联单事件。
 
 ## 当前进度
 
@@ -90,9 +91,11 @@
 - 已完成：HTTP 与 CLI 未预期失败的隐私回归明确断言单次故障恰好产生一条事件；ChatPaper 分层失败回归保持最终控制器单次记录。
 - 已完成：独立 `/test` 全量门禁通过；Flutter 523 项、服务端 62 项、格式、静态分析、Python 编译与空白检查均成功。
 - 已完成：`/review` 从任务基线 `4474bcf` 逐项核对 59 个改动文件、结构阻断条件、验收标准与全量测试证据。
-- 待修复：Paper API 仅应把明确的请求校验异常映射为 400；存储、映射或推荐层抛出的 `ValueError` 必须记录一次并返回固定 500。
-- 待修复：PDF 下载、worker unexpected/protocol/crash/spawn 已记录后又转换为 `PaperPdfException`，全文入口会再次记录；同一故障必须只在一个边界报告并保留原 stack。
-- 下一步：返回 `/develop` 修复两个阻断项并增加内部 `ValueError` 与 PDF 端到端单事件回归；随后重新执行 `/test` 与 `/review`。
+- 已完成：审查回修引入专用 `_InvalidRequestError`；显式 cursor/sort/year/following/seed/limit/date/请求目标校验保持 400，内部 `ValueError` 记录一次并返回固定 500。
+- 已完成：PDF 下载与 worker 只映射友好异常并保留原 stack，不在中间层记录；全文入口成为唯一报告边界，四个失去生产调用方的 PDF 中间层 operation 已删除。
+- 已完成：新增真实 PDF 下载/worker 到全文入口的串联回归，分别证明中间层零事件、最终边界恰好一条事件；服务端新增内部 `ValueError` 隐私回归。
+- 已完成：补强 PDF worker 栈契约；服务级回归锁定 isolate 内 `_extractSynchronously` 根因，最终消费级回归锁定 `_runExtractionWorker` 异步完成边界，避免只断言非空栈而放过证据退化。
+- 下一步：重新执行 `/test` 全量门禁；通过后重新进入 `/review`。
 - 阻塞项：无。
 
 ## 决策记录
@@ -155,6 +158,12 @@
 | `/review` 完整改动读取与结构核对 | 完成；任务基线 `4474bcf` 至 `18e34b7` 共 59 文件、3087 行新增、183 行删除；10 条结构阻断条件均未触发 | 2026-08-13 |
 | `/review` 内部 `ValueError` HTTP 复现 | 未通过；令 `PaperStore.count()` 抛出 `ValueError('token=private-db-secret')`，实际得到 `(400, {'error': 'invalid_request', 'message': 'token=private-db-secret'})` 且绕过诊断 | 2026-08-13 |
 | `/review` PDF 分层事件流核对 | 未通过；下载/worker 边界先报告并转换为 `PaperPdfException`，`PaperAiChatAppBar._toggleFullText` 的 broad catch 对同一异常再次报告，现有测试仅分别验证各层而未覆盖端到端去重 | 2026-08-13 |
+| 审查回修 Flutter 定向测试 | 通过；PDF service、全文入口、诊断总测试与架构门禁共 44 项，真实下载与 worker 串联均只有 `chatLoadFullText` 一条事件且保留原 stack | 2026-08-13 |
+| 审查回修服务端 API/诊断定向测试 | 通过；10 项，内部 `ValueError` 固定 500、单事件且不泄露，显式日期与 seed 校验保持无日志 400 | 2026-08-13 |
+| 审查回修 `python -m unittest discover -s tests` | 通过；服务端全量 63 项 | 2026-08-13 |
+| 审查回修 Python 编译、`flutter analyze` 与 Dart 格式 | 通过；Python 包与测试可编译，Flutter 无静态问题，92 个 Dart 文件格式通过 | 2026-08-13 |
+| 审查回修 `git diff --check` 与失效 operation 扫描 | 通过；无空白错误，四个 PDF 中间层 operation 在生产与测试中均无残留引用 | 2026-08-13 |
+| 审查回修 PDF 根因栈定向测试 | 通过；`paper_pdf_test.dart` 与 `paper_ai_chat_app_bar_test.dart` 共 24 项，分别锁定 isolate 根因栈与最终消费异步边界栈；随后 92 文件格式、`flutter analyze` 与 `git diff --check` 通过 | 2026-08-13 |
 
 ## 审查结论
 
@@ -163,8 +172,9 @@
 - 审查日期：2026-08-13
 - 阻断项：2 项。① `server/spark_papers/api.py:167-168` 把内部 `ValueError` 当作请求错误并回传异常文本，违反固定 500 与隐私边界；② `paper_pdf_extraction_service.dart:99-105,218-288` 与 `paper_ai_chat_app_bar.dart:213-219` 对同一 PDF 故障分层重复记录。
 - 缺陷：现有回归分别覆盖 PDF 服务与全文入口，但缺少串联两层的单事件测试；修复阻断项时必须补充。
-- 建议：为当前仅由枚举总测试覆盖的 `chatConversationSessionLoad`、`chatSessionPin`、PDF worker protocol/spawn 等分支逐步增加操作级回归，但不单独阻断本任务。
+- 建议：为当前仅由枚举总测试覆盖的 `chatConversationSessionLoad`、`chatSessionPin` 等分支逐步增加操作级回归，但不单独阻断本任务；PDF worker 中间层 operation 已在回修中删除并改由真实串联测试覆盖。
 - 结论：需修复；返回 `/develop`，修复后重新执行 `/test` 与 `/review`。
+- 回修状态：两个阻断项已在 `795937d` 修复并通过定向验证；原审查结论保留为历史，待重新 `/test` 后复审。
 
 ## 检查点与提交
 
@@ -177,12 +187,14 @@
 | `5889fa7` | `修复（诊断）：覆盖本地状态异常边界` | 第四轮 `/develop` | 客户端 broad catch 归零并加入静态门禁；58 项状态/架构测试、13 项 DeepSeek 回归、92 文件格式与 analyze 通过 |
 | `d3f52ca` | `修复（服务端诊断）：脱敏异常日志与固定 500 响应` | 第五轮 `/develop` | HTTP/CLI 安全诊断、固定 500 与预期同步零日志；35 项定向、60 项服务端全量、Python 编译、Flutter analyze 与格式通过 |
 | `11f2f44` | `测试（诊断）：锁定隐私与单事件门禁` | 第六轮 `/develop` | 客户端/服务端 operation、旁路日志和单事件总回归；35 项 Flutter 定向、19 项服务端定向、Python 编译、92 文件格式与 analyze 通过 |
+| `795937d` | `修复（诊断）：收紧错误分类与单事件边界` | 审查回修 `/develop` | 专用 HTTP 请求校验异常、内部 ValueError 固定 500、PDF 最终边界单事件；44 项 Flutter 定向、10 项服务端定向、63 项服务端全量、Python 编译、格式与 analyze 通过 |
+| `8451f05` | `测试（诊断）：锁定 PDF 根因栈` | 审查回修 `/develop` 补强 | 服务级与最终消费级分别锁定 worker 根因栈位置；24 项 PDF/ChatPaper 定向、92 文件格式、analyze 与 diff check 通过 |
 
 ## 交付准备（合并前收集）
 
 ### 交付摘要
 
-客户端与 Paper API 服务端现已具备统一、可测试且不接收动态 payload 的运行时诊断边界；所有已分类的最终消费异常使用固定 operation 记录异常类型和 stack trace，预期取消/数据拒绝不记录，HTTP 500 不再暴露底层错误文本。开发阶段定向验证和 `/test` 全量门禁均已完成，待 `/review` 只读审查。
+客户端与 Paper API 服务端现已具备统一、可测试且不接收动态 payload 的运行时诊断边界；所有已分类的最终消费异常使用固定 operation 记录异常类型和 stack trace，预期取消/数据拒绝不记录，HTTP 500 不再暴露底层错误文本。首次 `/test` 已通过，首次 `/review` 的两个阻断项已回修并完成定向验证，待重新 `/test` 与 `/review`。
 
 ### 实际变更
 

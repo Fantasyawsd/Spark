@@ -10,8 +10,8 @@
 - Worktree：`C:\Users\Fantasy\Desktop\Spark-worktrees\agent-3`
 - 基线提交：`175f26ac469fb6817701570858d49b990bb0ce8a`
 - 负责人：Codex（Fantasy 编排）
-- 状态：开发完成，待 `/test`
-- 最近更新：`2026-08-13 16:03`（Asia/Shanghai）
+- 状态：完整门禁通过，待 `/review`
+- 最近更新：`2026-08-13 16:06`（Asia/Shanghai）
 
 ## 目标
 
@@ -34,7 +34,7 @@
 - [x] 生产组合根为论文全屏聊天、主聊天和论文内嵌讨论三条路径注入现有平台链接服务；有效来源仍可外部打开，返回 `false` 或抛异常时仍显示“无法打开来源链接”。
 - [x] 消息复制不包含 reasoning、推理/来源默认折叠与展开、流式状态、多选、重试、编辑和删除入口等既有行为保持不变。
 - [x] 新增或扩充 Widget/单元测试，覆盖有效来源回调、非法 URI 禁用、缺少 opener 禁用、打开失败反馈及拆分后的主要交互。
-- [ ] 相关定向测试、Dart 格式、`flutter analyze`、`flutter test` 和 `git diff --check` 通过。
+- [x] 相关定向测试、Dart 格式、`flutter analyze`、`flutter test` 和 `git diff --check` 通过。
 
 ## 写入范围
 
@@ -83,7 +83,8 @@
 - 已完成：将 923 行消息视图拆为 78 行装配器及 actions（141 行）、bubbles（277 行）、reasoning（216 行）、sources（278 行）四个职责文件，并拆短主要 `build`。
 - 已完成：删除 chat presentation 的 `url_launcher`/`launchUrl`，缺少 opener 时来源不可点击；`SparkShell` 为论文全屏、主聊天、内嵌讨论三条路径注入 `_linkService.open`。
 - 已完成：提交 `dbae979`；定向 Widget/单元/论文阅读/架构测试与 `flutter analyze` 通过。
-- 下一步：由编排者触发 `/test`，执行完整格式、分析和 Flutter 测试门禁并记录证据。
+- 已完成：`/test` 完整门禁通过——37 个变更 Dart 文件格式正确、静态分析零问题、Flutter 473 项测试全部通过。
+- 下一步：进入只读 `/review`，审查 `175f26a..HEAD` 的完整第三批 diff；如无阻断项，以审查后的最终提交作为第四批 worktree 基线。
 - 阻塞项：无。
 
 ## 决策记录
@@ -111,6 +112,11 @@
 | 论文 URI 受影响定向回归 | `cached_paper_pdf_content_provider_test.dart` 与 `paper_reader_view_test.dart` 的 25 项业务测试通过；一次组合命令因误写不存在的 `architecture_rules_test.dart` 路径返回失败，随后以正确架构测试文件重跑通过 | 2026-08-13 |
 | 结构与残留检索 | 装配器 78 行，拆分文件最大 278 行；chat presentation 无 `url_launcher`/`launchUrl`，`validPaperUri` 无残留 | 2026-08-13 |
 | `git diff --check` | 通过 | 2026-08-13 |
+| `./tool/verify_changed_dart_format.ps1` | 通过；检查 37 个变更 Dart 文件，0 个需修改 | 2026-08-13 |
+| `flutter analyze`（完整门禁） | 通过；`No issues found!` | 2026-08-13 |
+| `flutter test`（首次工具调用） | 工具超时误设为约 1 秒，在依赖解析阶段被外部终止，未进入测试执行；不计为代码门禁结果 | 2026-08-13 |
+| `flutter test`（纠正超时后重跑） | 通过；473 项测试全部通过，0 失败 | 2026-08-13 |
+| 人工 Windows 验收 | 按编排者明确指示不执行；本批以自动化门禁和只读审查验收 | 2026-08-13 |
 
 ## 审查结论
 
@@ -127,12 +133,13 @@
 | --- | --- | --- | --- |
 | `88a4438` | `文档：初始化第三批消息视图边界台账` | `/start` | Git/worktree/报告/历史契约预检完成 |
 | `dbae979` | `重构（聊天）：拆分消息视图并收紧来源打开边界` | `/develop` | 分析、消息/入口/URI/论文阅读/架构定向测试通过 |
+| `e785ca1` | `文档：记录第三批聊天边界开发结果` | `/develop` | 开发证据、兼容性与下一阶段状态已入账 |
 
 ## 交付准备（合并前收集）
 
 ### 交付摘要
 
-本批开发实现已完成：消息视图职责拆分、展示层平台直连消失、共享 HTTP(S) 校验建立，生产来源链接通过组合根注入且交互回归通过。尚待 `/test` 完整门禁与 `/review` 只读审查。
+本批开发实现与完整门禁已完成：消息视图职责拆分、展示层平台直连消失、共享 HTTP(S) 校验建立，生产来源链接通过组合根注入且交互回归通过。尚待 `/review` 只读审查。
 
 ### 实际变更
 
@@ -166,7 +173,7 @@
 
 > 编排者明确要求本修复链不合入 `main`，因此本节当前不适用；不预填集成提交、合并时间或 main 验证。
 
-- 最终状态：未合并，第三批开发完成，待完整门禁与审查
+- 最终状态：未合并，第三批完整门禁通过，待只读审查
 - 合入分支：不适用
 - 最终集成提交：不适用
 - Pull Request：不适用

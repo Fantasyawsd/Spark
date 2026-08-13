@@ -9,7 +9,7 @@
 - 基线提交：`4474bcffd8a1e9c49baba0be9bfe1b7398d35c5c`
 - 负责人：Fantasy（编排者）
 - 状态：开发中
-- 最近更新：2026-08-13 17:27
+- 最近更新：2026-08-13 17:53
 
 ## 目标
 
@@ -63,9 +63,10 @@
 
 1. 第一轮：在 `lib/src/core/diagnostics/` 建立固定 operation、最小事件模型、默认 sink、Zone 测试 sink 与 Flutter 顶层绑定；修改 `lib/main.dart`，以 `test/runtime_diagnostics_test.dart` 覆盖隐私和原错误处理器传播。
 2. 第二轮：扩展 `runtime_diagnostics.dart` 固定 operation；改造 `paper_feed_controller.dart`、`paper_search_controller.dart`、`offline_first_paper_catalog_repository.dart`、`paper_api_catalog_repository.dart` 和 `local_json_store.dart`，并在四个既有测试文件中同时断言诊断事件与原 fallback。
-3. 第三轮：增加服务端标准 logging 配置与 HTTP/CLI/同步边界事件，固定 500 响应并避免记录数据型动态值。
-4. 第四轮：补齐跨模块业务结果、事件去重和隐私回归，增加匿名 broad catch 静态门禁。
-5. 实现完成后执行 `/test` 全量门禁并进入 `/review` 只读审查。
+3. 第三轮：扩展 PDF/Chat/外链固定 operation；改造 PDF provider/service、Chat conversation/session controller、DeepSeek SSE request、Reader、Sources panel 与 Chat app bar，并在对应定向测试中区分用户取消和取消清理失败。
+4. 第四轮：完成客户端其余本地状态持久化 catch，增加匿名 broad catch 静态门禁。
+5. 第五轮：增加服务端标准 logging 配置与 HTTP/CLI/同步边界事件，固定 500 响应并避免记录数据型动态值。
+6. 实现完成后补齐跨模块隐私回归，执行 `/test` 全量门禁并进入 `/review` 只读审查。
 
 ## 当前进度
 
@@ -76,7 +77,10 @@
 - 已完成：`main.dart` 在同一受保护 Zone 内初始化 Flutter binding 与 `runApp`；framework、platform 和 Dart 未处理错误统一报告，且原 handler 返回值与父 Zone 传播保持不变。
 - 已完成：第二轮 `/develop` 迁移 Feed、搜索、Paper API/arXiv/cache 多级回退中最终消费异常的 catch；缓存与远程降级记录 warning，仓储继续抛至控制器的最终故障记录 error。
 - 已完成：本地 JSON Windows 原子替换恢复路径改为显式保存原 error/stack 后继续抛出，不在中间层重复记录；本轮五个生产文件均无匿名 broad catch。
-- 下一步：第三轮 `/develop` 处理 PDF、ChatPaper 持久化、SSE 取消和展示操作中的最终消费异常，并区分用户取消与意外清理失败。
+- 已完成：第三轮 `/develop` 覆盖 PDF 缓存/下载/worker 解析、ChatPaper 会话设置与消息持久化、会话列表、AI 请求、SSE 取消清理、关键词/分享/外链/全文加载；原 fallback 与用户提示保持不变。
+- 已完成：用户主动取消仍是无诊断事件的预期控制流；取消订阅自身失败记录 warning，且不会覆盖向调用者返回的取消结果。
+- 已完成：PDF worker 将未预期解析失败的固定异常类型和原 stack trace 跨 isolate 送回诊断边界，不调用异常 `toString()`；已知 `PaperPdfException` 不重复记录。
+- 下一步：第四轮处理本地数据和论文交互等状态控制器剩余 15 处无绑定变量的 `on Object`，并增加禁止新增匿名 broad catch 的静态门禁。
 - 阻塞项：无。
 
 ## 决策记录
@@ -104,6 +108,12 @@
 | 第二轮匿名 broad catch 扫描 | 通过；Feed、Search、offline-first、Paper API、LocalJsonStore 五个生产文件均为 0 | 2026-08-13 |
 | 第二轮 `.\tool\verify_changed_dart_format.ps1` | 通过；跨串联基线识别的 62 个 Dart 文件均无需格式化 | 2026-08-13 |
 | 第二轮 `flutter analyze` | 通过；No issues found | 2026-08-13 |
+| 第三轮 PDF/Chat/展示层定向测试 | 通过；9 个测试文件共 71 项，覆盖缓存、下载、worker、会话持久化、AI 请求、SSE 取消、Reader、AppBar 与来源面板 | 2026-08-13 |
+| `flutter test test/paper_pdf_test.dart` | 最终审查补强后通过；22 项，确认 worker 固定异常类型与 stack 跨 isolate 传递不影响错误映射 | 2026-08-13 |
+| 全量 `lib` broad catch 扫描 | 匿名 `catch (_)` 已为 0；无绑定变量 `on Object` 余 15 处，均定位到下一轮本地状态控制器 | 2026-08-13 |
+| 第三轮 `flutter analyze` | 通过；No issues found | 2026-08-13 |
+| 第三轮 `.\tool\verify_changed_dart_format.ps1` | 通过；跨串联基线识别的 75 个 Dart 文件均无需格式化 | 2026-08-13 |
+| 第三轮 `git diff --check` | 通过；实现与测试提交无空白错误 | 2026-08-13 |
 
 ## 审查结论
 
@@ -121,6 +131,7 @@
 | `7657d68` | `新增（诊断）：接入客户端运行时错误边界` | 第一轮 `/develop` 实现 | 诊断最小事件、Zone/default sink、Flutter 顶层绑定与 main 接线；5 项初始定向测试、格式和 analyze 通过 |
 | `0dea59d` | `测试（诊断）：覆盖异步错误继续传播` | 第一轮 `/develop` 补强 | 证明异步未处理错误只记录一次并以原对象继续进入父 Zone；定向测试增至 6 项 |
 | `e60bf30` | `修复（论文目录）：记录降级链路异常` | 第二轮 `/develop` | Feed/Search/Paper API/arXiv/cache 分层事件与 LocalJsonStack 保真；92 项定向测试、62 文件格式与 analyze 通过 |
+| `5cb07d9` | `修复（诊断）：覆盖 PDF 与聊天异常边界` | 第三轮 `/develop` | PDF/Chat/展示层最终消费异常可诊断；71 项定向测试、75 文件格式、analyze 与 diff check 通过 |
 
 ## 交付准备（合并前收集）
 

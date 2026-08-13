@@ -10,8 +10,8 @@
 - Worktree：`C:\Users\Fantasy\Desktop\Spark-worktrees\agent-4`
 - 基线提交：`2d23c6c955f682dccae4383fb447ff994c27877d`
 - 负责人：Codex（Fantasy 编排）
-- 状态：开发实现完成，待 `/test`
-- 最近更新：`2026-08-13 16:27`（Asia/Shanghai）
+- 状态：`/test` 完整门禁通过，待 `/review`
+- 最近更新：`2026-08-13 16:30`（Asia/Shanghai）
 
 ## 目标
 
@@ -37,7 +37,7 @@
 - [x] 会话设置 sheet 拆为独立组件并将 138 行 `build` 分解为短区块；自定义 prompt、回答风格、Skills 选择与保存契约不变。
 - [x] 原有 ValueKey、可访问性语义、移动/桌面发送焦点、编辑最新提示、多选配对与批量删除、预览切换、清空确认、全文三条反馈路径均保持。
 - [x] 新增或扩充独立测试覆盖键盘适配器、消息选择 controller 与拆分组件；既有 Android IME、键盘交互、移动聊天 UI 和后台续答定向测试通过。
-- [ ] 相关定向测试、Dart 格式、`flutter analyze`、`flutter test` 和 `git diff --check` 通过。
+- [x] 相关定向测试、Dart 格式、`flutter analyze`、`flutter test` 和 `git diff --check` 通过。
 
 ## 写入范围
 
@@ -87,8 +87,9 @@
 - 已完成：将消息配对选择规则迁入独立 `PaperAiMessageSelectionController`，选择态 AppBar 与底栏迁入专用组件。
 - 已完成：聚合 AppBar 自持标题与全文 loading/enabled 状态，并在内部切换多选外观，避免进入多选导致状态丢失；会话设置 sheet 已拆为短区块组件。
 - 已完成：主页面由 909 行降至 343 行；新增边界与组件测试，定向套件 31 项、架构测试 23 项及 `flutter analyze` 均通过。
-- 正在进行：`/develop` 已完成并形成原子代码提交，等待独立 `/test` 完整门禁。
-- 下一步：触发 `/test`，执行 changed Dart format、`flutter analyze` 与完整 `flutter test`，记录证据后再进入只读 `/review`。
+- 已完成：`/test` 独立完整门禁通过：增量格式检查 47 个文件、静态分析零问题、完整测试 479 项、`git diff --check` 均成功。
+- 正在进行：测试证据已记录，等待只读 `/review`。
+- 下一步：触发 `/review`，只读审查 `2d23c6c..HEAD` 的第四批 diff、测试覆盖和架构边界；通过后不执行 `/finish`，而是以第四批最终提交创建下一修复 worktree。
 - 阻塞项：无。
 
 ## 决策记录
@@ -119,6 +120,12 @@
 | `flutter analyze` | 通过，No issues found | 2026-08-13 |
 | 结构与规模检查 | 页面 343 行；AppBar 223 行、设置 sheet 222 行、IME 文件 111 行；页面无 `flutter/services`、`SystemChannels`、内嵌 IME/settings/selection 状态符号 | 2026-08-13 |
 | `git diff --check` | 通过 | 2026-08-13 |
+| `./tool/verify_changed_dart_format.ps1`（`/test`） | 通过；检查 47 个相对第三批基线变化的 Dart 文件，0 个需要修改 | 2026-08-13 |
+| `flutter analyze`（`/test`） | 通过；No issues found | 2026-08-13 |
+| `flutter test`（`/test`） | 通过；479 项完整测试全部成功 | 2026-08-13 |
+| `git diff --check`（`/test`） | 通过；工作树保持干净 | 2026-08-13 |
+| APK / Windows release 构建 | 未运行；按项目规范仅由合入 `main` 的 `/finish` 执行，本修复链明确不合并 | 2026-08-13 |
+| Windows 应用人工验收 | 未运行；编排者明确无需人工验收，且本批为无预期界面变化的结构重构 | 2026-08-13 |
 
 ## 审查结论
 
@@ -140,7 +147,7 @@
 
 ### 交付摘要
 
-ChatPaper 页面已收敛为会话控制器生命周期、Composer 编辑/发送和少量跨组件协调入口；Android IME、系统键盘通道、标题/全文 AppBar、消息选择及设置 sheet 已按职责拆分，既有交互、键盘几何和后台续答契约由 31 项定向测试保持。当前代码提交为 `142e8b9`，尚待独立完整 `/test` 与 `/review`。
+ChatPaper 页面已收敛为会话控制器生命周期、Composer 编辑/发送和少量跨组件协调入口；Android IME、系统键盘通道、标题/全文 AppBar、消息选择及设置 sheet 已按职责拆分，既有交互、键盘几何和后台续答契约由 31 项定向测试保持。当前代码提交为 `142e8b9`，完整 `/test` 已以 479 项测试通过，尚待只读 `/review`。
 
 ### 实际变更
 
@@ -158,7 +165,7 @@ ChatPaper 页面已收敛为会话控制器生命周期、Composer 编辑/发送
 
 ### 已知风险与回滚
 
-- 已知风险：IME 类虽保持算法等价，仍需由 `/test` 完整回归与 `/review` 复核；标题/全文在多选切换时的状态易失风险已由聚合 AppBar 内部切换和新增组件测试消除。
+- 已知风险：IME 类虽保持算法等价且完整测试通过，仍需由 `/review` 复核实现等价性；标题/全文在多选切换时的状态易失风险已由聚合 AppBar 内部切换和新增组件测试消除。
 - 回滚方式：按检查点逆序 `git revert`；无数据迁移。
 
 ### 文档更新建议
@@ -174,7 +181,7 @@ ChatPaper 页面已收敛为会话控制器生命周期、Composer 编辑/发送
 
 > 编排者明确要求本修复链不合入 `main`，因此本节当前不适用；不预填集成提交、合并时间或 main 验证。
 
-- 最终状态：未合并，第四批开发完成、待 `/test`
+- 最终状态：未合并，第四批 `/test` 通过、待 `/review`
 - 合入分支：不适用
 - 最终集成提交：不适用
 - Pull Request：不适用

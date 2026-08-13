@@ -1,5 +1,5 @@
-import '../domain/paper.dart';
-import '../domain/paper_repository.dart';
+import 'package:spark/src/features/papers/domain/paper.dart';
+import 'package:spark/src/features/papers/domain/paper_repository.dart';
 
 class DemoPaperRepository implements PaperRepository {
   const DemoPaperRepository();

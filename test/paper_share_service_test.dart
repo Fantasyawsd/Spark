@@ -2,7 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:spark/src/core/platform/spark_clipboard.dart';
 import 'package:spark/src/features/papers/application/paper_share_service.dart';
 import 'package:spark/src/features/papers/data/arxiv_seed_repository.dart';
-import 'package:spark/src/features/papers/data/demo_paper_repository.dart';
+import 'support/demo_paper_repository.dart';
 import 'package:spark/src/features/papers/data/platform_paper_share_service.dart';
 import 'package:spark/src/features/papers/domain/paper.dart';
 import 'package:spark/src/features/papers/domain/paper_share.dart';

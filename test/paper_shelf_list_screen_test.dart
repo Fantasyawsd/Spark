@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:spark/src/features/papers/data/demo_paper_repository.dart';
+import 'support/demo_paper_repository.dart';
 import 'package:spark/src/features/papers/domain/favorite_group.dart';
 import 'package:spark/src/features/papers/domain/paper.dart';
 import 'package:spark/src/features/profile/presentation/paper_shelf_list_screen.dart';

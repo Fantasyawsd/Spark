@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:spark/src/features/papers/application/paper_comment_controller.dart';
-import 'package:spark/src/features/papers/data/demo_paper_repository.dart';
+import 'support/demo_paper_repository.dart';
 import 'package:spark/src/features/papers/presentation/widgets/paper_comments_sheet.dart';
 
 void main() {

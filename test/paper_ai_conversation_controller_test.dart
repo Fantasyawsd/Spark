@@ -6,7 +6,7 @@ import 'package:spark/src/core/diagnostics/diagnostics.dart';
 import 'package:spark/src/features/chat/application/chat_conversation_controller.dart';
 import 'package:spark/src/features/chat/data/in_memory_chat_session_repository.dart';
 import 'package:spark/src/features/papers/application/paper_chat_context.dart';
-import 'package:spark/src/features/papers/data/demo_paper_repository.dart';
+import 'support/demo_paper_repository.dart';
 
 void main() {
   test(

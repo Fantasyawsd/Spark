@@ -4,7 +4,7 @@ import 'package:spark/src/features/chat/application/chat_conversation_controller
 import 'package:spark/src/features/chat/chat.dart';
 import 'package:spark/src/features/chat/presentation/widgets/paper_ai_content.dart';
 import 'package:spark/src/features/papers/application/paper_chat_context.dart';
-import 'package:spark/src/features/papers/data/demo_paper_repository.dart';
+import 'support/demo_paper_repository.dart';
 
 void main() {
   testWidgets('AI answer exposes a collapsible reasoning chain',

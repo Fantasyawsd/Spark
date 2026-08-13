@@ -7,7 +7,7 @@ import 'package:http/testing.dart';
 import 'package:spark/src/features/chat/chat.dart';
 import 'package:spark/src/features/chat/data/deepseek_web_search_chat_ai_service.dart';
 import 'package:spark/src/features/papers/application/paper_chat_context.dart';
-import 'package:spark/src/features/papers/data/demo_paper_repository.dart';
+import 'support/demo_paper_repository.dart';
 
 void main() {
   test('DeepSeek web search uses native server tool and parses sources',

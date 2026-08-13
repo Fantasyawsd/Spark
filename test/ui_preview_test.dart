@@ -9,7 +9,7 @@ import 'package:spark/src/features/chat/data/in_memory_chat_session_repository.d
 import 'package:spark/src/features/chat/presentation/paper_ai_discussion_view.dart';
 import 'package:spark/src/features/papers/application/paper_chat_context.dart';
 import 'package:spark/src/features/papers/data/arxiv_seed_repository.dart';
-import 'package:spark/src/features/papers/data/demo_paper_repository.dart';
+import 'support/demo_paper_repository.dart';
 import 'package:spark/src/features/papers/data/in_memory_paper_comment_repository.dart';
 import 'package:spark/src/features/papers/data/in_memory_paper_interaction_repository.dart';
 import 'package:spark/src/features/papers/data/in_memory_paper_reading_repository.dart';

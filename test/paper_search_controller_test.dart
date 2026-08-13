@@ -3,7 +3,7 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:spark/src/core/diagnostics/diagnostics.dart';
-import 'package:spark/src/features/papers/data/demo_paper_repository.dart';
+import 'support/demo_paper_repository.dart';
 import 'package:spark/src/features/papers/domain/paper.dart';
 import 'package:spark/src/features/papers/domain/paper_catalog.dart';
 import 'package:spark/src/features/search/application/paper_search_controller.dart';

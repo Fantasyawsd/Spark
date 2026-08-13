@@ -9,7 +9,7 @@ import 'package:spark/src/features/chat/data/deepseek_chat_ai_service.dart';
 import 'package:spark/src/features/papers/application/paper_translation_controller.dart';
 import 'package:spark/src/features/papers/application/paper_translation_service.dart';
 import 'package:spark/src/features/papers/data/deepseek_paper_translation_service.dart';
-import 'package:spark/src/features/papers/data/demo_paper_repository.dart';
+import 'support/demo_paper_repository.dart';
 import 'package:spark/src/features/papers/data/in_memory_paper_translation_repository.dart';
 import 'package:spark/src/features/papers/domain/paper.dart';
 

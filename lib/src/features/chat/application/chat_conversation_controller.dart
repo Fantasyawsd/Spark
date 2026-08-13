@@ -1,6 +1,6 @@
-import 'dart:async';
-
 import 'package:flutter/foundation.dart';
+
+export 'chat_conversation_request_state.dart' show ChatRequestStatus;
 
 import '../../../core/diagnostics/diagnostics.dart';
 import '../domain/chat_context.dart';
@@ -8,11 +8,10 @@ import '../domain/chat_ai_service.dart';
 import '../domain/chat_message.dart';
 import '../domain/chat_session_repository.dart';
 import '../domain/chat_session_settings.dart';
+import 'chat_conversation_request_state.dart';
 import 'chat_conversation_settings_state.dart';
 import 'chat_prompt_assembler.dart';
 import 'chat_conversation_write_queue.dart';
-
-enum ChatRequestStatus { idle, sending, completed, cancelled, failed }
 
 class ChatConversationController extends ChangeNotifier {
   ChatConversationController({
@@ -21,72 +20,56 @@ class ChatConversationController extends ChangeNotifier {
     ChatAiService? webSearchService,
     ChatSessionRepository? sessionRepository,
     ChatSessionSettingsRepository? settingsRepository,
-  }) : _service = service,
-       _webSearchService = webSearchService,
-       _sessionRepository = sessionRepository {
+  }) : _sessionRepository = sessionRepository {
     _settingsState = ChatConversationSettingsState(
       contextId: context.id,
       repository: settingsRepository,
       isDisposed: () => _disposed,
       notify: _notify,
     );
+    _requestState = ChatConversationRequestState(
+      service: service,
+      webSearchService: webSearchService,
+      messages: _messages,
+      effectiveContext: () => effectiveContext,
+      isDisposed: () => _disposed,
+      persist: _persist,
+      notify: _notify,
+    );
   }
   ChatContext context;
-  final ChatAiService _service;
-  final ChatAiService? _webSearchService;
   final ChatSessionRepository? _sessionRepository;
   final List<ChatMessage> _messages = [];
   late final ChatConversationSettingsState _settingsState;
+  late final ChatConversationRequestState _requestState;
 
-  bool _sending = false;
   bool _loading = false;
   bool _disposed = false;
-  bool _webSearchEnabled = false;
-  bool _searching = false;
-  ChatReasoningEffort _reasoningEffort = ChatReasoningEffort.high;
-  ChatRequestStatus _requestStatus = ChatRequestStatus.idle;
-  String? _requestError;
   String? _persistenceError;
-  int _requestVersion = 0;
   int _writeVersion = 0;
-  int? _activeAssistantIndex;
-  ChatAiService? _activeService;
-  ChatRequestCancellation? _activeCancellation;
   Future<void>? _initialization;
   late final ChatConversationWriteQueue _writeQueue =
       ChatConversationWriteQueue(
-        onQueueError: reportChatConversationWriteQueueError,
-      );
-  Timer? _streamNotifyTimer;
+    onQueueError: reportChatConversationWriteQueueError,
+  );
 
   List<ChatMessage> get messages => List.unmodifiable(_messages);
-  bool get sending => _sending;
+  bool get sending => _requestState.sending;
   bool get loading => _loading;
   ChatSessionSettings get settings => _settingsState.value;
   ChatContext get effectiveContext =>
       ChatPromptAssembler.applySettings(context, _settingsState.value);
   String? get error =>
-      _requestError ?? _persistenceError ?? _settingsState.persistenceError;
-  bool get canRetry =>
-      !_sending &&
-      _messages.isNotEmpty &&
-      (_requestStatus == ChatRequestStatus.cancelled ||
-          _requestStatus == ChatRequestStatus.failed);
+      _requestState.error ??
+      _persistenceError ??
+      _settingsState.persistenceError;
+  bool get canRetry => _requestState.canRetry;
+  bool get canRetryRequestError => _requestState.canRetryRequestError;
 
-  bool get canRetryRequestError => canRetry && _requestError != null;
-
-  bool get _canRegenerateLatest {
-    if (_sending || _messages.isEmpty) return false;
-
-    final last = _messages.last;
-    return canRetry ||
-        (!last.fromUser && last.status == ChatMessageStatus.complete);
-  }
-
-  bool get webSearchAvailable => _webSearchService != null;
-  bool get webSearchEnabled => _webSearchEnabled;
-  bool get searching => _searching;
-  ChatReasoningEffort get reasoningEffort => _reasoningEffort;
+  bool get webSearchAvailable => _requestState.webSearchAvailable;
+  bool get webSearchEnabled => _requestState.webSearchEnabled;
+  bool get searching => _requestState.searching;
+  ChatReasoningEffort get reasoningEffort => _requestState.reasoningEffort;
 
   /// 在保持会话身份不变的前提下替换上下文（例如注入论文 PDF 全文）。
   /// 返回 false 表示 id 不匹配，替换被拒绝。
@@ -97,19 +80,13 @@ class ChatConversationController extends ChangeNotifier {
     return true;
   }
 
-  ChatRequestStatus get requestStatus => _requestStatus;
+  ChatRequestStatus get requestStatus => _requestState.status;
 
-  void setWebSearchEnabled(bool enabled) {
-    if (_sending || !webSearchAvailable || enabled == _webSearchEnabled) return;
-    _webSearchEnabled = enabled;
-    _notify();
-  }
+  void setWebSearchEnabled(bool enabled) =>
+      _requestState.setWebSearchEnabled(enabled);
 
-  void setReasoningEffort(ChatReasoningEffort effort) {
-    if (_sending || effort == _reasoningEffort) return;
-    _reasoningEffort = effort;
-    _notify();
-  }
+  void setReasoningEffort(ChatReasoningEffort effort) =>
+      _requestState.setReasoningEffort(effort);
 
   Future<void> updateSettings(ChatSessionSettings settings) async {
     await _settingsState.update(settings);
@@ -139,17 +116,7 @@ class ChatConversationController extends ChangeNotifier {
         _messages
           ..clear()
           ..addAll(stored);
-        if (stored.isEmpty) {
-          _requestStatus = ChatRequestStatus.idle;
-        } else if (stored.last.status == ChatMessageStatus.cancelled) {
-          _requestStatus = ChatRequestStatus.cancelled;
-        } else if (stored.last.status == ChatMessageStatus.failed ||
-            stored.last.fromUser) {
-          _requestStatus = ChatRequestStatus.failed;
-          _requestError = '上次回答未完成，请重新生成。';
-        } else {
-          _requestStatus = ChatRequestStatus.completed;
-        }
+        _requestState.restoreFromMessages();
       }
 
       await _settingsState.load();
@@ -173,14 +140,14 @@ class ChatConversationController extends ChangeNotifier {
     if (text.isEmpty) return;
     final initialization = _initialization;
     if (initialization != null) await initialization;
-    if (_disposed || _sending) return;
-    _removeTrailingEmptyTerminalMessage();
+    if (_disposed || sending) return;
+    _requestState.prepareForSend();
     _messages.add(ChatMessage(fromUser: true, content: text));
-    await _requestAnswer();
+    await _requestState.requestAnswer();
   }
 
   Future<void> retry() async {
-    if (!_canRegenerateLatest) return;
+    if (!_requestState.canRegenerateLatest) return;
 
     // 重新生成只替换最后一条 Assistant 回复，保留对应的用户 Prompt。
     // 失败/停止时如果服务还没有来得及创建 Assistant 占位消息，最后一条
@@ -188,12 +155,12 @@ class ChatConversationController extends ChangeNotifier {
     if (_messages.last case final last when !last.fromUser) {
       _messages.removeLast();
     }
-    await _requestAnswer();
+    await _requestState.requestAnswer();
   }
 
   Future<void> editLatestPromptAndRetry(String rawText) async {
     final text = rawText.trim();
-    if (text.isEmpty || _sending) return;
+    if (text.isEmpty || sending) return;
 
     final promptIndex = _messages.lastIndexWhere((message) => message.fromUser);
     if (promptIndex < 0) return;
@@ -202,7 +169,7 @@ class ChatConversationController extends ChangeNotifier {
     if (promptIndex + 1 < _messages.length) {
       _messages.removeRange(promptIndex + 1, _messages.length);
     }
-    await _requestAnswer();
+    await _requestState.requestAnswer();
   }
 
   void deleteMessageAt(int index) {
@@ -210,56 +177,29 @@ class ChatConversationController extends ChangeNotifier {
   }
 
   void deleteMessagesAt(Iterable<int> indexes) {
-    if (_sending) return;
-    final selected =
-        indexes
-            .where((index) => index >= 0 && index < _messages.length)
-            .toSet()
-            .toList()
-          ..sort((a, b) => b.compareTo(a));
+    if (sending) return;
+    final selected = indexes
+        .where((index) => index >= 0 && index < _messages.length)
+        .toSet()
+        .toList()
+      ..sort((a, b) => b.compareTo(a));
     if (selected.isEmpty) return;
 
     for (final index in selected) {
       _messages.removeAt(index);
     }
-    _requestError = null;
-    _requestStatus = _messages.isEmpty
-        ? ChatRequestStatus.idle
-        : ChatRequestStatus.completed;
+    _requestState.resetAfterMessageChange();
     _persist();
     _notify();
   }
 
-  void cancel() {
-    if (!_sending) return;
-    _requestVersion++;
-    final cancellation = _activeCancellation;
-    cancellation?.cancel();
-    if (cancellation == null) {
-      final activeService = _activeService;
-      if (activeService is CancellableChatAiService) {
-        activeService.cancelActiveRequest();
-      }
-    }
-    _markActiveAssistant(ChatMessageStatus.cancelled);
-    _activeAssistantIndex = null;
-    _activeService = null;
-    _activeCancellation = null;
-    _searching = false;
-    _streamNotifyTimer?.cancel();
-    _sending = false;
-    _requestError = null;
-    _requestStatus = ChatRequestStatus.cancelled;
-    _persist();
-    _notify();
-  }
+  void cancel() => _requestState.cancel();
 
   Future<void> clear() async {
     cancel();
     _messages.clear();
-    _requestError = null;
     _persistenceError = null;
-    _requestStatus = ChatRequestStatus.idle;
+    _requestState.reset();
     _notify();
     final repository = _sessionRepository;
     if (repository == null) return;
@@ -290,139 +230,6 @@ class ChatConversationController extends ChangeNotifier {
       }
     });
     await operation;
-  }
-
-  Future<void> _requestAnswer() async {
-    final requestVersion = ++_requestVersion;
-    _sending = true;
-    _requestStatus = ChatRequestStatus.sending;
-    _requestError = null;
-    _searching = false;
-    _persist();
-    _notify();
-    try {
-      final service = _webSearchEnabled && _webSearchService != null
-          ? _webSearchService!
-          : _service;
-      if (service case final ConfigurableChatAiService configurable) {
-        configurable.setReasoningEffort(_reasoningEffort);
-      }
-      _activeService = service;
-      if (service
-          case final RequestScopedStreamingChatAiService scopedService) {
-        final cancellation = ChatRequestCancellation();
-        _activeCancellation = cancellation;
-        await _consumeStream(
-          scopedService.answerStream(
-            context: effectiveContext,
-            conversation: _conversationForRequest(),
-            cancellation: cancellation,
-          ),
-          requestVersion,
-        );
-      } else if (service case final StreamingChatAiService streamingService) {
-        await _consumeStream(
-          streamingService.answerStream(
-            context: effectiveContext,
-            conversation: _conversationForRequest(),
-          ),
-          requestVersion,
-        );
-      } else {
-        final answer = await service.answer(
-          context: effectiveContext,
-          conversation: _conversationForRequest(),
-        );
-        if (_disposed || requestVersion != _requestVersion) return;
-        _messages.add(ChatMessage(fromUser: false, content: answer));
-      }
-      if (_disposed || requestVersion != _requestVersion) return;
-      _activeAssistantIndex = null;
-      _activeService = null;
-      _activeCancellation = null;
-      _searching = false;
-      _streamNotifyTimer?.cancel();
-      _sending = false;
-      _requestStatus = ChatRequestStatus.completed;
-      _persist();
-      _notify();
-    } on ChatAiCancelledException {
-      if (_disposed || requestVersion != _requestVersion) return;
-      _markActiveAssistant(ChatMessageStatus.cancelled);
-      _activeAssistantIndex = null;
-      _activeService = null;
-      _activeCancellation = null;
-      _searching = false;
-      _streamNotifyTimer?.cancel();
-      _sending = false;
-      _requestError = null;
-      _requestStatus = ChatRequestStatus.cancelled;
-      _persist();
-      _notify();
-    } on ChatAiException catch (error, stackTrace) {
-      SparkDiagnostics.reportUnexpected(
-        operation: SparkDiagnosticOperation.chatConversationRequest,
-        error: error,
-        stackTrace: stackTrace,
-      );
-      _setError(requestVersion, error.message);
-    } on Exception catch (error, stackTrace) {
-      SparkDiagnostics.reportUnexpected(
-        operation: SparkDiagnosticOperation.chatConversationRequest,
-        error: error,
-        stackTrace: stackTrace,
-      );
-      _setError(requestVersion, 'AI 服务发生未知错误，请稍后重试。');
-    }
-  }
-
-  void _setError(int requestVersion, String message) {
-    if (_disposed || requestVersion != _requestVersion) return;
-    _markActiveAssistant(ChatMessageStatus.failed);
-    _activeAssistantIndex = null;
-    _activeService = null;
-    _activeCancellation = null;
-    _searching = false;
-    _streamNotifyTimer?.cancel();
-    _sending = false;
-    _requestError = message;
-    _requestStatus = ChatRequestStatus.failed;
-    _persist();
-    _notify();
-  }
-
-  Future<void> _consumeStream(
-    Stream<ChatStreamChunk> stream,
-    int requestVersion,
-  ) async {
-    await for (final chunk in stream) {
-      if (_disposed || requestVersion != _requestVersion) return;
-      var assistantIndex = _activeAssistantIndex;
-      if (assistantIndex == null) {
-        assistantIndex = _messages.length;
-        _activeAssistantIndex = assistantIndex;
-        _messages.add(const ChatMessage(fromUser: false, content: ''));
-      }
-      final current = _messages[assistantIndex];
-      final sourcesByUrl = <String, ChatSource>{
-        for (final source in current.sources) source.url: source,
-        for (final source in chunk.sources) source.url: source,
-      };
-      _messages[assistantIndex] = current.copyWith(
-        content: current.content + chunk.contentDelta,
-        reasoningContent: current.reasoningContent + chunk.reasoningDelta,
-        sources: sourcesByUrl.values.toList(growable: false),
-      );
-      if (chunk.searchStarted) _searching = true;
-      if (chunk.searchFinished) _searching = false;
-      if (chunk.contentDelta.isNotEmpty) _searching = false;
-      _scheduleStreamNotify();
-    }
-    final assistantIndex = _activeAssistantIndex;
-    if (assistantIndex == null ||
-        _messages[assistantIndex].content.trim().isEmpty) {
-      throw const ChatAiException('AI 返回了空响应，请稍后重试。');
-    }
   }
 
   void _persist() {
@@ -477,54 +284,10 @@ class ChatConversationController extends ChangeNotifier {
     if (!_disposed) notifyListeners();
   }
 
-  void _scheduleStreamNotify() {
-    if (_streamNotifyTimer?.isActive ?? false) return;
-    _streamNotifyTimer = Timer(const Duration(milliseconds: 32), _notify);
-  }
-
-  void _markActiveAssistant(ChatMessageStatus status) {
-    final assistantIndex = _activeAssistantIndex;
-    if (assistantIndex == null || assistantIndex >= _messages.length) {
-      _messages.add(ChatMessage(fromUser: false, content: '', status: status));
-      return;
-    }
-    final assistant = _messages[assistantIndex];
-    _messages[assistantIndex] = assistant.copyWith(status: status);
-  }
-
-  void _removeTrailingEmptyTerminalMessage() {
-    if (_messages.isEmpty) return;
-    final last = _messages.last;
-    if (last.fromUser ||
-        last.status == ChatMessageStatus.complete ||
-        last.content.trim().isNotEmpty ||
-        last.reasoningContent.trim().isNotEmpty ||
-        last.sources.isNotEmpty) {
-      return;
-    }
-    _messages.removeLast();
-  }
-
-  List<ChatMessage> _conversationForRequest() => List.unmodifiable(
-    _messages.where(
-      (message) =>
-          message.fromUser || message.status == ChatMessageStatus.complete,
-    ),
-  );
-
   @override
   void dispose() {
     _disposed = true;
-    _requestVersion++;
-    _streamNotifyTimer?.cancel();
-    final cancellation = _activeCancellation;
-    cancellation?.cancel();
-    if (cancellation == null) {
-      final activeService = _activeService;
-      if (activeService is CancellableChatAiService) {
-        activeService.cancelActiveRequest();
-      }
-    }
+    _requestState.dispose();
     super.dispose();
   }
 }

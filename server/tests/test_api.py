@@ -108,6 +108,7 @@ class ApiTest(unittest.TestCase):
             payload,
             {"error": "internal_error", "message": INTERNAL_ERROR_MESSAGE},
         )
+        self.assertEqual(len(logs.records), 1)
         output = "\n".join(logs.output)
         self.assertIn("operation=http.request", output)
         self.assertIn("type=RuntimeError", output)

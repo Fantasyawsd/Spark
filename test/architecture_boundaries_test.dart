@@ -139,4 +139,36 @@ void main() {
 
     expect(violations, isEmpty, reason: violations.join('\n'));
   });
+
+  test('production code sends runtime logs through SparkDiagnostics', () {
+    final allowedLogWriter = File(
+      'lib/src/core/diagnostics/runtime_diagnostics.dart',
+    ).absolute.path.replaceAll('\\', '/');
+    final patterns = <String, RegExp>{
+      'dart:developer import': RegExp(r'''['"]dart:developer['"]'''),
+      'developer.log call': RegExp(r'\bdeveloper\s*\.\s*log\s*\('),
+      'debugPrint call': RegExp(r'\bdebugPrint\s*\('),
+      'print call': RegExp(r'\bprint\s*\('),
+    };
+    final violations = <String>[];
+    final dartFiles = Directory('lib')
+        .listSync(recursive: true)
+        .whereType<File>()
+        .where((file) => file.path.endsWith('.dart'));
+
+    for (final file in dartFiles) {
+      final normalizedPath = file.absolute.path.replaceAll('\\', '/');
+      if (normalizedPath == allowedLogWriter) continue;
+      final source = file.readAsStringSync();
+      for (final entry in patterns.entries) {
+        for (final match in entry.value.allMatches(source)) {
+          final line =
+              '\n'.allMatches(source.substring(0, match.start)).length + 1;
+          violations.add('${file.path}:$line: ${entry.key}');
+        }
+      }
+    }
+
+    expect(violations, isEmpty, reason: violations.join('\n'));
+  });
 }

@@ -5,6 +5,44 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:spark/src/core/diagnostics/diagnostics.dart';
 
 void main() {
+  test('diagnostic operation codes are fixed unique safe identifiers', () {
+    final operations = SparkDiagnosticOperation.values;
+    final codes = operations.map((operation) => operation.code).toList();
+
+    expect(codes.toSet(), hasLength(codes.length));
+    expect(
+      codes,
+      everyElement(matches(RegExp(r'^[a-z][a-z0-9]*(?:[._][a-z0-9]+)*$'))),
+    );
+  });
+
+  test('every operation keeps sensitive exception text out of events', () {
+    final events = <SparkDiagnosticEvent>[];
+    final error = _SensitiveError(
+      'token=deepseek-secret prompt=private-paper chat=private-message',
+    );
+
+    SparkDiagnostics.runWithSink(events.add, () {
+      for (final operation in SparkDiagnosticOperation.values) {
+        SparkDiagnostics.reportUnexpected(
+          operation: operation,
+          error: error,
+          stackTrace: StackTrace.current,
+        );
+      }
+    });
+
+    expect(error.toStringCalls, 0);
+    expect(
+      events.map((event) => event.operation),
+      SparkDiagnosticOperation.values,
+    );
+    expect(
+      events.map((event) => event.summary),
+      everyElement('unexpected_error type=_SensitiveError'),
+    );
+  });
+
   test(
     'diagnostic events expose fixed metadata without stringifying errors',
     () {

@@ -84,6 +84,7 @@ class CliTest(unittest.TestCase):
             main()
 
         self.assertEqual(exit_context.exception.code, 1)
+        self.assertEqual(len(logs.records), 1)
         output = "\n".join(logs.output)
         self.assertIn("operation=cli.sync_json", output)
         self.assertIn("type=RuntimeError", output)

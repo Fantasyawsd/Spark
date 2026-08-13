@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:spark/src/core/diagnostics/diagnostics.dart';
@@ -51,6 +53,33 @@ void main() {
     );
     expect(events.single.errorType, 'StateError');
     expect(events.single.summary, isNot(contains('sensitive-request-body')));
+  });
+
+  test('guarded zone reports and forwards async errors to its parent',
+      () async {
+    final events = <SparkDiagnosticEvent>[];
+    final error = StateError('private-chat-content');
+    final propagated = Completer<Object>();
+
+    await runZonedGuarded(
+      () async {
+        SparkDiagnostics.runWithSink(events.add, () {
+          SparkDiagnostics.runGuarded<void>(() {
+            scheduleMicrotask(() => throw error);
+          });
+        });
+        await Future<void>.delayed(Duration.zero);
+      },
+      (forwardedError, stackTrace) {
+        if (!propagated.isCompleted) propagated.complete(forwardedError);
+      },
+    );
+
+    expect(await propagated.future, same(error));
+    expect(events, hasLength(1));
+    expect(events.single.operation, SparkDiagnosticOperation.dartUnhandled);
+    expect(events.single.errorType, 'StateError');
+    expect(events.single.summary, isNot(contains('private-chat-content')));
   });
 
   test('flutter binding reports framework errors and calls prior handler', () {

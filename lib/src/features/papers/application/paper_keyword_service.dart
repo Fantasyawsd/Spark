@@ -3,6 +3,7 @@ import 'dart:convert';
 import '../../chat/chat.dart';
 import '../domain/paper.dart';
 import '../domain/paper_keyword_record.dart';
+import 'paper_content_fingerprint.dart';
 
 const paperKeywordPromptVersion = 1;
 const _fingerprintSeparator = '|spark-keywords|';
@@ -84,16 +85,7 @@ class PaperKeywordGenerationException implements Exception {
 }
 
 String paperKeywordInputFingerprint(Paper paper) {
-  final bytes = utf8.encode(
-    '${paper.title.trim()}$_fingerprintSeparator'
-    '${paper.content.originalAbstractMarkdown.trim()}',
-  );
-  var hash = 0xcbf29ce484222325;
-  for (final byte in bytes) {
-    hash ^= byte;
-    hash = (hash * 0x100000001b3) & 0xFFFFFFFFFFFFFFFF;
-  }
-  return hash.toRadixString(16).padLeft(16, '0');
+  return paperContentFingerprint(paper, namespace: _fingerprintSeparator);
 }
 
 bool isPaperKeywordRecordFresh(PaperKeywordRecord record, Paper paper) {

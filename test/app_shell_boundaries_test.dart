@@ -2,6 +2,8 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:spark/spark.dart' as public_api;
+import 'package:spark/src/app/spark_app.dart' as app_api;
 import 'package:spark/src/app/spark_bootstrap.dart';
 import 'package:spark/src/core/motion/motion_tokens.dart';
 
@@ -62,6 +64,7 @@ void main() {
 
   test('root controller ownership stays in SparkApplicationSession', () {
     final appSource = File('lib/src/app/spark_app.dart').readAsStringSync();
+    final shellSource = File('lib/src/app/spark_shell.dart').readAsStringSync();
     final sessionSource = File(
       'lib/src/app/spark_application_session.dart',
     ).readAsStringSync();
@@ -75,10 +78,18 @@ void main() {
       'LocalDataController',
     ];
 
-    expect(appSource, contains('late final SparkApplicationSession _session;'));
+    expect(
+      shellSource,
+      contains('late final SparkApplicationSession _session;'),
+    );
     for (final type in rootControllerTypes) {
       expect(
         appSource,
+        isNot(contains('$type(')),
+        reason: '$type must not be constructed by SparkApp',
+      );
+      expect(
+        shellSource,
         isNot(contains('$type(')),
         reason: '$type must not be constructed by SparkShell',
       );
@@ -91,5 +102,29 @@ void main() {
     expect(sessionSource, contains('Future<void> _prepareLocalDataMutation'));
     expect(
         sessionSource, contains('Future<void> _reloadAfterLocalDataMutation'));
+  });
+
+  test('navigation shell stays outside spark_app.dart', () {
+    final appSource = File('lib/src/app/spark_app.dart').readAsStringSync();
+    final shellSource = File('lib/src/app/spark_shell.dart').readAsStringSync();
+
+    expect(appSource, contains("export 'spark_shell.dart' show SparkShell;"));
+    expect(appSource, isNot(contains('class SparkShell')));
+    expect(appSource, isNot(contains('PaperSearchScreen(')));
+    expect(appSource, isNot(contains('PaperDetailScreen(')));
+    expect(appSource, isNot(contains('MainAiChatScreen(')));
+    expect(appSource.split('\n').length, lessThanOrEqualTo(180));
+    expect(shellSource, contains('class SparkShell'));
+    expect(shellSource, contains('PaperSearchScreen('));
+    expect(shellSource, contains('PaperDetailScreen('));
+    expect(shellSource, contains('MainAiChatScreen('));
+  });
+
+  test('SparkShell remains visible through both established imports', () {
+    const publicShell = public_api.SparkShell();
+    const internalShell = app_api.SparkShell();
+
+    expect(publicShell, isA<app_api.SparkShell>());
+    expect(internalShell, isA<public_api.SparkShell>());
   });
 }

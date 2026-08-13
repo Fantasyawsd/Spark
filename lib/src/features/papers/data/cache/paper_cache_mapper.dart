@@ -1,5 +1,6 @@
 import '../../domain/paper.dart';
 import 'paper_cache_record.dart';
+import '../paper_json_value_reader.dart';
 
 class PaperCacheMapper {
   const PaperCacheMapper();
@@ -104,21 +105,21 @@ class PaperCacheMapper {
     };
   }
 
-  static PaperCacheSnapshotRecord snapshotFromJson(
-    Map<String, dynamic> json,
-  ) {
+  static PaperCacheSnapshotRecord snapshotFromJson(Map<String, dynamic> json) {
     final papersJson = _requiredMap(json, 'papers');
     final pagesJson = _requiredMap(json, 'pages');
     final papers = papersJson.map(
       (id, value) => MapEntry(
         id,
-        _paperFromJson(_asMap(value, 'papers.$id')),
+        _paperFromJson(
+          PaperJsonValueReader.stringMapValue(value, 'papers.$id'),
+        ),
       ),
     );
     final pages = pagesJson.map(
       (key, value) => MapEntry(
         key,
-        _pageFromJson(_asMap(value, 'pages.$key')),
+        _pageFromJson(PaperJsonValueReader.stringMapValue(value, 'pages.$key')),
       ),
     );
     for (final entry in pages.entries) {
@@ -185,42 +186,70 @@ class PaperCacheMapper {
 
   static PaperCacheRecord _paperFromJson(Map<String, dynamic> json) {
     return PaperCacheRecord(
-      id: _requiredString(json, 'id'),
-      title: _requiredString(json, 'title'),
-      authors: _stringList(json, 'authors'),
-      affiliations: _stringList(json, 'affiliations'),
-      contentKeywords: _stringList(json, 'contentKeywords'),
-      subjects: _stringList(json, 'subjects'),
-      primarySubject: _optionalString(json, 'primarySubject'),
-      venue: _optionalString(json, 'venue'),
-      journalReference: _optionalString(json, 'journalReference'),
-      comment: _optionalString(json, 'comment'),
-      abstractMarkdown: _requiredString(json, 'abstractMarkdown'),
-      chineseAbstractMarkdown: _requiredString(json, 'chineseAbstractMarkdown'),
-      relatedPapers: _list(json, 'relatedPapers').map((value) {
-        final related = _asMap(value, 'relatedPapers');
+      id: PaperJsonValueReader.requiredNonEmptyString(json, 'id'),
+      title: PaperJsonValueReader.requiredNonEmptyString(json, 'title'),
+      authors: PaperJsonValueReader.requiredStringList(json, 'authors'),
+      affiliations: PaperJsonValueReader.requiredStringList(
+        json,
+        'affiliations',
+      ),
+      contentKeywords: PaperJsonValueReader.requiredStringList(
+        json,
+        'contentKeywords',
+      ),
+      subjects: PaperJsonValueReader.requiredStringList(json, 'subjects'),
+      primarySubject: PaperJsonValueReader.nullableString(
+        json,
+        'primarySubject',
+      ),
+      venue: PaperJsonValueReader.nullableString(json, 'venue'),
+      journalReference: PaperJsonValueReader.nullableString(
+        json,
+        'journalReference',
+      ),
+      comment: PaperJsonValueReader.nullableString(json, 'comment'),
+      abstractMarkdown: PaperJsonValueReader.requiredNonEmptyString(
+        json,
+        'abstractMarkdown',
+      ),
+      chineseAbstractMarkdown: PaperJsonValueReader.requiredNonEmptyString(
+        json,
+        'chineseAbstractMarkdown',
+      ),
+      relatedPapers:
+          PaperJsonValueReader.list(json, 'relatedPapers').map((value) {
+        final related = PaperJsonValueReader.stringMapValue(
+          value,
+          'relatedPapers',
+        );
         return RelatedPaperCacheRecord(
-          id: _requiredString(related, 'id'),
-          title: _requiredString(related, 'title'),
-          venue: _optionalString(related, 'venue'),
-          relation: _requiredString(related, 'relation'),
+          id: PaperJsonValueReader.requiredNonEmptyString(related, 'id'),
+          title: PaperJsonValueReader.requiredNonEmptyString(
+            related,
+            'title',
+          ),
+          venue: PaperJsonValueReader.nullableString(related, 'venue'),
+          relation: PaperJsonValueReader.requiredNonEmptyString(
+            related,
+            'relation',
+          ),
         );
       }).toList(growable: false),
-      readMinutes: _requiredInt(json, 'readMinutes'),
-      citations: _optionalInt(json, 'citations'),
-      likes: _requiredInt(json, 'likes'),
-      comments: _requiredInt(json, 'comments'),
-      saves: _requiredInt(json, 'saves'),
-      shares: _requiredInt(json, 'shares'),
-      arxivId: _optionalString(json, 'arxivId'),
-      doi: _optionalString(json, 'doi'),
-      paperUrl: _optionalString(json, 'paperUrl'),
-      pdfUrl: _optionalString(json, 'pdfUrl'),
-      publishedAt: _optionalString(json, 'publishedAt'),
-      updatedAt: _optionalString(json, 'updatedAt'),
-      license: _optionalString(json, 'license'),
-      source: _requiredString(json, 'source'),
-      cachedAt: _requiredString(json, 'cachedAt'),
+      readMinutes: PaperJsonValueReader.requiredInt(json, 'readMinutes'),
+      citations: PaperJsonValueReader.nullableInt(json, 'citations'),
+      likes: PaperJsonValueReader.requiredInt(json, 'likes'),
+      comments: PaperJsonValueReader.requiredInt(json, 'comments'),
+      saves: PaperJsonValueReader.requiredInt(json, 'saves'),
+      shares: PaperJsonValueReader.requiredInt(json, 'shares'),
+      arxivId: PaperJsonValueReader.nullableString(json, 'arxivId'),
+      doi: PaperJsonValueReader.nullableString(json, 'doi'),
+      paperUrl: PaperJsonValueReader.nullableString(json, 'paperUrl'),
+      pdfUrl: PaperJsonValueReader.nullableString(json, 'pdfUrl'),
+      publishedAt: PaperJsonValueReader.nullableString(json, 'publishedAt'),
+      updatedAt: PaperJsonValueReader.nullableString(json, 'updatedAt'),
+      license: PaperJsonValueReader.nullableString(json, 'license'),
+      source: PaperJsonValueReader.requiredNonEmptyString(json, 'source'),
+      cachedAt: PaperJsonValueReader.requiredNonEmptyString(json, 'cachedAt'),
     );
   }
 
@@ -238,11 +267,14 @@ class PaperCacheMapper {
     if (nextOffset != null && nextOffset is! int) {
       throw const FormatException('论文缓存 nextOffset 必须是整数或 null。');
     }
-    final fetchedAt = _requiredString(json, 'fetchedAt');
+    final fetchedAt = PaperJsonValueReader.requiredNonEmptyString(
+      json,
+      'fetchedAt',
+    );
     _requiredDate(fetchedAt, 'fetchedAt');
     return PaperPageCacheRecord(
-      queryKey: _requiredString(json, 'queryKey'),
-      paperIds: _stringList(json, 'paperIds'),
+      queryKey: PaperJsonValueReader.requiredNonEmptyString(json, 'queryKey'),
+      paperIds: PaperJsonValueReader.requiredStringList(json, 'paperIds'),
       fetchedAt: fetchedAt,
       nextOffset: nextOffset as int?,
     );
@@ -252,54 +284,7 @@ class PaperCacheMapper {
     Map<String, dynamic> json,
     String key,
   ) {
-    return _asMap(json[key], key);
-  }
-
-  static Map<String, dynamic> _asMap(Object? value, String field) {
-    if (value is! Map) throw FormatException('论文缓存字段 $field 必须是对象。');
-    return Map<String, dynamic>.from(value);
-  }
-
-  static List<dynamic> _list(Map<String, dynamic> json, String key) {
-    final value = json[key];
-    if (value is! List) throw FormatException('论文缓存字段 $key 必须是数组。');
-    return List<dynamic>.from(value);
-  }
-
-  static List<String> _stringList(Map<String, dynamic> json, String key) {
-    final values = _list(json, key);
-    if (values.any((value) => value is! String)) {
-      throw FormatException('论文缓存字段 $key 必须是字符串数组。');
-    }
-    return values.cast<String>();
-  }
-
-  static String _requiredString(Map<String, dynamic> json, String key) {
-    final value = json[key];
-    if (value is! String || value.trim().isEmpty) {
-      throw FormatException('论文缓存字段 $key 必须是非空字符串。');
-    }
-    return value;
-  }
-
-  static String? _optionalString(Map<String, dynamic> json, String key) {
-    final value = json[key];
-    if (value == null) return null;
-    if (value is! String) throw FormatException('论文缓存字段 $key 必须是字符串。');
-    return value;
-  }
-
-  static int _requiredInt(Map<String, dynamic> json, String key) {
-    final value = json[key];
-    if (value is! int) throw FormatException('论文缓存字段 $key 必须是整数。');
-    return value;
-  }
-
-  static int? _optionalInt(Map<String, dynamic> json, String key) {
-    final value = json[key];
-    if (value == null) return null;
-    if (value is! int) throw FormatException('论文缓存字段 $key 必须是整数或 null。');
-    return value;
+    return PaperJsonValueReader.stringMapValue(json[key], key);
   }
 
   static DateTime _requiredDate(String value, String field) {

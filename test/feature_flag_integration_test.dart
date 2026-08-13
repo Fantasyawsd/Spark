@@ -24,7 +24,9 @@ void main() {
               environment: AppEnvironment.development,
               features: FeatureFlags(experimentalPdfAi: pdfAiEnabled),
             ),
-            aiSessionRepository: repository,
+            dependencies: SparkDependencies.preview(
+              aiSessionRepository: repository,
+            ),
           ),
         );
         await tester.pumpAndSettle();

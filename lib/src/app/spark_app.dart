@@ -7,17 +7,6 @@ import '../core/navigation/spark_route_observer.dart';
 import '../core/theme/spark_theme.dart';
 import '../core/theme/theme_controller.dart';
 import '../core/theme/theme_preference_repository.dart';
-import '../features/chat/domain/chat_ai_service.dart';
-import '../features/chat/domain/chat_session_repository.dart';
-import '../features/papers/application/paper_translation_service.dart';
-import '../features/papers/domain/paper_comment_repository.dart';
-import '../features/papers/domain/paper_interaction_repository.dart';
-import '../features/papers/domain/paper_link_service.dart';
-import '../features/papers/domain/paper_preference_repository.dart';
-import '../features/papers/domain/paper_reading_repository.dart';
-import '../features/papers/domain/paper_share.dart';
-import '../features/papers/domain/paper_translation.dart';
-import '../features/search/domain/paper_search_history_repository.dart';
 import 'spark_bootstrap.dart';
 import 'spark_dependencies.dart';
 import 'spark_shell.dart';
@@ -30,35 +19,11 @@ class SparkApp extends StatefulWidget {
     this.config = const AppConfig.production(),
     this.showSplash = true,
     this.dependencies,
-    this.commentRepository,
-    this.interactionRepository,
-    this.preferenceRepository,
-    this.readingRepository,
-    this.searchHistoryRepository,
-    this.shareService,
-    this.linkService,
-    this.aiService,
-    this.aiSessionRepository,
-    this.translationServiceFactory,
-    this.translationRepository,
-    this.webSearchAiService,
   });
 
   final AppConfig config;
   final bool showSplash;
   final SparkDependencies? dependencies;
-  final PaperCommentRepository? commentRepository;
-  final PaperInteractionRepository? interactionRepository;
-  final PaperPreferenceRepository? preferenceRepository;
-  final PaperReadingRepository? readingRepository;
-  final PaperSearchHistoryRepository? searchHistoryRepository;
-  final PaperShareService? shareService;
-  final PaperLinkService? linkService;
-  final ChatAiService? aiService;
-  final ChatSessionRepository? aiSessionRepository;
-  final PaperTranslationServiceFactory? translationServiceFactory;
-  final PaperTranslationRepository? translationRepository;
-  final ChatAiService? webSearchAiService;
 
   @override
   State<SparkApp> createState() => _SparkAppState();
@@ -70,21 +35,7 @@ class _SparkAppState extends State<SparkApp> {
   @override
   void initState() {
     super.initState();
-    _dependencies = widget.dependencies ??
-        SparkDependencies.preview(
-          commentRepository: widget.commentRepository,
-          interactionRepository: widget.interactionRepository,
-          preferenceRepository: widget.preferenceRepository,
-          readingRepository: widget.readingRepository,
-          searchHistoryRepository: widget.searchHistoryRepository,
-          shareService: widget.shareService,
-          linkService: widget.linkService,
-          aiService: widget.aiService,
-          webSearchAiService: widget.webSearchAiService,
-          aiSessionRepository: widget.aiSessionRepository,
-          translationServiceFactory: widget.translationServiceFactory,
-          translationRepository: widget.translationRepository,
-        );
+    _dependencies = widget.dependencies ?? SparkDependencies.preview();
     unawaited(
       ThemeController.instance.configure(
         _dependencies.themePreferenceRepository,

@@ -61,7 +61,7 @@ void main() {
     await tester.pumpWidget(
       SparkApp(
         showSplash: false,
-        linkService: linkService,
+        dependencies: SparkDependencies.preview(linkService: linkService),
       ),
     );
     await tester.pump();
@@ -97,9 +97,12 @@ void main() {
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
     await tester.pumpWidget(
-      const SparkApp(
+      SparkApp(
         showSplash: false,
-        translationServiceFactory: _FakePaperTranslationServiceFactory(),
+        dependencies: SparkDependencies.preview(
+          translationServiceFactory:
+              const _FakePaperTranslationServiceFactory(),
+        ),
       ),
     );
     await tester.pump();
@@ -284,7 +287,9 @@ void main() {
     await tester.pumpWidget(
       SparkApp(
         showSplash: false,
-        interactionRepository: interactions,
+        dependencies: SparkDependencies.preview(
+          interactionRepository: interactions,
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -367,7 +372,9 @@ void main() {
     await tester.pumpWidget(
       SparkApp(
         showSplash: false,
-        interactionRepository: repository,
+        dependencies: SparkDependencies.preview(
+          interactionRepository: repository,
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -432,7 +439,9 @@ void main() {
     await tester.pumpWidget(
       SparkApp(
         showSplash: false,
-        readingRepository: repository,
+        dependencies: SparkDependencies.preview(
+          readingRepository: repository,
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -491,8 +500,10 @@ void main() {
     await tester.pumpWidget(
       SparkApp(
         showSplash: false,
-        translationServiceFactory: _FakePaperTranslationServiceFactory(
-          content: List.filled(160, '这是中文解读正文').join(' '),
+        dependencies: SparkDependencies.preview(
+          translationServiceFactory: _FakePaperTranslationServiceFactory(
+            content: List.filled(160, '这是中文解读正文').join(' '),
+          ),
         ),
       ),
     );
@@ -519,11 +530,13 @@ void main() {
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
     await tester.pumpWidget(
-      const SparkApp(
+      SparkApp(
         showSplash: false,
-        translationServiceFactory: _FakePaperTranslationServiceFactory(
-          content: '简短中文摘要',
-          delay: Duration(seconds: 1),
+        dependencies: SparkDependencies.preview(
+          translationServiceFactory: const _FakePaperTranslationServiceFactory(
+            content: '简短中文摘要',
+            delay: Duration(seconds: 1),
+          ),
         ),
       ),
     );
@@ -840,8 +853,10 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: SparkShell(
-          interactionRepository: repository,
-          aiService: const _FakeChatAiService(),
+          dependencies: SparkDependencies.preview(
+            interactionRepository: repository,
+            aiService: const _FakeChatAiService(),
+          ),
         ),
       ),
     );
@@ -869,7 +884,9 @@ void main() {
     await tester.pumpWidget(
       SparkApp(
         showSplash: false,
-        commentRepository: repository,
+        dependencies: SparkDependencies.preview(
+          commentRepository: repository,
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -1096,7 +1113,9 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: SparkShell(
-          searchHistoryRepository: historyRepository,
+          dependencies: SparkDependencies.preview(
+            searchHistoryRepository: historyRepository,
+          ),
         ),
       ),
     );
@@ -1157,8 +1176,10 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: SparkShell(
-          aiService: const _FakeChatAiService(),
-          aiSessionRepository: repository,
+          dependencies: SparkDependencies.preview(
+            aiService: const _FakeChatAiService(),
+            aiSessionRepository: repository,
+          ),
         ),
       ),
     );
@@ -1182,9 +1203,11 @@ void main() {
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
     await tester.pumpWidget(
-      const MaterialApp(
+      MaterialApp(
         home: SparkShell(
-          aiService: _FakeChatAiService(),
+          dependencies: SparkDependencies.preview(
+            aiService: const _FakeChatAiService(),
+          ),
         ),
       ),
     );
@@ -1213,8 +1236,10 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: SparkShell(
-          aiService: const _FakeChatAiService(),
-          aiSessionRepository: repository,
+          dependencies: SparkDependencies.preview(
+            aiService: const _FakeChatAiService(),
+            aiSessionRepository: repository,
+          ),
         ),
       ),
     );

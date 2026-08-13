@@ -120,11 +120,68 @@ void main() {
     expect(shellSource, contains('MainAiChatScreen('));
   });
 
+  test('application constructors expose only complete dependency boundaries',
+      () {
+    final appSource = File('lib/src/app/spark_app.dart').readAsStringSync();
+    final shellSource = File('lib/src/app/spark_shell.dart').readAsStringSync();
+
+    expect(
+      _constructorParameterNames(appSource, 'SparkApp'),
+      ['key', 'config', 'showSplash', 'dependencies'],
+    );
+    expect(
+      _constructorParameterNames(shellSource, 'SparkShell'),
+      ['key', 'dependencies', 'features'],
+    );
+    expect(
+      _constructorParameters(shellSource, 'SparkShell'),
+      contains('required this.dependencies'),
+    );
+  });
+
+  test('preview dependencies are resolved only by the application root', () {
+    final shellSource = File('lib/src/app/spark_shell.dart').readAsStringSync();
+    final previewCallSites = <String>[];
+    final dartFiles = Directory('lib')
+        .listSync(recursive: true)
+        .whereType<File>()
+        .where((file) => file.path.endsWith('.dart'));
+    for (final file in dartFiles) {
+      for (final line in file.readAsLinesSync()) {
+        if (line.contains('SparkDependencies.preview(') &&
+            !line.trimLeft().startsWith('factory ')) {
+          previewCallSites.add(file.path.replaceAll('\\', '/'));
+        }
+      }
+    }
+
+    expect(shellSource, isNot(contains('SparkDependencies.preview(')));
+    expect(previewCallSites, ['lib/src/app/spark_app.dart']);
+  });
+
   test('SparkShell remains visible through both established imports', () {
-    const publicShell = public_api.SparkShell();
-    const internalShell = app_api.SparkShell();
+    final dependencies = public_api.SparkDependencies.preview();
+    final publicShell = public_api.SparkShell(dependencies: dependencies);
+    final internalShell = app_api.SparkShell(dependencies: dependencies);
 
     expect(publicShell, isA<app_api.SparkShell>());
     expect(internalShell, isA<public_api.SparkShell>());
   });
+}
+
+String _constructorParameters(String source, String className) {
+  final match = RegExp(
+    'const $className\\(\\{([\\s\\S]*?)\\n  \\}\\);',
+  ).firstMatch(source);
+  expect(match, isNotNull,
+      reason: '$className must keep a const named constructor');
+  return match!.group(1)!;
+}
+
+List<String> _constructorParameterNames(String source, String className) {
+  final parameters = _constructorParameters(source, className);
+  return RegExp(r'(?:super\.|this\.)(\w+)')
+      .allMatches(parameters)
+      .map((match) => match.group(1)!)
+      .toList();
 }

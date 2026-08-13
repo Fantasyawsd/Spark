@@ -52,8 +52,10 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: SparkShell(
-            aiService: service,
-            aiSessionRepository: repository,
+            dependencies: SparkDependencies.preview(
+              aiService: service,
+              aiSessionRepository: repository,
+            ),
           ),
         ),
       );
@@ -109,8 +111,10 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: SparkShell(
-            aiService: service,
-            aiSessionRepository: repository,
+            dependencies: SparkDependencies.preview(
+              aiService: service,
+              aiSessionRepository: repository,
+            ),
           ),
         ),
       );
@@ -237,8 +241,10 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: SparkShell(
-            aiService: service,
-            aiSessionRepository: repository,
+            dependencies: SparkDependencies.preview(
+              aiService: service,
+              aiSessionRepository: repository,
+            ),
           ),
         ),
       );
@@ -355,8 +361,10 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: SparkShell(
-            aiService: service,
-            aiSessionRepository: repository,
+            dependencies: SparkDependencies.preview(
+              aiService: service,
+              aiSessionRepository: repository,
+            ),
           ),
         ),
       );

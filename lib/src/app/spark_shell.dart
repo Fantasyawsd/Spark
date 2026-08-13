@@ -7,8 +7,6 @@ import '../core/platform/external_http_uri.dart';
 import '../core/theme/spark_theme.dart';
 import '../features/ai_settings/presentation/deepseek_settings_section.dart';
 import '../features/chat/application/main_ai_chat_definition.dart';
-import '../features/chat/domain/chat_ai_service.dart';
-import '../features/chat/domain/chat_session_repository.dart';
 import '../features/chat/presentation/ai_chat_home_screen.dart';
 import '../features/chat/presentation/main_ai_chat_screen.dart';
 import '../features/chat/presentation/paper_ai_chat_screen.dart';
@@ -17,22 +15,13 @@ import '../features/community/data/community_post_seed.dart';
 import '../features/community/presentation/community_screen.dart';
 import '../features/local_data/presentation/local_data_sheet.dart';
 import '../features/papers/application/paper_chat_context.dart';
-import '../features/papers/application/paper_translation_service.dart';
-import '../features/papers/domain/paper_comment_repository.dart';
 import '../features/papers/domain/paper.dart';
 import '../features/papers/domain/paper_catalog.dart';
-import '../features/papers/domain/paper_interaction_repository.dart';
-import '../features/papers/domain/paper_link_service.dart';
-import '../features/papers/domain/paper_preference_repository.dart';
-import '../features/papers/domain/paper_reading_repository.dart';
-import '../features/papers/domain/paper_share.dart';
-import '../features/papers/domain/paper_translation.dart';
 import '../features/papers/presentation/paper_detail_screen.dart';
 import '../features/papers/presentation/papers_screen.dart';
 import '../features/profile/presentation/paper_shelf_list_screen.dart';
 import '../features/profile/presentation/profile_screen.dart';
 import '../features/search/application/paper_search_controller.dart';
-import '../features/search/domain/paper_search_history_repository.dart';
 import '../features/search/presentation/paper_search_screen.dart';
 import 'spark_application_session.dart';
 import 'spark_bottom_nav.dart';
@@ -41,36 +30,12 @@ import 'spark_dependencies.dart';
 class SparkShell extends StatefulWidget {
   const SparkShell({
     super.key,
+    required this.dependencies,
     this.features = const FeatureFlags(),
-    this.dependencies,
-    this.commentRepository,
-    this.interactionRepository,
-    this.preferenceRepository,
-    this.readingRepository,
-    this.searchHistoryRepository,
-    this.shareService,
-    this.linkService,
-    this.aiService,
-    this.aiSessionRepository,
-    this.translationServiceFactory,
-    this.translationRepository,
-    this.webSearchAiService,
   });
 
   final FeatureFlags features;
-  final SparkDependencies? dependencies;
-  final PaperCommentRepository? commentRepository;
-  final PaperInteractionRepository? interactionRepository;
-  final PaperPreferenceRepository? preferenceRepository;
-  final PaperReadingRepository? readingRepository;
-  final PaperSearchHistoryRepository? searchHistoryRepository;
-  final PaperShareService? shareService;
-  final PaperLinkService? linkService;
-  final ChatAiService? aiService;
-  final ChatSessionRepository? aiSessionRepository;
-  final PaperTranslationServiceFactory? translationServiceFactory;
-  final PaperTranslationRepository? translationRepository;
-  final ChatAiService? webSearchAiService;
+  final SparkDependencies dependencies;
 
   @override
   State<SparkShell> createState() => _SparkShellState();
@@ -84,22 +49,7 @@ class _SparkShellState extends State<SparkShell> {
   @override
   void initState() {
     super.initState();
-    final dependencies = widget.dependencies ??
-        SparkDependencies.preview(
-          commentRepository: widget.commentRepository,
-          interactionRepository: widget.interactionRepository,
-          preferenceRepository: widget.preferenceRepository,
-          readingRepository: widget.readingRepository,
-          searchHistoryRepository: widget.searchHistoryRepository,
-          shareService: widget.shareService,
-          linkService: widget.linkService,
-          aiService: widget.aiService,
-          webSearchAiService: widget.webSearchAiService,
-          aiSessionRepository: widget.aiSessionRepository,
-          translationServiceFactory: widget.translationServiceFactory,
-          translationRepository: widget.translationRepository,
-        );
-    _session = SparkApplicationSession(dependencies)
+    _session = SparkApplicationSession(widget.dependencies)
       ..addListener(_handleSessionStateChanged)
       ..initialize();
   }

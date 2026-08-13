@@ -10,8 +10,8 @@
 - Worktree：`C:\Users\Fantasy\Desktop\Spark-worktrees\agent-2`
 - 基线提交：`e61d320939fba18b58b489ed99d140b4c84e57aa`
 - 负责人：Codex（Fantasy 编排）
-- 状态：待审查（`/test` 已通过）
-- 最近更新：`2026-08-13 15:04`（Asia/Shanghai）
+- 状态：开发中（`/review` 发现阻断项）
+- 最近更新：`2026-08-13 15:09`（Asia/Shanghai）
 
 ## 目标
 
@@ -30,7 +30,7 @@
 - [x] 同 feature 分层守卫覆盖 `presentation -> data`、`application -> data`、`domain -> application/data/presentation` 及其他逆向依赖，并通过隔离 fixture 证明旧盲区会被检出。
 - [x] domain 纯净度采用默认拒绝的外部包策略或等价的显式安全允许机制，能够检出 `sqflite`、`path_provider`、`shared_preferences`、`flutter_secure_storage` 等未获准基础设施包以及 `dart:io`。
 - [x] `lib/src` 导入图具备循环检测，至少用多文件循环 fixture 验证，并在失败信息中给出可定位的依赖链。
-- [x] `core/widgets` 的业务复用检查以真实 feature 可达性为依据，不把测试或 barrel export 误算为业务复用；少于两个独立业务模块使用的组件会失败或具有明确、可审查的基础设施例外。
+- [ ] `core/widgets` 的业务复用检查以真实 feature 可达性为依据，不把测试或 barrel export 误算为业务复用；少于两个独立业务模块使用的组件会失败或具有明确、可审查的基础设施例外。
 - [x] 报告指出的生产零调用 `CherryButton` 被删除，`ProfileAvatar` 与 `TopicChip` 回归各自业务模块；新守卫发现的其他同类现存问题须修正或记录符合规范的例外理由。
 - [x] 组件移动后的导入、公开入口与测试同步更新，用户可观察行为不变。
 - [x] 架构定向测试、相关 Widget 测试、Dart 格式、`flutter analyze`、`flutter test` 和 `git diff --check` 通过。
@@ -76,9 +76,10 @@
 - 已完成：新守卫在修复前准确报告 `ProfileAvatar`、`TopicChip` 和 `SparkThemeSheet` 三项单 feature 归属；三者已移回 community、papers 和 profile。
 - 已完成：删除生产零调用的 `CherryButton` 及专用测试，保留仍有真实调用的 `CherryIconButton` 和 `CherrySurface`；形成 `6fc6a73` 检查点。
 - 已完成：`/test` 完整门禁通过；20 个 Dart 文件格式、静态分析、461 项 Flutter 测试、55 项服务端测试、Python 编译与 Git 检查均成功。
-- 正在进行：实现与完整验证已完成，等待只读 `/review`。
-- 下一步：触发 `/review`，对批准基线 `e61d320...当前任务 tip` 做规格与架构双轴审查；通过后保留为下一串联 worktree 基线，不合入 `main`。
-- 阻塞项：无。
+- 已完成：`/review` 审查批准基线 `e61d320...e3a8ac6` 的 5 个提交、19 个文件和全部验收标准，发现 1 个 core 复用守卫假阴性。
+- 正在进行：审查结论为需修复，任务退回 `/develop`。
+- 下一步：区分 import 与 export 依赖；core 内部 export 只用于继续可达性追踪，feature barrel export 不得计为业务使用，并补充能在当前实现失败的 fixture。
+- 阻塞项：`coreWidgetReuseViolations()` 当前把 feature barrel export 计为真实 feature 使用，未满足验收标准。
 
 ## 决策记录
 
@@ -118,10 +119,17 @@
 
 ## 审查结论
 
-- 审查日期：待 `/review`
-- 阻断项：待 `/review`
-- 缺陷：待 `/review`
-- 结论：待 `/review`
+- 审查日期：2026-08-13
+- 审查范围：`e61d320939fba18b58b489ed99d140b4c84e57aa...e3a8ac693586fffe88fca7cdcdb438b17041a715`；5 个提交、19 个文件，新增 968 行、删除 387 行。
+- 基线说明：`origin/main@948f3af` 比当前修复链落后 85 个提交；按编排者批准的上一批最终提交 `e61d320` 固定本批范围，避免混入无关历史。
+- 规格核对：同 feature 分层、domain 纯净度、循环检测、组件迁移/删除和完整验证 6 项满足；core 真实复用 1 项未满足。
+- 结构核对：未触发 Widget/Controller 基础设施直连、领域层外部依赖、多职数据类型、core 反向依赖、循环依赖、业务 utils、深继承或在超大页面新增流程等阻断条件。
+- 阻断项：`test/support/architecture_rules.dart:145-169` 使用包含 import/export 的 `directives()` 建立反向图，并在到达任意 feature 文件时直接计数。两个 feature barrel 仅 export 同一 core widget 即可伪造“两个业务模块复用”，存在假阴性；`test/architecture_test_support_test.dart:193-210` 只覆盖 core barrel，缺少 feature barrel 反例。
+- 修复方向：源码图暴露 import/export 类型；core 可达性只把 feature import 计为使用，core export 仅作为内部转发边，增加两个 feature barrel export 仍应报告 `features: none` 的 fixture。
+- 缺陷：除上述阻断项外未发现其他缺陷。
+- `/test` 证据：格式、`flutter analyze`、461 项 Flutter 测试、55 项服务端测试、Python 编译与 Git 检查均通过；这些测试未覆盖上述 feature barrel 假阴性。
+- 未验证项：按阶段未执行目标构建；按编排者要求未进行人工验收；两项均不是本次审查阻断原因。
+- 结论：需修复并重新 `/test`、`/review`；不得作为下一串联 worktree 基线。
 
 ## 检查点与提交
 
@@ -134,14 +142,14 @@
 
 ### 交付摘要
 
-四类架构盲区和新守卫直接揭示的组件归属问题均已修复，完整 `/test` 已通过；待 `/review` 补齐最终审查结论。本任务按编排者要求不合入 `main`。
+同 feature 分层、domain 纯净度、循环检测和现存组件归属问题已修复，完整 `/test` 已通过；`/review` 发现 core 复用规则仍会把 feature barrel export 误算为真实使用，修复前本批不可交付。本任务按编排者要求不合入 `main`。
 
 ### 实际变更
 
 - 领域与业务逻辑：无行为变化；仅强化依赖方向和组件所有权约束。
 - 数据与基础设施：无变化。
 - 界面与交互：头像、主题标签和主题面板只移动文件归属；主题面板入口及交互保持不变；删除无生产入口的 `CherryButton`。
-- 测试与工具：四类架构守卫均可由隔离 fixture 自证，并持续扫描真实 `lib/src` 源码。
+- 测试与工具：前三类架构守卫已由隔离 fixture 自证；core 复用守卫尚缺 feature barrel 假阴性覆盖。
 - 文档：持续更新本台账。
 
 ### 兼容性与迁移
@@ -152,7 +160,7 @@
 
 ### 已知风险与回滚
 
-- 已知风险：完整自动化门禁无已知失败；当前 `core` 复用规则按文件级生产依赖判定，单个共享文件内部未来新增的未使用公开符号仍需 analyzer、引用检索和审查共同发现。
+- 已知风险：已确认 core 复用守卫会把 feature barrel export 误算为真实使用，属于待修阻断项；此外规则按文件级依赖判定，单个共享文件内部未来新增的未使用公开符号仍需 analyzer、引用检索和审查共同发现。
 - 回滚方式：按逆序 `git revert 6fc6a73 d8f26ae`；无数据迁移。
 
 ### 文档更新建议

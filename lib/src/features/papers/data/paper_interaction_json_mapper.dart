@@ -1,6 +1,6 @@
 import '../domain/favorite_group.dart';
-import '../domain/paper_interaction_repository.dart';
 import 'paper_json_value_reader.dart';
+import 'paper_interaction_record.dart';
 
 class PaperInteractionJsonMapper {
   const PaperInteractionJsonMapper._();
@@ -64,9 +64,9 @@ class PaperInteractionJsonMapper {
     };
   }
 
-  static PaperInteractionSnapshot fromJson(Map<String, dynamic> json) {
+  static PaperInteractionRecord fromJson(Map<String, dynamic> json) {
     if (!_usesGroupedFavorites(json)) {
-      return PaperInteractionSnapshot(
+      return PaperInteractionRecord(
         likedPaperIds: PaperJsonValueReader.stringList(json, 'likedPaperIds'),
         savedPaperIds: PaperJsonValueReader.stringList(json, 'savedPaperIds'),
         followedPaperIds: PaperJsonValueReader.stringList(
@@ -76,7 +76,7 @@ class PaperInteractionJsonMapper {
         shareCountDeltas: PaperJsonValueReader.intMap(json, 'shareCountDeltas'),
       );
     }
-    return PaperInteractionSnapshot(
+    return PaperInteractionRecord(
       likedPaperIds: PaperJsonValueReader.stringList(json, 'likedPaperIds'),
       favoriteGroups: _favoriteGroups(json),
       favoritePaperIdsByGroup: _favoriteMemberships(json),
@@ -88,7 +88,7 @@ class PaperInteractionJsonMapper {
     );
   }
 
-  static Map<String, dynamic> toJson(PaperInteractionSnapshot snapshot) {
+  static Map<String, dynamic> toJson(PaperInteractionRecord snapshot) {
     return {
       'likedPaperIds': snapshot.likedPaperIds.toList(),
       'favoriteGroups': snapshot.favoriteGroups

@@ -1,6 +1,7 @@
 import '../../../core/storage/local_json_store.dart';
 import '../../../core/storage/versioned_local_json_store.dart';
 import '../domain/paper_interaction_repository.dart';
+import 'paper_interaction_record.dart';
 import 'paper_interaction_json_mapper.dart';
 
 class FilePaperInteractionRepository implements PaperInteractionRepository {
@@ -20,7 +21,7 @@ class FilePaperInteractionRepository implements PaperInteractionRepository {
     try {
       final json = await _store.readMap();
       if (json == null) return PaperInteractionSnapshot();
-      return PaperInteractionJsonMapper.fromJson(json);
+      return PaperInteractionJsonMapper.fromJson(json).toDomain();
     } catch (error) {
       throw PaperInteractionPersistenceException('无法读取论文互动状态。', error);
     }
@@ -29,7 +30,11 @@ class FilePaperInteractionRepository implements PaperInteractionRepository {
   @override
   Future<void> save(PaperInteractionSnapshot snapshot) async {
     try {
-      await _store.writeMap(PaperInteractionJsonMapper.toJson(snapshot));
+      await _store.writeMap(
+        PaperInteractionJsonMapper.toJson(
+          PaperInteractionRecord.fromDomain(snapshot),
+        ),
+      );
     } catch (error) {
       throw PaperInteractionPersistenceException('无法保存论文互动状态。', error);
     }

@@ -322,10 +322,22 @@ class PaperStore:
         self._connection.commit()
 
     def _row_to_paper(self, row: sqlite3.Row) -> PaperRecord:
+        return self._rows_to_papers((row,))[0]
+
+    def _rows_to_papers(self, rows: Iterable[sqlite3.Row]) -> list[PaperRecord]:
+        rows = tuple(rows)
+        if not rows:
+            return []
+        paper_ids = tuple(dict.fromkeys(row["paper_id"] for row in rows))
+        placeholders = ",".join("?" for _ in paper_ids)
+        provenance_by_paper: dict[str, list[sqlite3.Row]] = {paper_id: [] for paper_id in paper_ids}
         provenance_rows = self._connection.execute(
-            "SELECT * FROM provenance WHERE paper_id = ? ORDER BY field_name, source", (row["paper_id"],)
+            f"SELECT * FROM provenance WHERE paper_id IN ({placeholders}) ORDER BY paper_id, field_name, source",
+            paper_ids,
         ).fetchall()
-        return paper_from_row(row, provenance_rows)
+        for provenance_row in provenance_rows:
+            provenance_by_paper[provenance_row["paper_id"]].append(provenance_row)
+        return [paper_from_row(row, provenance_by_paper[row["paper_id"]]) for row in rows]
 
     def get(self, paper_id: str) -> PaperRecord | None:
         row = self._connection.execute("SELECT * FROM papers WHERE paper_id = ?", (paper_id,)).fetchone()
@@ -668,7 +680,7 @@ class PaperStore:
         query = f"SELECT * FROM papers WHERE {' AND '.join(clauses)} ORDER BY {order} LIMIT ?"
         params.append(max(1, min(limit, 100)) + 1)
         rows = self._connection.execute(query, params).fetchall()
-        items = [self._row_to_paper(row) for row in rows[:limit]]
+        items = self._rows_to_papers(rows[:limit])
         next_cursor = None
         if len(rows) > limit and items:
             next_cursor = (items[-1].published_at.isoformat(), items[-1].paper_id)
@@ -748,7 +760,7 @@ class PaperStore:
                 "ORDER BY papers.published_at DESC, papers.paper_id DESC LIMIT ?",
                 params,
             ).fetchall()
-        bounded = [self._row_to_paper(row) for row in rows[:bounded_limit]]
+        bounded = self._rows_to_papers(rows[:bounded_limit])
         next_cursor = None
         if len(rows) > len(bounded) and bounded:
             next_cursor = (bounded[-1].published_at.isoformat(), bounded[-1].paper_id)
@@ -854,7 +866,7 @@ class PaperStore:
         rows = self._connection.execute(
             "SELECT * FROM papers WHERE admitted = 1 AND withdrawn = 0 ORDER BY published_at DESC, paper_id DESC"
         ).fetchall()
-        return [self._row_to_paper(row) for row in rows]
+        return self._rows_to_papers(rows)
 
     def recommendation_candidates(
         self,

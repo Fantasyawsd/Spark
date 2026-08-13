@@ -78,6 +78,82 @@ class Paper {
     }
     return null;
   }
+
+  Paper copyWith({
+    String? id,
+    String? title,
+    List<String>? authors,
+    List<String>? affiliations,
+    List<String>? contentKeywords,
+    List<String>? subjects,
+    String? primarySubject,
+    bool clearPrimarySubject = false,
+    String? venue,
+    bool clearVenue = false,
+    String? journalReference,
+    bool clearJournalReference = false,
+    String? comment,
+    bool clearComment = false,
+    String? abstractText,
+    String? chineseAbstractMarkdown,
+    List<RelatedPaper>? relatedPapers,
+    int? readMinutes,
+    int? citations,
+    bool clearCitations = false,
+    int? likes,
+    int? comments,
+    int? saves,
+    int? shares,
+    String? arxivId,
+    bool clearArxivId = false,
+    String? doi,
+    bool clearDoi = false,
+    String? paperUrl,
+    bool clearPaperUrl = false,
+    String? pdfUrl,
+    bool clearPdfUrl = false,
+    DateTime? publishedAt,
+    bool clearPublishedAt = false,
+    DateTime? updatedAt,
+    bool clearUpdatedAt = false,
+    String? license,
+    bool clearLicense = false,
+    String? source,
+  }) {
+    return Paper(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      authors: authors ?? this.authors,
+      affiliations: affiliations ?? this.affiliations,
+      contentKeywords: contentKeywords ?? this.contentKeywords,
+      subjects: subjects ?? this.subjects,
+      primarySubject:
+          clearPrimarySubject ? null : primarySubject ?? this.primarySubject,
+      venue: clearVenue ? null : venue ?? this.venue,
+      journalReference: clearJournalReference
+          ? null
+          : journalReference ?? this.journalReference,
+      comment: clearComment ? null : comment ?? this.comment,
+      abstractText: abstractText ?? content.originalAbstractMarkdown,
+      chineseAbstractMarkdown:
+          chineseAbstractMarkdown ?? content.chineseAbstractMarkdown,
+      relatedPapers: relatedPapers ?? this.relatedPapers,
+      readMinutes: readMinutes ?? this.readMinutes,
+      citations: clearCitations ? null : citations ?? metrics.citations,
+      likes: likes ?? metrics.likes,
+      comments: comments ?? metrics.comments,
+      saves: saves ?? metrics.saves,
+      shares: shares ?? metrics.shares,
+      arxivId: clearArxivId ? null : arxivId ?? this.arxivId,
+      doi: clearDoi ? null : doi ?? this.doi,
+      paperUrl: clearPaperUrl ? null : paperUrl ?? this.paperUrl,
+      pdfUrl: clearPdfUrl ? null : pdfUrl ?? this.pdfUrl,
+      publishedAt: clearPublishedAt ? null : publishedAt ?? this.publishedAt,
+      updatedAt: clearUpdatedAt ? null : updatedAt ?? this.updatedAt,
+      license: clearLicense ? null : license ?? this.license,
+      source: source ?? this.source,
+    );
+  }
 }
 
 class PaperContent {

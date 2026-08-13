@@ -59,4 +59,37 @@ void main() {
     expect(bootstrapSource, contains('class SparkBootstrap'));
     expect(bootstrapSource, contains("ValueKey('spark-splash')"));
   });
+
+  test('root controller ownership stays in SparkApplicationSession', () {
+    final appSource = File('lib/src/app/spark_app.dart').readAsStringSync();
+    final sessionSource = File(
+      'lib/src/app/spark_application_session.dart',
+    ).readAsStringSync();
+    const rootControllerTypes = [
+      'PaperController',
+      'PaperCommentController',
+      'PaperReadingController',
+      'ChatConversationCoordinator',
+      'ChatSessionController',
+      'DeepSeekCredentialController',
+      'LocalDataController',
+    ];
+
+    expect(appSource, contains('late final SparkApplicationSession _session;'));
+    for (final type in rootControllerTypes) {
+      expect(
+        appSource,
+        isNot(contains('$type(')),
+        reason: '$type must not be constructed by SparkShell',
+      );
+      expect(
+        sessionSource,
+        contains('$type('),
+        reason: '$type must be owned by SparkApplicationSession',
+      );
+    }
+    expect(sessionSource, contains('Future<void> _prepareLocalDataMutation'));
+    expect(
+        sessionSource, contains('Future<void> _reloadAfterLocalDataMutation'));
+  });
 }

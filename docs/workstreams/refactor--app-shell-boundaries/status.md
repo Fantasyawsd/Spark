@@ -1,7 +1,7 @@
 # 应用壳边界重构任务台账
 
-> 状态：`/develop` 迭代 1 已完成，待迭代 2
-> 最近更新：2026-08-13 19:03
+> 状态：`/develop` 迭代 2 已完成，待迭代 3
+> 最近更新：2026-08-13 19:11
 
 ## 1. 任务信息
 
@@ -14,7 +14,7 @@
 | worktree | `C:\Users\Fantasy\Desktop\Spark-worktrees\agent-7` |
 | 基线 | `5e4dd9c2a65a9e9230c83990a8dd7c309a5da30a`（上一批 `fix/runtime-diagnostics` 最终审查提交） |
 | 负责人 | Fantasy（编排）；Codex（执行） |
-| 当前阶段 | `/develop` 迭代 1 已完成；下一步为运行期会话边界 |
+| 当前阶段 | `/develop` 迭代 2 已完成；下一步为导航展示壳边界 |
 
 ## 2. 问题与边界
 
@@ -77,6 +77,13 @@ DeepSeek 报告指出 `lib/src/app/spark_app.dart` 同时承担应用根、闪�
 - 闭环目标：把启动动画与 `SparkShell` 叠放逻辑完整迁出 `spark_app.dart`，不改变 `SparkApp`、`SparkShell` 构造接口和运行行为。
 - 验证：结构测试确认 bootstrap 类及 splash key 不再位于 `spark_app.dart`；`test/widget_test.dart` 验证普通动画、reduce-motion 与导航行为；随后运行 `flutter analyze` 和变更 Dart 格式检查。
 
+### 当前迭代：应用运行期会话边界
+
+- 改动文件：新增 `lib/src/app/spark_application_session.dart`，调整 `lib/src/app/spark_app.dart`、`test/app_shell_boundaries_test.dart` 与本台账。
+- 闭环目标：由 `SparkApplicationSession` 统一创建、初始化、同步和销毁根级控制器，并封装 Chat 清理与本地业务数据重载；`SparkShell` 状态仅持有和监听一个会话对象。
+- 保留边界：路由级 `PaperSearchController` 仍由对应路由创建和销毁；导航、页面构造与依赖 fallback 本轮不迁移，分别留给后续导航壳及依赖入口迭代。
+- 验证：源码边界测试禁止七类根控制器重新回流 `spark_app.dart`；运行 `test/app_shell_boundaries_test.dart`、`test/chat_background_completion_test.dart`、`test/widget_test.dart`，随后执行 `flutter analyze` 和变更 Dart 格式检查。
+
 ## 6. 决策记录
 
 | 时间 | 决策 | 原因 |
@@ -85,6 +92,7 @@ DeepSeek 报告指出 `lib/src/app/spark_app.dart` 同时承担应用根、闪�
 | 2026-08-13 | 将全局 `ThemeController` 排除在本任务之外。 | 报告将其列为独立问题；本批只治理应用壳职责和生命周期，避免两个结构性改动耦合。 |
 | 2026-08-13 | 运行期控制器所有权迁入专用应用会话对象，而不是下沉到页面。 | Chat 后台任务必须跨页面存活，组合根仍应统一掌握其生命周期。 |
 | 2026-08-13 | 测试覆盖参数统一经 `SparkDependencies.preview(...)` 构造完整依赖。 | 消除 `SparkApp`/`SparkShell` 重复参数面和第二次 fallback，同时保留测试替身能力。 |
+| 2026-08-13 | 路由级 `PaperSearchController` 暂留导航壳就地创建和销毁。 | 它的生命周期只覆盖搜索路由，不属于应用会话；本轮不把短生命周期对象提升为根级所有权。 |
 
 ## 7. 验证记录
 
@@ -97,6 +105,9 @@ DeepSeek 报告指出 `lib/src/app/spark_app.dart` 同时承担应用根、闪�
 | 2026-08-13 | `/develop` 迭代 1 | `flutter test test\app_shell_boundaries_test.dart test\widget_test.dart` | 通过，8 项测试覆盖独立 bootstrap、启动动画、reduce-motion、一级导航与功能开关。 |
 | 2026-08-13 | `/develop` 迭代 1 | `flutter analyze` | 通过，无问题。 |
 | 2026-08-13 | `/develop` 迭代 1 | `.\tool\verify_changed_dart_format.ps1` | 首次因 `pub get` 前格式化未加载 package 配置而发现 1 个文件差异；重新格式化后通过，共检查 94 个变更相关 Dart 文件。 |
+| 2026-08-13 | `/develop` 迭代 2 | `flutter test test\app_shell_boundaries_test.dart test\chat_background_completion_test.dart test\widget_test.dart` | 通过，16 项测试覆盖会话所有权边界、根协调器销毁、后台回复存活、会话删除、Chat 数据清理、闪屏与一级导航。 |
+| 2026-08-13 | `/develop` 迭代 2 | `flutter analyze` | 通过，无问题。 |
+| 2026-08-13 | `/develop` 迭代 2 | `.\tool\verify_changed_dart_format.ps1` | 通过，共检查 95 个变更相关 Dart 文件。 |
 
 ## 8. 审查与交付
 
@@ -114,6 +125,6 @@ DeepSeek 报告指出 `lib/src/app/spark_app.dart` 同时承担应用根、闪�
 
 ## 10. 当前状态
 
-- 已完成：报告问题确认、强制文档阅读、重叠任务核对、基线预检、新分支与 worktree 创建；已将 116 行闪屏/bootstrap 实现迁出 `spark_app.dart`，应用壳由 781 行降至 668 行，并以独立 Widget 测试和源码边界测试锁定行为。
-- 下一步：继续 `/develop` 迭代 2，引入应用运行期会话对象，迁移控制器创建、初始化、销毁与本地数据清理编排。
+- 已完成：已迁出闪屏/bootstrap；新增 201 行 `SparkApplicationSession`，集中持有七类根控制器、Chat 协调器、初始化/销毁、跨控制器上下文同步、本地数据清理钩子与派生书架数据；`SparkShell` 状态只持有和监听一个会话对象，`spark_app.dart` 由 781 行降至 533 行。
+- 下一步：继续 `/develop` 迭代 3，将 `SparkShell` 与导航/路由展示迁至独立文件，并维持 `package:spark/spark.dart` 的公开导出兼容性。
 - 阻塞项：无。

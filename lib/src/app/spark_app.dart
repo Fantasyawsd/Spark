@@ -9,10 +9,7 @@ import '../core/platform/external_http_uri.dart';
 import '../core/theme/spark_theme.dart';
 import '../core/theme/theme_controller.dart';
 import '../core/theme/theme_preference_repository.dart';
-import '../features/ai_settings/application/deepseek_credential_controller.dart';
 import '../features/ai_settings/presentation/deepseek_settings_section.dart';
-import '../features/chat/application/chat_session_controller.dart';
-import '../features/chat/application/chat_conversation_coordinator.dart';
 import '../features/chat/application/main_ai_chat_definition.dart';
 import '../features/chat/domain/chat_ai_service.dart';
 import '../features/chat/domain/chat_session_repository.dart';
@@ -22,14 +19,8 @@ import '../features/chat/presentation/paper_ai_chat_screen.dart';
 import '../features/chat/presentation/paper_ai_discussion_view.dart';
 import '../features/community/data/community_post_seed.dart';
 import '../features/community/presentation/community_screen.dart';
-import '../features/local_data/application/local_data_controller.dart';
-import '../features/local_data/domain/local_data_repository.dart';
 import '../features/local_data/presentation/local_data_sheet.dart';
 import '../features/papers/application/paper_chat_context.dart';
-import '../features/papers/application/paper_chat_context_loader.dart';
-import '../features/papers/application/paper_comment_controller.dart';
-import '../features/papers/application/paper_controller.dart';
-import '../features/papers/application/paper_reading_controller.dart';
 import '../features/papers/application/paper_translation_service.dart';
 import '../features/papers/domain/paper_comment_repository.dart';
 import '../features/papers/domain/paper.dart';
@@ -47,6 +38,7 @@ import '../features/profile/presentation/profile_screen.dart';
 import '../features/search/application/paper_search_controller.dart';
 import '../features/search/domain/paper_search_history_repository.dart';
 import '../features/search/presentation/paper_search_screen.dart';
+import 'spark_application_session.dart';
 import 'spark_bootstrap.dart';
 import 'spark_bottom_nav.dart';
 import 'spark_dependencies.dart';
@@ -187,28 +179,12 @@ class SparkShell extends StatefulWidget {
 class _SparkShellState extends State<SparkShell> {
   int _selectedIndex = 0;
   int _coveringRouteDepth = 0;
-  late final SparkDependencies _dependencies;
-  late final PaperController _paperController;
-  late final PaperCommentController _commentController;
-  late final PaperReadingController _readingController;
-  late final ChatAiService _paperAiService;
-  late final ChatAiService _webSearchAiService;
-  late final ChatAiService _mainAiService;
-  late final ChatAiService _mainWebSearchAiService;
-  late final ChatSessionRepository _aiSessionRepository;
-  late final ChatSessionController _chatSessionController;
-  late final ChatConversationCoordinator _chatConversationCoordinator;
-  late final PaperSearchHistoryRepository _searchHistoryRepository;
-  late final PaperTranslationServiceFactory _translationServiceFactory;
-  late final PaperChatContextLoader _paperChatContextLoader;
-  late final PaperLinkService _linkService;
-  late final DeepSeekCredentialController _credentialController;
-  late final LocalDataController _localDataController;
+  late final SparkApplicationSession _session;
 
   @override
   void initState() {
     super.initState();
-    _dependencies = widget.dependencies ??
+    final dependencies = widget.dependencies ??
         SparkDependencies.preview(
           commentRepository: widget.commentRepository,
           interactionRepository: widget.interactionRepository,
@@ -223,68 +199,16 @@ class _SparkShellState extends State<SparkShell> {
           translationServiceFactory: widget.translationServiceFactory,
           translationRepository: widget.translationRepository,
         );
-    _paperController = PaperController(
-      _dependencies.paperRepository,
-      interactionRepository: _dependencies.interactionRepository,
-      preferenceRepository: _dependencies.preferenceRepository,
-      catalogRepository: _dependencies.paperCatalogRepository,
-      readPaperIdsProvider: () => _readingController.readPaperIds,
-    )..addListener(_handlePaperStateChanged);
-    _readingController = PaperReadingController(
-      repository: _dependencies.readingRepository,
-    )..addListener(_handleReadingStateChanged);
-    unawaited(_readingController.initialize());
-    _commentController = PaperCommentController(
-      repository: _dependencies.commentRepository,
-    );
-    _paperAiService = _dependencies.aiService;
-    _webSearchAiService = _dependencies.webSearchAiService;
-    _mainAiService = _dependencies.mainAiService;
-    _mainWebSearchAiService = _dependencies.mainWebSearchAiService;
-    _aiSessionRepository = _dependencies.aiSessionRepository;
-    _chatConversationCoordinator = ChatConversationCoordinator(
-      sessionRepository: _aiSessionRepository,
-      settingsRepository: _dependencies.chatSessionSettingsRepository,
-    );
-    _chatSessionController = ChatSessionController(
-      repository: _aiSessionRepository,
-      settingsRepository: _dependencies.chatSessionSettingsRepository,
-      mainSessionId: MainAiChatDefinition.sessionId,
-      contexts: _paperChatContexts,
-      beforeDelete: _chatConversationCoordinator.remove,
-    );
-    unawaited(_chatSessionController.refresh());
-    _translationServiceFactory = _dependencies.translationServiceFactory;
-    _paperChatContextLoader = _dependencies.paperChatContextLoader;
-    _searchHistoryRepository = _dependencies.searchHistoryRepository;
-    _linkService = _dependencies.linkService;
-    _credentialController = DeepSeekCredentialController(
-      repository: _dependencies.deepSeekCredentialRepository,
-      validator: _dependencies.deepSeekCredentialValidator,
-    );
-    unawaited(_credentialController.initialize());
-    _localDataController = LocalDataController(
-      repository: _dependencies.localDataRepository,
-      beforeClear: _prepareLocalDataMutation,
-      afterClear: _reloadAfterLocalDataMutation,
-    );
-    unawaited(_localDataController.initialize());
-    unawaited(_initializePaperState());
+    _session = SparkApplicationSession(dependencies)
+      ..addListener(_handleSessionStateChanged)
+      ..initialize();
   }
 
   @override
   void dispose() {
-    _paperController
-      ..removeListener(_handlePaperStateChanged)
+    _session
+      ..removeListener(_handleSessionStateChanged)
       ..dispose();
-    _commentController.dispose();
-    _readingController
-      ..removeListener(_handleReadingStateChanged)
-      ..dispose();
-    _chatConversationCoordinator.dispose();
-    _chatSessionController.dispose();
-    _credentialController.dispose();
-    _localDataController.dispose();
     super.dispose();
   }
 
@@ -301,17 +225,18 @@ class _SparkShellState extends State<SparkShell> {
               children: [
                 PapersScreen(
                   active: _selectedIndex == 0 && _coveringRouteDepth == 0,
-                  feedController: _paperController.feed,
-                  interactionController: _paperController.interactions,
-                  commentController: _commentController,
-                  readingController: _readingController,
+                  feedController: _session.paperController.feed,
+                  interactionController: _session.paperController.interactions,
+                  commentController: _session.commentController,
+                  readingController: _session.readingController,
                   aiDiscussionBuilder: _buildPaperAiDiscussion,
-                  keywordService: _paperAiService,
-                  translationServiceFactory: _translationServiceFactory,
-                  translationRepository: _dependencies.translationRepository,
-                  keywordRepository: _dependencies.keywordRepository,
-                  shareService: _dependencies.shareService,
-                  linkService: _linkService,
+                  keywordService: _session.paperAiService,
+                  translationServiceFactory: _session.translationServiceFactory,
+                  translationRepository:
+                      _session.dependencies.translationRepository,
+                  keywordRepository: _session.dependencies.keywordRepository,
+                  shareService: _session.dependencies.shareService,
+                  linkService: _session.linkService,
                   onSearch: _openPaperSearch,
                   onOpenPaperDetail: (paperId) =>
                       unawaited(_openPaperDetailById(paperId)),
@@ -319,7 +244,7 @@ class _SparkShellState extends State<SparkShell> {
                       widget.features.experimentalConferenceChannels,
                 ),
                 AiChatHomeScreen(
-                  chatSessionController: _chatSessionController,
+                  chatSessionController: _session.chatSessionController,
                   onOpenPaperChat: _openAiChatById,
                   onOpenMainChat: _openMainAiChat,
                 ),
@@ -327,46 +252,49 @@ class _SparkShellState extends State<SparkShell> {
                   const CommunityScreen(posts: demoCommunityPosts),
                 ProfileScreen(
                   aiSettingsBuilder: (context) => DeepSeekSettingsSection(
-                    controller: _credentialController,
+                    controller: _session.credentialController,
                   ),
-                  localDataListenable: _localDataController,
+                  localDataListenable: _session.localDataController,
                   localDataDescriptionBuilder: () =>
-                      '占用 ${formatLocalDataBytes(_localDataController.usage.totalBytes)}',
+                      '占用 ${formatLocalDataBytes(_session.localDataController.usage.totalBytes)}',
                   onOpenLocalData: () => showLocalDataSheet(
                     context,
-                    controller: _localDataController,
+                    controller: _session.localDataController,
                   ),
                   catalogStatus: PaperCatalogStatusView(
-                    sourceLabel: switch (_paperController.feed.catalogSource) {
+                    sourceLabel: switch (
+                        _session.paperController.feed.catalogSource) {
                       PaperPageSource.paperApi => 'Spark Paper API',
                       PaperPageSource.remote => 'arXiv 远程目录',
                       PaperPageSource.cache => 'arXiv 本地缓存',
                       PaperPageSource.seed => '内置论文',
                     },
-                    availability: switch (_paperController.feed.catalogSource) {
+                    availability: switch (
+                        _session.paperController.feed.catalogSource) {
                       PaperPageSource.paperApi =>
                         PaperCatalogAvailability.online,
                       PaperPageSource.remote => PaperCatalogAvailability.online,
                       PaperPageSource.cache => PaperCatalogAvailability.offline,
                       PaperPageSource.seed => PaperCatalogAvailability.local,
                     },
-                    fetchedAt: _paperController.feed.catalogFetchedAt,
+                    fetchedAt: _session.paperController.feed.catalogFetchedAt,
                   ),
-                  favoriteGroups: _paperController.interactions.favoriteGroups,
-                  favoritePapersByGroup: _favoritePapersByGroup,
-                  savedCount:
-                      _paperController.interactions.savedPaperIds.length,
+                  favoriteGroups:
+                      _session.paperController.interactions.favoriteGroups,
+                  favoritePapersByGroup: _session.favoritePapersByGroup,
+                  savedCount: _session
+                      .paperController.interactions.savedPaperIds.length,
                   onCreateFavoriteGroup:
-                      _paperController.interactions.createFavoriteGroup,
+                      _session.paperController.interactions.createFavoriteGroup,
                   onRenameFavoriteGroup:
-                      _paperController.interactions.renameFavoriteGroup,
+                      _session.paperController.interactions.renameFavoriteGroup,
                   onDeleteFavoriteGroup:
-                      _paperController.interactions.deleteFavoriteGroup,
-                  readingHistory: _papersForIds(
-                    _readingController.historyPaperIds,
+                      _session.paperController.interactions.deleteFavoriteGroup,
+                  readingHistory: _session.papersForIds(
+                    _session.readingController.historyPaperIds,
                   ),
-                  readLaterPapers: _papersForIds(
-                    _readingController.readLaterPaperIds,
+                  readLaterPapers: _session.papersForIds(
+                    _session.readingController.readLaterPaperIds,
                   ),
                   onOpenPaper: (paperId) =>
                       unawaited(_openPaperDetailById(paperId)),
@@ -394,97 +322,23 @@ class _SparkShellState extends State<SparkShell> {
 
   void _handleNavigation(int index) {
     if (index == 0 && _selectedIndex == 0) {
-      unawaited(_paperController.feed.refreshCatalog());
+      unawaited(_session.paperController.feed.refreshCatalog());
       return;
     }
     setState(() => _selectedIndex = index);
   }
 
-  void _handlePaperStateChanged() {
-    _chatSessionController.updateContexts(_paperChatContexts);
+  void _handleSessionStateChanged() {
     if (mounted) setState(() {});
   }
-
-  void _handleReadingStateChanged() {
-    if (mounted) setState(() {});
-  }
-
-  Iterable<ChatContextSummary> get _paperChatContexts =>
-      _paperController.feed.allPapers
-          .map((paper) => ChatContextSummary(id: paper.id, title: paper.title));
-
-  Future<void> _initializePaperState() async {
-    await _paperController.initialize();
-    if (!mounted) return;
-    await _commentController.initialize(
-      _paperController.feed.allPapers.map((paper) => paper.id),
-    );
-    if (!mounted) return;
-    _chatSessionController.updateContexts(_paperChatContexts);
-  }
-
-  Future<void> _prepareLocalDataMutation(LocalDataClearTarget target) async {
-    if (target == LocalDataClearTarget.chats ||
-        target == LocalDataClearTarget.allBusinessData) {
-      await _chatConversationCoordinator.removeAll();
-    }
-    await Future.wait([
-      _paperController.interactions.flushPendingWrites(),
-      _paperController.feed.flushPreferenceWrites(),
-      _paperController.feed.flushCatalogOperations(),
-      _commentController.flushPendingWrites(),
-      _readingController.flushPendingWrites(),
-      ThemeController.instance.flushPendingWrites(),
-    ]);
-  }
-
-  Future<void> _reloadAfterLocalDataMutation(
-    LocalDataClearTarget target,
-  ) async {
-    switch (target) {
-      case LocalDataClearTarget.paperCache:
-        return;
-      case LocalDataClearTarget.chats:
-        await _chatSessionController.reload();
-        return;
-      case LocalDataClearTarget.allBusinessData:
-        await Future.wait([
-          _paperController.reloadLocalState(),
-          _readingController.reload(),
-          _commentController.reload(
-            _paperController.feed.allPapers.map((paper) => paper.id),
-          ),
-          _chatSessionController.reload(),
-          ThemeController.instance.reload(),
-        ]);
-        return;
-    }
-  }
-
-  List<Paper> _papersForIds(Iterable<String> ids) {
-    final papersById = {
-      for (final paper in _paperController.feed.allPapers) paper.id: paper,
-    };
-    return ids
-        .map((id) => papersById[id])
-        .whereType<Paper>()
-        .toList(growable: false);
-  }
-
-  Map<String, List<Paper>> get _favoritePapersByGroup => {
-        for (final group in _paperController.interactions.favoriteGroups)
-          group.id: _papersForIds(
-            _paperController.interactions.favoritePaperIds(group.id),
-          ),
-      };
 
   Future<void> _openFavoriteCollection() {
     return _pushCoveredRoute<void>(
       MaterialPageRoute(
         builder: (context) => PaperShelfListScreen.collection(
           title: '我的收藏',
-          groups: _paperController.interactions.favoriteGroups,
-          papersByGroup: _favoritePapersByGroup,
+          groups: _session.paperController.interactions.favoriteGroups,
+          papersByGroup: _session.favoritePapersByGroup,
           onOpenPaper: (paperId) => unawaited(_openPaperDetailById(paperId)),
         ),
       ),
@@ -494,14 +348,18 @@ class _SparkShellState extends State<SparkShell> {
   Future<void> _openReadLaterCollection() {
     return _openPaperShelf(
       title: '稍后阅读',
-      papers: _papersForIds(_readingController.readLaterPaperIds),
+      papers: _session.papersForIds(
+        _session.readingController.readLaterPaperIds,
+      ),
     );
   }
 
   Future<void> _openReadingHistory() {
     return _openPaperShelf(
       title: '阅读历史',
-      papers: _papersForIds(_readingController.historyPaperIds),
+      papers: _session.papersForIds(
+        _session.readingController.historyPaperIds,
+      ),
     );
   }
 
@@ -522,9 +380,9 @@ class _SparkShellState extends State<SparkShell> {
 
   Future<void> _openPaperSearch() async {
     final controller = PaperSearchController(
-      papers: _paperController.feed.allPapers,
-      historyRepository: _searchHistoryRepository,
-      catalogRepository: _dependencies.paperCatalogRepository,
+      papers: _session.paperController.feed.allPapers,
+      historyRepository: _session.searchHistoryRepository,
+      catalogRepository: _session.dependencies.paperCatalogRepository,
     );
     try {
       await _pushCoveredRoute<void>(
@@ -541,27 +399,31 @@ class _SparkShellState extends State<SparkShell> {
   }
 
   Future<void> _openAiChat(Paper paper) async {
-    final chatContext = await _paperChatContextLoader.load(paper);
+    final chatContext = await _session.paperChatContextLoader.load(paper);
     if (!mounted) return;
-    final conversation = _chatConversationCoordinator.conversation(
+    final conversation = _session.chatConversationCoordinator.conversation(
       context: chatContext,
-      service: _paperAiService,
-      webSearchService: _webSearchAiService,
+      service: _session.paperAiService,
+      webSearchService: _session.webSearchAiService,
     );
     await Navigator.of(context).push<void>(
       MaterialPageRoute(
         builder: (context) => PaperAiChatScreen(
           chatContext: chatContext,
-          aiService: _paperAiService,
-          webSearchAiService: _webSearchAiService,
-          sessionRepository: _aiSessionRepository,
-          onOpenSource: _linkService.open,
-          settingsRepository: _dependencies.chatSessionSettingsRepository,
+          aiService: _session.paperAiService,
+          webSearchAiService: _session.webSearchAiService,
+          sessionRepository: _session.aiSessionRepository,
+          onOpenSource: _session.linkService.open,
+          settingsRepository:
+              _session.dependencies.chatSessionSettingsRepository,
           conversationController: conversation,
           fullTextAvailable: widget.features.experimentalPdfAi &&
               validExternalHttpUri(paper.pdfUrl) != null,
           onLoadFullText: widget.features.experimentalPdfAi
-              ? () => _paperChatContextLoader.load(paper, includeFullText: true)
+              ? () => _session.paperChatContextLoader.load(
+                    paper,
+                    includeFullText: true,
+                  )
               : null,
         ),
       ),
@@ -581,21 +443,21 @@ class _SparkShellState extends State<SparkShell> {
     return PaperAiDiscussionView(
       key: ValueKey('paper-ai-discussion-${paper.id}'),
       chatContext: chatContext,
-      aiService: _paperAiService,
-      webSearchAiService: _webSearchAiService,
-      onOpenSource: _linkService.open,
-      sessionRepository: _aiSessionRepository,
-      conversationController: _chatConversationCoordinator.conversation(
+      aiService: _session.paperAiService,
+      webSearchAiService: _session.webSearchAiService,
+      onOpenSource: _session.linkService.open,
+      sessionRepository: _session.aiSessionRepository,
+      conversationController: _session.chatConversationCoordinator.conversation(
         context: chatContext,
-        service: _paperAiService,
-        webSearchService: _webSearchAiService,
+        service: _session.paperAiService,
+        webSearchService: _session.webSearchAiService,
       ),
       scrollController: scrollController,
     );
   }
 
   Future<void> _openAiChatById(String contextId) async {
-    final paper = _paperController.feed.allPapers
+    final paper = _session.paperController.feed.allPapers
         .where((item) => item.id == contextId)
         .firstOrNull;
     if (paper != null) await _openAiChat(paper);
@@ -605,43 +467,46 @@ class _SparkShellState extends State<SparkShell> {
     await Navigator.of(context).push<void>(
       MaterialPageRoute(
         builder: (context) => MainAiChatScreen(
-          aiService: _mainAiService,
-          webSearchAiService: _mainWebSearchAiService,
-          sessionRepository: _aiSessionRepository,
-          settingsRepository: _dependencies.chatSessionSettingsRepository,
-          onOpenSource: _linkService.open,
-          conversationController: _chatConversationCoordinator.conversation(
+          aiService: _session.mainAiService,
+          webSearchAiService: _session.mainWebSearchAiService,
+          sessionRepository: _session.aiSessionRepository,
+          settingsRepository:
+              _session.dependencies.chatSessionSettingsRepository,
+          onOpenSource: _session.linkService.open,
+          conversationController:
+              _session.chatConversationCoordinator.conversation(
             context: MainAiChatDefinition.context,
-            service: _mainAiService,
-            webSearchService: _mainWebSearchAiService,
+            service: _session.mainAiService,
+            webSearchService: _session.mainWebSearchAiService,
           ),
         ),
       ),
     );
-    await _chatSessionController.refresh();
+    await _session.chatSessionController.refresh();
   }
 
   Future<void> _openPaperDetailById(String paperId) async {
-    var paper = _paperController.feed.allPapers
+    var paper = _session.paperController.feed.allPapers
         .where((item) => item.id == paperId)
         .firstOrNull;
-    paper ??= await _dependencies.paperCatalogRepository?.findById(paperId);
+    paper ??=
+        await _session.dependencies.paperCatalogRepository?.findById(paperId);
     final selectedPaper = paper;
     if (selectedPaper == null || !mounted) return;
     await _pushCoveredRoute<void>(
       MaterialPageRoute(
         builder: (context) => PaperDetailScreen(
           paper: selectedPaper,
-          interactionController: _paperController.interactions,
-          commentController: _commentController,
-          readingController: _readingController,
+          interactionController: _session.paperController.interactions,
+          commentController: _session.commentController,
+          readingController: _session.readingController,
           aiDiscussionBuilder: _buildPaperAiDiscussion,
-          keywordService: _paperAiService,
-          translationServiceFactory: _translationServiceFactory,
-          translationRepository: _dependencies.translationRepository,
-          keywordRepository: _dependencies.keywordRepository,
-          shareService: _dependencies.shareService,
-          linkService: _linkService,
+          keywordService: _session.paperAiService,
+          translationServiceFactory: _session.translationServiceFactory,
+          translationRepository: _session.dependencies.translationRepository,
+          keywordRepository: _session.dependencies.keywordRepository,
+          shareService: _session.dependencies.shareService,
+          linkService: _session.linkService,
           onOpenRelatedPaper: (relatedPaperId) =>
               unawaited(_openPaperDetailById(relatedPaperId)),
         ),

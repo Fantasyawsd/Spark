@@ -114,7 +114,10 @@ void main() {
 
       expect(caughtError, isA<PaperPdfException>());
       expect(caughtStackTrace, isNotNull);
-      expect(caughtStackTrace!.toString(), isNotEmpty);
+      expect(
+        caughtStackTrace!.toString(),
+        contains('PaperPdfExtractionService._extractSynchronously'),
+      );
       expect(events, isEmpty);
     });
 

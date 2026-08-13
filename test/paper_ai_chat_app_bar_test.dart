@@ -122,7 +122,10 @@ void main() {
 
     _expectRetryableFullTextFailure(tester, events);
     expect(events.single.errorType, 'PaperPdfException');
-    expect(events.single.stackTrace.toString(), isNotEmpty);
+    expect(
+      events.single.stackTrace.toString(),
+      contains('PaperPdfExtractionService._runExtractionWorker'),
+    );
   });
 }
 

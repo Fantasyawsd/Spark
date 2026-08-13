@@ -15,6 +15,10 @@ class ArxivSubject {
 class ArxivSubjectCatalog {
   const ArxivSubjectCatalog._();
 
+  static List<String> get codes => [
+        for (final subject in initialSubjects) subject.code,
+      ];
+
   static const List<ArxivSubject> initialSubjects = [
     ArxivSubject(code: 'cs.AI', displayName: '人工智能'),
     ArxivSubject(code: 'cs.AR', displayName: '硬件架构'),

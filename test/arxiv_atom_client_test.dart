@@ -106,7 +106,7 @@ void main() {
       await api.loadLatest(category: null, offset: 0, limit: 20);
 
       final query = client.requests.single.url.queryParameters['search_query']!;
-      expect(query, startsWith('cat:cs.AI OR cat:cs.CL'));
+      expect(query, startsWith('cat:cs.AI OR cat:cs.AR'));
       expect(query, isNot(contains('all:*')));
     });
 

@@ -107,7 +107,7 @@ void main() {
 {"id":"2401.00002","title":"Other","authors":"Carol","abstract":"Other abstract","categories":"math.PR","update_date":"2024-01-03"}
 ''';
 
-      final papers = await const ArxivJsonlImporter()
+      final papers = await ArxivJsonlImporter()
           .parseLines(Stream<String>.fromIterable(lines.trim().split('\n')))
           .toList();
 

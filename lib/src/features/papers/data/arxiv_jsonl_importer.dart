@@ -1,22 +1,14 @@
 import 'dart:convert';
 
 import '../domain/paper.dart';
+import '../domain/arxiv_subject_catalog.dart';
 import 'providers/arxiv/arxiv_paper_dto.dart';
 import 'providers/arxiv/arxiv_paper_mapper.dart';
 
 class ArxivJsonlImporter {
-  const ArxivJsonlImporter({this.targetCategories = defaultArxivCategories});
-
-  static const defaultArxivCategories = <String>{
-    'cs.AI',
-    'cs.CL',
-    'cs.CV',
-    'cs.IR',
-    'cs.LG',
-    'cs.RO',
-    'cs.SE',
-    'stat.ML',
-  };
+  ArxivJsonlImporter({Set<String>? targetCategories})
+      : targetCategories =
+            targetCategories ?? ArxivSubjectCatalog.codes.toSet();
 
   final Set<String> targetCategories;
 

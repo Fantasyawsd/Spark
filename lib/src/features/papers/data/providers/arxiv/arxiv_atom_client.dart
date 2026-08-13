@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:http/http.dart' as http;
 import 'package:xml/xml.dart';
 
+import '../../../domain/arxiv_subject_catalog.dart';
 import 'arxiv_catalog_source.dart';
 import 'arxiv_id.dart';
 import 'arxiv_paper_dto.dart';
@@ -29,37 +30,7 @@ class ArxivApiException implements Exception {
 /// `all:*` 在 arXiv 服务端长期不稳定（2026-08 实测持续返回 HTTP 500），
 /// 而 Spark 的论文流定位就是 CS/ML 论文（频道计划见 development.md），
 /// 分类并集查询稳定（HTTP 200）且语义一致。
-const defaultArxivCategories = [
-  'cs.AI',
-  'cs.CL',
-  'cs.CV',
-  'cs.LG',
-  'cs.LO',
-  'cs.CR',
-  'cs.CC',
-  'cs.CE',
-  'cs.DB',
-  'cs.DC',
-  'cs.DS',
-  'cs.ET',
-  'cs.FL',
-  'cs.GT',
-  'cs.HC',
-  'cs.IR',
-  'cs.IT',
-  'cs.MA',
-  'cs.MM',
-  'cs.MS',
-  'cs.NE',
-  'cs.NI',
-  'cs.PF',
-  'cs.PL',
-  'cs.SC',
-  'cs.SD',
-  'cs.SE',
-  'cs.SI',
-  'cs.SY',
-];
+final defaultArxivCategories = ArxivSubjectCatalog.codes;
 
 class ArxivAtomClient implements ArxivCatalogSource {
   ArxivAtomClient({

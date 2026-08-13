@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 
 import '../../../core/diagnostics/diagnostics.dart';
 import '../domain/paper.dart';
+import '../domain/arxiv_subject_catalog.dart';
 import '../domain/paper_catalog.dart';
 import '../domain/paper_channel.dart';
 import '../domain/paper_channel_preference_repository.dart';
@@ -52,8 +53,7 @@ class PaperFeedController extends ChangeNotifier {
     _refreshVisiblePapers();
   }
 
-  static const _defaultArxivCategories =
-      'cs.CL|cs.AI|cs.CV|cs.DC|cs.OS|cs.PF|math.OC|math.ST|q-bio.QM|q-bio.BM';
+  static final _defaultArxivCategories = ArxivSubjectCatalog.codes.join('|');
   static const _catalogPrefetchThreshold = 10;
   static const _maxReadPaperIdsPerRequest = 200;
 

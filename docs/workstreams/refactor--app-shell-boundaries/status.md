@@ -1,7 +1,7 @@
 # 应用壳边界重构任务台账
 
-> 状态：`/develop` 迭代 3 已完成，待迭代 4
-> 最近更新：2026-08-13 19:18
+> 状态：`/develop` 实现完成，待 `/test`
+> 最近更新：2026-08-13 20:20
 
 ## 1. 任务信息
 
@@ -14,7 +14,7 @@
 | worktree | `C:\Users\Fantasy\Desktop\Spark-worktrees\agent-7` |
 | 基线 | `5e4dd9c2a65a9e9230c83990a8dd7c309a5da30a`（上一批 `fix/runtime-diagnostics` 最终审查提交） |
 | 负责人 | Fantasy（编排）；Codex（执行） |
-| 当前阶段 | `/develop` 迭代 3 已完成；下一步为依赖入口收口 |
+| 当前阶段 | `/develop` 已完成；下一步为 `/test` 完整门禁 |
 
 ## 2. 问题与边界
 
@@ -92,6 +92,13 @@ DeepSeek 报告指出 `lib/src/app/spark_app.dart` 同时承担应用根、闪�
 - 保留边界：本轮不改变 `SparkApp`/`SparkShell` 构造参数，也不消除第二次 preview fallback；依赖入口与测试装配在下一迭代统一迁移。
 - 验证：源码边界测试确认导航页面、路由构造和 `SparkShell` 类不再位于 `spark_app.dart`，并验证两条公开导入路径；运行应用壳、Chat 后台完成、UI preview 与 Widget 导航测试，再执行 `flutter analyze` 和变更 Dart 格式检查。
 
+### 当前迭代：依赖入口收口
+
+- 改动文件：`lib/src/app/spark_app.dart`、`lib/src/app/spark_shell.dart`、`test/app_shell_boundaries_test.dart`，以及所有直接通过 `SparkApp`/`SparkShell` 镜像参数注入测试替身的应用壳测试与本台账。
+- 闭环目标：`SparkApp` 只保留 `key`、`config`、`showSplash`、`dependencies`；`SparkShell` 只保留 `key`、必需的 `dependencies` 与默认 `features`；完整依赖只在根节点解析一次，导航壳不再创建 preview fallback。
+- 迁移方式：测试替身统一通过 `SparkDependencies.preview(...)` 组装完整依赖，不改变测试数据、替身实例或断言。
+- 验证：扩展源码边界测试锁定两个构造参数面、禁止 `spark_shell.dart` 调用 preview，并确认应用生产源码只剩一个 `SparkDependencies.preview(...)`；运行应用壳、Chat 后台完成、Widget、UI preview、功能开关、键盘窗口及主壳定向测试，再执行 `flutter analyze` 和变更 Dart 格式检查。
+
 ## 6. 决策记录
 
 | 时间 | 决策 | 原因 |
@@ -120,6 +127,10 @@ DeepSeek 报告指出 `lib/src/app/spark_app.dart` 同时承担应用根、闪�
 | 2026-08-13 | `/develop` 迭代 3 | `flutter test test\app_shell_boundaries_test.dart test\chat_background_completion_test.dart test\widget_test.dart test\ui_preview_test.dart` | 通过，45 项测试覆盖导航壳结构、两条导入路径、书架/搜索/详情、主页与论文 Chat、后台完成和会话操作。 |
 | 2026-08-13 | `/develop` 迭代 3 | `flutter analyze` | 首次发现拆分时缺少 `AppThemeMode` 类型导入；补回主题偏好类型导入后通过，无问题。 |
 | 2026-08-13 | `/develop` 迭代 3 | `.\tool\verify_changed_dart_format.ps1` | 通过，共检查 96 个变更相关 Dart 文件。 |
+| 2026-08-13 | `/develop` 迭代 4 | `flutter test test\app_shell_boundaries_test.dart test\chat_background_completion_test.dart test\widget_test.dart test\ui_preview_test.dart test\feature_flag_integration_test.dart test\android_keyboard_window_config_test.dart test\tiktok_app_shell_test.dart` | 通过，共 57 项测试；覆盖依赖边界、Chat 后台生命周期、导航、功能开关、键盘窗口配置与主壳行为。 |
+| 2026-08-13 | `/develop` 迭代 4 | `flutter analyze` | 通过，无问题。 |
+| 2026-08-13 | `/develop` 迭代 4 | `.\tool\verify_changed_dart_format.ps1` | 通过，共检查 99 个变更相关 Dart 文件。 |
+| 2026-08-13 | `/develop` 迭代 4 | 源码结构搜索与 `test/app_shell_boundaries_test.dart` | `SparkApp` 参数面为 `key/config/showSplash/dependencies`；`SparkShell` 参数面为 `key/required dependencies/features`；应用生产源码只有 `spark_app.dart` 调用一次 `SparkDependencies.preview(...)`。 |
 
 ## 8. 审查与交付
 
@@ -136,9 +147,10 @@ DeepSeek 报告指出 `lib/src/app/spark_app.dart` 同时承担应用根、闪�
 | `c1bd32a` | 重构、测试、文档 | 抽离 `SparkBootstrap` 与启动动画，新增独立 Widget/源码边界测试；定向测试、analyze 和格式门禁通过。 |
 | `e33798f` | 重构、测试、文档 | 新增 `SparkApplicationSession` 集中根控制器生命周期、跨控制器同步与本地数据清理编排；16 项定向测试、analyze 和格式门禁通过。 |
 | `3e8d1e1` | 重构、测试、文档 | 将 `SparkShell`、一级页面和路由迁至独立导航壳文件，以转导出维持兼容；45 项定向测试、analyze 和格式门禁通过。 |
+| `31a7bb6` | 重构、测试 | 删除应用根与导航壳的仓储/服务镜像参数，将完整依赖解析收口至根节点；迁移测试装配并增加构造参数面与唯一 preview 调用的结构回归。 |
 
 ## 10. 当前状态
 
-- 已完成：已迁出闪屏/bootstrap 与应用运行期会话；新增 433 行 `spark_shell.dart`，完整承接一级页面、书架/搜索/详情/Chat 路由和覆盖层导航状态；`spark_app.dart` 只保留主题、依赖解析和根装配，由 781 行降至 120 行，并保持两条既有导入路径兼容。
-- 下一步：继续 `/develop` 迭代 4，删除 `SparkApp`/`SparkShell` 的仓储与服务镜像参数，使根只解析一次完整 `SparkDependencies`，并迁移所有测试装配。
+- 已完成：闪屏/bootstrap、应用运行期会话及导航展示壳均已迁出；`spark_app.dart` 由基线 781 行降至 72 行，只保留主题、一次依赖解析和根装配。`SparkApp` 与 `SparkShell` 的仓储/服务镜像参数及壳内 fallback 已删除，所有直接测试装配均改为完整 `SparkDependencies`，两条既有导入路径继续兼容。
+- 下一步：进入 `/test`，执行变更 Dart 格式检查、`flutter analyze` 与完整 `flutter test`，记录完整门禁证据。
 - 阻塞项：无。

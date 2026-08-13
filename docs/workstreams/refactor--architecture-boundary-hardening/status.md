@@ -10,8 +10,8 @@
 - Worktree：`C:\Users\Fantasy\Desktop\Spark-worktrees\agent-2`
 - 基线提交：`e61d320939fba18b58b489ed99d140b4c84e57aa`
 - 负责人：Codex（Fantasy 编排）
-- 状态：待重新审查（审查阻断修复后的 `/test` 已通过）
-- 最近更新：`2026-08-13 15:19`（Asia/Shanghai）
+- 状态：开发中（重新审查发现 feature barrel 真使用假阳性，待 `/develop`）
+- 最近更新：`2026-08-13 15:25`（Asia/Shanghai）
 
 ## 目标
 
@@ -30,7 +30,7 @@
 - [x] 同 feature 分层守卫覆盖 `presentation -> data`、`application -> data`、`domain -> application/data/presentation` 及其他逆向依赖，并通过隔离 fixture 证明旧盲区会被检出。
 - [x] domain 纯净度采用默认拒绝的外部包策略或等价的显式安全允许机制，能够检出 `sqflite`、`path_provider`、`shared_preferences`、`flutter_secure_storage` 等未获准基础设施包以及 `dart:io`。
 - [x] `lib/src` 导入图具备循环检测，至少用多文件循环 fixture 验证，并在失败信息中给出可定位的依赖链。
-- [x] `core/widgets` 的业务复用检查以真实 feature 可达性为依据，不把测试或 barrel export 误算为业务复用；少于两个独立业务模块使用的组件会失败或具有明确、可审查的基础设施例外。
+- [ ] `core/widgets` 的业务复用检查以真实 feature 可达性为依据，不把测试或 barrel export 误算为业务复用；少于两个独立业务模块使用的组件会失败或具有明确、可审查的基础设施例外。
 - [x] 报告指出的生产零调用 `CherryButton` 被删除，`ProfileAvatar` 与 `TopicChip` 回归各自业务模块；新守卫发现的其他同类现存问题须修正或记录符合规范的例外理由。
 - [x] 组件移动后的导入、公开入口与测试同步更新，用户可观察行为不变。
 - [x] 架构定向测试、相关 Widget 测试、Dart 格式、`flutter analyze`、`flutter test` 和 `git diff --check` 通过。
@@ -80,9 +80,10 @@
 - 已完成：新增两个 feature barrel 只 export 同一 core widget 的失败 fixture；旧实现返回 0 违规，新实现正确报告 `features: none`。
 - 已完成：源码图暴露 typed imports；core 复用图只将 feature import 计为使用，core import/export 均可继续内部可达性追踪；形成 `4743ded` 检查点。
 - 已完成：审查阻断修复后的 `/test` 完整门禁通过；20 个 Dart 文件格式、静态分析、462 项 Flutter 测试、55 项服务端测试、Python 编译与 Git 检查均成功。
-- 正在进行：代码与完整验证证据已就绪，等待重新执行只读 `/review`。
-- 下一步：重新触发 `/review`，复核 `e61d320` 至当前任务 tip，重点确认 feature barrel 假复用阻断项已闭环。
-- 阻塞项：无。
+- 已完成：重新 `/review` 确认原“feature barrel 仅 export 即伪造复用”的假阴性已修复，且逐项核对 19 个改动文件与全部结构阻断条件。
+- 正在进行：重新审查发现相反方向的假阳性；当前算法完全丢弃 feature export 边，无法沿“core widget <- feature barrel <- 真实页面 import”继续反向可达。
+- 下一步：返回 `/develop`，先增加两个 feature barrel 分别被真实 feature 页面 import 的正例 fixture，再以带边类型的反向图让 export 只负责透传、import 才计为真实使用。
+- 阻塞项：core 复用图丢弃 feature export 透传边，导致经真实 feature barrel import 的合法复用被误报；需在 `/develop` 修复。
 
 ## 决策记录
 
@@ -131,21 +132,24 @@
 | `/test` Git 一致性检查（审查修复后完整复测） | `git diff --check`、`git diff --cached --check` 通过；工作树与暂存区为空；`main` 仍为 `5578a77` | 2026-08-13 |
 | `/test` 目标构建（审查修复后完整复测） | 按阶段规范不运行；本修复链明确不合入 `main`，不会进入常规 `/finish` 构建门禁 | 2026-08-13 |
 | `/test` 人工验收（审查修复后完整复测） | 按编排者明确指示不运行；以自动化回归与只读审查作为验收证据 | 2026-08-13 |
+| 重新 `/review` `flutter test test/architecture_test_support_test.dart test/architecture_boundaries_test.dart` | 现有 22 项全部通过；未覆盖 feature barrel 被真实页面 import 的合法透传正例，不能证明真实可达性完整 | 2026-08-13 |
+| 重新 `/review` 全量差异与结构检查 | 已核对 `e61d320...19e6a7a` 的 9 个提交、19 个文件及全部阻断条件；除 core 复用图假阳性外未发现其他缺陷 | 2026-08-13 |
+| 重新 `/review` Git 状态 | `git diff --check` 通过，任务 worktree 干净；`main@5578a77` 未变化 | 2026-08-13 |
 
 ## 审查结论
 
-- 审查日期：2026-08-13
-- 审查范围：`e61d320939fba18b58b489ed99d140b4c84e57aa...e3a8ac693586fffe88fca7cdcdb438b17041a715`；5 个提交、19 个文件，新增 968 行、删除 387 行。
-- 基线说明：`origin/main@948f3af` 比当前修复链落后 85 个提交；按编排者批准的上一批最终提交 `e61d320` 固定本批范围，避免混入无关历史。
-- 规格核对：同 feature 分层、domain 纯净度、循环检测、组件迁移/删除和完整验证 6 项满足；core 真实复用 1 项未满足。
-- 结构核对：未触发 Widget/Controller 基础设施直连、领域层外部依赖、多职数据类型、core 反向依赖、循环依赖、业务 utils、深继承或在超大页面新增流程等阻断条件。
-- 阻断项：`test/support/architecture_rules.dart:145-169` 使用包含 import/export 的 `directives()` 建立反向图，并在到达任意 feature 文件时直接计数。两个 feature barrel 仅 export 同一 core widget 即可伪造“两个业务模块复用”，存在假阴性；`test/architecture_test_support_test.dart:193-210` 只覆盖 core barrel，缺少 feature barrel 反例。
-- 修复方向：源码图暴露 import/export 类型；core 可达性只把 feature import 计为使用，core export 仅作为内部转发边，增加两个 feature barrel export 仍应报告 `features: none` 的 fixture。
-- 修复状态：`4743ded` 已按上述方向修复并通过 22 项架构定向测试；待重新 `/test` 与 `/review` 后更新最终结论。
-- 缺陷：除上述阻断项外未发现其他缺陷。
-- `/test` 证据：格式、`flutter analyze`、461 项 Flutter 测试、55 项服务端测试、Python 编译与 Git 检查均通过；这些测试未覆盖上述 feature barrel 假阴性。
+- 审查日期：2026-08-13（重新审查）
+- 审查范围：`e61d320939fba18b58b489ed99d140b4c84e57aa...19e6a7a90ab822a323fbf00b73b4ed2fc1be871d`；9 个提交、19 个文件，新增 1019 行、删除 387 行。
+- 基线说明：`origin/main@948f3af` 比当前修复链落后 89 个提交；按编排者批准的上一批最终提交 `e61d320` 固定本批范围，避免混入第一批或无关历史。
+- 规格核对：同 feature 分层、domain 纯净度、循环检测、组件迁移/删除、行为保持和完整验证 6 项满足；core 真实复用可达性 1 项未满足。
+- 结构核对：逐项检查 19 个改动文件；未触发 Widget/Controller 基础设施直连、领域层外部依赖、多职数据类型、core 反向依赖、循环依赖、业务 utils、深继承、超大页面新增流程或只能依赖完整 UI 验证等其他阻断条件。
+- 已闭环的原阻断项：`4743ded` 使两个 feature 仅 export 同一 core widget 时不再被计为真实使用，原假阴性已由 fixture 覆盖。
+- 新阻断项：`test/support/architecture_rules.dart:145-176` 只保留 feature 的 import，完全不建立 feature export 的反向透传边。若 `papers.dart` 与 `chat.dart` 各自 export 同一 core widget，且各自 presentation 页面真实 import 对应 barrel，算法仍无法从 widget 到达这些页面并会误报 `features: none`。`test/architecture_test_support_test.dart:212-227` 仅覆盖“无人 import 的 feature barrel 不计数”，缺少“被真实 import 后应计数”的合法正例。
+- 修复方向：反向依赖图保留 import/export 边类型；遇到 export 只进入 exporter 继续遍历而不计 feature，遇到 import 才把 importer 所属 feature 记为真实使用，并覆盖多级 barrel、无人 import barrel 与两个真实 importer 三类 fixture。
+- 缺陷：除上述阻断项外未发现其他缺陷或建议项。
+- `/test` 证据：格式、`flutter analyze`、462 项 Flutter 测试、55 项服务端测试、Python 编译与 Git 检查均通过；重新审查时 22 项架构定向测试再次通过，但现有集合未覆盖上述合法 barrel 透传路径。
 - 未验证项：按阶段未执行目标构建；按编排者要求未进行人工验收；两项均不是本次审查阻断原因。
-- 结论：需修复并重新 `/test`、`/review`；不得作为下一串联 worktree 基线。
+- 结论：需返回 `/develop` 修复并重新 `/test`、`/review`；当前 tip 不得作为下一串联 worktree 基线。
 
 ## 检查点与提交
 
@@ -159,7 +163,7 @@
 
 ### 交付摘要
 
-同 feature 分层、domain 纯净度、循环检测、core 真实复用和现存组件归属问题均已修复；`/review` 阻断项已由 `4743ded` 修复，审查修复后的第二次完整 `/test` 已通过，待重新 `/review` 后交付。本任务按编排者要求不合入 `main`。
+同 feature 分层、domain 纯净度、循环检测和现存组件归属问题已修复，完整 `/test` 已通过；重新 `/review` 确认原假阴性闭环，但发现 feature barrel 真实 import 链被截断的新假阳性，需返回 `/develop` 修复后再次验证。本任务按编排者要求不合入 `main`。
 
 ### 实际变更
 
@@ -192,7 +196,7 @@
 
 > 编排者明确要求本修复链不合入 `main`，因此本节当前不适用；不预填集成提交、合并时间或 main 验证。
 
-- 最终状态：未合并，待重新审查
+- 最终状态：未合并，重新审查阻断待修复
 - 合入分支：不适用
 - 最终集成提交：不适用
 - Pull Request：不适用

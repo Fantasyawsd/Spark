@@ -1,7 +1,7 @@
 # 主题控制器边界重构任务台账
 
-> 状态：`/develop` 实现完成，待 `/test`
-> 最近更新：2026-08-13 21:45
+> 状态：`/review` 已通过，保留为下一批串行基线
+> 最近更新：2026-08-13 22:15
 
 ## 1. 任务信息
 
@@ -14,7 +14,7 @@
 | worktree | `C:\Users\Fantasy\Desktop\Spark-worktrees\agent-8` |
 | 基线 | `42b651dcf369f20f7de5a0d838911db55ad2b492`（上一批 `refactor/app-shell-boundaries` 最终审查提交） |
 | 负责人 | Fantasy（编排）；Codex（执行） |
-| 当前阶段 | `/develop` 已完成；下一步为 `/test` 完整门禁 |
+| 当前阶段 | `/review` 已完成；下一步基于最终审查提交创建新的串行 worktree |
 
 ## 2. 问题与边界
 
@@ -69,8 +69,9 @@ DeepSeek 报告指出 `ThemeController.instance` 是全应用全局可变单例�
 - 已完成：已读取报告、主题实现、应用壳台账和架构规范；确认本批只处理全局主题控制器。
 - 已完成：`ThemeController` 已改为普通实例并由 `SparkDependencies` 持有；`SparkApp`、应用会话、本地数据清理、Profile 主题入口与主题工厂均改为显式依赖；生产源码不再引用单例。
 - 已完成：主题和 Profile 测试改为每用例独立控制器，并增加实例隔离、依赖覆盖、根节点实时换色/明暗模式和源码边界回归。
-- 正在进行：准备 `/test` 完整门禁。
-- 下一步：运行变更 Dart 格式检查、`flutter analyze` 和完整 `flutter test`。
+- 已完成：`/test` 完整门禁与 `/review` 只读审查均通过。
+- 正在进行：形成最终审查提交。
+- 下一步：基于最终审查提交创建新 worktree，继续处理报告中的剩余有效问题。
 - 阻塞项：无。
 
 ## 7. 决策记录
@@ -88,10 +89,20 @@ DeepSeek 报告指出 `ThemeController.instance` 是全应用全局可变单例�
 | 2026-08-13 | `/develop` | `flutter analyze` | 通过，无问题。 |
 | 2026-08-13 | `/develop` | `.\tool\verify_changed_dart_format.ps1` | 首次列出 6 个本批生产文件需按 Dart 3.12 格式化；统一格式化后通过，共检查 110 个变更相关 Dart 文件。 |
 | 2026-08-13 | `/develop` | `rg -n "ThemeController\.instance|debugResetForTesting" lib test` 与结构测试 | `lib/` 无单例引用；测试仅保留待匹配的结构守卫字符串；`debugResetForTesting` 已删除。 |
+| 2026-08-13 | `/test` | `git branch --show-current; git status --short` | 分支为 `refactor/theme-controller-boundary`；进入门禁前工作区干净。 |
+| 2026-08-13 | `/test` | `.\tool\verify_changed_dart_format.ps1` | 通过，共检查 110 个变更相关 Dart 文件。 |
+| 2026-08-13 | `/test` | `flutter analyze` | 通过，无问题。 |
+| 2026-08-13 | `/test` | `flutter test` | 通过，共 536 项测试；无失败、错误或超时。 |
 
 ## 9. 审查与交付
 
-- 审查结论：尚未进入 `/review`。
+- 审查范围：`42b651dcf369f20f7de5a0d838911db55ad2b492..HEAD`，21 个改动文件，新增 280 行、删除 83 行；其中代码与测试 20 个文件，另有本任务台账。
+- 规格核对：7 项验收标准全部满足；生产源码无 `ThemeController.instance`，依赖容器创建或接收独立实例，应用根、主题工厂、Profile 和本地清理均显式使用同一注入对象。
+- 结构核对：逐项检查提交前结构清单和 10 条阻断条件；未触发 Widget/Controller 基础设施直连、领域层外部依赖、公共模块反向依赖、循环依赖、多职数据类型、业务 utils、深层继承、超大页面新增流程或只能依赖完整 UI 验证等问题。
+- 阻断项：无。
+- 缺陷：无。
+- 建议：无。
+- 审查结论：通过；不执行 `/finish`，不合入 `main`，最终审查提交作为下一批 worktree 基线。
 - 兼容性：主题偏好 JSON schema 和公开枚举保持不变；仅移除内部全局单例访问。
 - 风险：遗漏主题调用点、独立测试未注入控制器、异步写队列跨实例污染。
 - 回滚：按原子提交回滚，不触碰 `main`。

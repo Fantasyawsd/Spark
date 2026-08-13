@@ -74,7 +74,6 @@ Community, direct messages, notifications, accounts, cloud sync, and content pub
 |           |-- profile/       Profile page and personal research data entry
 |           |-- local_data/    Local data statistics and cleanup
 |           |-- community/     Deferred module, not in production navigation
-|           `-- messages/      Legacy module, not in production navigation
 |-- test/                      Unit tests and widget tests
 |-- tool/                      Development, build, and key-security helper scripts
 |-- pubspec.yaml               Flutter package, assets, and version configuration

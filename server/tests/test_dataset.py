@@ -7,6 +7,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from spark_papers.dataset import DatasetImporter
+from spark_papers.diagnostics import DIAGNOSTIC_LOGGER_NAME
 from spark_papers.models import utc_now
 from spark_papers.storage import PaperStore
 
@@ -85,9 +86,10 @@ class DatasetImporterTest(unittest.TestCase):
         with source.open("a", encoding="utf-8") as handle:
             handle.write("{not-json}\n")
             handle.write(json.dumps(records[2]) + "\n")
-        partial = DatasetImporter(self.store, batch_size=1).import_arxiv(source, max_records=2)
-        completed = DatasetImporter(self.store, batch_size=1).import_arxiv(source)
-        repeated = DatasetImporter(self.store, batch_size=1).import_arxiv(source)
+        with self.assertNoLogs(DIAGNOSTIC_LOGGER_NAME, level="ERROR"):
+            partial = DatasetImporter(self.store, batch_size=1).import_arxiv(source, max_records=2)
+            completed = DatasetImporter(self.store, batch_size=1).import_arxiv(source)
+            repeated = DatasetImporter(self.store, batch_size=1).import_arxiv(source)
 
         self.assertEqual(partial["status"], "running")
         self.assertEqual(partial["processed_count"], 2)

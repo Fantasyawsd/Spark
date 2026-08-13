@@ -9,6 +9,11 @@ from typing import Mapping
 
 from .api import PaperApiService, create_server
 from .dataset import DatasetImporter
+from .diagnostics import (
+    ServerDiagnosticOperation,
+    configure_logging,
+    report_unexpected,
+)
 from .pipeline import SnapshotStore, SyncRunner
 from .models import utc_now
 from .sources import (
@@ -21,6 +26,15 @@ from .sources import (
     SemanticScholarBatchSource,
 )
 from .storage import PaperStore
+
+
+_CLI_OPERATIONS = {
+    "sync-json": ServerDiagnosticOperation.CLI_SYNC_JSON,
+    "import-dataset": ServerDiagnosticOperation.CLI_IMPORT_DATASET,
+    "sync-external": ServerDiagnosticOperation.CLI_SYNC_EXTERNAL,
+    "sync-arxiv-oai": ServerDiagnosticOperation.CLI_SYNC_ARXIV_OAI,
+    "serve": ServerDiagnosticOperation.CLI_SERVE,
+}
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -131,7 +145,22 @@ def _failed_syncs(report: Mapping[str, object]) -> list[str]:
 
 
 def main() -> None:
+    configure_logging()
     args = build_parser().parse_args()
+    try:
+        _run(args)
+    except (KeyboardInterrupt, SystemExit):
+        raise
+    except Exception as error:
+        operation = _CLI_OPERATIONS.get(
+            args.command,
+            ServerDiagnosticOperation.CLI_COMMAND,
+        )
+        report_unexpected(operation, error)
+        raise SystemExit(1) from None
+
+
+def _run(args: argparse.Namespace) -> None:
     store = PaperStore(args.db)
     try:
         if args.command == "sync-json":

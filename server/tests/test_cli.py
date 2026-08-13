@@ -11,6 +11,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from spark_papers.cli import _arxiv_oai_window, _ensure_arxiv_oai_checkpoint, main
+from spark_papers.diagnostics import DIAGNOSTIC_LOGGER_NAME
 from spark_papers.pipeline import SnapshotStore, SyncRunner
 from spark_papers.sources import RetryableSourceError, StaticSource
 from spark_papers.storage import PaperStore
@@ -50,6 +51,7 @@ class CliTest(unittest.TestCase):
                 ),
                 patch.object(PaperStore, "refresh_indexes") as refresh_indexes,
                 redirect_stdout(output),
+                self.assertNoLogs(DIAGNOSTIC_LOGGER_NAME, level="ERROR"),
                 self.assertRaises(SystemExit) as exit_context,
             ):
                 main()
@@ -59,6 +61,40 @@ class CliTest(unittest.TestCase):
             report = json.loads(output.getvalue())
             self.assertEqual(report["failed_sources"], ["huggingface"])
             self.assertFalse(report["indexes_refreshed"])
+
+    def test_unexpected_cli_failure_logs_fixed_operation_without_inputs(self) -> None:
+        argv = [
+            "spark-papers",
+            "--db",
+            "private-database.sqlite3",
+            "sync-json",
+            "--source",
+            "private-source",
+            "--file",
+            "private-record.json",
+        ]
+        error = RuntimeError("token=server-secret paper=private-record")
+
+        with (
+            patch("sys.argv", argv),
+            patch("spark_papers.cli.PaperStore", side_effect=error),
+            self.assertLogs(DIAGNOSTIC_LOGGER_NAME, level="ERROR") as logs,
+            self.assertRaises(SystemExit) as exit_context,
+        ):
+            main()
+
+        self.assertEqual(exit_context.exception.code, 1)
+        output = "\n".join(logs.output)
+        self.assertIn("operation=cli.sync_json", output)
+        self.assertIn("type=RuntimeError", output)
+        self.assertIn("cli.py", output)
+        for secret in (
+            "server-secret",
+            "private-record",
+            "private-source",
+            "private-database",
+        ):
+            self.assertNotIn(secret, output)
 
     def test_first_arxiv_oai_window_starts_at_latest_arxiv_update(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

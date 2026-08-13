@@ -8,6 +8,7 @@ from unittest.mock import patch
 UTC = timezone.utc
 from pathlib import Path
 
+from spark_papers.diagnostics import DIAGNOSTIC_LOGGER_NAME
 from spark_papers.models import FetchResult
 from spark_papers.pipeline import SnapshotStore, SyncRunner
 from spark_papers.sources import RetryableSourceError, SourceAdapter, StaticSource
@@ -139,7 +140,10 @@ class PipelineTest(unittest.TestCase):
                         ),
                     }
                 )
-                with patch.object(store, "refresh_indexes", wraps=store.refresh_indexes) as refresh:
+                with (
+                    patch.object(store, "refresh_indexes", wraps=store.refresh_indexes) as refresh,
+                    self.assertNoLogs(DIAGNOSTIC_LOGGER_NAME, level="ERROR"),
+                ):
                     result = runner.sync_paginated(
                         source,
                         state_name="arxiv_oai",
@@ -459,7 +463,8 @@ class PipelineTest(unittest.TestCase):
             store = PaperStore(Path(directory) / "papers.sqlite3")
             runner = SyncRunner(store, SnapshotStore(Path(directory) / "snapshots"))
             success = runner.sync(StaticSource("arxiv", (_paper("2401.00002", "A Paper", "2024-01-03T00:00:00Z"),)))
-            failure = runner.sync(FailingSource())
+            with self.assertNoLogs(DIAGNOSTIC_LOGGER_NAME, level="ERROR"):
+                failure = runner.sync(FailingSource())
             self.assertEqual(success["status"], "success")
             self.assertEqual(failure["status"], "failed")
             self.assertEqual(failure["retained_snapshot"], success["snapshot"])

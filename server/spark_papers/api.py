@@ -9,10 +9,14 @@ from urllib.parse import parse_qs, unquote, urlsplit
 from typing import Any, Iterable, Mapping
 
 from . import API_SCHEMA_VERSION, SCORE_VERSION
+from .diagnostics import ServerDiagnosticOperation, report_unexpected
 from .dto import paper_to_api, recommendation_to_api
 from .models import PaperRecord, parse_datetime
 from .ports import PaperRepository
 from .recommendation import RecommendationEngine
+
+
+INTERNAL_ERROR_MESSAGE = "Paper service is temporarily unavailable."
 
 
 def encode_cursor(cursor: tuple[str, str] | None) -> str | None:
@@ -156,15 +160,19 @@ class PaperRequestHandler(BaseHTTPRequestHandler):
     service: PaperApiService
 
     def do_GET(self) -> None:  # noqa: N802
-        parsed = urlsplit(self.path)
-        query = parse_qs(parsed.query, keep_blank_values=True)
         try:
+            parsed = urlsplit(self.path)
+            query = parse_qs(parsed.query, keep_blank_values=True)
             payload, status = self._dispatch(parsed.path, query)
         except ValueError as error:
             payload, status = {"error": "invalid_request", "message": str(error)}, HTTPStatus.BAD_REQUEST
-        except Exception as error:  # pragma: no cover - defensive HTTP boundary
-            payload, status = {"error": "internal_error", "message": str(error)}, HTTPStatus.INTERNAL_SERVER_ERROR
-        body = json.dumps(payload, ensure_ascii=True, separators=(",", ":")).encode("utf-8")
+        except Exception as error:
+            payload, status = _internal_error_response(error)
+        try:
+            body = json.dumps(payload, ensure_ascii=True, separators=(",", ":")).encode("utf-8")
+        except Exception as error:
+            payload, status = _internal_error_response(error)
+            body = json.dumps(payload, ensure_ascii=True, separators=(",", ":")).encode("utf-8")
         self.send_response(status)
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Content-Length", str(len(body)))
@@ -193,6 +201,14 @@ class PaperRequestHandler(BaseHTTPRequestHandler):
 
     def log_message(self, format: str, *args: Any) -> None:
         return
+
+
+def _internal_error_response(error: Exception) -> tuple[dict[str, str], HTTPStatus]:
+    report_unexpected(ServerDiagnosticOperation.HTTP_REQUEST, error)
+    return {
+        "error": "internal_error",
+        "message": INTERNAL_ERROR_MESSAGE,
+    }, HTTPStatus.INTERNAL_SERVER_ERROR
 
 
 def create_server(service: PaperApiService, host: str = "127.0.0.1", port: int = 8000) -> ThreadingHTTPServer:

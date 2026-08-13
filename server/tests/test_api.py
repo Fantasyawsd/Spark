@@ -7,8 +7,10 @@ import unittest
 import urllib.error
 import urllib.request
 from pathlib import Path
+from unittest.mock import patch
 
-from spark_papers.api import PaperApiService, create_server
+from spark_papers.api import INTERNAL_ERROR_MESSAGE, PaperApiService, create_server
+from spark_papers.diagnostics import DIAGNOSTIC_LOGGER_NAME
 from spark_papers.pipeline import SnapshotStore, SyncRunner
 from spark_papers.sources import StaticSource
 from spark_papers.storage import PaperStore
@@ -84,6 +86,51 @@ class ApiTest(unittest.TestCase):
         self.assertEqual(missing["error"], "not_found")
 
     def test_invalid_query_is_rejected(self) -> None:
-        status, payload = self.get("/api/v1/channels/subject/cs.AI?from=not-a-date")
+        with self.assertNoLogs(DIAGNOSTIC_LOGGER_NAME, level="ERROR"):
+            status, payload = self.get("/api/v1/channels/subject/cs.AI?from=not-a-date")
         self.assertEqual(status, 400)
         self.assertEqual(payload["error"], "invalid_request")
+
+    def test_internal_failure_is_logged_without_leaking_request_or_error(self) -> None:
+        secret_error = RuntimeError(
+            "token=server-secret prompt=private-paper-body query=private-query"
+        )
+        with (
+            patch.object(self.store, "count", side_effect=secret_error),
+            self.assertLogs(DIAGNOSTIC_LOGGER_NAME, level="ERROR") as logs,
+        ):
+            status, payload = self.get(
+                "/api/v1/health?token=request-secret&query=private-query"
+            )
+
+        self.assertEqual(status, 500)
+        self.assertEqual(
+            payload,
+            {"error": "internal_error", "message": INTERNAL_ERROR_MESSAGE},
+        )
+        output = "\n".join(logs.output)
+        self.assertIn("operation=http.request", output)
+        self.assertIn("type=RuntimeError", output)
+        self.assertIn("api.py", output)
+        for secret in (
+            "server-secret",
+            "private-paper-body",
+            "private-query",
+            "request-secret",
+        ):
+            self.assertNotIn(secret, output)
+
+    def test_non_json_service_payload_uses_the_same_fixed_500_boundary(self) -> None:
+        with (
+            patch.object(self.store, "count", return_value=object()),
+            self.assertLogs(DIAGNOSTIC_LOGGER_NAME, level="ERROR") as logs,
+        ):
+            status, payload = self.get("/api/v1/health")
+
+        self.assertEqual(status, 500)
+        self.assertEqual(
+            payload,
+            {"error": "internal_error", "message": INTERNAL_ERROR_MESSAGE},
+        )
+        self.assertEqual(len(logs.records), 1)
+        self.assertIn("type=TypeError", logs.records[0].getMessage())

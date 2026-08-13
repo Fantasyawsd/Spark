@@ -1,7 +1,7 @@
 # Spark 开发路线图
 
 > 状态：持续维护
-> 最近更新：2026-08-12
+> 最近更新：2026-08-14
 
 本文是开发计划的唯一文件，记录产品边界、当前能力、开发任务与后续方向。
 发布范围和证据归入 `releases/<version>/`；架构、Git 与发布规则分别见
@@ -9,6 +9,8 @@
 [`standards/version-control.md`](standards/version-control.md)、
 [`standards/release-management.md`](standards/release-management.md)。论文来源、外部信号和频道语义见
 [`../CONTEXT.md`](../CONTEXT.md)。
+
+DeepSeek Spark 代码分析报告的最终审计已于 2026-08-14 合入 `main`。本轮收敛了最后一个公共 API 暴露问题，并完成合并后的格式、分析、测试及 Android/Windows 集成构建门禁；后续计划聚焦产品能力缺口，不再保留该审计作为未完成开发项。
 
 ---
 

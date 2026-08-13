@@ -1,6 +1,6 @@
 # DeepSeek 报告最终审计台账
 
-> 状态：待合并
+> 状态：已合并
 > 最近更新：2026-08-14
 
 ## 目标
@@ -9,7 +9,7 @@
 
 ## 非目标
 
-- 不合入 `main`，不进行客户端人工验收，不构建 APK/EXE。
+- 本批不负责重复进行客户端人工验收；合并后的集成构建与门禁由收尾流程完成。
 - 不重复修改前序批次已完成且审查通过的代码。
 - 不把文件规模本身当作必须继续拆分的行为缺陷；只处理有明确边界收益的问题。
 
@@ -75,10 +75,16 @@
 | `git diff --check` | 通过 | 2026-08-14 |
 | Windows 开发版人工验收 | 用户确认验收通过；验收 worktree 为 `C:\Users\Fantasy\Desktop\Spark-worktrees\agent-51` | 2026-08-14 |
 | 只读报告复核 | 未发现仍需修复的报告条目；剩余规模差异均已有边界拆分或属于有意保留的模块内部能力 | 2026-08-14 |
+| 合并后 Dart 格式检查（`5578a77`） | 192 个文件通过；5 个文件同步当前 formatter 排版 | 2026-08-14 |
+| 合并后 `flutter analyze` | No issues found | 2026-08-14 |
+| 合并后 `flutter test` | 582 项通过 | 2026-08-14 |
+| Android development profile 构建 | `build/app/outputs/flutter-apk/app-development-profile.apk`，119,638,924 bytes，SHA-256 `640D0D1FB510F99448511613976FF225888812D6905A31089F455D6F456E01B9`；无 `android/key.properties`，按规范使用 profile | 2026-08-14 |
+| Windows development release 构建 | `build/windows/x64/runner/Release/spark.exe`，101,888 bytes，SHA-256 `CDFCDE6D1129AA3B01FAF6DDCBC8FEAAB9D92B647A6B7BD00B9C712E579BA28A` | 2026-08-14 |
+| Gradle daemon 收尾 | `--stop` 后 `--status`：No Gradle daemons are running | 2026-08-14 |
 
 ## 审查结论
 
-通过。第 51 批修复了最后一个仍成立的报告问题；前序批次均有独立代码/测试/台账证据。未合入 `main`，工作树保持为可继续交接的任务分支。
+通过。第 51 批修复了最后一个仍成立的报告问题；前序批次均有独立代码/测试/台账证据。已快进合入 `main`，并完成合并后格式、分析、测试和目标构建门禁。
 
 ## 检查点与提交
 
@@ -86,3 +92,10 @@
 | --- | --- | --- | --- |
 | `a07ba6e` | `修复（公共 API）：隐藏未接线同步入口` | 实现 | Flutter 582 项、分析、格式通过 |
 | `9eff65c` | `文档（审计）：记录 DeepSeek 报告最终结论` | `/test` + `/review` | 逐项记录报告结论 |
+
+## 合并归档
+
+- 合并分支：`audit/deepseek-report-final`（快进合并）
+- 最终集成提交：`ee9d751`
+- 合并时间：2026-08-14
+- 合并后验证：Dart 格式、`flutter analyze`、`flutter test`、Android profile 构建、Windows release 构建均通过。

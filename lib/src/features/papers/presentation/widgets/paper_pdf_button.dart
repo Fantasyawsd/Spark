@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/platform/external_http_uri.dart';
 import '../../../../core/theme/spark_font_sizes.dart';
 import '../../../../core/theme/spark_theme.dart';
 import '../../domain/paper.dart';
-import '../../domain/paper_link_service.dart';
 
 class PaperPdfButton extends StatelessWidget {
   const PaperPdfButton({super.key, required this.paper, required this.onOpen});
@@ -13,9 +13,10 @@ class PaperPdfButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final uri = validPaperUri(paper.pdfUrl) ?? validPaperUri(paper.paperUrl);
+    final uri = validExternalHttpUri(paper.pdfUrl) ??
+        validExternalHttpUri(paper.paperUrl);
     if (uri == null) return const SizedBox.shrink();
-    final hasPdf = validPaperUri(paper.pdfUrl) != null;
+    final hasPdf = validExternalHttpUri(paper.pdfUrl) != null;
     return Align(
       alignment: Alignment.centerLeft,
       child: TextButton.icon(

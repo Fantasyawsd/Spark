@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../core/motion/motion_tokens.dart';
+import '../../../../core/platform/external_http_uri.dart';
 import '../../../../core/platform/spark_clipboard.dart';
 import '../../../../core/theme/spark_design_tokens.dart';
 import '../../../../core/theme/spark_font_sizes.dart';
@@ -15,7 +16,6 @@ import '../../application/paper_translation_controller.dart';
 import '../../application/paper_translation_service.dart';
 import '../../domain/paper.dart';
 import '../../domain/paper_keyword_repository.dart';
-import '../../domain/paper_link_service.dart';
 import 'paper_action_bar.dart';
 import 'paper_full_reader_page.dart';
 import 'paper_metadata.dart';
@@ -167,8 +167,8 @@ class _PaperReaderCardState extends State<PaperReaderCard> {
     final paper = widget.paper;
     final safePadding = MediaQuery.paddingOf(context);
     final hasPaperLink = widget.onOpenPaper != null &&
-        (validPaperUri(paper.pdfUrl) != null ||
-            validPaperUri(paper.paperUrl) != null);
+        (validExternalHttpUri(paper.pdfUrl) != null ||
+            validExternalHttpUri(paper.paperUrl) != null);
     return ColoredBox(
       color: SparkColors.of(context).card,
       child: Stack(

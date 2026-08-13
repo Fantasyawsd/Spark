@@ -6,6 +6,7 @@ import '../core/config/app_config.dart';
 import '../core/config/feature_flags.dart';
 import '../core/motion/motion_tokens.dart';
 import '../core/navigation/spark_route_observer.dart';
+import '../core/platform/external_http_uri.dart';
 import '../core/theme/spark_theme.dart';
 import '../core/theme/theme_controller.dart';
 import '../core/theme/theme_preference_repository.dart';
@@ -667,10 +668,11 @@ class _SparkShellState extends State<SparkShell> {
           aiService: _paperAiService,
           webSearchAiService: _webSearchAiService,
           sessionRepository: _aiSessionRepository,
+          onOpenSource: _linkService.open,
           settingsRepository: _dependencies.chatSessionSettingsRepository,
           conversationController: conversation,
           fullTextAvailable: widget.features.experimentalPdfAi &&
-              validPaperUri(paper.pdfUrl) != null,
+              validExternalHttpUri(paper.pdfUrl) != null,
           onLoadFullText: widget.features.experimentalPdfAi
               ? () => _paperChatContextLoader.load(paper, includeFullText: true)
               : null,
@@ -694,6 +696,7 @@ class _SparkShellState extends State<SparkShell> {
       chatContext: chatContext,
       aiService: _paperAiService,
       webSearchAiService: _webSearchAiService,
+      onOpenSource: _linkService.open,
       sessionRepository: _aiSessionRepository,
       conversationController: _chatConversationCoordinator.conversation(
         context: chatContext,
@@ -719,6 +722,7 @@ class _SparkShellState extends State<SparkShell> {
           webSearchAiService: _mainWebSearchAiService,
           sessionRepository: _aiSessionRepository,
           settingsRepository: _dependencies.chatSessionSettingsRepository,
+          onOpenSource: _linkService.open,
           conversationController: _chatConversationCoordinator.conversation(
             context: MainAiChatDefinition.context,
             service: _mainAiService,

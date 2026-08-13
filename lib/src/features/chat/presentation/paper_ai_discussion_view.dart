@@ -19,6 +19,7 @@ class PaperAiDiscussionView extends StatefulWidget {
     this.sessionRepository,
     this.scrollController,
     this.conversationController,
+    this.onOpenSource,
   });
 
   final ChatContext chatContext;
@@ -27,6 +28,7 @@ class PaperAiDiscussionView extends StatefulWidget {
   final ChatSessionRepository? sessionRepository;
   final ScrollController? scrollController;
   final ChatConversationController? conversationController;
+  final Future<bool> Function(Uri uri)? onOpenSource;
 
   @override
   State<PaperAiDiscussionView> createState() => _PaperAiDiscussionViewState();
@@ -79,6 +81,7 @@ class _PaperAiDiscussionViewState extends State<PaperAiDiscussionView> {
                 onPrompt: _send,
                 onRetry: _conversation.retry,
                 onCancel: _conversation.cancel,
+                onOpenSource: widget.onOpenSource,
                 searching: _conversation.searching,
                 requestStatus: _conversation.requestStatus,
                 canRetryRequestError: _conversation.canRetryRequestError,

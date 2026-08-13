@@ -1,5 +1,5 @@
+import '../../../core/platform/external_http_uri.dart';
 import '../domain/paper.dart';
-import '../domain/paper_link_service.dart';
 import '../domain/paper_pdf.dart';
 import '../domain/paper_pdf_content_provider.dart';
 import '../domain/paper_pdf_repository.dart';
@@ -16,7 +16,7 @@ final class CachedPaperPdfContentProvider implements PaperPdfContentProvider {
 
   @override
   Future<PaperPdfExtract> load(Paper paper) async {
-    final pdfUrl = validPaperUri(paper.pdfUrl);
+    final pdfUrl = validExternalHttpUri(paper.pdfUrl);
     if (pdfUrl == null) {
       throw const PaperPdfException('该论文没有可用的 PDF 链接。');
     }

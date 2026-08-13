@@ -15,6 +15,7 @@ class MainAiChatScreen extends StatelessWidget {
     required this.sessionRepository,
     this.settingsRepository,
     this.conversationController,
+    this.onOpenSource,
   });
 
   final ChatAiService aiService;
@@ -22,6 +23,7 @@ class MainAiChatScreen extends StatelessWidget {
   final ChatSessionRepository sessionRepository;
   final ChatSessionSettingsRepository? settingsRepository;
   final ChatConversationController? conversationController;
+  final Future<bool> Function(Uri uri)? onOpenSource;
 
   @override
   Widget build(BuildContext context) {
@@ -32,6 +34,7 @@ class MainAiChatScreen extends StatelessWidget {
       sessionRepository: sessionRepository,
       settingsRepository: settingsRepository,
       conversationController: conversationController,
+      onOpenSource: onOpenSource,
       screenTitle: '主聊天',
       screenSubtitle: '主会话',
       welcomeTitle: '今天想研究什么？',

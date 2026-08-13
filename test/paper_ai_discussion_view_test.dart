@@ -4,6 +4,7 @@ import 'package:spark/src/features/chat/domain/chat_ai_service.dart';
 import 'package:spark/src/features/chat/domain/chat_context.dart';
 import 'package:spark/src/features/chat/domain/chat_message.dart';
 import 'package:spark/src/features/chat/domain/chat_session_repository.dart';
+import 'package:spark/src/features/chat/presentation/main_ai_chat_screen.dart';
 import 'package:spark/src/features/chat/presentation/paper_ai_chat_screen.dart';
 import 'package:spark/src/features/chat/presentation/paper_ai_discussion_view.dart';
 
@@ -11,6 +12,15 @@ void main() {
   const messages = [
     ChatMessage(fromUser: true, content: '论文问题'),
     ChatMessage(fromUser: false, content: '论文回答'),
+  ];
+  const sourceMessages = [
+    ChatMessage(
+      fromUser: false,
+      content: '带来源的回答',
+      sources: [
+        ChatSource(title: '论文来源', url: 'https://example.test/paper'),
+      ],
+    ),
   ];
 
   testWidgets('embedded paper discussion hides edit and delete entries',
@@ -71,6 +81,88 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('删除消息'), findsOneWidget);
   });
+
+  testWidgets('fullscreen paper chat forwards the injected source opener',
+      (tester) async {
+    Uri? opened;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: PaperAiChatScreen(
+          chatContext: const ChatContext(
+            id: 'fullscreen-source-test',
+            title: '全屏来源测试',
+            systemPrompt: '回答问题。',
+          ),
+          aiService: const _FakeChatAiService(),
+          sessionRepository:
+              const _FakeChatSessionRepository(messages: sourceMessages),
+          onOpenSource: (uri) async {
+            opened = uri;
+            return true;
+          },
+        ),
+      ),
+    );
+    await _openFirstSource(tester);
+
+    expect(opened, Uri.parse('https://example.test/paper'));
+  });
+
+  testWidgets('embedded paper discussion forwards the injected source opener',
+      (tester) async {
+    Uri? opened;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: PaperAiDiscussionView(
+            chatContext: const ChatContext(
+              id: 'embedded-source-test',
+              title: '内嵌来源测试',
+              systemPrompt: '回答问题。',
+            ),
+            aiService: const _FakeChatAiService(),
+            sessionRepository:
+                const _FakeChatSessionRepository(messages: sourceMessages),
+            onOpenSource: (uri) async {
+              opened = uri;
+              return true;
+            },
+          ),
+        ),
+      ),
+    );
+    await _openFirstSource(tester);
+
+    expect(opened, Uri.parse('https://example.test/paper'));
+  });
+
+  testWidgets('main chat forwards the injected source opener', (tester) async {
+    Uri? opened;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: MainAiChatScreen(
+          aiService: const _FakeChatAiService(),
+          sessionRepository:
+              const _FakeChatSessionRepository(messages: sourceMessages),
+          onOpenSource: (uri) async {
+            opened = uri;
+            return true;
+          },
+        ),
+      ),
+    );
+    await _openFirstSource(tester);
+
+    expect(opened, Uri.parse('https://example.test/paper'));
+  });
+}
+
+Future<void> _openFirstSource(WidgetTester tester) async {
+  await tester.pumpAndSettle();
+  await tester.tap(find.byKey(const ValueKey('paper-ai-sources-toggle')));
+  await tester.pumpAndSettle();
+  await tester.tap(find.byKey(const ValueKey('paper-ai-source-1')));
+  await tester.pump();
 }
 
 class _FakeChatAiService implements ChatAiService {

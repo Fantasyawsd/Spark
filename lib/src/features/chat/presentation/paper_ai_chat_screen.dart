@@ -33,6 +33,7 @@ class PaperAiChatScreen extends StatefulWidget {
     this.fullTextAvailable = false,
     this.onLoadFullText,
     this.conversationController,
+    this.onOpenSource,
   });
 
   final ChatContext chatContext;
@@ -51,6 +52,7 @@ class PaperAiChatScreen extends StatefulWidget {
   final Future<ChatContext> Function()? onLoadFullText;
   final String clearConfirmation;
   final ChatConversationController? conversationController;
+  final Future<bool> Function(Uri uri)? onOpenSource;
 
   @override
   State<PaperAiChatScreen> createState() => _PaperAiChatScreenState();
@@ -143,6 +145,7 @@ class _PaperAiChatScreenState extends State<PaperAiChatScreen> {
                     onCancel: _conversation.cancel,
                     onDelete: _deleteMessage,
                     onEdit: _editMessage,
+                    onOpenSource: widget.onOpenSource,
                     selectionMode: _selectionMode,
                     selectedMessageIndexes: _selectedMessageIndexes,
                     onToggleMessageSelection: _toggleMessageSelection,

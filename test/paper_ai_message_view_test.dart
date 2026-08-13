@@ -6,6 +6,14 @@ import 'package:spark/src/features/chat/chat.dart';
 import 'package:spark/src/features/chat/presentation/widgets/paper_ai_message_view.dart';
 
 void main() {
+  const sourceMessage = ChatMessage(
+    fromUser: false,
+    content: '带来源的回答',
+    sources: [
+      ChatSource(title: '来源一', url: 'https://example.test/source'),
+    ],
+  );
+
   Widget wrap(Widget child) {
     return MaterialApp(
       home: Scaffold(
@@ -18,6 +26,11 @@ void main() {
 
   SparkMarkdown markdownOf(WidgetTester tester) {
     return tester.widget<SparkMarkdown>(find.byType(SparkMarkdown).first);
+  }
+
+  Future<void> expandSources(WidgetTester tester) async {
+    await tester.tap(find.byKey(const ValueKey('paper-ai-sources-toggle')));
+    await tester.pumpAndSettle();
   }
 
   testWidgets('assistant content stays non-selectable while streaming',
@@ -162,5 +175,119 @@ void main() {
     expect(find.byTooltip('重新生成'), findsOneWidget);
     expect(find.byTooltip('更多'), findsNWidgets(2));
     expect(find.text('Fork 会话'), findsNothing);
+  });
+
+  testWidgets('valid source uses only the injected opener', (tester) async {
+    Uri? opened;
+    await tester.pumpWidget(
+      wrap(
+        ChatMessageView(
+          message: sourceMessage,
+          streaming: false,
+          searching: false,
+          onOpenSource: (uri) async {
+            opened = uri;
+            return true;
+          },
+        ),
+      ),
+    );
+
+    await expandSources(tester);
+    await tester.tap(find.byKey(const ValueKey('paper-ai-source-1')));
+    await tester.pump();
+
+    expect(opened, Uri.parse('https://example.test/source'));
+    expect(find.text('无法打开来源链接'), findsNothing);
+  });
+
+  testWidgets('source is disabled when no opener is injected', (tester) async {
+    await tester.pumpWidget(
+      wrap(
+        const ChatMessageView(
+          message: sourceMessage,
+          streaming: false,
+          searching: false,
+        ),
+      ),
+    );
+
+    await expandSources(tester);
+
+    final row = tester.widget<InkWell>(
+      find.byKey(const ValueKey('paper-ai-source-1')),
+    );
+    expect(row.onTap, isNull);
+  });
+
+  testWidgets('invalid source URI is disabled even with an opener',
+      (tester) async {
+    var calls = 0;
+    await tester.pumpWidget(
+      wrap(
+        ChatMessageView(
+          message: const ChatMessage(
+            fromUser: false,
+            content: '非法来源',
+            sources: [
+              ChatSource(title: '本地文件', url: 'file:///tmp/paper.pdf'),
+            ],
+          ),
+          streaming: false,
+          searching: false,
+          onOpenSource: (_) async {
+            calls++;
+            return true;
+          },
+        ),
+      ),
+    );
+
+    await expandSources(tester);
+
+    final row = tester.widget<InkWell>(
+      find.byKey(const ValueKey('paper-ai-source-1')),
+    );
+    expect(row.onTap, isNull);
+    expect(calls, 0);
+  });
+
+  testWidgets('source opener false result shows failure feedback',
+      (tester) async {
+    await tester.pumpWidget(
+      wrap(
+        ChatMessageView(
+          message: sourceMessage,
+          streaming: false,
+          searching: false,
+          onOpenSource: (_) async => false,
+        ),
+      ),
+    );
+
+    await expandSources(tester);
+    await tester.tap(find.byKey(const ValueKey('paper-ai-source-1')));
+    await tester.pump();
+
+    expect(find.text('无法打开来源链接'), findsOneWidget);
+  });
+
+  testWidgets('source opener exception shows failure feedback', (tester) async {
+    await tester.pumpWidget(
+      wrap(
+        ChatMessageView(
+          message: sourceMessage,
+          streaming: false,
+          searching: false,
+          onOpenSource: (_) => Future<bool>.error(StateError('open failed')),
+        ),
+      ),
+    );
+
+    await expandSources(tester);
+    await tester.tap(find.byKey(const ValueKey('paper-ai-source-1')));
+    await tester.pump();
+
+    expect(find.text('无法打开来源链接'), findsOneWidget);
   });
 }

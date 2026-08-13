@@ -22,6 +22,7 @@ from .models import PaperRecord, parse_datetime, utc_now
 from .ports import IngestOutcome, IngestStatus
 from .paper_record_merger import merge_paper_records
 from .storage_schema import StorageSchemaManager
+from .sync_storage import SyncStorage
 
 
 class PaperStore:
@@ -51,6 +52,7 @@ class PaperStore:
             self._connection,
             timestamp_factory=utc_now,
         )
+        self._sync_storage = SyncStorage(self._connection)
 
     def close(self) -> None:
         self._connection.close()
@@ -739,17 +741,17 @@ class PaperStore:
         record_count: int = 0,
         error: str | None = None,
     ) -> None:
-        with self.transaction() as connection:
-            connection.execute(
-                """INSERT INTO snapshots
-                   (source, snapshot_key, fetched_at, status, etag, cursor, raw_path, record_count, error)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-                   ON CONFLICT(source, snapshot_key) DO UPDATE SET
-                    fetched_at=excluded.fetched_at, status=excluded.status, etag=excluded.etag,
-                    cursor=excluded.cursor, raw_path=excluded.raw_path,
-                    record_count=excluded.record_count, error=excluded.error""",
-                (source, snapshot_key, fetched_at.isoformat(), status, etag, cursor, raw_path, record_count, error),
-            )
+        self._sync_storage.record_snapshot(
+            source,
+            snapshot_key,
+            status=status,
+            fetched_at=fetched_at,
+            etag=etag,
+            cursor=cursor,
+            raw_path=raw_path,
+            record_count=record_count,
+            error=error,
+        )
 
     def set_sync_state(
         self,
@@ -764,55 +766,23 @@ class PaperStore:
         window_until: str | None = None,
         mark_success: bool = True,
     ) -> None:
-        self._connection.execute(
-            """INSERT INTO sync_state(
-                   source, etag, cursor, last_success_at, last_snapshot_path,
-                   completed_through, window_from, window_until
-               ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-               ON CONFLICT(source) DO UPDATE SET etag=excluded.etag, cursor=excluded.cursor,
-               last_success_at=COALESCE(excluded.last_success_at, sync_state.last_success_at),
-               last_snapshot_path=excluded.last_snapshot_path,
-               completed_through=CASE
-                   WHEN excluded.completed_through IS NULL THEN sync_state.completed_through
-                   WHEN sync_state.completed_through IS NULL THEN excluded.completed_through
-                   WHEN excluded.completed_through > sync_state.completed_through THEN excluded.completed_through
-                   ELSE sync_state.completed_through
-               END,
-               window_from=COALESCE(excluded.window_from, sync_state.window_from),
-               window_until=COALESCE(excluded.window_until, sync_state.window_until)""",
-            (
-                source,
-                etag,
-                cursor,
-                at.isoformat() if mark_success else None,
-                path,
-                completed_through.isoformat() if completed_through else None,
-                window_from,
-                window_until,
-            ),
+        self._sync_storage.set_state(
+            source,
+            etag,
+            cursor,
+            path,
+            at,
+            completed_through=completed_through,
+            window_from=window_from,
+            window_until=window_until,
+            mark_success=mark_success,
         )
-        self._connection.commit()
 
     def get_sync_state(self, source: str) -> dict[str, str | None]:
-        row = self._connection.execute("SELECT * FROM sync_state WHERE source = ?", (source,)).fetchone()
-        if not row:
-            return {
-                "etag": None,
-                "cursor": None,
-                "last_success_at": None,
-                "last_snapshot_path": None,
-                "completed_through": None,
-                "window_from": None,
-                "window_until": None,
-            }
-        return dict(row)
+        return self._sync_storage.get_state(source)
 
     def latest_source_update(self, source: str) -> datetime | None:
-        row = self._connection.execute(
-            "SELECT MAX(source_updated_at) AS latest FROM source_observations WHERE source = ?",
-            (source,),
-        ).fetchone()
-        return parse_datetime(row["latest"]) if row and row["latest"] else None
+        return self._sync_storage.latest_source_update(source)
 
     def record_batch(
         self,

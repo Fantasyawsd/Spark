@@ -1,24 +1,25 @@
 import '../../../core/storage/local_json_store.dart';
-import '../../../core/storage/versioned_local_json_store.dart';
 import '../domain/paper_comment.dart';
 import '../domain/paper_comment_repository.dart';
 import 'paper_comment_json_mapper.dart';
 import 'paper_comment_record.dart';
+import 'paper_file_persistence.dart';
 
 class FilePaperCommentRepository implements PaperCommentRepository {
   FilePaperCommentRepository({LocalJsonStore? store})
-      : _store = VersionedLocalJsonStore(
-          store ?? LocalJsonStore(fileName: 'paper_comments.json'),
+      : _persistence = PaperFilePersistence(
+          fileName: 'paper_comments.json',
           schemaId: 'papers.comments',
           validatePayload: PaperCommentJsonMapper.validatePayload,
+          store: store,
         );
 
-  final VersionedLocalJsonStore _store;
+  final PaperFilePersistence _persistence;
 
   @override
-  Future<PaperCommentSnapshot> load(String paperId) async {
-    try {
-      final json = await _store.readMap();
+  Future<PaperCommentSnapshot> load(String paperId) {
+    return _persistence.guard(() async {
+      final json = await _persistence.store.readMap();
       if (json == null) {
         return const PaperCommentSnapshot(comments: [], hasStoredValue: false);
       }
@@ -27,24 +28,21 @@ class FilePaperCommentRepository implements PaperCommentRepository {
         paperId,
       ).map((record) => record.toDomain()).toList(growable: false);
       return PaperCommentSnapshot(comments: comments, hasStoredValue: true);
-    } catch (error) {
-      throw PaperCommentPersistenceException('无法读取评论。', error);
-    }
+    }, (error) => PaperCommentPersistenceException('无法读取评论。', error));
   }
 
   @override
-  Future<void> save(String paperId, List<PaperComment> comments) async {
-    try {
-      await _store.updateMap((current) {
+  Future<void> save(String paperId, List<PaperComment> comments) {
+    return _persistence.guard(
+      () => _persistence.store.updateMap((current) {
         final json = current ?? <String, dynamic>{};
         json[paperId] = comments
             .map(PaperCommentRecord.fromDomain)
             .map(PaperCommentJsonMapper.toJson)
             .toList(growable: false);
         return json;
-      });
-    } catch (error) {
-      throw PaperCommentPersistenceException('无法保存评论。', error);
-    }
+      }),
+      (error) => PaperCommentPersistenceException('无法保存评论。', error),
+    );
   }
 }

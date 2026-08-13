@@ -1,35 +1,34 @@
 import '../../../core/storage/local_json_store.dart';
-import '../../../core/storage/versioned_local_json_store.dart';
 import '../domain/paper_reading_repository.dart';
+import 'paper_file_persistence.dart';
 import 'paper_reading_json_mapper.dart';
 
 class FilePaperReadingRepository implements PaperReadingRepository {
   FilePaperReadingRepository({LocalJsonStore? store})
-      : _store = VersionedLocalJsonStore(
-          store ?? LocalJsonStore(fileName: 'paper_reading.json'),
+      : _persistence = PaperFilePersistence(
+          fileName: 'paper_reading.json',
           schemaId: 'papers.reading',
           validatePayload: PaperReadingJsonMapper.validatePayload,
+          store: store,
         );
 
-  final VersionedLocalJsonStore _store;
+  final PaperFilePersistence _persistence;
 
   @override
-  Future<PaperReadingSnapshot> load() async {
-    try {
-      final json = await _store.readMap();
+  Future<PaperReadingSnapshot> load() {
+    return _persistence.guard(() async {
+      final json = await _persistence.store.readMap();
       if (json == null) return PaperReadingSnapshot();
       return PaperReadingJsonMapper.fromJson(json);
-    } catch (error) {
-      throw PaperReadingPersistenceException('无法读取论文阅读状态。', error);
-    }
+    }, (error) => PaperReadingPersistenceException('无法读取论文阅读状态。', error));
   }
 
   @override
-  Future<void> save(PaperReadingSnapshot snapshot) async {
-    try {
-      await _store.writeMap(PaperReadingJsonMapper.toJson(snapshot));
-    } catch (error) {
-      throw PaperReadingPersistenceException('无法保存论文阅读状态。', error);
-    }
+  Future<void> save(PaperReadingSnapshot snapshot) {
+    return _persistence.guard(
+      () =>
+          _persistence.store.writeMap(PaperReadingJsonMapper.toJson(snapshot)),
+      (error) => PaperReadingPersistenceException('无法保存论文阅读状态。', error),
+    );
   }
 }

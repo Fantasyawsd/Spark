@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:spark/src/core/storage/local_json_store.dart';
 import 'package:spark/src/features/papers/data/file_paper_keyword_repository.dart';
-import 'package:spark/src/features/papers/domain/paper_keyword_record.dart';
+import 'package:spark/src/features/papers/domain/paper_keyword_cache.dart';
 import 'package:spark/src/features/papers/domain/paper_keyword_repository.dart';
 
 void main() {
@@ -91,8 +91,8 @@ FilePaperKeywordRepository _repository(File file) {
   );
 }
 
-PaperKeywordRecord _record(String paperId, {DateTime? generatedAt}) {
-  return PaperKeywordRecord(
+PaperKeywordCache _record(String paperId, {DateTime? generatedAt}) {
+  return PaperKeywordCache(
     paperId: paperId,
     keywords: const ['A', 'B', 'C', 'D', 'E'],
     inputFingerprint: 'fingerprint-$paperId',

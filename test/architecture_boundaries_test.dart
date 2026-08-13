@@ -180,7 +180,7 @@ void main() {
       ).readAsStringSync();
 
       expect(source, isNot(contains('keywordRepository?.load(')));
-      expect(source, isNot(contains('isPaperKeywordRecordFresh(')));
+      expect(source, isNot(contains('isPaperKeywordCacheFresh(')));
     },
   );
 }

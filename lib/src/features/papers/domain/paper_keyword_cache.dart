@@ -1,5 +1,5 @@
-class PaperKeywordRecord {
-  const PaperKeywordRecord({
+class PaperKeywordCache {
+  const PaperKeywordCache({
     required this.paperId,
     required this.keywords,
     required this.inputFingerprint,

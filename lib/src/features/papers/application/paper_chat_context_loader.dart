@@ -33,7 +33,7 @@ final class PaperChatContextLoader {
   Future<List<String>> _loadFreshKeywords(Paper paper) async {
     try {
       final record = await keywordRepository.load(paper.id);
-      if (record == null || !isPaperKeywordRecordFresh(record, paper)) {
+      if (record == null || !isPaperKeywordCacheFresh(record, paper)) {
         return const [];
       }
       return record.keywords;

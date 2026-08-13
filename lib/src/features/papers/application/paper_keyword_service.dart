@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import '../../chat/chat.dart';
 import '../domain/paper.dart';
-import '../domain/paper_keyword_record.dart';
+import '../domain/paper_keyword_cache.dart';
 import 'paper_content_fingerprint.dart';
 
 const paperKeywordPromptVersion = 1;
@@ -88,10 +88,10 @@ String paperKeywordInputFingerprint(Paper paper) {
   return paperContentFingerprint(paper, namespace: _fingerprintSeparator);
 }
 
-bool isPaperKeywordRecordFresh(PaperKeywordRecord record, Paper paper) {
-  return record.paperId == paper.id &&
-      record.promptVersion == paperKeywordPromptVersion &&
-      record.inputFingerprint == paperKeywordInputFingerprint(paper) &&
-      record.keywords.length >= 5 &&
-      record.keywords.length <= 12;
+bool isPaperKeywordCacheFresh(PaperKeywordCache cache, Paper paper) {
+  return cache.paperId == paper.id &&
+      cache.promptVersion == paperKeywordPromptVersion &&
+      cache.inputFingerprint == paperKeywordInputFingerprint(paper) &&
+      cache.keywords.length >= 5 &&
+      cache.keywords.length <= 12;
 }

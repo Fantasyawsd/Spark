@@ -9,7 +9,7 @@ import 'package:spark/src/features/papers/application/paper_reading_controller.d
 import 'package:spark/src/features/papers/application/paper_translation_service.dart';
 import 'package:spark/src/features/papers/data/arxiv_seed_repository.dart';
 import 'package:spark/src/features/papers/domain/paper.dart';
-import 'package:spark/src/features/papers/domain/paper_keyword_record.dart';
+import 'package:spark/src/features/papers/domain/paper_keyword_cache.dart';
 import 'package:spark/src/features/papers/domain/paper_keyword_repository.dart';
 import 'package:spark/src/features/papers/domain/paper_link_service.dart';
 import 'package:spark/src/features/papers/domain/paper_share.dart';
@@ -159,7 +159,7 @@ void main() {
     addTearDown(reading.dispose);
     final paper = const ArxivSeedRepository().getAll().first;
     final keywordRepository = _CountingKeywordRepository(
-      record: PaperKeywordRecord(
+      record: PaperKeywordCache(
         paperId: paper.id,
         keywords: const [
           'shared keyword',
@@ -302,20 +302,20 @@ class _CountingTranslationRepository implements PaperTranslationRepository {
 class _CountingKeywordRepository implements PaperKeywordRepository {
   _CountingKeywordRepository({this.record});
 
-  final PaperKeywordRecord? record;
+  final PaperKeywordCache? record;
   int loadCalls = 0;
 
   @override
   Future<void> clear(String paperId) async {}
 
   @override
-  Future<PaperKeywordRecord?> load(String paperId) async {
+  Future<PaperKeywordCache?> load(String paperId) async {
     loadCalls++;
     return record;
   }
 
   @override
-  Future<void> save(PaperKeywordRecord record) async {}
+  Future<void> save(PaperKeywordCache cache) async {}
 }
 
 class _ThrowingKeywordRepository implements PaperKeywordRepository {
@@ -323,11 +323,11 @@ class _ThrowingKeywordRepository implements PaperKeywordRepository {
   Future<void> clear(String paperId) async {}
 
   @override
-  Future<PaperKeywordRecord?> load(String paperId) =>
-      Future<PaperKeywordRecord?>.error(StateError('cache unavailable'));
+  Future<PaperKeywordCache?> load(String paperId) =>
+      Future<PaperKeywordCache?>.error(StateError('cache unavailable'));
 
   @override
-  Future<void> save(PaperKeywordRecord record) async {}
+  Future<void> save(PaperKeywordCache cache) async {}
 }
 
 class _FakeTranslationServiceFactory implements PaperTranslationServiceFactory {

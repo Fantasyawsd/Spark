@@ -3,7 +3,7 @@ import 'package:flutter/foundation.dart';
 import '../../../core/diagnostics/diagnostics.dart';
 import '../domain/paper.dart';
 import '../domain/paper_keyword_repository.dart';
-import '../domain/paper_keyword_record.dart';
+import '../domain/paper_keyword_cache.dart';
 import '../../chat/chat.dart';
 import 'paper_keyword_service.dart';
 
@@ -53,7 +53,7 @@ class PaperKeywordController extends ChangeNotifier {
     _notify();
     try {
       final record = await repository.load(paper.id);
-      if (record != null && isPaperKeywordRecordFresh(record, paper)) {
+      if (record != null && isPaperKeywordCacheFresh(record, paper)) {
         _keywords = record.keywords;
       }
     } on PaperKeywordPersistenceException catch (error, stackTrace) {
@@ -135,7 +135,7 @@ class PaperKeywordController extends ChangeNotifier {
     if (repository == null) return;
     try {
       await repository.save(
-        PaperKeywordRecord(
+        PaperKeywordCache(
           paperId: paper.id,
           keywords: _keywords,
           inputFingerprint: paperKeywordInputFingerprint(paper),

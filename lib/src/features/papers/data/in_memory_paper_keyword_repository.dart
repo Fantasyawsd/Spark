@@ -1,15 +1,15 @@
-import '../domain/paper_keyword_record.dart';
+import '../domain/paper_keyword_cache.dart';
 import '../domain/paper_keyword_repository.dart';
 
 class InMemoryPaperKeywordRepository implements PaperKeywordRepository {
-  final Map<String, PaperKeywordRecord> _records = {};
+  final Map<String, PaperKeywordCache> _records = {};
 
   @override
-  Future<PaperKeywordRecord?> load(String paperId) async => _records[paperId];
+  Future<PaperKeywordCache?> load(String paperId) async => _records[paperId];
 
   @override
-  Future<void> save(PaperKeywordRecord record) async {
-    _records[record.paperId] = record;
+  Future<void> save(PaperKeywordCache cache) async {
+    _records[cache.paperId] = cache;
   }
 
   @override

@@ -1,7 +1,8 @@
 import '../../../core/storage/local_json_store.dart';
 import '../../../core/storage/versioned_local_json_store.dart';
-import '../domain/paper_keyword_record.dart';
+import '../domain/paper_keyword_cache.dart';
 import '../domain/paper_keyword_repository.dart';
+import 'paper_keyword_cache_record.dart';
 import 'paper_keyword_json_mapper.dart';
 
 class FilePaperKeywordRepository implements PaperKeywordRepository {
@@ -15,24 +16,25 @@ class FilePaperKeywordRepository implements PaperKeywordRepository {
   final VersionedLocalJsonStore _store;
 
   @override
-  Future<PaperKeywordRecord?> load(String paperId) async {
+  Future<PaperKeywordCache?> load(String paperId) async {
     try {
       final json = await _store.readMap();
       if (json == null) return null;
       final value = json[paperId];
       if (value is! Map<String, dynamic>) return null;
-      return PaperKeywordJsonMapper.fromJson(paperId, value);
+      return PaperKeywordJsonMapper.fromJson(paperId, value).toDomain();
     } catch (error) {
       throw PaperKeywordPersistenceException('无法读取关键词缓存。', error);
     }
   }
 
   @override
-  Future<void> save(PaperKeywordRecord record) async {
+  Future<void> save(PaperKeywordCache cache) async {
     try {
       await _store.updateMap((current) {
         final json = current ?? <String, dynamic>{};
-        json[record.paperId] = PaperKeywordJsonMapper.toJson(record);
+        final record = PaperKeywordCacheRecord.fromDomain(cache);
+        json[cache.paperId] = PaperKeywordJsonMapper.toJson(record);
         return json;
       });
     } catch (error) {

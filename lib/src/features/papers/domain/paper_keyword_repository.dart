@@ -1,9 +1,9 @@
-import 'paper_keyword_record.dart';
+import 'paper_keyword_cache.dart';
 
 abstract interface class PaperKeywordRepository {
-  Future<PaperKeywordRecord?> load(String paperId);
+  Future<PaperKeywordCache?> load(String paperId);
 
-  Future<void> save(PaperKeywordRecord record);
+  Future<void> save(PaperKeywordCache cache);
 
   Future<void> clear(String paperId);
 }

@@ -7,7 +7,7 @@ import 'package:spark/src/features/papers/application/paper_keyword_controller.d
 import 'package:spark/src/features/papers/application/paper_keyword_service.dart';
 import 'package:spark/src/features/papers/data/in_memory_paper_keyword_repository.dart';
 import 'package:spark/src/features/papers/domain/paper.dart';
-import 'package:spark/src/features/papers/domain/paper_keyword_record.dart';
+import 'package:spark/src/features/papers/domain/paper_keyword_cache.dart';
 import 'package:spark/src/features/papers/domain/paper_keyword_repository.dart';
 
 void main() {
@@ -42,7 +42,7 @@ void main() {
     final repository = InMemoryPaperKeywordRepository();
     final paper = _paper();
     await repository.save(
-      PaperKeywordRecord(
+      PaperKeywordCache(
         paperId: paper.id,
         keywords: const ['a', 'b', 'c', 'd', 'e'],
         inputFingerprint: 'stale',
@@ -77,7 +77,7 @@ void main() {
     expect(controller.keywords, ['A', 'B', 'C', 'D', 'E']);
     final stored = await repository.load(paper.id);
     expect(stored, isNotNull);
-    expect(isPaperKeywordRecordFresh(stored!, paper), isTrue);
+    expect(isPaperKeywordCacheFresh(stored!, paper), isTrue);
   });
 
   test(
@@ -212,13 +212,13 @@ class _ThrowingKeywordRepository implements PaperKeywordRepository {
   Future<void> clear(String paperId) async {}
 
   @override
-  Future<PaperKeywordRecord?> load(String paperId) async {
+  Future<PaperKeywordCache?> load(String paperId) async {
     if (loadFailure) throw StateError('private-keyword-cache');
     return null;
   }
 
   @override
-  Future<void> save(PaperKeywordRecord record) async {
+  Future<void> save(PaperKeywordCache cache) async {
     if (saveFailure) {
       throw const PaperKeywordPersistenceException('关键词保存失败');
     }
@@ -226,20 +226,20 @@ class _ThrowingKeywordRepository implements PaperKeywordRepository {
 }
 
 class _PendingKeywordRepository implements PaperKeywordRepository {
-  final Completer<PaperKeywordRecord?> _loadCompleter = Completer();
+  final Completer<PaperKeywordCache?> _loadCompleter = Completer();
   int loadCalls = 0;
 
-  void complete(PaperKeywordRecord? record) => _loadCompleter.complete(record);
+  void complete(PaperKeywordCache? cache) => _loadCompleter.complete(cache);
 
   @override
   Future<void> clear(String paperId) async {}
 
   @override
-  Future<PaperKeywordRecord?> load(String paperId) {
+  Future<PaperKeywordCache?> load(String paperId) {
     loadCalls++;
     return _loadCompleter.future;
   }
 
   @override
-  Future<void> save(PaperKeywordRecord record) async {}
+  Future<void> save(PaperKeywordCache cache) async {}
 }

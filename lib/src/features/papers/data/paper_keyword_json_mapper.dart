@@ -1,4 +1,4 @@
-import '../domain/paper_keyword_record.dart';
+import 'paper_keyword_cache_record.dart';
 
 class PaperKeywordJsonMapper {
   const PaperKeywordJsonMapper._();
@@ -15,7 +15,7 @@ class PaperKeywordJsonMapper {
     }
   }
 
-  static PaperKeywordRecord fromJson(
+  static PaperKeywordCacheRecord fromJson(
     String paperId,
     Map<String, dynamic> json,
   ) {
@@ -34,7 +34,7 @@ class PaperKeywordJsonMapper {
     if (parsedGeneratedAt == null) {
       throw const FormatException('Paper keyword generatedAt is invalid.');
     }
-    return PaperKeywordRecord(
+    return PaperKeywordCacheRecord(
       paperId: paperId,
       keywords: List<String>.unmodifiable(keywords.cast<String>()),
       inputFingerprint: inputFingerprint,
@@ -43,7 +43,7 @@ class PaperKeywordJsonMapper {
     );
   }
 
-  static Map<String, dynamic> toJson(PaperKeywordRecord record) => {
+  static Map<String, dynamic> toJson(PaperKeywordCacheRecord record) => {
         'keywords': record.keywords,
         'inputFingerprint': record.inputFingerprint,
         'promptVersion': record.promptVersion,

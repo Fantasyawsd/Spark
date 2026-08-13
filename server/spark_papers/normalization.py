@@ -38,6 +38,13 @@ def _subjects(value: Any) -> tuple[str, ...]:
     return tuple(dict.fromkeys(result))
 
 
+def _optional_text(value: Any) -> str | None:
+    if value is None:
+        return None
+    normalized = str(value).strip()
+    return normalized or None
+
+
 def _source_ids(source: str, record: Mapping[str, Any]) -> dict[str, str]:
     external = dict(record.get("external_ids") or {})
     for key in ("arxiv_id", "doi", "openalex_id", "semantic_scholar_id", "huggingface_id", "github_url"):
@@ -97,7 +104,7 @@ def normalize_record(
         PaperRecord(
             paper_id=paper_id,
             title=title,
-            abstract=(str(record["abstract"]).strip() if record.get("abstract") is not None else None),
+            abstract=_optional_text(record.get("abstract")),
             authors=authors,
             published_at=published_at,
             updated_at=parse_datetime(record.get("updated_at") or record.get("updatedAt")),

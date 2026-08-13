@@ -1,8 +1,11 @@
 from __future__ import annotations
 
 import io
+import json
+import tempfile
 import unittest
 import urllib.parse
+from pathlib import Path
 from unittest.mock import patch
 
 from spark_papers.models import FetchResult, utc_now
@@ -14,6 +17,7 @@ from spark_papers.sources import (
     GitHubRepositorySource,
     HttpJsonSource,
     HuggingFaceDailySource,
+    JsonFileSource,
     OpenAlexSource,
     SemanticScholarBatchSource,
     SemanticScholarSource,
@@ -23,6 +27,16 @@ from spark_papers.sources import (
 
 
 class SourceMappingTest(unittest.TestCase):
+    def test_json_file_rejects_null_and_scalar_roots_as_source_errors(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "records.json"
+            for payload in (None, 42, "invalid"):
+                with self.subTest(payload=payload):
+                    path.write_text(json.dumps(payload), encoding="utf-8")
+
+                    with self.assertRaisesRegex(SourceError, "record list"):
+                        JsonFileSource("fixture", str(path)).fetch()
+
     def test_arxiv_oai_uses_absolute_window_then_resumption_token(self) -> None:
         payloads = iter(
             (

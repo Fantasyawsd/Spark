@@ -61,10 +61,34 @@ void main() {
     expect(remote.lastPublishedUntil, DateTime(2024, 3, 1, 23, 59, 59, 999));
     expect(
       await cache.readPage(
-        'feed|category=cs.AI|time=last-7-days|offset=0|limit=10',
+        'feed|category=cs.AI|time=last-7-days'
+        '|window=2024-02-24..2024-03-01|offset=0|limit=10',
       ),
       isNotNull,
     );
+  });
+
+  test('relative time cache is not reused after its window moves', () async {
+    var now = DateTime.utc(2024, 3, 1);
+    repository = OfflineFirstPaperCatalogRepository(
+      remoteSource: remote,
+      cacheStore: cache,
+      seedRepository: const ArxivSeedRepository(),
+      clock: () => now,
+    );
+    remote.feed = _page('2401.00001');
+    const query = PaperFeedQuery(
+      category: 'cs.AI',
+      timeRange: PaperTimeRange.last7Days(),
+      limit: 10,
+    );
+    await repository.loadFeed(query);
+
+    now = DateTime.utc(2024, 3, 21);
+    remote.error = StateError('offline');
+    final page = await repository.loadFeed(query);
+
+    expect(page.source, PaperPageSource.seed);
   });
 
   test('remote failure returns stale query cache', () async {

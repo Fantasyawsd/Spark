@@ -12,6 +12,7 @@ from . import PAPER_SCHEMA_VERSION
 from .identity import fuzzy_identity_score, normalize_external_ids, stable_paper_id
 from .db_mapper import paper_from_row, paper_values
 from .models import PaperRecord, parse_datetime, utc_now
+from .ports import IngestOutcome, IngestStatus
 
 
 def _json(value: Any) -> str:
@@ -379,14 +380,14 @@ class PaperStore:
         source_updated_at: datetime | None = None,
         etag: str | None = None,
         allow_create: bool = True,
-    ) -> str | None:
+    ) -> IngestOutcome:
         existing_ids = self.find_by_external_ids(paper.external_ids)
         target_id = paper.paper_id
         if len(existing_ids) == 1:
             target_id = next(iter(existing_ids))
         elif len(existing_ids) > 1:
             self.queue_match(source, external_id, None, 1.0, "conflicting_exact_identity", raw_payload)
-            return paper.paper_id
+            return IngestOutcome(IngestStatus.CONFLICT)
         elif not existing_ids:
             fuzzy = (
                 self.find_fuzzy_candidates(
@@ -409,7 +410,7 @@ class PaperStore:
                         "enrichment_identity_not_found",
                         raw_payload,
                     )
-                return None
+                return IngestOutcome(IngestStatus.UNMATCHED)
         current = self.get(target_id)
         if current is None:
             merged = paper if target_id == paper.paper_id else PaperRecord(
@@ -516,7 +517,7 @@ class PaperStore:
                         _json(evidence),
                     ),
                 )
-        return merged.paper_id
+        return IngestOutcome(IngestStatus.STORED, merged.paper_id)
 
     def withdraw_by_external_id(
         self,

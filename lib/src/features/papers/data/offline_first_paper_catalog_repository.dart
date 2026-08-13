@@ -37,9 +37,14 @@ class OfflineFirstPaperCatalogRepository implements PaperCatalogRepository {
 
   @override
   Future<PaperPage> loadFeed(PaperFeedQuery query) async {
-    final queryKey = _feedKey(query);
+    final now = _clock();
+    final bounds = query.timeRange.bounds(now: now);
+    final queryKey = _feedKey(
+      query,
+      publishedFrom: bounds?.start,
+      publishedUntil: bounds?.end,
+    );
     try {
-      final bounds = query.timeRange.bounds(now: _clock());
       final remote = await _remoteSource.loadLatest(
         category: _remoteCategory(query.category),
         publishedFrom: bounds?.start,
@@ -279,10 +284,27 @@ class OfflineFirstPaperCatalogRepository implements PaperCatalogRepository {
     return normalized;
   }
 
-  static String _feedKey(PaperFeedQuery query) =>
+  static String _feedKey(
+    PaperFeedQuery query, {
+    required DateTime? publishedFrom,
+    required DateTime? publishedUntil,
+  }) =>
       'feed|category=${query.category?.trim() ?? ''}'
       '|time=${query.timeRange.storageKey}'
+      '${_windowKey(publishedFrom, publishedUntil)}'
       '|offset=${query.offset}|limit=${query.limit}';
+
+  static String _windowKey(DateTime? from, DateTime? until) {
+    if (from == null || until == null) return '';
+    return '|window=${_dateKey(from)}..${_dateKey(until)}';
+  }
+
+  static String _dateKey(DateTime value) {
+    final year = value.year.toString().padLeft(4, '0');
+    final month = value.month.toString().padLeft(2, '0');
+    final day = value.day.toString().padLeft(2, '0');
+    return '$year-$month-$day';
+  }
 
   static String _searchKey(PaperSearchQuery query) =>
       'search|term=${query.term.trim().toLowerCase()}|offset=${query.offset}|limit=${query.limit}';

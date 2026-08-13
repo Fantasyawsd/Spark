@@ -12,7 +12,7 @@ from .models import parse_datetime, utc_now
 from .normalization import normalize_record
 from .policy import AiAdmissionPolicy
 from .sources import SourceAdapter, SourceError
-from .ports import PipelineRepository
+from .ports import IngestStatus, PipelineRepository
 
 
 class SnapshotStore:
@@ -62,6 +62,7 @@ class SyncRunner:
         raw_path = self.snapshot_store.save(adapter.name, key, result.raw_payload, result.fetched_at)
         ingested = 0
         unmatched = 0
+        conflicts = 0
         rejected = 0
         enrichment_only = bool(
             getattr(adapter, "enrichment_only", False)
@@ -70,7 +71,7 @@ class SyncRunner:
         for record in result.records:
             try:
                 paper, external_id = normalize_record(adapter.name, record, fetched_at=result.fetched_at, policy=self.policy)
-                paper_id = self.store.ingest(
+                outcome = self.store.ingest(
                     paper,
                     source=adapter.name,
                     external_id=external_id,
@@ -80,8 +81,10 @@ class SyncRunner:
                     etag=result.etag,
                     allow_create=not enrichment_only,
                 )
-                if paper_id is None:
+                if outcome.status is IngestStatus.UNMATCHED:
                     unmatched += 1
+                elif outcome.status is IngestStatus.CONFLICT:
+                    conflicts += 1
                 else:
                     ingested += 1
             except (TypeError, ValueError, KeyError):
@@ -95,6 +98,7 @@ class SyncRunner:
             "status": "success",
             "records": ingested,
             "unmatched": unmatched,
+            "conflicts": conflicts,
             "rejected": rejected,
             "snapshot": raw_path,
         }
@@ -118,6 +122,7 @@ class SyncRunner:
         ingested = 0
         excluded = 0
         unmatched = 0
+        conflicts = 0
         rejected = 0
         withdrawn = 0
         missing_withdrawals = 0
@@ -145,6 +150,7 @@ class SyncRunner:
                     "records": ingested,
                     "excluded": excluded,
                     "unmatched": unmatched,
+                    "conflicts": conflicts,
                     "rejected": rejected,
                     "withdrawn": withdrawn,
                     "missing_withdrawals": missing_withdrawals,
@@ -166,6 +172,7 @@ class SyncRunner:
             page_ingested = 0
             page_excluded = 0
             page_unmatched = 0
+            page_conflicts = 0
             page_rejected = 0
             page_withdrawn = 0
             page_missing_withdrawals = 0
@@ -197,7 +204,7 @@ class SyncRunner:
                         excluded += 1
                         page_excluded += 1
                         continue
-                    paper_id = self.store.ingest(
+                    outcome = self.store.ingest(
                         paper,
                         source=adapter.name,
                         external_id=external_id,
@@ -207,9 +214,12 @@ class SyncRunner:
                         etag=result.etag,
                         allow_create=True,
                     )
-                    if paper_id is None:
+                    if outcome.status is IngestStatus.UNMATCHED:
                         unmatched += 1
                         page_unmatched += 1
+                    elif outcome.status is IngestStatus.CONFLICT:
+                        conflicts += 1
+                        page_conflicts += 1
                     else:
                         ingested += 1
                         page_ingested += 1
@@ -240,6 +250,7 @@ class SyncRunner:
                     "records": ingested,
                     "excluded": excluded,
                     "unmatched": unmatched,
+                    "conflicts": conflicts,
                     "rejected": rejected,
                     "withdrawn": withdrawn,
                     "missing_withdrawals": missing_withdrawals,
@@ -260,9 +271,10 @@ class SyncRunner:
                 raw_path=raw_path,
                 record_count=page_ingested,
                 error=(
-                    f"excluded={page_excluded};unmatched={page_unmatched};rejected={page_rejected};"
+                    f"excluded={page_excluded};unmatched={page_unmatched};conflicts={page_conflicts};"
+                    f"rejected={page_rejected};"
                     f"withdrawn={page_withdrawn};missing_withdrawals={page_missing_withdrawals}"
-                    if page_excluded or page_unmatched or page_rejected or page_withdrawn or page_missing_withdrawals
+                    if page_excluded or page_unmatched or page_conflicts or page_rejected or page_withdrawn or page_missing_withdrawals
                     else None
                 ),
             )
@@ -289,6 +301,7 @@ class SyncRunner:
                     "records": ingested,
                     "excluded": excluded,
                     "unmatched": unmatched,
+                    "conflicts": conflicts,
                     "rejected": rejected,
                     "withdrawn": withdrawn,
                     "missing_withdrawals": missing_withdrawals,
@@ -305,6 +318,7 @@ class SyncRunner:
             "records": ingested,
             "excluded": excluded,
             "unmatched": unmatched,
+            "conflicts": conflicts,
             "rejected": rejected,
             "withdrawn": withdrawn,
             "missing_withdrawals": missing_withdrawals,

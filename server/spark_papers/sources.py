@@ -22,6 +22,21 @@ class RetryableSourceError(SourceError):
     pass
 
 
+def _record_list(payload: Any, source_name: str) -> list[Any]:
+    if isinstance(payload, list):
+        return payload
+    if not isinstance(payload, Mapping):
+        raise SourceError(f"{source_name} does not contain a record list")
+    records: Any = []
+    for key in ("records", "results", "data", "items"):
+        if key in payload:
+            records = payload[key]
+            break
+    if not isinstance(records, list):
+        raise SourceError(f"{source_name} does not contain a record list")
+    return records
+
+
 class SourceAdapter(Protocol):
     name: str
 
@@ -57,9 +72,7 @@ class JsonFileSource:
     def fetch(self, *, etag: str | None = None, cursor: str | None = None) -> FetchResult:
         with open(self.path, encoding="utf-8") as handle:
             payload = json.load(handle)
-        records = payload if isinstance(payload, list) else payload.get("records", payload.get("results", payload.get("data", payload.get("items", []))))
-        if not isinstance(records, list):
-            raise SourceError(f"{self.path} does not contain a record list")
+        records = _record_list(payload, self.path)
         return FetchResult(
             source=self.name,
             records=tuple(item for item in records if isinstance(item, Mapping)),
@@ -135,9 +148,7 @@ class HttpJsonSource:
                     time.sleep(self.retry_backoff * (2**attempt))
                     continue
                 raise RetryableSourceError(f"{self.name} fetch failed: {error}") from error
-        records = payload if isinstance(payload, list) else payload.get("records", payload.get("results", payload.get("data", payload.get("items", []))))
-        if not isinstance(records, list):
-            raise SourceError(f"{self.name} response does not contain records")
+        records = _record_list(payload, f"{self.name} response")
         raw_payload = {"request": {"url": self.endpoint, "query": query}, "response": payload}
         return FetchResult(self.name, tuple(item for item in records if isinstance(item, Mapping)), raw_payload, utc_now(), cursor=cursor, etag=response_etag)
 

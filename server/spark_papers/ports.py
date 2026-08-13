@@ -1,9 +1,23 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from datetime import datetime
+from enum import Enum
 from typing import Any, Iterable, Mapping, Protocol
 
 from .models import PaperRecord
+
+
+class IngestStatus(str, Enum):
+    STORED = "stored"
+    UNMATCHED = "unmatched"
+    CONFLICT = "conflict"
+
+
+@dataclass(frozen=True)
+class IngestOutcome:
+    status: IngestStatus
+    paper_id: str | None = None
 
 
 class PaperRepository(Protocol):
@@ -57,7 +71,7 @@ class PipelineRepository(PaperRepository, Protocol):
         source_updated_at: datetime | None = None,
         etag: str | None = None,
         allow_create: bool = True,
-    ) -> str | None: ...
+    ) -> IngestOutcome: ...
 
     def withdraw_by_external_id(
         self,

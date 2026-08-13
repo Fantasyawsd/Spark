@@ -493,3 +493,42 @@ class PipelineTest(unittest.TestCase):
             self.assertTrue(any(row["reason"] == "fuzzy_candidate_requires_review" for row in queued))
             self.assertTrue(all(0.65 <= row["confidence"] <= 1 for row in queued))
             store.close()
+
+    def test_conflicting_exact_identity_is_queued_and_not_counted_as_ingested(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            store = PaperStore(Path(directory) / "papers.sqlite3")
+            try:
+                runner = SyncRunner(store, SnapshotStore(Path(directory) / "snapshots"))
+                first = _paper(
+                    "2401.00010",
+                    "First Identity",
+                    "2024-01-04T00:00:00Z",
+                    source_fields={"doi": "10.1000/first"},
+                )
+                second = _paper(
+                    "2401.00011",
+                    "Second Identity",
+                    "2024-01-04T00:00:00Z",
+                    source_fields={"doi": "10.1000/second"},
+                )
+                runner.sync(StaticSource("arxiv", (first, second), snapshot_key="seed"))
+                conflict = _paper(
+                    "2401.00010",
+                    "Conflicting Identity",
+                    "2024-01-04T00:00:00Z",
+                    source_fields={"doi": "10.1000/second"},
+                )
+
+                result = runner.sync(
+                    StaticSource("arxiv", (conflict,), snapshot_key="conflict")
+                )
+                queued = store._connection.execute(
+                    "SELECT reason FROM match_queue WHERE reason = 'conflicting_exact_identity'"
+                ).fetchall()
+
+                self.assertEqual(result["records"], 0)
+                self.assertEqual(result["conflicts"], 1)
+                self.assertEqual(store.count(), 2)
+                self.assertEqual(len(queued), 1)
+            finally:
+                store.close()

@@ -209,6 +209,23 @@ void main() {
     expect(violations.single, contains('features: none'));
   });
 
+  test('does not count feature barrel exports as feature use', () {
+    source('core/widgets/orphan.dart', 'class Orphan {}\n');
+    source(
+      'features/papers/papers.dart',
+      "export '../../core/widgets/orphan.dart';\n",
+    );
+    source(
+      'features/chat/chat.dart',
+      "export '../../core/widgets/orphan.dart';\n",
+    );
+
+    final violations = graph().coreWidgetReuseViolations();
+
+    expect(violations, hasLength(1));
+    expect(violations.single, contains('features: none'));
+  });
+
   test('parses every branch of a conditional import', () {
     final entry = source(
       'entry.dart',

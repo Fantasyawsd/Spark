@@ -142,7 +142,11 @@ extension ArchitectureRules on ArchitectureSourceGraph {
     };
     final importersByTarget = <String, Set<String>>{};
     for (final source in sourceFiles) {
-      for (final directive in directives(source)) {
+      final usageDirectives = [
+        ...imports(source),
+        if (_isCoreSource(source)) ...exports(source),
+      ];
+      for (final directive in usageDirectives) {
         final target = resolve(source, directive);
         if (target == null) continue;
         final targetId = identity(target);

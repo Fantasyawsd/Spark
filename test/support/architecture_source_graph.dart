@@ -30,6 +30,11 @@ class ArchitectureSourceGraph {
       .expand((directive) => directive.uris)
       .toList(growable: false);
 
+  List<String> imports(File file) => _sourceDirectives(file)
+      .where((directive) => directive.kind == 'import')
+      .expand((directive) => directive.uris)
+      .toList(growable: false);
+
   List<String> exports(File file) => _sourceDirectives(file)
       .where((directive) => directive.kind == 'export')
       .expand((directive) => directive.uris)

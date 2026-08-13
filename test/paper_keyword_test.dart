@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:spark/src/core/diagnostics/diagnostics.dart';
 import 'package:spark/src/features/chat/chat.dart';
@@ -78,24 +80,43 @@ void main() {
     expect(isPaperKeywordRecordFresh(stored!, paper), isTrue);
   });
 
-  test('keyword cache load failures report while retaining empty fallback',
-      () async {
+  test(
+    'keyword cache load failures report while retaining empty fallback',
+    () async {
+      final controller = PaperKeywordController(
+        paper: _paper(),
+        service: const _FakeAiService('[]'),
+        repository: _ThrowingKeywordRepository(loadFailure: true),
+      );
+      addTearDown(controller.dispose);
+      final events = <SparkDiagnosticEvent>[];
+
+      await SparkDiagnostics.runWithSink(events.add, controller.initialize);
+
+      expect(controller.keywords, isEmpty);
+      expect(controller.error, '无法读取关键词缓存。');
+      expect(events.map((event) => event.operation), [
+        SparkDiagnosticOperation.paperKeywordsLoad,
+      ]);
+    },
+  );
+
+  test('concurrent cache initialization shares one repository load', () async {
+    final repository = _PendingKeywordRepository();
     final controller = PaperKeywordController(
       paper: _paper(),
       service: const _FakeAiService('[]'),
-      repository: _ThrowingKeywordRepository(loadFailure: true),
+      repository: repository,
     );
     addTearDown(controller.dispose);
-    final events = <SparkDiagnosticEvent>[];
 
-    await SparkDiagnostics.runWithSink(events.add, controller.initialize);
+    final first = controller.initialize();
+    final second = controller.initialize();
 
-    expect(controller.keywords, isEmpty);
-    expect(controller.error, '无法读取关键词缓存。');
-    expect(
-      events.map((event) => event.operation),
-      [SparkDiagnosticOperation.paperKeywordsLoad],
-    );
+    expect(repository.loadCalls, 1);
+    repository.complete(null);
+    await Future.wait([first, second]);
+    expect(repository.loadCalls, 1);
   });
 
   test('keyword generation and cache save use distinct operations', () async {
@@ -120,13 +141,10 @@ void main() {
     expect(generationController.error, '关键词数量应为 5 至 12 个，请重试。');
     expect(saveController.keywords, ['A', 'B', 'C', 'D', 'E']);
     expect(saveController.error, '关键词保存失败');
-    expect(
-      events.map((event) => event.operation),
-      [
-        SparkDiagnosticOperation.paperKeywordsGenerate,
-        SparkDiagnosticOperation.paperKeywordsSave,
-      ],
-    );
+    expect(events.map((event) => event.operation), [
+      SparkDiagnosticOperation.paperKeywordsGenerate,
+      SparkDiagnosticOperation.paperKeywordsSave,
+    ]);
   });
 
   test('keyword cancellation remains expected control flow', () async {
@@ -205,4 +223,23 @@ class _ThrowingKeywordRepository implements PaperKeywordRepository {
       throw const PaperKeywordPersistenceException('关键词保存失败');
     }
   }
+}
+
+class _PendingKeywordRepository implements PaperKeywordRepository {
+  final Completer<PaperKeywordRecord?> _loadCompleter = Completer();
+  int loadCalls = 0;
+
+  void complete(PaperKeywordRecord? record) => _loadCompleter.complete(record);
+
+  @override
+  Future<void> clear(String paperId) async {}
+
+  @override
+  Future<PaperKeywordRecord?> load(String paperId) {
+    loadCalls++;
+    return _loadCompleter.future;
+  }
+
+  @override
+  Future<void> save(PaperKeywordRecord record) async {}
 }

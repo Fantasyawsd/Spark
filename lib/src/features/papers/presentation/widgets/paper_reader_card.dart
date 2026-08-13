@@ -24,6 +24,9 @@ import 'paper_related_papers.dart';
 import 'paper_tab_body.dart';
 import 'paper_translation_content.dart';
 
+typedef PaperDiscussionOpener = void Function(List<String> keywords,
+    {required bool keywordCacheFailed});
+
 class PaperReaderCard extends StatefulWidget {
   const PaperReaderCard({
     super.key,
@@ -71,8 +74,8 @@ class PaperReaderCard extends StatefulWidget {
   final VoidCallback onToggleRead;
   final VoidCallback onToggleReadLater;
   final VoidCallback onFollow;
-  final VoidCallback onComment;
-  final VoidCallback onAnalyze;
+  final PaperDiscussionOpener onComment;
+  final PaperDiscussionOpener onAnalyze;
   final VoidCallback onShare;
   final ValueChanged<Uri>? onOpenPaper;
   final ValueChanged<String>? onOpenRelatedPaper;
@@ -232,7 +235,9 @@ class _PaperReaderCardState extends State<PaperReaderCard> {
           Positioned(
             right: 16,
             bottom: safePadding.bottom + widget.actionBarBottomInset + 56,
-            child: _AiInterpretButton(onPressed: widget.onAnalyze),
+            child: _AiInterpretButton(
+              onPressed: () => unawaited(_openDiscussion(widget.onAnalyze)),
+            ),
           ),
           Positioned(
             left: 16,
@@ -246,7 +251,7 @@ class _PaperReaderCardState extends State<PaperReaderCard> {
               shareCountDelta: widget.shareCountDelta,
               commentCountDelta: widget.commentCountDelta,
               onLike: widget.onLike,
-              onComment: widget.onComment,
+              onComment: () => unawaited(_openDiscussion(widget.onComment)),
               onSave: widget.onSave,
               onSaveLongPress: widget.onSaveLongPress,
               onShare: widget.onShare,
@@ -334,7 +339,9 @@ class _PaperReaderCardState extends State<PaperReaderCard> {
       return _AuthorContent(paper: paper);
     }
     if (index == 4) {
-      return _AiInterpretationContent(onOpen: widget.onAnalyze);
+      return _AiInterpretationContent(
+        onOpen: () => unawaited(_openDiscussion(widget.onAnalyze)),
+      );
     }
     if (index == 5) {
       return PaperRelatedPapers(
@@ -370,6 +377,21 @@ class _PaperReaderCardState extends State<PaperReaderCard> {
               title == 'Abstract' ? widget.onAbstractScrollChanged : null,
         ),
       ),
+    );
+  }
+
+  Future<void> _openDiscussion(PaperDiscussionOpener open) async {
+    final controller = _keywordController;
+    await controller.initialize();
+    if (!mounted ||
+        !widget.active ||
+        !identical(controller, _keywordController)) {
+      return;
+    }
+    open(
+      controller.keywords,
+      keywordCacheFailed:
+          controller.cacheLoadFailed && controller.keywords.isEmpty,
     );
   }
 

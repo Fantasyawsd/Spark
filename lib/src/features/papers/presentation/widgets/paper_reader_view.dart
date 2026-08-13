@@ -4,7 +4,6 @@ import '../../../../core/diagnostics/diagnostics.dart';
 import '../../../chat/chat.dart';
 import '../../application/paper_comment_controller.dart';
 import '../../application/paper_interaction_controller.dart';
-import '../../application/paper_keyword_service.dart';
 import '../../application/paper_reading_controller.dart';
 import '../../application/paper_share_service.dart';
 import '../../application/paper_translation_service.dart';
@@ -71,9 +70,15 @@ class PaperReaderView extends StatelessWidget {
       onToggleRead: () => readingController.toggleRead(paper.id),
       onToggleReadLater: () => readingController.toggleReadLater(paper.id),
       onFollow: () => interactionController.toggleFollowAuthor(paper),
-      onComment: () => _openDiscussion(context),
-      onAnalyze: () => _openDiscussion(
+      onComment: (keywords, {required keywordCacheFailed}) => _openDiscussion(
         context,
+        keywords: keywords,
+        keywordCacheFailed: keywordCacheFailed,
+      ),
+      onAnalyze: (keywords, {required keywordCacheFailed}) => _openDiscussion(
+        context,
+        keywords: keywords,
+        keywordCacheFailed: keywordCacheFailed,
         initialPage: PaperSheetPage.ai,
       ),
       onShare: () => _sharePaper(context),
@@ -81,8 +86,9 @@ class PaperReaderView extends StatelessWidget {
           linkService == null ? null : (uri) => _openPaperLink(context, uri),
       onOpenRelatedPaper: onOpenRelatedPaper,
       active: active,
-      initialAbstractScrollOffset:
-          readingController.abstractScrollOffset(paper.id),
+      initialAbstractScrollOffset: readingController.abstractScrollOffset(
+        paper.id,
+      ),
       onAbstractScrollChanged: (offset) =>
           readingController.saveAbstractScrollOffset(paper.id, offset),
       translationServiceFactory: translationServiceFactory,
@@ -94,25 +100,15 @@ class PaperReaderView extends StatelessWidget {
     );
   }
 
-  Future<void> _openDiscussion(
+  void _openDiscussion(
     BuildContext context, {
+    required List<String> keywords,
+    required bool keywordCacheFailed,
     PaperSheetPage initialPage = PaperSheetPage.comments,
-  }) async {
-    List<String> keywords;
-    try {
-      keywords = await _loadGeneratedKeywords();
-    } on Object catch (error, stackTrace) {
-      SparkDiagnostics.reportUnexpected(
-        operation: SparkDiagnosticOperation.paperReaderKeywordsLoad,
-        error: error,
-        stackTrace: stackTrace,
-        severity: SparkDiagnosticSeverity.warning,
-      );
-      if (!context.mounted) return;
+  }) {
+    if (keywordCacheFailed) {
       _showMessage(context, '无法读取已生成的关键词，已使用空关键词继续');
-      keywords = const [];
     }
-    if (!context.mounted) return;
     showPaperCommentsSheet(
       context,
       paper,
@@ -121,14 +117,6 @@ class PaperReaderView extends StatelessWidget {
       commentController: commentController,
       generatedKeywords: keywords,
     );
-  }
-
-  Future<List<String>> _loadGeneratedKeywords() async {
-    final record = await keywordRepository?.load(paper.id);
-    if (record == null || !isPaperKeywordRecordFresh(record, paper)) {
-      return const [];
-    }
-    return record.keywords;
   }
 
   void _showFavoriteGroups(BuildContext context) {
@@ -180,8 +168,8 @@ class PaperReaderView extends StatelessWidget {
   }
 
   void _showMessage(BuildContext context, String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 }

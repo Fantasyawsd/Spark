@@ -171,4 +171,16 @@ void main() {
 
     expect(violations, isEmpty, reason: violations.join('\n'));
   });
+
+  test(
+    'paper reader presentation leaves keyword cache rules to application',
+    () {
+      final source = File(
+        'lib/src/features/papers/presentation/widgets/paper_reader_view.dart',
+      ).readAsStringSync();
+
+      expect(source, isNot(contains('keywordRepository?.load(')));
+      expect(source, isNot(contains('isPaperKeywordRecordFresh(')));
+    },
+  );
 }

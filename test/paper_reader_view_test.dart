@@ -4,6 +4,7 @@ import 'package:spark/src/core/diagnostics/diagnostics.dart';
 import 'package:spark/src/features/chat/chat.dart';
 import 'package:spark/src/features/papers/application/paper_comment_controller.dart';
 import 'package:spark/src/features/papers/application/paper_interaction_controller.dart';
+import 'package:spark/src/features/papers/application/paper_keyword_service.dart';
 import 'package:spark/src/features/papers/application/paper_reading_controller.dart';
 import 'package:spark/src/features/papers/application/paper_translation_service.dart';
 import 'package:spark/src/features/papers/data/arxiv_seed_repository.dart';
@@ -17,8 +18,9 @@ import 'package:spark/src/features/papers/presentation/widgets/paper_reader_card
 import 'package:spark/src/features/papers/presentation/widgets/paper_reader_view.dart';
 
 void main() {
-  testWidgets('reader initializes only the active tab cache once',
-      (tester) async {
+  testWidgets('reader initializes only the active tab cache once', (
+    tester,
+  ) async {
     await tester.binding.setSurfaceSize(const Size(900, 900));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     final translationRepository = _CountingTranslationRepository();
@@ -45,8 +47,8 @@ void main() {
             onToggleRead: () {},
             onToggleReadLater: () {},
             onFollow: () {},
-            onComment: () {},
-            onAnalyze: () {},
+            onComment: (_, {required keywordCacheFailed}) {},
+            onAnalyze: (_, {required keywordCacheFailed}) {},
             onShare: () {},
             translationServiceFactory: translationFactory,
             keywordService: aiService,
@@ -89,10 +91,15 @@ void main() {
     await tester.tap(find.text('关键词'));
     await tester.pumpAndSettle();
     expect(keywordRepository.loadCalls, 1);
+
+    await tester.tap(find.byKey(const ValueKey('paper-action-comment')));
+    await tester.pumpAndSettle();
+    expect(keywordRepository.loadCalls, 1);
   });
 
-  testWidgets('keyword cache failure reports and still opens discussion',
-      (tester) async {
+  testWidgets('keyword cache failure reports and still opens discussion', (
+    tester,
+  ) async {
     await tester.binding.setSurfaceSize(const Size(900, 900));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     final interactions = PaperInteractionController();
@@ -134,14 +141,92 @@ void main() {
 
     expect(find.text('无法读取已生成的关键词，已使用空关键词继续'), findsOneWidget);
     expect(find.byKey(const ValueKey('paper-comments-sheet')), findsOneWidget);
-    expect(
-      events.map((event) => event.operation),
-      [SparkDiagnosticOperation.paperReaderKeywordsLoad],
-    );
+    expect(events.map((event) => event.operation), [
+      SparkDiagnosticOperation.paperKeywordsLoad,
+    ]);
   });
 
-  testWidgets('reader reports link and share failures with existing messages',
-      (tester) async {
+  testWidgets('discussion and keyword tab share one keyword cache load', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(900, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final interactions = PaperInteractionController();
+    final comments = PaperCommentController();
+    final reading = PaperReadingController();
+    addTearDown(interactions.dispose);
+    addTearDown(comments.dispose);
+    addTearDown(reading.dispose);
+    final paper = const ArxivSeedRepository().getAll().first;
+    final keywordRepository = _CountingKeywordRepository(
+      record: PaperKeywordRecord(
+        paperId: paper.id,
+        keywords: const [
+          'shared keyword',
+          'cache reuse',
+          'paper reading',
+          'discussion context',
+          'keyword controller',
+        ],
+        inputFingerprint: paperKeywordInputFingerprint(paper),
+        promptVersion: paperKeywordPromptVersion,
+        generatedAt: DateTime.utc(2026, 8, 13),
+      ),
+    );
+    List<String>? discussionKeywords;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: PaperReaderView(
+            paper: paper,
+            interactionController: interactions,
+            commentController: comments,
+            readingController: reading,
+            aiDiscussionBuilder: (
+              context, {
+              required paper,
+              required generatedKeywords,
+              required scrollController,
+            }) {
+              discussionKeywords = generatedKeywords;
+              return const SizedBox.shrink();
+            },
+            keywordService: const _FakeAiService(),
+            translationServiceFactory: const _FakeTranslationServiceFactory(),
+            keywordRepository: keywordRepository,
+            actionBarBottomInset: 0,
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.byKey(const ValueKey('paper-action-comment')));
+    await tester.pumpAndSettle();
+
+    expect(keywordRepository.loadCalls, 1);
+    expect(discussionKeywords, [
+      'shared keyword',
+      'cache reuse',
+      'paper reading',
+      'discussion context',
+      'keyword controller',
+    ]);
+
+    Navigator.of(
+      tester.element(find.byKey(const ValueKey('paper-comments-sheet'))),
+    ).pop();
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('关键词'));
+    await tester.pumpAndSettle();
+
+    expect(keywordRepository.loadCalls, 1);
+    expect(find.text('shared keyword'), findsOneWidget);
+  });
+
+  testWidgets('reader reports link and share failures with existing messages', (
+    tester,
+  ) async {
     await tester.binding.setSurfaceSize(const Size(900, 900));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     final interactions = PaperInteractionController();
@@ -191,13 +276,10 @@ void main() {
       expect(find.text('无法分享论文。'), findsOneWidget);
     });
 
-    expect(
-      events.map((event) => event.operation),
-      [
-        SparkDiagnosticOperation.paperReaderOpenLink,
-        SparkDiagnosticOperation.paperReaderShare,
-      ],
-    );
+    expect(events.map((event) => event.operation), [
+      SparkDiagnosticOperation.paperReaderOpenLink,
+      SparkDiagnosticOperation.paperReaderShare,
+    ]);
   });
 }
 
@@ -218,6 +300,9 @@ class _CountingTranslationRepository implements PaperTranslationRepository {
 }
 
 class _CountingKeywordRepository implements PaperKeywordRepository {
+  _CountingKeywordRepository({this.record});
+
+  final PaperKeywordRecord? record;
   int loadCalls = 0;
 
   @override
@@ -226,7 +311,7 @@ class _CountingKeywordRepository implements PaperKeywordRepository {
   @override
   Future<PaperKeywordRecord?> load(String paperId) async {
     loadCalls++;
-    return null;
+    return record;
   }
 
   @override

@@ -25,26 +25,30 @@ class PaperKeywordController extends ChangeNotifier {
   String? _error;
   bool _loadingCache = false;
   bool _cacheInitialized = false;
+  bool _cacheLoadFailed = false;
   bool _generating = false;
   bool _disposed = false;
   int _requestVersion = 0;
+  Future<void>? _cacheInitialization;
 
   List<String> get keywords => _keywords;
   String? get error => _error;
   bool get loadingCache => _loadingCache;
+  bool get cacheLoadFailed => _cacheLoadFailed;
   bool get generating => _generating;
   bool get hasKeywords => _keywords.isNotEmpty;
 
-  Future<void> initialize() async {
+  Future<void> initialize() {
     final repository = _repository;
-    if (_disposed ||
-        repository == null ||
-        _cacheInitialized ||
-        _loadingCache ||
-        hasKeywords) {
-      return;
-    }
+    if (_disposed || repository == null || hasKeywords) return Future.value();
+    final initialization = _cacheInitialization;
+    if (initialization != null) return initialization;
+    if (_cacheInitialized) return Future.value();
     _cacheInitialized = true;
+    return _cacheInitialization = _loadCache(repository);
+  }
+
+  Future<void> _loadCache(PaperKeywordRepository repository) async {
     _loadingCache = true;
     _notify();
     try {
@@ -58,6 +62,7 @@ class PaperKeywordController extends ChangeNotifier {
         error,
         stackTrace,
       );
+      _cacheLoadFailed = true;
       _error = error.message;
     } on Object catch (error, stackTrace) {
       _reportPersistenceFailure(
@@ -65,6 +70,7 @@ class PaperKeywordController extends ChangeNotifier {
         error,
         stackTrace,
       );
+      _cacheLoadFailed = true;
       _error = '无法读取关键词缓存。';
     } finally {
       if (!_disposed) {
@@ -113,7 +119,10 @@ class PaperKeywordController extends ChangeNotifier {
   }
 
   void _handleError(
-      int requestVersion, String? message, List<String> previous) {
+    int requestVersion,
+    String? message,
+    List<String> previous,
+  ) {
     if (_disposed || requestVersion != _requestVersion) return;
     _keywords = previous;
     _error = message;

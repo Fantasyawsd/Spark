@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 
 import '../core/config/app_config.dart';
 import '../core/config/feature_flags.dart';
-import '../core/motion/motion_tokens.dart';
 import '../core/navigation/spark_route_observer.dart';
 import '../core/platform/external_http_uri.dart';
 import '../core/theme/spark_theme.dart';
@@ -48,6 +47,7 @@ import '../features/profile/presentation/profile_screen.dart';
 import '../features/search/application/paper_search_controller.dart';
 import '../features/search/domain/paper_search_history_repository.dart';
 import '../features/search/presentation/paper_search_screen.dart';
+import 'spark_bootstrap.dart';
 import 'spark_bottom_nav.dart';
 import 'spark_dependencies.dart';
 
@@ -134,128 +134,15 @@ class _SparkAppState extends State<SparkApp> {
           AppThemeMode.dark => ThemeMode.dark,
         },
         navigatorObservers: [SparkRouteObserver.instance],
-        home: _SparkBootstrap(
+        home: SparkBootstrap(
           showSplash: widget.showSplash,
-          dependencies: _dependencies,
-          features: widget.config.features,
+          child: SparkShell(
+            dependencies: _dependencies,
+            features: widget.config.features,
+          ),
         ),
       ),
     );
-  }
-}
-
-class _SparkBootstrap extends StatefulWidget {
-  const _SparkBootstrap({
-    required this.showSplash,
-    required this.dependencies,
-    required this.features,
-  });
-
-  final bool showSplash;
-  final SparkDependencies dependencies;
-  final FeatureFlags features;
-
-  @override
-  State<_SparkBootstrap> createState() => _SparkBootstrapState();
-}
-
-class _SparkBootstrapState extends State<_SparkBootstrap>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-  late final Animation<double> _opacity;
-  late final Animation<double> _scale;
-  late bool _splashComplete;
-  bool _animationStarted = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _splashComplete = !widget.showSplash;
-    _controller = AnimationController(
-      vsync: this,
-      duration: MotionTokens.splashDuration,
-    );
-    _opacity = TweenSequence<double>([
-      TweenSequenceItem(tween: ConstantTween(1.0), weight: 42),
-      TweenSequenceItem<double>(
-        tween: Tween(
-          begin: 1.0,
-          end: 0.0,
-        ).chain(CurveTween(curve: Curves.easeInCubic)),
-        weight: 58,
-      ),
-    ]).animate(_controller);
-    _scale = Tween(
-      begin: 1.0,
-      end: 1.035,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
-
-    if (widget.showSplash) {
-      _controller.addStatusListener(_handleAnimationStatus);
-    }
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (!widget.showSplash || _animationStarted || _splashComplete) return;
-
-    _animationStarted = true;
-    if (MediaQuery.maybeOf(context)?.disableAnimations == true) {
-      _controller.value = 1;
-      _splashComplete = true;
-      return;
-    }
-    _controller.forward();
-  }
-
-  @override
-  void dispose() {
-    _controller
-      ..removeStatusListener(_handleAnimationStatus)
-      ..dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final shell = SparkShell(
-      dependencies: widget.dependencies,
-      features: widget.features,
-    );
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        shell,
-        if (!_splashComplete)
-          AbsorbPointer(
-            child: FadeTransition(
-              opacity: _opacity,
-              child: ColoredBox(
-                key: const ValueKey('spark-splash'),
-                color: SparkColors.of(context).canvas,
-                child: Center(
-                  child: ScaleTransition(
-                    scale: _scale,
-                    child: Image.asset(
-                      'assets/images/spark_logo.png',
-                      width: 240,
-                      height: 240,
-                      filterQuality: FilterQuality.high,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-      ],
-    );
-  }
-
-  void _handleAnimationStatus(AnimationStatus status) {
-    if (status == AnimationStatus.completed && mounted) {
-      setState(() => _splashComplete = true);
-    }
   }
 }
 

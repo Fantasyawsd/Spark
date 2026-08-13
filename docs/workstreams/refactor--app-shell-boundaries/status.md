@@ -1,7 +1,7 @@
 # 应用壳边界重构任务台账
 
-> 状态：规划完成，待 `/develop`
-> 最近更新：2026-08-13 18:56
+> 状态：`/develop` 迭代 1 已完成，待迭代 2
+> 最近更新：2026-08-13 19:03
 
 ## 1. 任务信息
 
@@ -14,7 +14,7 @@
 | worktree | `C:\Users\Fantasy\Desktop\Spark-worktrees\agent-7` |
 | 基线 | `5e4dd9c2a65a9e9230c83990a8dd7c309a5da30a`（上一批 `fix/runtime-diagnostics` 最终审查提交） |
 | 负责人 | Fantasy（编排）；Codex（执行） |
-| 当前阶段 | `/start` 已完成，等待 `/develop` |
+| 当前阶段 | `/develop` 迭代 1 已完成；下一步为运行期会话边界 |
 
 ## 2. 问题与边界
 
@@ -71,6 +71,12 @@ DeepSeek 报告指出 `lib/src/app/spark_app.dart` 同时承担应用根、闪�
 4. 抽离导航展示壳，并将 `SparkShell` 改为只接收完整依赖和功能开关。
 5. 迁移测试装配与公共导出，执行定向测试和结构搜索；随后进入 `/test` 与 `/review`。
 
+### 当前迭代：闪屏/bootstrap 边界
+
+- 改动文件：`lib/src/app/spark_app.dart`、新增 `lib/src/app/spark_bootstrap.dart`、新增 `test/app_shell_boundaries_test.dart`，以及本台账。
+- 闭环目标：把启动动画与 `SparkShell` 叠放逻辑完整迁出 `spark_app.dart`，不改变 `SparkApp`、`SparkShell` 构造接口和运行行为。
+- 验证：结构测试确认 bootstrap 类及 splash key 不再位于 `spark_app.dart`；`test/widget_test.dart` 验证普通动画、reduce-motion 与导航行为；随后运行 `flutter analyze` 和变更 Dart 格式检查。
+
 ## 6. 决策记录
 
 | 时间 | 决策 | 原因 |
@@ -88,6 +94,9 @@ DeepSeek 报告指出 `lib/src/app/spark_app.dart` 同时承担应用根、闪�
 | 2026-08-13 | `/start` | 上游 `agent-6` 分支、状态与 HEAD 核验 | `fix/runtime-diagnostics` 干净，最终审查提交为 `5e4dd9c2a65a9e9230c83990a8dd7c309a5da30a`。 |
 | 2026-08-13 | `/start` | `git worktree add ..\agent-7 -b refactor/app-shell-boundaries 5e4dd9c2...` | 成功；路径、分支与串行基线符合规范。 |
 | 2026-08-13 | `/start` | 报告、强制文档、模板及重叠台账核对 | 已完成；确认本任务延续此前显式延期的 `spark_app.dart` 拆分，并保留 Chat 协调器应用根生命周期契约。 |
+| 2026-08-13 | `/develop` 迭代 1 | `flutter test test\app_shell_boundaries_test.dart test\widget_test.dart` | 通过，8 项测试覆盖独立 bootstrap、启动动画、reduce-motion、一级导航与功能开关。 |
+| 2026-08-13 | `/develop` 迭代 1 | `flutter analyze` | 通过，无问题。 |
+| 2026-08-13 | `/develop` 迭代 1 | `.\tool\verify_changed_dart_format.ps1` | 首次因 `pub get` 前格式化未加载 package 配置而发现 1 个文件差异；重新格式化后通过，共检查 94 个变更相关 Dart 文件。 |
 
 ## 8. 审查与交付
 
@@ -104,6 +113,6 @@ DeepSeek 报告指出 `lib/src/app/spark_app.dart` 同时承担应用根、闪�
 
 ## 10. 当前状态
 
-- 已完成：报告问题确认、强制文档阅读、重叠任务核对、基线预检、新分支与 worktree 创建、实施与验收边界定义。
-- 下一步：由编排者触发 `/develop`，先补结构/行为刻画测试，再开始拆分。
+- 已完成：报告问题确认、强制文档阅读、重叠任务核对、基线预检、新分支与 worktree 创建；已将 116 行闪屏/bootstrap 实现迁出 `spark_app.dart`，应用壳由 781 行降至 668 行，并以独立 Widget 测试和源码边界测试锁定行为。
+- 下一步：继续 `/develop` 迭代 2，引入应用运行期会话对象，迁移控制器创建、初始化、销毁与本地数据清理编排。
 - 阻塞项：无。

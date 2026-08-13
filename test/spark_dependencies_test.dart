@@ -5,6 +5,7 @@ import 'package:spark/src/core/config/app_environment.dart';
 import 'package:spark/src/core/config/feature_flags.dart';
 import 'package:spark/src/features/ai_settings/data/secure_deepseek_credential_repository.dart';
 import 'package:spark/src/core/theme/file_theme_preference_repository.dart';
+import 'package:spark/src/core/theme/theme_controller.dart';
 import 'package:spark/src/features/chat/chat.dart';
 import 'package:spark/src/features/chat/data/deepseek_chat_ai_service.dart';
 import 'package:spark/src/features/chat/data/deepseek_web_search_chat_ai_service.dart';
@@ -113,6 +114,17 @@ void main() {
 
     expect(dependencies.aiService, same(paperAiService));
     expect(dependencies.mainAiService, same(mainAiService));
+  });
+
+  test('preview dependencies isolate and preserve theme controllers', () {
+    final injected = ThemeController();
+    final overridden = SparkDependencies.preview(themeController: injected);
+    final firstDefault = SparkDependencies.preview();
+    final secondDefault = SparkDependencies.preview();
+
+    expect(overridden.themeController, same(injected));
+    expect(firstDefault.themeController,
+        isNot(same(secondDefault.themeController)));
   });
 }
 

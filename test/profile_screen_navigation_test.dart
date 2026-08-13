@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:spark/src/core/theme/theme_controller.dart';
 import 'package:spark/src/features/papers/data/demo_paper_repository.dart';
 import 'package:spark/src/features/papers/domain/favorite_group.dart';
 import 'package:spark/src/features/profile/presentation/paper_shelf_list_screen.dart';
@@ -15,6 +16,7 @@ void main() {
 
   ProfileScreen buildScreen() {
     return ProfileScreen(
+      themeController: ThemeController(),
       favoriteGroups: const [FavoriteGroup.defaultGroup()],
       favoritePapersByGroup: {
         defaultFavoriteGroupId: [papers[0]],
@@ -79,6 +81,7 @@ void main() {
     var opened = false;
     await tester.pumpWidget(
       wrap(ProfileScreen(
+        themeController: ThemeController(),
         savedCount: 1,
         onOpenFavoriteCollection: () => opened = true,
       )),
@@ -96,6 +99,7 @@ void main() {
     var opened = false;
     await tester.pumpWidget(
       wrap(ProfileScreen(
+        themeController: ThemeController(),
         localDataDescriptionBuilder: () => '占用 12 MB',
         onOpenLocalData: () => opened = true,
       )),

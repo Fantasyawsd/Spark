@@ -5,17 +5,15 @@ import 'spark_design_tokens.dart';
 import 'spark_font_sizes.dart';
 import 'spark_palette.dart';
 import 'spark_theme_color.dart';
-import 'theme_controller.dart';
 
 /// 语义颜色访问门面。
 ///
 /// 亮/暗调色板由 [SparkTheme] 经 `ThemeData.extensions` 注入；
-/// 在未注入 Spark 主题的兜底场景（如独立 widget 测试）返回亮色调色板，
-/// 强调色取自 [ThemeController] 当前值。
+/// 在未注入 Spark 主题的兜底场景（如独立 widget 测试）返回亮色调色板。
 abstract final class SparkColors {
   static SparkPalette of(BuildContext context) {
     return Theme.of(context).extension<SparkPalette>() ??
-        SparkPalette.light(ThemeController.instance.color);
+        SparkPalette.light(SparkThemeColor.pink);
   }
 }
 
@@ -25,16 +23,16 @@ extension SparkColorsContext on BuildContext {
 }
 
 abstract final class SparkTheme {
-  static ThemeData light() {
+  static ThemeData light([SparkThemeColor color = SparkThemeColor.pink]) {
     return _themeData(
-      SparkPalette.light(ThemeController.instance.color),
+      SparkPalette.light(color),
       Brightness.light,
     );
   }
 
-  static ThemeData dark() {
+  static ThemeData dark([SparkThemeColor color = SparkThemeColor.pink]) {
     return _themeData(
-      SparkPalette.dark(ThemeController.instance.color),
+      SparkPalette.dark(color),
       Brightness.dark,
     );
   }

@@ -159,6 +159,31 @@ void main() {
     expect(previewCallSites, ['lib/src/app/spark_app.dart']);
   });
 
+  test('theme state is passed through the composition root', () {
+    final singletonReferences = Directory('lib')
+        .listSync(recursive: true)
+        .whereType<File>()
+        .where((file) => file.path.endsWith('.dart'))
+        .where(
+          (file) =>
+              file.readAsStringSync().contains('ThemeController.instance'),
+        )
+        .map((file) => file.path.replaceAll('\\', '/'))
+        .toList();
+    expect(singletonReferences, isEmpty);
+    final dependencySource =
+        File('lib/src/app/spark_dependencies.dart').readAsStringSync();
+    expect(dependencySource, contains('required this.themeController'));
+    expect(
+      dependencySource,
+      contains('themeController: themeController ?? ThemeController()'),
+    );
+    expect(
+      File('lib/src/core/theme/theme_controller.dart').readAsStringSync(),
+      isNot(contains('debugResetForTesting')),
+    );
+  });
+
   test('SparkShell remains visible through both established imports', () {
     final dependencies = public_api.SparkDependencies.preview();
     final publicShell = public_api.SparkShell(dependencies: dependencies);

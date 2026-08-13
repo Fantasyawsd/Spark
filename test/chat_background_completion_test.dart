@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:spark/src/app/spark_app.dart';
 import 'package:spark/src/app/spark_dependencies.dart';
-import 'package:spark/src/core/theme/theme_controller.dart';
 import 'package:spark/src/features/chat/application/chat_conversation_coordinator.dart';
 import 'package:spark/src/features/chat/data/in_memory_chat_session_repository.dart';
 import 'package:spark/src/features/chat/domain/chat_ai_service.dart';
@@ -287,8 +286,6 @@ void main() {
   testWidgets(
     'clearing ChatPaper data stops background replies before deleting storage',
     (tester) async {
-      ThemeController.instance.debugResetForTesting();
-      addTearDown(ThemeController.instance.debugResetForTesting);
       await tester.binding.setSurfaceSize(const Size(378, 810));
       addTearDown(() => tester.binding.setSurfaceSize(null));
       final service = _DelayedStreamingChatAiService();

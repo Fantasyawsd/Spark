@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:spark/src/core/theme/theme_controller.dart';
 import 'package:spark/src/features/profile/presentation/profile_screen.dart';
 
 void main() {
@@ -8,9 +9,10 @@ void main() {
     await tester.binding.setSurfaceSize(const Size(378, 810));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(
-      const MaterialApp(
+      MaterialApp(
         home: Scaffold(
           body: ProfileScreen(
+            themeController: ThemeController(),
             catalogStatus: PaperCatalogStatusView(
               sourceLabel: 'arXiv 本地缓存',
               availability: PaperCatalogAvailability.offline,
@@ -53,7 +55,11 @@ void main() {
     await tester.binding.setSurfaceSize(const Size(378, 810));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(
-      const MaterialApp(home: Scaffold(body: ProfileScreen())),
+      MaterialApp(
+        home: Scaffold(
+          body: ProfileScreen(themeController: ThemeController()),
+        ),
+      ),
     );
 
     await tester.ensureVisible(find.byKey(const ValueKey('profile-privacy')));

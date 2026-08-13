@@ -104,6 +104,7 @@ class _SparkShellState extends State<SparkShell> {
                   aiSettingsBuilder: (context) => DeepSeekSettingsSection(
                     controller: _session.credentialController,
                   ),
+                  themeController: _session.dependencies.themeController,
                   localDataListenable: _session.localDataController,
                   localDataDescriptionBuilder: () =>
                       '占用 ${formatLocalDataBytes(_session.localDataController.usage.totalBytes)}',

@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
-import '../core/theme/theme_controller.dart';
 import '../features/ai_settings/application/deepseek_credential_controller.dart';
 import '../features/chat/application/chat_conversation_coordinator.dart';
 import '../features/chat/application/chat_session_controller.dart';
@@ -172,7 +171,7 @@ class SparkApplicationSession extends ChangeNotifier {
       paperController.feed.flushCatalogOperations(),
       commentController.flushPendingWrites(),
       readingController.flushPendingWrites(),
-      ThemeController.instance.flushPendingWrites(),
+      dependencies.themeController.flushPendingWrites(),
     ]);
   }
 
@@ -193,7 +192,7 @@ class SparkApplicationSession extends ChangeNotifier {
             paperController.feed.allPapers.map((paper) => paper.id),
           ),
           chatSessionController.reload(),
-          ThemeController.instance.reload(),
+          dependencies.themeController.reload(),
         ]);
         return;
     }

@@ -31,28 +31,28 @@ class SparkApp extends StatefulWidget {
 
 class _SparkAppState extends State<SparkApp> {
   late final SparkDependencies _dependencies;
+  late final ThemeController _themeController;
 
   @override
   void initState() {
     super.initState();
     _dependencies = widget.dependencies ?? SparkDependencies.preview();
+    _themeController = _dependencies.themeController;
     unawaited(
-      ThemeController.instance.configure(
-        _dependencies.themePreferenceRepository,
-      ),
+      _themeController.configure(_dependencies.themePreferenceRepository),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
-      listenable: ThemeController.instance,
+      listenable: _themeController,
       builder: (context, _) => MaterialApp(
         title: widget.config.applicationTitle,
         debugShowCheckedModeBanner: widget.config.showDebugBanner,
-        theme: SparkTheme.light(),
-        darkTheme: SparkTheme.dark(),
-        themeMode: switch (ThemeController.instance.mode) {
+        theme: SparkTheme.light(_themeController.color),
+        darkTheme: SparkTheme.dark(_themeController.color),
+        themeMode: switch (_themeController.mode) {
           AppThemeMode.system => ThemeMode.system,
           AppThemeMode.light => ThemeMode.light,
           AppThemeMode.dark => ThemeMode.dark,

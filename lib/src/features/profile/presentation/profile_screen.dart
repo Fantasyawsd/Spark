@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/spark_theme.dart';
+import '../../../core/theme/theme_controller.dart';
 import '../../papers/papers.dart';
 import 'favorite_collection_section.dart';
 import 'paper_shelf_list_screen.dart';
@@ -11,6 +12,7 @@ import 'profile_settings_section.dart';
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({
     super.key,
+    required this.themeController,
     this.aiSettingsBuilder,
     this.catalogStatus,
     this.favoriteGroups = const [FavoriteGroup.defaultGroup()],
@@ -31,6 +33,7 @@ class ProfileScreen extends StatelessWidget {
   });
 
   final WidgetBuilder? aiSettingsBuilder;
+  final ThemeController themeController;
   final PaperCatalogStatusView? catalogStatus;
   final List<FavoriteGroup> favoriteGroups;
   final Map<String, List<Paper>> favoritePapersByGroup;
@@ -66,6 +69,7 @@ class ProfileScreen extends StatelessWidget {
               onSavedTap: () => _openFavorites(context),
               onReadLaterTap: () => _openReadLater(context),
               onHistoryTap: () => _openHistory(context),
+              themeController: themeController,
             ),
             if (aiSettingsBuilder case final builder?) ...[
               const SizedBox(height: 16),
@@ -112,6 +116,7 @@ class ProfileScreen extends StatelessWidget {
               localDataListenable: localDataListenable,
               localDataDescriptionBuilder: localDataDescriptionBuilder,
               onOpenLocalData: onOpenLocalData,
+              themeController: themeController,
             ),
           ],
         ),

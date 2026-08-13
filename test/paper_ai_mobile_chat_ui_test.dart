@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:spark/src/core/theme/spark_theme_color.dart';
 import 'package:spark/src/core/theme/spark_theme.dart';
-import 'package:spark/src/core/theme/theme_controller.dart';
 import 'package:spark/src/features/chat/domain/chat_ai_service.dart';
 import 'package:spark/src/features/chat/domain/chat_context.dart';
 import 'package:spark/src/features/chat/domain/chat_message.dart';
@@ -15,9 +14,6 @@ void main() {
       (tester) async {
     await tester.binding.setSurfaceSize(const Size(378, 810));
     addTearDown(() => tester.binding.setSurfaceSize(null));
-    addTearDown(
-      () => ThemeController.instance.setColor(SparkThemeColor.pink),
-    );
 
     const messages = [
       ChatMessage(fromUser: true, content: '主题问题'),
@@ -27,10 +23,8 @@ void main() {
         reasoningContent: '主题推理',
       ),
     ];
-    ThemeController.instance.setColor(SparkThemeColor.blue);
-    final blueTheme = SparkTheme.light();
-    ThemeController.instance.setColor(SparkThemeColor.green);
-    final greenTheme = SparkTheme.light();
+    final blueTheme = SparkTheme.light(SparkThemeColor.blue);
+    final greenTheme = SparkTheme.light(SparkThemeColor.green);
 
     Future<_ChatThemeColors> pumpWithTheme(ThemeData theme) async {
       await tester.pumpWidget(

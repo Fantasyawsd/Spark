@@ -27,6 +27,7 @@ void main() {
         home: Scaffold(
           body: Builder(
             builder: (context) => ProfileScreen(
+              themeController: ThemeController(),
               localDataListenable: controller,
               localDataDescriptionBuilder: () =>
                   '占用 ${formatLocalDataBytes(controller.usage.totalBytes)}',

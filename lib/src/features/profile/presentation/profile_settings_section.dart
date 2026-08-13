@@ -13,6 +13,7 @@ class ProfileSettingsSection extends StatelessWidget {
     required this.catalogStateLabel,
     required this.catalogOffline,
     required this.fallbackLocalDataDescription,
+    required this.themeController,
     this.localDataListenable,
     this.localDataDescriptionBuilder,
     this.onOpenLocalData,
@@ -25,6 +26,7 @@ class ProfileSettingsSection extends StatelessWidget {
   final Listenable? localDataListenable;
   final String Function()? localDataDescriptionBuilder;
   final VoidCallback? onOpenLocalData;
+  final ThemeController themeController;
 
   @override
   Widget build(BuildContext context) {
@@ -39,13 +41,16 @@ class ProfileSettingsSection extends StatelessWidget {
               leading: const Icon(Icons.palette_outlined),
               title: const Text('主题'),
               trailing: ListenableBuilder(
-                listenable: ThemeController.instance,
+                listenable: themeController,
                 builder: (context, _) => Text(
-                  ThemeController.instance.color.label,
+                  themeController.color.label,
                   style: TextStyle(color: SparkColors.of(context).muted),
                 ),
               ),
-              onTap: () => showProfileThemeSheet(context),
+              onTap: () => showProfileThemeSheet(
+                context,
+                controller: themeController,
+              ),
             ),
             const Divider(height: 1),
             if (catalogSourceDescription case final description?) ...[

@@ -2,6 +2,7 @@ import '../core/storage/local_json_store.dart';
 import '../core/config/app_config.dart';
 import '../core/theme/file_theme_preference_repository.dart';
 import '../core/theme/in_memory_theme_preference_repository.dart';
+import '../core/theme/theme_controller.dart';
 import '../core/theme/theme_preference_repository.dart';
 import '../features/ai_settings/data/deepseek_api_credential_validator.dart';
 import '../features/ai_settings/data/in_memory_deepseek_credential_repository.dart';
@@ -90,6 +91,7 @@ class SparkDependencies {
     required this.mainAiService,
     required this.mainWebSearchAiService,
     required this.localDataRepository,
+    required this.themeController,
     required this.themePreferenceRepository,
   });
 
@@ -100,6 +102,7 @@ class SparkDependencies {
 
   static SparkDependencies _persistent({String? paperApiBaseUrl}) {
     const seedRepository = ArxivSeedRepository();
+    final themeController = ThemeController();
     final credentialRepository = SecureDeepSeekCredentialRepository();
     final paperCacheStore = LocalJsonStore(
       fileName: 'paper_catalog_cache.json',
@@ -213,6 +216,7 @@ class SparkDependencies {
       themePreferenceRepository: FileThemePreferenceRepository(
         store: themeStore,
       ),
+      themeController: themeController,
     );
   }
 
@@ -244,6 +248,7 @@ class SparkDependencies {
     ChatAiService? mainWebSearchAiService,
     LocalDataRepository? localDataRepository,
     ThemePreferenceRepository? themePreferenceRepository,
+    ThemeController? themeController,
   }) {
     final resolvedCredentialRepository =
         deepSeekCredentialRepository ?? InMemoryDeepSeekCredentialRepository();
@@ -309,6 +314,7 @@ class SparkDependencies {
       localDataRepository: localDataRepository ?? InMemoryLocalDataRepository(),
       themePreferenceRepository:
           themePreferenceRepository ?? InMemoryThemePreferenceRepository(),
+      themeController: themeController ?? ThemeController(),
     );
   }
 
@@ -335,5 +341,6 @@ class SparkDependencies {
   final ChatAiService mainAiService;
   final ChatAiService mainWebSearchAiService;
   final LocalDataRepository localDataRepository;
+  final ThemeController themeController;
   final ThemePreferenceRepository themePreferenceRepository;
 }

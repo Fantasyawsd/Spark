@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/spark_design_tokens.dart';
 import '../../../core/theme/spark_font_sizes.dart';
 import '../../../core/theme/spark_theme.dart';
+import '../../../core/theme/theme_controller.dart';
 import 'profile_theme_sheet.dart';
 
 class ProfileHeader extends StatelessWidget {
@@ -14,6 +15,7 @@ class ProfileHeader extends StatelessWidget {
     required this.onSavedTap,
     required this.onReadLaterTap,
     required this.onHistoryTap,
+    required this.themeController,
   });
 
   final int savedCount;
@@ -22,6 +24,7 @@ class ProfileHeader extends StatelessWidget {
   final VoidCallback onSavedTap;
   final VoidCallback onReadLaterTap;
   final VoidCallback onHistoryTap;
+  final ThemeController themeController;
 
   @override
   Widget build(BuildContext context) {
@@ -43,7 +46,10 @@ class ProfileHeader extends StatelessWidget {
             IconButton(
               key: const ValueKey('profile-theme-settings'),
               tooltip: '主题',
-              onPressed: () => showProfileThemeSheet(context),
+              onPressed: () => showProfileThemeSheet(
+                context,
+                controller: themeController,
+              ),
               icon: const Icon(Icons.palette_outlined),
             ),
           ],

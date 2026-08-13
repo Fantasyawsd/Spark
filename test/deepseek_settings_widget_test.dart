@@ -4,6 +4,7 @@ import 'package:spark/src/features/ai_settings/ai_settings.dart';
 import 'package:spark/src/features/ai_settings/application/deepseek_credential_controller.dart';
 import 'package:spark/src/features/ai_settings/data/in_memory_deepseek_credential_repository.dart';
 import 'package:spark/src/features/ai_settings/presentation/deepseek_settings_section.dart';
+import 'package:spark/src/core/theme/theme_controller.dart';
 import 'package:spark/src/features/profile/presentation/profile_screen.dart';
 
 void main() {
@@ -21,6 +22,7 @@ void main() {
       MaterialApp(
         home: Scaffold(
           body: ProfileScreen(
+            themeController: ThemeController(),
             aiSettingsBuilder: (_) =>
                 DeepSeekSettingsSection(controller: controller),
           ),

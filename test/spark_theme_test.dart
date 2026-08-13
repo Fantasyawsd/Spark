@@ -5,19 +5,10 @@ import 'package:spark/src/core/theme/in_memory_theme_preference_repository.dart'
 import 'package:spark/src/features/profile/presentation/profile_theme_sheet.dart';
 
 void main() {
-  setUp(() async {
-    ThemeController.instance.debugResetForTesting();
-    await ThemeController.instance.configure(
-      InMemoryThemePreferenceRepository(),
-    );
-  });
-
   test('material theme maps the selected accent to semantic colors', () {
-    ThemeController.instance.setColor(SparkThemeColor.blue);
+    final theme = SparkTheme.light(SparkThemeColor.blue);
 
-    final theme = SparkTheme.light();
-
-    final palette = SparkPalette.light(ThemeController.instance.color);
+    final palette = SparkPalette.light(SparkThemeColor.blue);
     expect(theme.colorScheme.primary, SparkThemeColor.blue.value);
     expect(theme.colorScheme.primaryContainer, SparkThemeColor.blue.soft);
     expect(theme.colorScheme.surface, palette.card);
@@ -41,6 +32,8 @@ void main() {
   testWidgets('theme sheet shows all palettes and updates the accent', (
     tester,
   ) async {
+    final controller = ThemeController();
+    await controller.configure(InMemoryThemePreferenceRepository());
     await tester.binding.setSurfaceSize(const Size(320, 640));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
@@ -51,7 +44,8 @@ void main() {
           builder: (context) => Scaffold(
             body: Center(
               child: TextButton(
-                onPressed: () => showProfileThemeSheet(context),
+                onPressed: () =>
+                    showProfileThemeSheet(context, controller: controller),
                 child: const Text('打开主题'),
               ),
             ),
@@ -71,10 +65,12 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('spark-theme-green')));
     await tester.pumpAndSettle();
 
-    expect(ThemeController.instance.color, SparkThemeColor.green);
+    expect(controller.color, SparkThemeColor.green);
   });
 
   testWidgets('theme sheet switches the appearance mode', (tester) async {
+    final controller = ThemeController();
+    await controller.configure(InMemoryThemePreferenceRepository());
     await tester.binding.setSurfaceSize(const Size(320, 640));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
@@ -86,7 +82,8 @@ void main() {
           builder: (context) => Scaffold(
             body: Center(
               child: TextButton(
-                onPressed: () => showProfileThemeSheet(context),
+                onPressed: () =>
+                    showProfileThemeSheet(context, controller: controller),
                 child: const Text('打开主题'),
               ),
             ),
@@ -102,7 +99,7 @@ void main() {
     await tester.tap(find.text('深色'));
     await tester.pumpAndSettle();
 
-    expect(ThemeController.instance.mode, AppThemeMode.dark);
+    expect(controller.mode, AppThemeMode.dark);
   });
 
   test('dark theme carries the dark palette', () {
@@ -129,7 +126,41 @@ void main() {
     expect(Theme.of(context).brightness, Brightness.dark);
     expect(
       Theme.of(context).scaffoldBackgroundColor,
-      SparkPalette.dark(ThemeController.instance.color).canvas,
+      SparkPalette.dark(SparkThemeColor.pink).canvas,
     );
+  });
+
+  testWidgets('SparkApp rebuilds from its injected theme controller',
+      (tester) async {
+    final controller = ThemeController();
+    final repository = InMemoryThemePreferenceRepository();
+    await controller.configure(repository);
+
+    await tester.pumpWidget(
+      SparkApp(
+        showSplash: false,
+        dependencies: SparkDependencies.preview(
+          themeController: controller,
+          themePreferenceRepository: repository,
+        ),
+      ),
+    );
+    await tester.pump();
+    BuildContext shellContext = tester.element(find.byType(SparkShell));
+    expect(
+      Theme.of(shellContext).colorScheme.primary,
+      SparkThemeColor.pink.value,
+    );
+
+    controller.setColor(SparkThemeColor.blue);
+    controller.setMode(AppThemeMode.dark);
+    await tester.pumpAndSettle();
+    shellContext = tester.element(find.byType(SparkShell));
+
+    expect(
+      Theme.of(shellContext).colorScheme.primary,
+      SparkThemeColor.blue.value,
+    );
+    expect(Theme.of(shellContext).brightness, Brightness.dark);
   });
 }

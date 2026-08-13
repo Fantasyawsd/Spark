@@ -10,7 +10,10 @@ import '../../../core/theme/theme_preference_repository.dart';
 import '../../../core/widgets/spark_segmented_control.dart';
 import '../../../core/widgets/spark_sheet.dart';
 
-void showProfileThemeSheet(BuildContext context) {
+void showProfileThemeSheet(
+  BuildContext context, {
+  required ThemeController controller,
+}) {
   showSparkSheet<void>(
     context: context,
     builder: (context) => Container(
@@ -49,12 +52,12 @@ void showProfileThemeSheet(BuildContext context) {
               ),
               const SizedBox(height: 8),
               ListenableBuilder(
-                listenable: ThemeController.instance,
+                listenable: controller,
                 builder: (context, _) => SparkSegmentedControl(
                   tabs: const ['跟随系统', '浅色', '深色'],
-                  selectedIndex: ThemeController.instance.mode.index,
-                  onSelected: (index) => ThemeController.instance
-                      .setMode(AppThemeMode.values[index]),
+                  selectedIndex: controller.mode.index,
+                  onSelected: (index) =>
+                      controller.setMode(AppThemeMode.values[index]),
                 ),
               ),
               const SizedBox(height: 18),
@@ -68,9 +71,9 @@ void showProfileThemeSheet(BuildContext context) {
               ),
               const SizedBox(height: 14),
               ListenableBuilder(
-                listenable: ThemeController.instance,
+                listenable: controller,
                 builder: (context, _) {
-                  final current = ThemeController.instance.color;
+                  final current = controller.color;
                   return Row(
                     children: [
                       for (final color in SparkThemeColor.values)
@@ -78,8 +81,7 @@ void showProfileThemeSheet(BuildContext context) {
                           child: _ThemeColorOption(
                             color: color,
                             selected: color == current,
-                            onTap: () =>
-                                ThemeController.instance.setColor(color),
+                            onTap: () => controller.setColor(color),
                           ),
                         ),
                     ],

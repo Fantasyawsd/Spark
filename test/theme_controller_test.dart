@@ -7,9 +7,24 @@ import 'package:spark/src/core/storage/local_json_store.dart';
 import 'package:spark/src/core/theme/file_theme_preference_repository.dart';
 
 void main() {
+  test('theme controller instances keep independent state and queues',
+      () async {
+    final first = ThemeController();
+    final second = ThemeController();
+    await first.configure(InMemoryThemePreferenceRepository());
+    await second.configure(InMemoryThemePreferenceRepository());
+
+    first.setColor(SparkThemeColor.blue);
+    await first.flushPendingWrites();
+
+    expect(first.color, SparkThemeColor.blue);
+    expect(second.color, SparkThemeColor.pink);
+    expect(first, isNot(same(second)));
+  });
+
   test('persists and reloads the selected theme color', () async {
     final repository = InMemoryThemePreferenceRepository();
-    final controller = ThemeController.instance;
+    final controller = ThemeController();
     await controller.configure(repository);
 
     controller.setColor(SparkThemeColor.blue);
@@ -24,7 +39,7 @@ void main() {
   test('reload restores the default after local preferences are cleared',
       () async {
     final repository = InMemoryThemePreferenceRepository(SparkThemeColor.green);
-    final controller = ThemeController.instance;
+    final controller = ThemeController();
     await controller.configure(repository);
     expect(controller.color, SparkThemeColor.green);
 
@@ -53,7 +68,7 @@ void main() {
 
   test('persists and reloads the selected theme mode', () async {
     final repository = InMemoryThemePreferenceRepository();
-    final controller = ThemeController.instance;
+    final controller = ThemeController();
     await controller.configure(repository);
 
     controller.setMode(AppThemeMode.dark);
@@ -89,7 +104,7 @@ void main() {
 
   test('a failed theme write does not block later changes', () async {
     final repository = _FailsOnceThemePreferenceRepository();
-    final controller = ThemeController.instance;
+    final controller = ThemeController();
     await controller.configure(repository);
 
     controller.setColor(SparkThemeColor.blue);

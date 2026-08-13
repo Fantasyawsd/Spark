@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../theme/spark_theme.dart';
+import '../../../../core/theme/spark_theme.dart';
 
 class ProfileAvatar extends StatelessWidget {
   const ProfileAvatar({

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:spark/spark.dart';
 import 'package:spark/src/core/theme/in_memory_theme_preference_repository.dart';
+import 'package:spark/src/features/profile/presentation/profile_theme_sheet.dart';
 
 void main() {
   setUp(() async {
@@ -50,7 +51,7 @@ void main() {
           builder: (context) => Scaffold(
             body: Center(
               child: TextButton(
-                onPressed: () => showSparkThemeSheet(context),
+                onPressed: () => showProfileThemeSheet(context),
                 child: const Text('打开主题'),
               ),
             ),
@@ -85,7 +86,7 @@ void main() {
           builder: (context) => Scaffold(
             body: Center(
               child: TextButton(
-                onPressed: () => showSparkThemeSheet(context),
+                onPressed: () => showProfileThemeSheet(context),
                 child: const Text('打开主题'),
               ),
             ),

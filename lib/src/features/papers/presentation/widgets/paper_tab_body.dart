@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/spark_design_tokens.dart';
 import '../../../../core/theme/spark_theme.dart';
 import '../../../../core/widgets/spark_markdown.dart';
-import '../../../../core/widgets/topic_chip.dart';
+import 'topic_chip.dart';
 
 class PaperTabBody extends StatelessWidget {
   const PaperTabBody({

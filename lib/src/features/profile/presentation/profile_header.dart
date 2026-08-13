@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/spark_design_tokens.dart';
 import '../../../core/theme/spark_font_sizes.dart';
 import '../../../core/theme/spark_theme.dart';
-import '../../../core/widgets/spark_theme_sheet.dart';
+import 'profile_theme_sheet.dart';
 
 class ProfileHeader extends StatelessWidget {
   const ProfileHeader({
@@ -43,7 +43,7 @@ class ProfileHeader extends StatelessWidget {
             IconButton(
               key: const ValueKey('profile-theme-settings'),
               tooltip: '主题',
-              onPressed: () => showSparkThemeSheet(context),
+              onPressed: () => showProfileThemeSheet(context),
               icon: const Icon(Icons.palette_outlined),
             ),
           ],

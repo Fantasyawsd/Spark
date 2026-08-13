@@ -158,6 +158,57 @@ void main() {
     expect(graph().importCycles(), isEmpty);
   });
 
+  test('counts feature use transitively through core widget wrappers', () {
+    source('core/widgets/base.dart', 'class Base {}\n');
+    source(
+      'core/widgets/wrapper.dart',
+      "import 'base.dart';\nclass Wrapper {}\n",
+    );
+    source(
+      'features/papers/presentation/screen.dart',
+      "import '../../../core/widgets/wrapper.dart';\n",
+    );
+    source(
+      'features/chat/presentation/screen.dart',
+      "import '../../../core/widgets/wrapper.dart';\n",
+    );
+
+    expect(graph().coreWidgetReuseViolations(), isEmpty);
+  });
+
+  test('reports a core widget used by only one feature', () {
+    source('core/widgets/topic.dart', 'class Topic {}\n');
+    source(
+      'features/papers/presentation/screen.dart',
+      "import '../../../core/widgets/topic.dart';\n",
+    );
+
+    final violations = graph().coreWidgetReuseViolations();
+
+    expect(violations, hasLength(1));
+    expect(violations.single, contains('features: papers'));
+    expect(violations.single, contains('requires at least 2'));
+  });
+
+  test('does not count test imports or an unused core barrel as feature use',
+      () {
+    source('core/widgets/orphan.dart', 'class Orphan {}\n');
+    source(
+      'core/widget_barrel.dart',
+      "export 'widgets/orphan.dart';\n",
+    );
+    final testConsumer = File('${packageRoot.path}/test/consumer.dart');
+    testConsumer.parent.createSync(recursive: true);
+    testConsumer.writeAsStringSync(
+      "import 'package:spark/src/core/widgets/orphan.dart';\n",
+    );
+
+    final violations = graph().coreWidgetReuseViolations();
+
+    expect(violations, hasLength(1));
+    expect(violations.single, contains('features: none'));
+  });
+
   test('parses every branch of a conditional import', () {
     final entry = source(
       'entry.dart',

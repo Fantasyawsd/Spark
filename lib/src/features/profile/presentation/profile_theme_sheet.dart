@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 
-import '../motion/motion_tokens.dart';
-import '../theme/spark_design_tokens.dart';
-import '../theme/spark_font_sizes.dart';
-import '../theme/spark_theme_color.dart';
-import '../theme/spark_theme.dart';
-import '../theme/theme_controller.dart';
-import '../theme/theme_preference_repository.dart';
-import 'spark_segmented_control.dart';
-import 'spark_sheet.dart';
+import '../../../core/motion/motion_tokens.dart';
+import '../../../core/theme/spark_design_tokens.dart';
+import '../../../core/theme/spark_font_sizes.dart';
+import '../../../core/theme/spark_theme.dart';
+import '../../../core/theme/spark_theme_color.dart';
+import '../../../core/theme/theme_controller.dart';
+import '../../../core/theme/theme_preference_repository.dart';
+import '../../../core/widgets/spark_segmented_control.dart';
+import '../../../core/widgets/spark_sheet.dart';
 
-void showSparkThemeSheet(BuildContext context) {
+void showProfileThemeSheet(BuildContext context) {
   showSparkSheet<void>(
     context: context,
     builder: (context) => Container(

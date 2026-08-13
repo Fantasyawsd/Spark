@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import '../../../core/config/app_version.dart';
 import '../../../core/theme/spark_theme.dart';
 import '../../../core/theme/theme_controller.dart';
-import '../../../core/widgets/spark_theme_sheet.dart';
 import '../../../core/widgets/surface_card.dart';
+import 'profile_theme_sheet.dart';
 
 class ProfileSettingsSection extends StatelessWidget {
   const ProfileSettingsSection({
@@ -45,7 +45,7 @@ class ProfileSettingsSection extends StatelessWidget {
                   style: TextStyle(color: SparkColors.of(context).muted),
                 ),
               ),
-              onTap: () => showSparkThemeSheet(context),
+              onTap: () => showProfileThemeSheet(context),
             ),
             const Divider(height: 1),
             if (catalogSourceDescription case final description?) ...[

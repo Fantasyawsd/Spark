@@ -16,7 +16,6 @@ export 'src/core/theme/theme_preference_repository.dart';
 export 'src/core/widgets/spark_sheet.dart';
 export 'src/core/widgets/spark_segmented_control.dart';
 export 'src/core/widgets/spark_tab_bar.dart';
-export 'src/core/widgets/spark_theme_sheet.dart';
 export 'src/features/chat/chat.dart';
 export 'src/features/local_data/application/local_data_controller.dart';
 export 'src/features/local_data/domain/local_data_repository.dart';

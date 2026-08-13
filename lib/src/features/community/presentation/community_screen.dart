@@ -4,9 +4,9 @@ import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import '../../../core/motion/motion_tokens.dart';
 import '../../../core/theme/spark_theme.dart';
 import '../../../core/widgets/spark_tab_bar.dart';
-import '../../../core/widgets/profile_avatar.dart';
 import '../domain/community_post.dart';
 import 'widgets/paper_diagram.dart';
+import 'widgets/profile_avatar.dart';
 
 class CommunityScreen extends StatefulWidget {
   const CommunityScreen({super.key, required this.posts});

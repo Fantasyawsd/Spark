@@ -136,6 +136,56 @@ extension ArchitectureRules on ArchitectureSourceGraph {
     return cycles..sort();
   }
 
+  List<String> coreWidgetReuseViolations({int minimumFeatureCount = 2}) {
+    final filesByIdentity = {
+      for (final file in sourceFiles) identity(file): file,
+    };
+    final importersByTarget = <String, Set<String>>{};
+    for (final source in sourceFiles) {
+      for (final directive in directives(source)) {
+        final target = resolve(source, directive);
+        if (target == null) continue;
+        final targetId = identity(target);
+        if (!filesByIdentity.containsKey(targetId)) continue;
+        importersByTarget.putIfAbsent(targetId, () => <String>{}).add(
+              identity(source),
+            );
+      }
+    }
+
+    final violations = <String>[];
+    for (final candidate in sourceFiles.where(_isCoreWidget)) {
+      final features = <String>{};
+      final visited = <String>{identity(candidate)};
+      final pending = <String>[identity(candidate)];
+
+      while (pending.isNotEmpty) {
+        final targetId = pending.removeLast();
+        for (final importerId in importersByTarget[targetId] ?? const {}) {
+          if (!visited.add(importerId)) continue;
+          final importer = filesByIdentity[importerId]!;
+          final feature = featureName(importer);
+          if (feature != null) {
+            features.add(feature);
+          } else if (_isCoreSource(importer)) {
+            pending.add(importerId);
+          }
+        }
+      }
+
+      if (features.length < minimumFeatureCount) {
+        final sortedFeatures = features.toList(growable: false)..sort();
+        violations.add(
+          '${relativePath(candidate)} -> features: '
+          '${sortedFeatures.isEmpty ? 'none' : sortedFeatures.join(', ')} '
+          '(requires at least $minimumFeatureCount)',
+        );
+      }
+    }
+
+    return violations..sort();
+  }
+
   List<String> siblingLayerImportViolations({
     required Set<String> forbiddenLayers,
   }) {
@@ -185,6 +235,19 @@ extension ArchitectureRules on ArchitectureSourceGraph {
       }
     }
     return violations.toList(growable: false)..sort();
+  }
+
+  bool _isCoreWidget(File file) {
+    final path = relativePath(file);
+    return path.startsWith('lib/src/core/widgets/');
+  }
+
+  bool _isCoreSource(File file) {
+    final segments = pathSegments(file);
+    final srcIndex = segments.indexOf('src');
+    return srcIndex >= 0 &&
+        srcIndex + 1 < segments.length &&
+        segments[srcIndex + 1] == 'core';
   }
 
   List<Set<String>> _stronglyConnectedComponents(

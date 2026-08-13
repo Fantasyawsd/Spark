@@ -52,6 +52,12 @@ void main() {
     expect(violations, isEmpty, reason: violations.join('\n'));
   });
 
+  test('core widgets are used by at least two business features', () {
+    final violations = graph.coreWidgetReuseViolations();
+
+    expect(violations, isEmpty, reason: violations.join('\n'));
+  });
+
   test('features do not deep import sibling presentation layers', () {
     final violations = graph.siblingLayerImportViolations(
       forbiddenLayers: const {'presentation'},

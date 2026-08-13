@@ -3,10 +3,10 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/spark_design_tokens.dart';
 import '../../../../core/theme/spark_font_sizes.dart';
 import '../../../../core/theme/spark_theme.dart';
-import '../../../../core/widgets/topic_chip.dart';
 import '../../domain/paper.dart';
 import '../paper_accent.dart';
 import 'paper_presenter.dart';
+import 'topic_chip.dart';
 
 class PaperGridCard extends StatelessWidget {
   const PaperGridCard({

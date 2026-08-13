@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../theme/spark_design_tokens.dart';
-import '../theme/spark_theme.dart';
+import '../../../../core/theme/spark_design_tokens.dart';
+import '../../../../core/theme/spark_theme.dart';
 
 class TopicChip extends StatelessWidget {
   const TopicChip({

@@ -122,6 +122,7 @@ DeepSeek 报告指出 `lib/src/app/spark_app.dart` 同时承担应用根、闪�
 | 提交 | 类型 | 说明 |
 | --- | --- | --- |
 | `c1bd32a` | 重构、测试、文档 | 抽离 `SparkBootstrap` 与启动动画，新增独立 Widget/源码边界测试；定向测试、analyze 和格式门禁通过。 |
+| `e33798f` | 重构、测试、文档 | 新增 `SparkApplicationSession` 集中根控制器生命周期、跨控制器同步与本地数据清理编排；16 项定向测试、analyze 和格式门禁通过。 |
 
 ## 10. 当前状态
 

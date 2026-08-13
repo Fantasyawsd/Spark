@@ -94,10 +94,24 @@ class JsonLinesFileSource(JsonFileSource):
 
     def fetch(self, *, etag: str | None = None, cursor: str | None = None) -> FetchResult:
         with open(self.path, encoding="utf-8") as handle:
-            records = tuple(json.loads(line) for line in handle if line.strip())
+            records: list[Mapping[str, Any]] = []
+            for line_number, line in enumerate(handle, start=1):
+                if not line.strip():
+                    continue
+                try:
+                    value = json.loads(line)
+                except json.JSONDecodeError as error:
+                    raise SourceError(
+                        f"{self.path} line {line_number} is invalid JSON"
+                    ) from error
+                if not isinstance(value, Mapping):
+                    raise SourceError(
+                        f"{self.path} line {line_number} is not a JSON object"
+                    )
+                records.append(value)
         return FetchResult(
             source=self.name,
-            records=tuple(item for item in records if isinstance(item, Mapping)),
+            records=tuple(records),
             raw_payload={"path": self.path, "records": list(records)},
             fetched_at=utc_now(),
             cursor=self.snapshot_key,

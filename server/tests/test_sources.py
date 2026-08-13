@@ -18,6 +18,7 @@ from spark_papers.sources import (
     HttpJsonSource,
     HuggingFaceDailySource,
     JsonFileSource,
+    JsonLinesFileSource,
     OpenAlexSource,
     SemanticScholarBatchSource,
     SemanticScholarSource,
@@ -27,6 +28,15 @@ from spark_papers.sources import (
 
 
 class SourceMappingTest(unittest.TestCase):
+    def test_jsonl_rejects_null_scalar_and_invalid_lines_with_line_number(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "records.jsonl"
+            for payload in ("null\n", "42\n", "not-json\n"):
+                path.write_text(payload, encoding="utf-8")
+                with self.subTest(payload=payload):
+                    with self.assertRaisesRegex(SourceError, r"line 1"):
+                        JsonLinesFileSource("fixture", str(path)).fetch()
+
     def test_json_file_rejects_null_and_scalar_roots_as_source_errors(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "records.json"

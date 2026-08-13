@@ -20,12 +20,14 @@ class PaperFeedController extends ChangeNotifier {
     PaperCatalogRepository? catalogRepository,
     PaperChannelPreferenceRepository? channelPreferenceRepository,
     Iterable<String> Function()? readPaperIdsProvider,
+    ValueListenable<Set<String>>? followedPaperIdsListenable,
   }) : this.fromPapers(
           repository.getAll(),
           preferenceRepository: preferenceRepository,
           catalogRepository: catalogRepository,
           channelPreferenceRepository: channelPreferenceRepository,
           readPaperIdsProvider: readPaperIdsProvider,
+          followedPaperIdsListenable: followedPaperIdsListenable,
         );
 
   PaperFeedController.fromPapers(
@@ -34,15 +36,18 @@ class PaperFeedController extends ChangeNotifier {
     PaperCatalogRepository? catalogRepository,
     PaperChannelPreferenceRepository? channelPreferenceRepository,
     Iterable<String> Function()? readPaperIdsProvider,
+    ValueListenable<Set<String>>? followedPaperIdsListenable,
   })  : _allPapers = List.unmodifiable(papers),
         _catalogRepository = catalogRepository,
         _readPaperIdsProvider = readPaperIdsProvider,
+        _followedPaperIdsListenable = followedPaperIdsListenable,
         _preferences = PaperFeedPreferenceCoordinator(
           preferenceRepository: preferenceRepository,
           channelPreferenceRepository: channelPreferenceRepository,
         ) {
     _initialPapers = _allPapers;
     _preferences.onChanged = _notify;
+    _followedPaperIdsListenable?.addListener(_handleFollowedPaperIdsChanged);
     _refreshVisiblePapers();
   }
 
@@ -54,9 +59,9 @@ class PaperFeedController extends ChangeNotifier {
   List<Paper> _allPapers;
   late final List<Paper> _initialPapers;
   late List<Paper> _visiblePapers;
-  Set<String> _followedPaperIds = {};
   final PaperCatalogRepository? _catalogRepository;
   final Iterable<String> Function()? _readPaperIdsProvider;
+  final ValueListenable<Set<String>>? _followedPaperIdsListenable;
   final PaperFeedPreferenceCoordinator _preferences;
   final Set<String> _loadedChannelKeys = {};
   final Map<String, List<Paper>> _channelPapers = {};
@@ -91,6 +96,9 @@ class PaperFeedController extends ChangeNotifier {
   bool get catalogHasMore => _currentCatalogState?.hasMore ?? false;
   PaperCatalogError? get catalogError => _currentCatalogState?.error;
   PaperTimeRange get timeRange => _preferences.timeRangeFor(currentChannelKey);
+
+  Set<String> get _currentFollowedPaperIds =>
+      _followedPaperIdsListenable?.value ?? const <String>{};
 
   _CatalogChannelState? get _currentCatalogState =>
       _catalogStates[currentChannelKey];
@@ -371,11 +379,8 @@ class PaperFeedController extends ChangeNotifier {
   bool hasUserChannel(String storageKey) =>
       _preferences.hasUserChannel(storageKey);
 
-  void setFollowedPaperIds(Iterable<String> paperIds) {
-    final next = paperIds.toSet();
-    if (setEquals(next, _followedPaperIds)) return;
-    _followedPaperIds = next;
-    if (_channelMode != PaperFeedMode.following) return;
+  void _handleFollowedPaperIdsChanged() {
+    if (_disposed || _channelMode != PaperFeedMode.following) return;
     _rememberPosition();
     final key = currentChannelKey;
     _catalogStates.remove(key);
@@ -423,7 +428,7 @@ class PaperFeedController extends ChangeNotifier {
       _visiblePapers = PaperFeedFilter.apply(
         papers: _allPapers,
         mode: PaperFeedMode.following,
-        followedPaperIds: _followedPaperIds,
+        followedPaperIds: _currentFollowedPaperIds,
         timeRange: timeRange,
       );
       return;
@@ -440,7 +445,7 @@ class PaperFeedController extends ChangeNotifier {
       papers: _allPapers,
       channelKey: channelKey,
       mode: _channelMode,
-      followedPaperIds: _followedPaperIds,
+      followedPaperIds: _currentFollowedPaperIds,
       timeRange: timeRange,
     );
   }
@@ -529,7 +534,7 @@ class PaperFeedController extends ChangeNotifier {
 
   List<String> get _followingAuthors {
     final authors = <String>{};
-    for (final identity in _followedPaperIds) {
+    for (final identity in _currentFollowedPaperIds) {
       if (identity.startsWith('author:')) {
         final author = identity.substring('author:'.length).trim();
         if (author.isNotEmpty) authors.add(author);
@@ -639,6 +644,9 @@ class PaperFeedController extends ChangeNotifier {
   @override
   void dispose() {
     _disposed = true;
+    _followedPaperIdsListenable?.removeListener(
+      _handleFollowedPaperIdsChanged,
+    );
     _preferences.dispose();
     super.dispose();
   }

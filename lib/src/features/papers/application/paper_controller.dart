@@ -12,41 +12,49 @@ import 'paper_interaction_controller.dart';
 
 /// Compatibility facade that owns the two independent paper controllers.
 class PaperController extends ChangeNotifier {
-  PaperController(
+  factory PaperController(
     PaperRepository repository, {
     PaperInteractionRepository? interactionRepository,
     PaperPreferenceRepository? preferenceRepository,
     PaperCatalogRepository? catalogRepository,
     PaperChannelPreferenceRepository? channelPreferenceRepository,
     Iterable<String> Function()? readPaperIdsProvider,
-  }) : this._fromPapers(
-          repository.getAll(),
-          interactionRepository: interactionRepository,
-          preferenceRepository: preferenceRepository,
-          catalogRepository: catalogRepository,
-          channelPreferenceRepository: channelPreferenceRepository,
-          readPaperIdsProvider: readPaperIdsProvider,
-        );
+  }) {
+    return PaperController._fromPapers(
+      repository.getAll(),
+      interactionRepository: interactionRepository,
+      preferenceRepository: preferenceRepository,
+      catalogRepository: catalogRepository,
+      channelPreferenceRepository: channelPreferenceRepository,
+      readPaperIdsProvider: readPaperIdsProvider,
+    );
+  }
 
-  PaperController._fromPapers(
+  factory PaperController._fromPapers(
     List<Paper> papers, {
     PaperInteractionRepository? interactionRepository,
     PaperPreferenceRepository? preferenceRepository,
     PaperCatalogRepository? catalogRepository,
     PaperChannelPreferenceRepository? channelPreferenceRepository,
     Iterable<String> Function()? readPaperIdsProvider,
-  })  : feed = PaperFeedController.fromPapers(
-          papers,
-          preferenceRepository: preferenceRepository,
-          catalogRepository: catalogRepository,
-          channelPreferenceRepository: channelPreferenceRepository,
-          readPaperIdsProvider: readPaperIdsProvider,
-        ),
-        interactions = PaperInteractionController(
-          repository: interactionRepository,
-        ) {
+  }) {
+    final interactions = PaperInteractionController(
+      repository: interactionRepository,
+    );
+    final feed = PaperFeedController.fromPapers(
+      papers,
+      preferenceRepository: preferenceRepository,
+      catalogRepository: catalogRepository,
+      channelPreferenceRepository: channelPreferenceRepository,
+      readPaperIdsProvider: readPaperIdsProvider,
+      followedPaperIdsListenable: interactions.followedPaperIdsListenable,
+    );
+    return PaperController._(feed: feed, interactions: interactions);
+  }
+
+  PaperController._({required this.feed, required this.interactions}) {
     feed.addListener(notifyListeners);
-    interactions.addListener(_handleInteractionsChanged);
+    interactions.addListener(notifyListeners);
   }
 
   final PaperFeedController feed;
@@ -94,15 +102,10 @@ class PaperController extends ChangeNotifier {
   void toggleFollow(String paperId) => interactions.toggleFollow(paperId);
   void recordShare(String paperId) => interactions.recordShare(paperId);
 
-  void _handleInteractionsChanged() {
-    feed.setFollowedPaperIds(interactions.followedPaperIds);
-    notifyListeners();
-  }
-
   @override
   void dispose() {
     feed.removeListener(notifyListeners);
-    interactions.removeListener(_handleInteractionsChanged);
+    interactions.removeListener(notifyListeners);
     feed.dispose();
     interactions.dispose();
     super.dispose();

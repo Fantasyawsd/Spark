@@ -11,7 +11,9 @@ class PaperInteractionController extends ChangeNotifier {
     Iterable<String> initiallySaved = const [],
     Iterable<String> initiallyFollowed = const [],
     PaperInteractionRepository? repository,
-  })  : _followedPaperIds = {...initiallyFollowed},
+  })  : _followedPaperIds = ValueNotifier<Set<String>>(
+          Set<String>.unmodifiable(initiallyFollowed),
+        ),
         _repository = repository {
     _favoriteGroups[defaultFavoriteGroupId] =
         const FavoriteGroup.defaultGroup();
@@ -23,7 +25,7 @@ class PaperInteractionController extends ChangeNotifier {
   final Set<String> _likedPaperIds = {};
   final Map<String, FavoriteGroup> _favoriteGroups = {};
   final Map<String, Set<String>> _favoritePaperIdsByGroup = {};
-  final Set<String> _followedPaperIds;
+  final ValueNotifier<Set<String>> _followedPaperIds;
   final Map<String, int> _shareCountDeltas = {};
   final PaperInteractionRepository? _repository;
   final List<_InteractionMutation> _pendingMutations = [];
@@ -36,7 +38,9 @@ class PaperInteractionController extends ChangeNotifier {
   String? _persistenceError;
   bool _disposed = false;
 
-  Set<String> get followedPaperIds => Set.unmodifiable(_followedPaperIds);
+  Set<String> get followedPaperIds => _followedPaperIds.value;
+  ValueListenable<Set<String>> get followedPaperIdsListenable =>
+      _followedPaperIds;
   List<FavoriteGroup> get favoriteGroups =>
       List.unmodifiable(_favoriteGroups.values);
   Set<String> get savedPaperIds => Set.unmodifiable(
@@ -53,7 +57,7 @@ class PaperInteractionController extends ChangeNotifier {
       );
   bool isSavedInGroup(String paperId, String groupId) =>
       _favoritePaperIdsByGroup[groupId]?.contains(paperId) ?? false;
-  bool isFollowed(String paperId) => _followedPaperIds.contains(paperId);
+  bool isFollowed(String paperId) => _followedPaperIds.value.contains(paperId);
 
   Set<String> favoriteGroupIdsForPaper(String paperId) => Set.unmodifiable(
         _favoritePaperIdsByGroup.entries
@@ -250,7 +254,9 @@ class PaperInteractionController extends ChangeNotifier {
         _favoriteGroups.remove(mutation.groupId);
         _favoritePaperIdsByGroup.remove(mutation.groupId);
       case _InteractionMutationType.follow:
-        _toggleMembership(_followedPaperIds, mutation.paperId);
+        final followedPaperIds = {..._followedPaperIds.value};
+        _toggleMembership(followedPaperIds, mutation.paperId);
+        _replaceFollowedPaperIds(followedPaperIds);
       case _InteractionMutationType.share:
         _shareCountDeltas.update(
           mutation.paperId,
@@ -262,6 +268,12 @@ class PaperInteractionController extends ChangeNotifier {
 
   void _toggleMembership(Set<String> values, String paperId) {
     if (!values.remove(paperId)) values.add(paperId);
+  }
+
+  void _replaceFollowedPaperIds(Iterable<String> paperIds) {
+    final next = Set<String>.unmodifiable(paperIds);
+    if (setEquals(next, _followedPaperIds.value)) return;
+    _followedPaperIds.value = next;
   }
 
   Future<void> flushPendingWrites() async {
@@ -319,7 +331,7 @@ class PaperInteractionController extends ChangeNotifier {
         likedPaperIds: _likedPaperIds,
         favoriteGroups: _favoriteGroups.values,
         favoritePaperIdsByGroup: _favoritePaperIdsByGroup,
-        followedPaperIds: _followedPaperIds,
+        followedPaperIds: _followedPaperIds.value,
         shareCountDeltas: _shareCountDeltas,
       );
 
@@ -339,9 +351,7 @@ class PaperInteractionController extends ChangeNotifier {
           (entry) => MapEntry(entry.key, {...entry.value}),
         ),
       );
-    _followedPaperIds
-      ..clear()
-      ..addAll(snapshot.followedPaperIds);
+    _replaceFollowedPaperIds(snapshot.followedPaperIds);
     _shareCountDeltas
       ..clear()
       ..addAll(snapshot.shareCountDeltas);
@@ -354,6 +364,7 @@ class PaperInteractionController extends ChangeNotifier {
   @override
   void dispose() {
     _disposed = true;
+    _followedPaperIds.dispose();
     super.dispose();
   }
 }

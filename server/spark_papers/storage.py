@@ -10,8 +10,13 @@ from pathlib import Path
 from typing import Any, Iterable, Iterator, Mapping
 
 from . import PAPER_SCHEMA_VERSION
-from .identity import fuzzy_identity_score, normalize_external_ids, stable_paper_id
 from .db_mapper import paper_from_row, paper_values
+from .identity import fuzzy_identity_score, normalize_external_ids, stable_paper_id
+from .identity_resolution import (
+    IdentityResolutionAction,
+    needs_fuzzy_lookup,
+    resolve_identity,
+)
 from .models import PaperRecord, parse_datetime, utc_now
 from .ports import IngestOutcome, IngestStatus
 from .paper_record_merger import merge_paper_records
@@ -396,35 +401,37 @@ class PaperStore:
         allow_create: bool = True,
     ) -> IngestOutcome:
         existing_ids = self.find_by_external_ids(paper.external_ids)
-        target_id = paper.paper_id
-        if len(existing_ids) == 1:
-            target_id = next(iter(existing_ids))
-        elif len(existing_ids) > 1:
-            self.queue_match(source, external_id, None, 1.0, "conflicting_exact_identity", raw_payload)
-            return IngestOutcome(IngestStatus.CONFLICT)
-        elif not existing_ids:
-            fuzzy = (
-                self.find_fuzzy_candidates(
-                    paper.title,
-                    paper.authors[0] if paper.authors else "",
-                    limit=1,
-                )
-                if not paper.external_ids
-                else []
+        fuzzy_candidate = None
+        if needs_fuzzy_lookup(existing_ids, has_external_ids=bool(paper.external_ids)):
+            fuzzy_candidates = self.find_fuzzy_candidates(
+                paper.title,
+                paper.authors[0] if paper.authors else "",
+                limit=1,
             )
-            if fuzzy and fuzzy[0][1] >= 0.65:
-                self.queue_match(source, external_id, fuzzy[0][0], fuzzy[0][1], "fuzzy_candidate_requires_review", raw_payload)
-            if not allow_create:
-                if not fuzzy or fuzzy[0][1] < 0.65:
-                    self.queue_match(
-                        source,
-                        external_id,
-                        None,
-                        0.0,
-                        "enrichment_identity_not_found",
-                        raw_payload,
-                    )
-                return IngestOutcome(IngestStatus.UNMATCHED)
+            fuzzy_candidate = fuzzy_candidates[0] if fuzzy_candidates else None
+        resolution = resolve_identity(
+            paper.paper_id,
+            exact_match_ids=existing_ids,
+            has_external_ids=bool(paper.external_ids),
+            best_fuzzy_candidate=fuzzy_candidate,
+            allow_create=allow_create,
+        )
+        if resolution.review is not None:
+            self.queue_match(
+                source,
+                external_id,
+                resolution.review.candidate_paper_id,
+                resolution.review.confidence,
+                resolution.review.reason,
+                raw_payload,
+            )
+        if resolution.action is IdentityResolutionAction.CONFLICT:
+            return IngestOutcome(IngestStatus.CONFLICT)
+        if resolution.action is IdentityResolutionAction.UNMATCHED:
+            return IngestOutcome(IngestStatus.UNMATCHED)
+        target_id = resolution.target_paper_id
+        if target_id is None:
+            raise RuntimeError("stored identity resolution must include a target paper ID")
         current = self.get(target_id)
         if current is None:
             merged = paper if target_id == paper.paper_id else replace(

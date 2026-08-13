@@ -10,8 +10,8 @@
 - Worktree：`C:\Users\Fantasy\Desktop\Spark-worktrees\agent-5`
 - 基线提交：`fee74bf4008d466e8af716ee6320de6f14a0c9e7`
 - 负责人：Codex（Fantasy 编排）
-- 状态：`/test` 已通过，待 `/review`
-- 最近更新：`2026-08-13 16:53`（Asia/Shanghai）
+- 状态：`/review` 发现 1 个阻断项，返回 `/develop`
+- 最近更新：`2026-08-13 16:58`（Asia/Shanghai）
 
 ## 目标
 
@@ -32,9 +32,9 @@
 
 - [x] `PaperInteractionController` 是关注集合唯一可变所有者；对外只暴露不可变快照与只读监听契约，调用方不能直接修改集合。
 - [x] `PaperFeedController` 不再声明、复制或替换 `_followedPaperIds` 可变镜像，也不再提供 `setFollowedPaperIds` 手工同步入口；本地过滤、作者参数和空关注加载判断均实时读取唯一来源。
-- [x] `PaperFeedController` 在构造时订阅关注状态、在 `dispose` 时解绑；关注集合变化时仅失效关注频道的目录状态和列表，其他频道不被清空或重新请求。
+- [ ] `PaperFeedController` 在构造时订阅关注状态、在 `dispose` 时解绑；关注集合变化时仅失效关注频道的目录状态和列表，其他频道不被清空或重新请求。
 - [x] `PaperController` 的装配先创建互动状态源再注入 Feed，并移除 `_handleInteractionsChanged` 集合复制桥；现有 facade 的 like/save/follow/share 通知与释放语义保持。
-- [x] 通过直接调用 `PaperInteractionController`（不经过 `PaperController.toggleFollow`）即可更新当前关注频道、切换后关注频道和远程 `followingAuthors` 查询，证明新增写入路径不依赖额外桥接。
+- [ ] 通过直接调用 `PaperInteractionController`（不经过 `PaperController.toggleFollow`）即可更新当前关注频道、切换后关注频道和远程 `followingAuthors` 查询，证明新增写入路径不依赖额外桥接。
 - [x] 初始化恢复、`reload()` 与持久化失败回滚更新唯一关注状态时，Feed 不保留旧集合；旧 paper id 记录仍可映射首位作者。
 - [x] 新增业务行为有可独立运行的 controller 测试；既有关注过滤、频道刷新、API 查询、互动持久化与页面集成测试保持通过。
 - [x] 相关定向测试、Dart 格式、`flutter analyze`、`flutter test` 与 `git diff --check` 通过。
@@ -84,9 +84,11 @@
 - 已完成：新增 6 项单一来源测试；最终定向回归 78 项、架构边界 23 项、Dart 格式、`flutter analyze` 与 `git diff --check` 均通过。
 - 已完成：形成原子代码提交 `e67e5b8`；工作区在更新本台账前干净。
 - 已完成：`/test` 独立完整门禁通过：增量格式检查 51 个文件、静态分析零问题、完整测试 485 项、`git diff --check` 均成功。
-- 正在进行：第五批已完成 `/start`→`/develop`→`/test`，按阶段边界停在只读 `/review` 前。
-- 下一步：执行 `/review`，只读审查相对第四批最终基线 `fee74bf` 的完整差异与验收证据；不进入 `/finish`。
-- 阻塞项：无。
+- 已完成：`/review` 逐项检查 `fee74bf..78685c2` 的 5 个变更文件、8 条验收标准、17 条结构清单和 10 条架构阻断条件；未发现越界改动、依赖倒置问题或敏感信息。
+- 已发现：关注频道若已加载，切到其他频道后改变关注，`_handleFollowedPaperIdsChanged()` 会因当前模式不是 following 直接返回；旧关注频道缓存未失效，返回时 `_ensureCurrentChannelLoaded()` 又被 loaded key 短路，无法用新 `followingAuthors` 重新请求。
+- 正在进行：第五批 `/review` 未通过，1 个行为阻断项待修复；无其他缺陷或建议。
+- 下一步：返回 `/develop`，先补“已加载关注频道→切走→直接变更关注→返回”的红测，再让监听器始终失效固定关注频道、仅在关注频道当前激活时通知和重载；之后重跑 `/test` 与 `/review`。
+- 阻塞项：审查阻断项 1 个，可在 `/develop` 内修复；无外部阻塞。
 
 ## 决策记录
 
@@ -122,15 +124,20 @@
 | `git diff --check`（`/test`） | 通过；工作树保持干净 | 2026-08-13 |
 | APK / Windows release 构建 | 未运行；按项目规范仅由合入 `main` 的 `/finish` 执行，本修复链明确不合并 | 2026-08-13 |
 | Windows 应用人工验收 | 未运行；编排者明确无需人工验收，且本批为无预期界面变化的状态所有权重构 | 2026-08-13 |
+| `/review` 变更范围 | `origin/main` merge-base 为 `948f3af`；本批任务基线为上一批已审查提交 `fee74bf`，任务增量 5 个文件、490 行新增、45 行删除 | 2026-08-13 |
+| `/review` 结构与敏感信息核对 | 17 条结构清单完成；10 条架构阻断条件均未触发；新增差异无调试标记或疑似密钥字样 | 2026-08-13 |
+| `/review` 关注频道缓存时序核对 | 未通过；非关注频道激活时监听器在 `paper_feed_controller.dart:383` 提前返回，已加载关注频道不会失效或重新查询 | 2026-08-13 |
 
 ## 审查结论
 
-> 尚未进入 `/review`。
-
-- 审查日期：不适用
-- 阻断项：待审查
-- 缺陷：待审查
-- 结论：待审查
+- 审查日期：2026-08-13
+- 审查范围：`fee74bf4008d466e8af716ee6320de6f14a0c9e7..78685c2c0d1e1c5c14bcccc2d4ea1da628b4b4f9`
+- 阻断项：1。
+  - `lib/src/features/papers/application/paper_feed_controller.dart:383`：监听器把“是否失效关注频道缓存”错误地绑定到“当前频道是否为关注频道”。关注频道已加载并切走后，直接互动写入、reload 或回滚均不会清除其 loaded key；返回关注频道时不会以最新作者集合重新请求。修复时应始终定位并失效 `fixed:following` 的目录状态与列表，仅在该频道当前激活时恢复位置、通知和触发加载。
+- 缺陷：0 个额外缺陷。
+- 建议：0；缺失的“已加载后切走再变更”回归测试属于上述阻断项的必要修复证据。
+- 验证证据：`/test` 增量格式 51 文件、`flutter analyze` 零问题、`flutter test` 485 项及 `git diff --check` 全部通过，但现有测试只覆盖关注频道首次打开，不足以证明缓存失效时序。
+- 结论：审查未通过；返回 `/develop` 修复并重新执行 `/test`、`/review`，不得把当前提交作为下一批基线。
 
 ## 检查点与提交
 
@@ -138,12 +145,13 @@
 | --- | --- | --- | --- |
 | `aa5d646` | `文档（台账）：初始化关注状态单一源任务` | `/start` | 记录范围、验收、基线与串联约束 |
 | `e67e5b8` | `重构（论文）：统一关注状态事实源` | `/develop` | 定向 78、架构 23、格式、analyze、diff check 通过 |
+| `78685c2` | `测试（论文）：记录关注状态完整门禁` | `/test` | 增量格式 51 文件、analyze 零问题、完整测试 485 项通过 |
 
 ## 交付准备（合并前收集）
 
 ### 交付摘要
 
-本批已完成实现并通过完整 `/test`：论文关注集合只有 `PaperInteractionController` 一个可变事实源，Feed 通过不可变只读监听自动响应直接互动写入、初始化恢复、reload 与失败回滚，不再依靠 facade 复制集合。代码提交为 `e67e5b8`，完整测试 485 项通过，等待只读 `/review`。
+本批初版实现已通过完整 `/test`，但只读 `/review` 发现已加载关注频道在非激活期间不会随关注状态变化失效，返回时可能沿用旧远程缓存并跳过最新作者查询。当前不可作为下一批基线，需回到 `/develop` 修复后重新验证和审查。
 
 ### 实际变更
 
@@ -161,7 +169,7 @@
 
 ### 已知风险与回滚
 
-- 已知风险：Feed 独立构造且不注入监听源时，关注集合按设计恒为空；生产 `PaperController` 始终注入真实来源。订阅时序、回滚和释放已由确定性 controller 测试覆盖。
+- 已知风险：已加载关注频道切到其他频道后发生直接关注写入、reload 或回滚时，当前实现不会失效关注频道缓存；返回后可能缺少新关注作者的远程论文。Feed 独立构造且不注入监听源时，关注集合按设计恒为空；生产 `PaperController` 始终注入真实来源。
 - 回滚方式：按检查点逆序 `git revert`；无数据迁移。
 
 ### 文档更新建议
@@ -177,7 +185,7 @@
 
 > 编排者明确要求本修复链不合入 `main`，因此本节当前不适用；不预填集成提交、合并时间或 main 验证。
 
-- 最终状态：未合并，第五批 `/test` 已通过，待 `/review`
+- 最终状态：未合并，第五批 `/review` 未通过，返回 `/develop`
 - 合入分支：不适用
 - 最终集成提交：不适用
 - Pull Request：不适用

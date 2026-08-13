@@ -10,8 +10,8 @@
 - Worktree：`C:\Users\Fantasy\Desktop\Spark-worktrees\agent-3`
 - 基线提交：`175f26ac469fb6817701570858d49b990bb0ce8a`
 - 负责人：Codex（Fantasy 编排）
-- 状态：规划中
-- 最近更新：`2026-08-13 15:48`（Asia/Shanghai）
+- 状态：开发完成，待 `/test`
+- 最近更新：`2026-08-13 16:03`（Asia/Shanghai）
 
 ## 目标
 
@@ -28,12 +28,12 @@
 
 ## 验收标准
 
-- [ ] `paper_ai_message_view.dart` 只负责消息类型选择与选择态装配；用户/助手气泡、操作区、推理面板和来源面板按单一职责拆到 chat feature 内部文件，原 923 行文件显著缩小，所有结果文件均可一次理解且不保留超长 `build`。
-- [ ] `lib/src/features/chat/presentation/` 不再导入 `package:url_launcher` 或直接调用 `launchUrl`；来源链接只能通过注入的窄回调打开，未注入时不产生隐式平台回退。
-- [ ] HTTP(S) URI 校验只有一个实现：chat 来源与 papers 链接共同复用 core 中的纯校验函数；空值、空 host、非 HTTP(S) scheme 均不可打开。
-- [ ] 生产组合根为论文全屏聊天、主聊天和论文内嵌讨论三条路径注入现有平台链接服务；有效来源仍可外部打开，返回 `false` 或抛异常时仍显示“无法打开来源链接”。
-- [ ] 消息复制不包含 reasoning、推理/来源默认折叠与展开、流式状态、多选、重试、编辑和删除入口等既有行为保持不变。
-- [ ] 新增或扩充 Widget/单元测试，覆盖有效来源回调、非法 URI 禁用、缺少 opener 禁用、打开失败反馈及拆分后的主要交互。
+- [x] `paper_ai_message_view.dart` 只负责消息类型选择与选择态装配；用户/助手气泡、操作区、推理面板和来源面板按单一职责拆到 chat feature 内部文件，原 923 行文件显著缩小，所有结果文件均可一次理解且不保留超长 `build`。
+- [x] `lib/src/features/chat/presentation/` 不再导入 `package:url_launcher` 或直接调用 `launchUrl`；来源链接只能通过注入的窄回调打开，未注入时不产生隐式平台回退。
+- [x] HTTP(S) URI 校验只有一个实现：chat 来源与 papers 链接共同复用 core 中的纯校验函数；空值、空 host、非 HTTP(S) scheme 均不可打开。
+- [x] 生产组合根为论文全屏聊天、主聊天和论文内嵌讨论三条路径注入现有平台链接服务；有效来源仍可外部打开，返回 `false` 或抛异常时仍显示“无法打开来源链接”。
+- [x] 消息复制不包含 reasoning、推理/来源默认折叠与展开、流式状态、多选、重试、编辑和删除入口等既有行为保持不变。
+- [x] 新增或扩充 Widget/单元测试，覆盖有效来源回调、非法 URI 禁用、缺少 opener 禁用、打开失败反馈及拆分后的主要交互。
 - [ ] 相关定向测试、Dart 格式、`flutter analyze`、`flutter test` 和 `git diff --check` 通过。
 
 ## 写入范围
@@ -66,7 +66,7 @@
 ## 实施计划
 
 1. 为有效/非法来源、缺少 opener、打开失败和既有消息交互补齐 characterization tests，先证明当前隐式平台回退和重复校验边界。
-2. 在 `core/platform` 建立纯 HTTP(S) URI 校验事实源，让 papers 的 `validPaperUri` 保持兼容并委托该实现，chat 直接复用共享规则。
+2. 在 `core/platform` 建立纯 HTTP(S) URI 校验事实源，迁移 papers 与 chat 调用方并移除 papers domain 中的重复实现。
 3. 按消息装配、气泡与操作、推理、来源四个职责拆分 `paper_ai_message_view.dart`，控制文件和 `build` 粒度，不改变 key、语义标签或视觉令牌。
 4. 删除 chat presentation 的 `url_launcher` 依赖和 fallback，通过 `PaperAiContent`、全屏/主聊天、内嵌讨论与 `SparkShell` 透传 `_linkService.open`。
 5. 运行消息视图、内容、全屏聊天、内嵌讨论和组合根定向回归，核对文件规模、旧符号与平台调用检索，再执行格式和静态分析。
@@ -78,8 +78,12 @@
 - 已完成：确认报告条目仍成立：`paper_ai_message_view.dart` 为 923 行，直接 import `url_launcher` 并在无 callback 时调用 `launchUrl`，`_validUri` 与 `validPaperUri` 规则重复。
 - 已完成：确认现有 `PaperLinkService` 已由组合根注入 papers 路径，ChatMessageView/PaperAiContent 已具备可空 `onOpenSource` 通道，但三个生产聊天入口均未接线，因此当前依赖展示层 fallback。
 - 已完成：从第二批最终提交 `175f26a` 创建 `agent-3` 与 `refactor/chat-message-view-boundaries`；`main@5578a77` 未变化。
-- 正在进行：第三批任务台账初始化，尚未修改功能代码。
-- 下一步：触发 `/develop`，先补齐来源链接 characterization tests，再开始共享校验与组件拆分。
+- 已完成：以“缺少 opener 时来源行必须禁用”红测确认展示层 fallback；新增有效/非法 URI、false/异常反馈与三个聊天入口回调贯通测试。
+- 已完成：新增 `validExternalHttpUri` 唯一事实源，迁移 papers/chat 调用方；为保持领域层纯净，删除未发布的 `validPaperUri` 辅助函数，不让 papers domain 反向依赖 core。
+- 已完成：将 923 行消息视图拆为 78 行装配器及 actions（141 行）、bubbles（277 行）、reasoning（216 行）、sources（278 行）四个职责文件，并拆短主要 `build`。
+- 已完成：删除 chat presentation 的 `url_launcher`/`launchUrl`，缺少 opener 时来源不可点击；`SparkShell` 为论文全屏、主聊天、内嵌讨论三条路径注入 `_linkService.open`。
+- 已完成：提交 `dbae979`；定向 Widget/单元/论文阅读/架构测试与 `flutter analyze` 通过。
+- 下一步：由编排者触发 `/test`，执行完整格式、分析和 Flutter 测试门禁并记录证据。
 - 阻塞项：无。
 
 ## 决策记录
@@ -88,7 +92,7 @@
 | --- | --- | --- | --- |
 | 2026-08-13 | 第三批只处理消息视图，不同时拆分 906 行聊天屏幕 | 两个高危文件职责与验证风险不同；串行小批次更易审查和回滚 | `paper_ai_chat_screen.dart` 只允许窄参数透传，IME/设置/state 拆分留到第四批 |
 | 2026-08-13 | 复用现有组合根链接服务，通过回调注入 chat | `SparkDependencies` 已持有平台适配器，ChatMessageView/PaperAiContent 已有 callback 形态 | 无需在 Widget 创建插件或新增第二套平台实现 |
-| 2026-08-13 | 把通用 HTTP(S) URI 校验放入 core，保留 `validPaperUri` 兼容入口 | papers 与 chat 两个独立模块真实复用同一纯规则，符合 core 边界；直接让 chat 深导入 papers domain 语义不当 | 消除复制校验且不强迫本批重命名所有 PaperLinkService API |
+| 2026-08-13 | 把通用 HTTP(S) URI 校验放入 core，迁移调用方并删除 `validPaperUri` | 严格架构门禁禁止 papers domain 依赖 core；保留委托包装会产生反向依赖，复制包装又违背单一事实源；项目未发布，可安全收敛内部辅助 API | papers domain 只保留 `PaperLinkService` 契约，所有 presentation/data/app/chat 调用同一纯校验函数 |
 | 2026-08-13 | 不进行人工验收或合并 | 编排者明确要求自动修复链保留在 worktree | 以自动化测试和只读审查作为证据，完成后串联下一 worktree |
 
 ## 验证记录
@@ -99,6 +103,14 @@
 | `git worktree add ..\agent-3 -b refactor/chat-message-view-boundaries 175f26a...` | 成功；第三批完整继承前两批修复，`main` 未变化 | 2026-08-13 |
 | 报告与源码定向检索 | 923 行、presentation 直连 `url_launcher`、重复 URI 校验三项均仍存在；现有 callback 未在生产入口注入 | 2026-08-13 |
 | 相关历史台账核对 | `fix/chat-message-actions` 已归档；内嵌/全屏消息操作显隐契约纳入本批回归范围 | 2026-08-13 |
+| 来源链接红测 | `source is disabled when no opener is injected` 在旧实现下失败，证明展示层 `launchUrl` fallback 会让来源保持可点击 | 2026-08-13 |
+| `flutter test test/paper_ai_message_view_test.dart test/external_http_uri_test.dart` | 13 项通过；覆盖复制/推理/选择/操作，以及有效、非法、缺失 opener、false/异常反馈 | 2026-08-13 |
+| `flutter test test/paper_ai_discussion_view_test.dart test/paper_ai_message_view_test.dart test/external_http_uri_test.dart` | 18 项通过；论文全屏、内嵌讨论、主聊天三条构造链均成功透传 opener | 2026-08-13 |
+| `flutter analyze` | 通过，`No issues found!` | 2026-08-13 |
+| `flutter test test/architecture_boundaries_test.dart test/architecture_test_support_test.dart` | 23 项通过；分层、循环依赖、core 方向、跨 feature 与公开入口规则均通过 | 2026-08-13 |
+| 论文 URI 受影响定向回归 | `cached_paper_pdf_content_provider_test.dart` 与 `paper_reader_view_test.dart` 的 25 项业务测试通过；一次组合命令因误写不存在的 `architecture_rules_test.dart` 路径返回失败，随后以正确架构测试文件重跑通过 | 2026-08-13 |
+| 结构与残留检索 | 装配器 78 行，拆分文件最大 278 行；chat presentation 无 `url_launcher`/`launchUrl`，`validPaperUri` 无残留 | 2026-08-13 |
+| `git diff --check` | 通过 | 2026-08-13 |
 
 ## 审查结论
 
@@ -113,25 +125,27 @@
 
 | SHA | 提交信息 | 对应阶段 | 验证摘要 |
 | --- | --- | --- | --- |
+| `88a4438` | `文档：初始化第三批消息视图边界台账` | `/start` | Git/worktree/报告/历史契约预检完成 |
+| `dbae979` | `重构（聊天）：拆分消息视图并收紧来源打开边界` | `/develop` | 分析、消息/入口/URI/论文阅读/架构定向测试通过 |
 
 ## 交付准备（合并前收集）
 
 ### 交付摘要
 
-本批尚未进入实现阶段。目标交付结果为消息视图职责拆分、展示层平台直连消失、生产来源链接保持可用且交互无回归；真实结果将在各检查点持续更新。
+本批开发实现已完成：消息视图职责拆分、展示层平台直连消失、共享 HTTP(S) 校验建立，生产来源链接通过组合根注入且交互回归通过。尚待 `/test` 完整门禁与 `/review` 只读审查。
 
 ### 实际变更
 
-- 领域与业务逻辑：待实现。
-- 数据与基础设施：待实现。
-- 界面与交互：预期无可观察变化。
-- 测试与工具：待实现。
+- 领域与业务逻辑：`PaperLinkService` 保持窄接口；删除其文件中的重复 URI 辅助实现。
+- 数据与基础设施：新增 core 纯 HTTP(S) URI 校验，papers data/presentation 与 app 统一调用；现有平台链接服务不变。
+- 界面与交互：消息装配、气泡、操作、推理、来源拆分；无 opener 时来源明确禁用，生产入口仍由现有平台服务打开。
+- 测试与工具：扩充消息来源边界与三个聊天入口透传测试，新增共享 URI 单测。
 - 文档：持续更新本台账。
 
 ### 兼容性与迁移
 
 - 本地数据迁移：无。
-- API 或领域契约变化：计划保留 `validPaperUri` 与现有链接服务契约；Chat presentation 构造器将增加可空 callback 透传。
+- API 或领域契约变化：`PaperLinkService` 契约不变；未发布的 `validPaperUri` 辅助函数被 `validExternalHttpUri` 取代；三个 Chat presentation 构造器增加可空 callback 透传。
 - 旧版本兼容性：无数据影响；生产三条入口完成注入后用户行为保持不变。
 
 ### 已知风险与回滚
@@ -152,7 +166,7 @@
 
 > 编排者明确要求本修复链不合入 `main`，因此本节当前不适用；不预填集成提交、合并时间或 main 验证。
 
-- 最终状态：未合并，第三批规划中
+- 最终状态：未合并，第三批开发完成，待完整门禁与审查
 - 合入分支：不适用
 - 最终集成提交：不适用
 - Pull Request：不适用

@@ -1,5 +1,5 @@
 import 'package:http/http.dart' as http;
-import 'package:spark/spark.dart';
+import 'package:spark/src/features/papers/domain/paper.dart';
 import 'package:spark/src/features/papers/data/arxiv_jsonl_importer.dart';
 import 'package:spark/src/features/papers/data/arxiv_oai_client.dart';
 import 'package:spark/src/features/papers/data/openalex_client.dart';
@@ -62,10 +62,11 @@ void main() {
       expect(paper.affiliations, ['Research Lab']);
     });
 
-    test('maps entries parsed by the Atom client through the shared DTO',
-        () async {
-      final client = _QueueClient([
-        _response('''
+    test(
+      'maps entries parsed by the Atom client through the shared DTO',
+      () async {
+        final client = _QueueClient([
+          _response('''
 <feed xmlns="http://www.w3.org/2005/Atom" xmlns:opensearch="http://a9.com/-/spec/opensearch/1.1/">
   <opensearch:totalResults>1</opensearch:totalResults>
   <opensearch:startIndex>0</opensearch:startIndex>
@@ -83,21 +84,22 @@ void main() {
   </entry>
 </feed>
 '''),
-      ]);
-      final api = ArxivAtomClient(
-        endpoint: 'https://example.test/atom',
-        client: client,
-        minimumRequestInterval: Duration.zero,
-      );
+        ]);
+        final api = ArxivAtomClient(
+          endpoint: 'https://example.test/atom',
+          client: client,
+          minimumRequestInterval: Duration.zero,
+        );
 
-      final page = await api.loadLatest(offset: 0, limit: 1);
-      final paper = const ArxivPaperMapper().toDomain(page.entries.single);
+        final page = await api.loadLatest(offset: 0, limit: 1);
+        final paper = const ArxivPaperMapper().toDomain(page.entries.single);
 
-      expect(page.entries.single, isA<ArxivPaperDto>());
-      expect(paper.id, '2401.00003');
-      expect(paper.paperUrl, 'https://arxiv.org/abs/2401.00003v2');
-      expect(paper.pdfUrl, 'https://arxiv.org/pdf/2401.00003v2');
-    });
+        expect(page.entries.single, isA<ArxivPaperDto>());
+        expect(paper.id, '2401.00003');
+        expect(paper.paperUrl, 'https://arxiv.org/abs/2401.00003v2');
+        expect(paper.pdfUrl, 'https://arxiv.org/pdf/2401.00003v2');
+      },
+    );
   });
 
   group('ArxivJsonlImporter', () {
@@ -134,8 +136,10 @@ void main() {
 </ListRecords></OAI-PMH>
 '''),
     ]);
-    final api =
-        ArxivOaiClient(endpoint: 'https://example.test/oai', client: client);
+    final api = ArxivOaiClient(
+      endpoint: 'https://example.test/oai',
+      client: client,
+    );
 
     final records = await api.listAll(set: 'cs:cs:AI');
 
@@ -153,8 +157,10 @@ void main() {
 {"results":[{"cited_by_count":42,"authorships":[{"institutions":[{"display_name":"Spark Lab"}]}],"concepts":[{"display_name":"Machine Learning"}],"related_works":["https://openalex.org/W1"]}]}
 '''),
     ]);
-    final api =
-        OpenAlexClient(endpoint: 'https://example.test/works', client: client);
+    final api = OpenAlexClient(
+      endpoint: 'https://example.test/works',
+      client: client,
+    );
 
     final result = await api.findByArxivId(
       'https://arxiv.org/abs/2401.00001v2',
@@ -162,8 +168,10 @@ void main() {
 
     expect(result?.citationCount, 42);
     expect(result?.institutions, ['Spark Lab']);
-    expect(client.requests.single.queryParameters['filter'],
-        'ids.arxiv:2401.00001');
+    expect(
+      client.requests.single.queryParameters['filter'],
+      'ids.arxiv:2401.00001',
+    );
   });
 }
 
@@ -186,7 +194,8 @@ class _QueueClient extends http.BaseClient {
   }
 }
 
-http.Response _response(String body) =>
-    http.Response(body, 200, headers: const {
-      'content-type': 'application/xml',
-    });
+http.Response _response(String body) => http.Response(
+      body,
+      200,
+      headers: const {'content-type': 'application/xml'},
+    );

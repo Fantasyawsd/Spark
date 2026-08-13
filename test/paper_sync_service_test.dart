@@ -1,25 +1,31 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:spark/spark.dart';
+import 'package:spark/src/features/papers/application/paper_sync_service.dart';
+import 'package:spark/src/features/papers/domain/paper.dart';
+import 'package:spark/src/features/papers/domain/paper_enhancement.dart';
+import 'package:spark/src/features/papers/domain/paper_source.dart';
+import 'package:spark/src/features/papers/domain/paper_sync_ports.dart';
 
 void main() {
-  test('sync service coordinates ports without concrete HTTP clients',
-      () async {
-    final store = _MemoryPaperStore();
-    final stateStore = _MemorySyncStateStore();
-    final service = ArxivPaperSyncService(
-      paperSource: _FakePaperSource(),
-      enhancementSource: _FakeEnhancementSource(),
-      stateStore: stateStore,
-      paperStore: store,
-    );
+  test(
+    'sync service coordinates ports without concrete HTTP clients',
+    () async {
+      final store = _MemoryPaperStore();
+      final stateStore = _MemorySyncStateStore();
+      final service = ArxivPaperSyncService(
+        paperSource: _FakePaperSource(),
+        enhancementSource: _FakeEnhancementSource(),
+        stateStore: stateStore,
+        paperStore: store,
+      );
 
-    final count = await service.sync(set: 'cs:cs:AI');
+      final count = await service.sync(set: 'cs:cs:AI');
 
-    expect(count, 1);
-    expect(store.papers.single.title, 'Imported paper');
-    expect(store.papers.single.metrics.citations, 42);
-    expect(stateStore.state.lastDatestamp, DateTime.utc(2024, 1, 2));
-  });
+      expect(count, 1);
+      expect(store.papers.single.title, 'Imported paper');
+      expect(store.papers.single.metrics.citations, 42);
+      expect(stateStore.state.lastDatestamp, DateTime.utc(2024, 1, 2));
+    },
+  );
 }
 
 class _FakePaperSource implements ArxivPaperSource {

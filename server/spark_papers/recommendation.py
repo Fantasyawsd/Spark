@@ -88,6 +88,24 @@ def _first_number(*values: Any) -> float | None:
     return None
 
 
+_UNKNOWN_SUBJECT = "__unknown__"
+_ALL_SUBJECTS = "__all__"
+
+
+def _subject_groups(paper: PaperRecord) -> frozenset[str]:
+    """Return normalized subject groups used to compare signal distributions."""
+    groups = frozenset(
+        subject.strip().lower()
+        for subject in paper.subjects
+        if subject and subject.strip()
+    )
+    return groups or frozenset({_UNKNOWN_SUBJECT})
+
+
+def _same_subject_group(left: PaperRecord, right: PaperRecord) -> bool:
+    return bool(_subject_groups(left).intersection(_subject_groups(right)))
+
+
 def _normalized_signal(paper: PaperRecord, name: str, candidates: Iterable[PaperRecord], as_of: datetime) -> float | None:
     value = _signal(paper, name, as_of)
     if value is None:
@@ -95,7 +113,12 @@ def _normalized_signal(paper: PaperRecord, name: str, candidates: Iterable[Paper
     comparison = tuple(candidates)
     if name != "freshness":
         bucket = age_bucket(paper.published_at, as_of)
-        bucket_values = tuple(candidate for candidate in comparison if age_bucket(candidate.published_at, as_of) == bucket)
+        bucket_values = tuple(
+            candidate
+            for candidate in comparison
+            if age_bucket(candidate.published_at, as_of) == bucket
+            and _same_subject_group(paper, candidate)
+        )
         if bucket_values:
             comparison = bucket_values
     all_values = [
@@ -144,17 +167,19 @@ def _score_candidates(
     as_of: datetime,
 ) -> list[tuple[PaperRecord, float, float, dict[str, float]]]:
     signal_names = tuple(dict.fromkeys(name for name, _ in (*config.quality_weights, *config.trend_weights)))
-    distributions: dict[tuple[str, str], list[float]] = {}
+    distributions: dict[tuple[str, str, str], dict[str, float]] = {}
     for candidate in candidates:
         for name in signal_names:
             value = _signal(candidate, name, as_of)
             if value is None:
                 continue
             bucket = "all" if name == "freshness" else age_bucket(candidate.published_at, as_of)
-            distributions.setdefault((name, bucket), []).append(value)
-    caps: dict[tuple[str, str], float] = {}
-    for key, values in distributions.items():
-        values.sort()
+            subject_groups = (_ALL_SUBJECTS,) if name == "freshness" else _subject_groups(candidate)
+            for subject_group in subject_groups:
+                distributions.setdefault((name, bucket, subject_group), {})[candidate.paper_id] = value
+    caps: dict[tuple[str, str, str], float] = {}
+    for key, candidate_values in distributions.items():
+        values = sorted(candidate_values.values())
         p99_index = max(0, min(len(values) - 1, math.ceil(len(values) * 0.99) - 1))
         caps[key] = values[p99_index]
 
@@ -163,9 +188,15 @@ def _score_candidates(
         if value is None:
             return None
         bucket = "all" if name == "freshness" else age_bucket(paper.published_at, as_of)
-        cap = caps.get((name, bucket))
-        if cap is None:
+        candidate_groups = (_ALL_SUBJECTS,) if name == "freshness" else _subject_groups(paper)
+        matching_caps = [
+            caps[(name, bucket, subject_group)]
+            for subject_group in candidate_groups
+            if (name, bucket, subject_group) in caps
+        ]
+        if not matching_caps:
             return None
+        cap = max(matching_caps)
         transformed = math.log1p(min(value, cap))
         maximum = math.log1p(cap)
         return transformed / maximum if maximum > 0 else 0.0

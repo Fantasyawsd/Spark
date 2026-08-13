@@ -115,3 +115,45 @@ class RecommendationTest(unittest.TestCase):
         self.assertEqual(age_bucket(now - timedelta(days=365 * 2), now), "1-3y")
         self.assertEqual(age_bucket(now - timedelta(days=365 * 4), now), "3-5y")
         self.assertEqual(age_bucket(now - timedelta(days=365 * 6), now), "5y+")
+
+    def test_signal_normalization_does_not_mix_subjects(self) -> None:
+        now = datetime(2026, 8, 11, tzinfo=UTC)
+        papers = self.store.all_candidates()
+        paper_a = replace(
+            papers[0],
+            subjects=("cs.LG",),
+            published_at=now - timedelta(days=30),
+            signals={"openalex": {"citation_count": 10}},
+        )
+        paper_b = replace(
+            papers[1],
+            subjects=("cs.RO",),
+            published_at=now - timedelta(days=30),
+            signals={"openalex": {"citation_count": 10_000}},
+        )
+
+        isolated_quality, _, _ = score_paper(paper_a, (paper_a,), as_of=now)
+        mixed_quality, _, _ = score_paper(paper_a, (paper_a, paper_b), as_of=now)
+
+        self.assertEqual(mixed_quality, isolated_quality)
+
+    def test_multi_subject_paper_uses_shared_subject_group(self) -> None:
+        now = datetime(2026, 8, 11, tzinfo=UTC)
+        papers = self.store.all_candidates()
+        paper_a = replace(
+            papers[0],
+            subjects=("cs.LG", "cs.CV"),
+            published_at=now - timedelta(days=30),
+            signals={"openalex": {"citation_count": 10}},
+        )
+        paper_b = replace(
+            papers[1],
+            subjects=("cs.CV",),
+            published_at=now - timedelta(days=30),
+            signals={"openalex": {"citation_count": 100}},
+        )
+
+        quality, _, signals = score_paper(paper_a, (paper_a, paper_b), as_of=now)
+
+        self.assertGreater(quality, 0.0)
+        self.assertGreater(signals["quality.citation_count"], 0.0)

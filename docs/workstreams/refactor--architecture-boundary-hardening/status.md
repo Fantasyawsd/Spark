@@ -10,8 +10,8 @@
 - Worktree：`C:\Users\Fantasy\Desktop\Spark-worktrees\agent-2`
 - 基线提交：`e61d320939fba18b58b489ed99d140b4c84e57aa`
 - 负责人：Codex（Fantasy 编排）
-- 状态：开发中
-- 最近更新：`2026-08-13 14:52`（Asia/Shanghai）
+- 状态：开发中（实现完成，待 `/test`）
+- 最近更新：`2026-08-13 15:00`（Asia/Shanghai）
 
 ## 目标
 
@@ -30,9 +30,9 @@
 - [x] 同 feature 分层守卫覆盖 `presentation -> data`、`application -> data`、`domain -> application/data/presentation` 及其他逆向依赖，并通过隔离 fixture 证明旧盲区会被检出。
 - [x] domain 纯净度采用默认拒绝的外部包策略或等价的显式安全允许机制，能够检出 `sqflite`、`path_provider`、`shared_preferences`、`flutter_secure_storage` 等未获准基础设施包以及 `dart:io`。
 - [x] `lib/src` 导入图具备循环检测，至少用多文件循环 fixture 验证，并在失败信息中给出可定位的依赖链。
-- [ ] `core/widgets` 的业务复用检查以真实 feature 可达性为依据，不把测试或 barrel export 误算为业务复用；少于两个独立业务模块使用的组件会失败或具有明确、可审查的基础设施例外。
-- [ ] 报告指出的生产零调用 `CherryButton` 被删除，`ProfileAvatar` 与 `TopicChip` 回归各自业务模块；新守卫发现的其他同类现存问题须修正或记录符合规范的例外理由。
-- [ ] 组件移动后的导入、公开入口与测试同步更新，用户可观察行为不变。
+- [x] `core/widgets` 的业务复用检查以真实 feature 可达性为依据，不把测试或 barrel export 误算为业务复用；少于两个独立业务模块使用的组件会失败或具有明确、可审查的基础设施例外。
+- [x] 报告指出的生产零调用 `CherryButton` 被删除，`ProfileAvatar` 与 `TopicChip` 回归各自业务模块；新守卫发现的其他同类现存问题须修正或记录符合规范的例外理由。
+- [x] 组件移动后的导入、公开入口与测试同步更新，用户可观察行为不变。
 - [ ] 架构定向测试、相关 Widget 测试、Dart 格式、`flutter analyze`、`flutter test` 和 `git diff --check` 通过。
 
 ## 写入范围
@@ -72,8 +72,11 @@
 - 已完成：从第一批最终提交 `e61d320` 创建 `agent-2` 与 `refactor/architecture-boundary-hardening`，未修改 `main`。
 - 已完成：将源码解析和规则判定拆为两个单一职责测试辅助文件；条件 import/export 的所有 URI 均进入依赖图。
 - 已完成：以 8 个隔离 fixture 测试补齐同 feature 逆向分层、domain 外部依赖默认拒绝和 `lib/src` 循环诊断，并保留全部既有架构规则；形成 `d8f26ae` 检查点。
-- 正在进行：第二批 `/develop`；前三类守卫已完成，`core` 真实业务复用守卫尚待实现。
-- 下一步：下一轮 `/develop` 增加 `core/widgets` 可达 feature 规则，删除 `CherryButton` 并移动两个单 feature 组件。
+- 已完成：新增 `core/widgets` 反向可达 feature 守卫；隔离 fixture 证明 core 包装器可透传真实使用，而测试导入和无人使用的 barrel 不计数。
+- 已完成：新守卫在修复前准确报告 `ProfileAvatar`、`TopicChip` 和 `SparkThemeSheet` 三项单 feature 归属；三者已移回 community、papers 和 profile。
+- 已完成：删除生产零调用的 `CherryButton` 及专用测试，保留仍有真实调用的 `CherryIconButton` 和 `CherrySurface`；形成 `6fc6a73` 检查点。
+- 正在进行：第二批实现已完成，等待执行 `/test` 完整验证门禁。
+- 下一步：触发 `/test`，运行改动格式、`flutter analyze` 和 `flutter test` 全量门禁并记录证据。
 - 阻塞项：无。
 
 ## 决策记录
@@ -85,6 +88,7 @@
 | 2026-08-13 | `core` 复用按 feature 可达性而非文本 import 次数判定 | 内部公共组件可能经其他 core 组件间接服务多个 feature，测试和 barrel export 也不构成真实业务使用 | 降低误报，同时严格落实“至少两个独立业务模块真实使用” |
 | 2026-08-13 | 基线使用第一批最终提交 `e61d320` | 编排者要求新的 worktree 基于上一个修复 worktree 构建 | 第二批完整继承第一批修复，`main@5578a77` 保持不变 |
 | 2026-08-13 | 不进行人工验收或合并 | 编排者明确要求自动修复链保留在 worktree | 以自动化测试和只读审查作为本批证据 |
+| 2026-08-13 | 将新守卫额外发现的 `SparkThemeSheet` 移回 profile | 根 barrel export 不构成两个业务模块真实使用；该面板只有 profile 生产调用 | 移除 `spark.dart` 中对应展示实现导出，测试改为导入 profile 所有者路径 |
 
 ## 验证记录
 
@@ -97,6 +101,11 @@
 | `.\tool\verify_changed_dart_format.ps1` | 通过；7 个当前改动 Dart 文件均无需格式化 | 2026-08-13 |
 | `flutter analyze` | `No issues found` | 2026-08-13 |
 | `git diff --cached --check` 与敏感信息检查 | 通过；代码检查点只含 5 个架构测试文件 | 2026-08-13 |
+| `flutter test test/architecture_boundaries_test.dart`（core 归属修复前） | 按预期失败并精确列出 `ProfileAvatar -> community`、`SparkThemeSheet -> profile`、`TopicChip -> papers` 三项 | 2026-08-13 |
+| `flutter test test/architecture_test_support_test.dart test/architecture_boundaries_test.dart test/cherry_primitives_test.dart test/spark_theme_test.dart test/ui_preview_test.dart` | 修复后 56 项全部通过；覆盖守卫反例、真实源码、主题交互、动效令牌和跨模块导航/展示 | 2026-08-13 |
+| `.\tool\verify_changed_dart_format.ps1`（第二轮） | 通过；20 个当前任务 Dart 文件均无需格式化 | 2026-08-13 |
+| `flutter analyze`（第二轮） | `No issues found` | 2026-08-13 |
+| 删除符号与旧路径全量检索 | `CherryButton*`、`showSparkThemeSheet` 和三个旧 `core/widgets` 路径均为 0 引用 | 2026-08-13 |
 | 人工验收 | 按编排者明确指示不运行 | 2026-08-13 |
 
 ## 审查结论
@@ -111,31 +120,32 @@
 | SHA | 提交信息 | 对应阶段 | 验证摘要 |
 | --- | --- | --- | --- |
 | `d8f26ae` | `测试（架构）：补齐依赖边界回归门禁` | `/develop` 第一轮 | 架构定向 17 项、格式门禁和 `flutter analyze` 通过 |
+| `6fc6a73` | `重构（架构）：校正公共组件业务归属` | `/develop` 第二轮 | 架构/主题/UI 等定向 56 项、格式门禁和 `flutter analyze` 通过 |
 
 ## 交付准备（合并前收集）
 
 ### 交付摘要
 
-待 `/develop`、`/test` 与 `/review` 完成后补充。本任务按编排者要求不合入 `main`。
+四类架构盲区和新守卫直接揭示的组件归属问题均已修复；待 `/test` 与 `/review` 完成后补齐最终验证和审查结论。本任务按编排者要求不合入 `main`。
 
 ### 实际变更
 
-- 领域与业务逻辑：待实现。
-- 数据与基础设施：待实现。
-- 界面与交互：计划仅移动组件归属，不改变行为。
-- 测试与工具：已实现前三类可由 fixture 自证的架构守卫；`core` 复用守卫待下一轮完成。
+- 领域与业务逻辑：无行为变化；仅强化依赖方向和组件所有权约束。
+- 数据与基础设施：无变化。
+- 界面与交互：头像、主题标签和主题面板只移动文件归属；主题面板入口及交互保持不变；删除无生产入口的 `CherryButton`。
+- 测试与工具：四类架构守卫均可由隔离 fixture 自证，并持续扫描真实 `lib/src` 源码。
 - 文档：持续更新本台账。
 
 ### 兼容性与迁移
 
 - 本地数据迁移：无。
-- API 或领域契约变化：预计无；若实现中发生则据实更新。
-- 旧版本兼容性：预计无影响。
+- API 或领域契约变化：`spark.dart` 不再导出仅供 profile 使用的 `showSparkThemeSheet`；内部入口更名为 `showProfileThemeSheet` 并由 profile 直接引用。领域契约无变化。
+- 旧版本兼容性：项目尚未正式发布，仓库内全部调用已同步；无数据或运行时迁移。
 
 ### 已知风险与回滚
 
-- 已知风险：架构扫描若只依赖文件级启发式可能误判符号复用，开发阶段须用当前全量源码与反例 fixture 双向验证。
-- 回滚方式：本批形成检查点后记录精确 revert 顺序；无数据迁移。
+- 已知风险：当前 `core` 复用规则按文件级生产依赖判定；单个共享文件内部未来新增的未使用公开符号仍需 analyzer、引用检索和审查共同发现。
+- 回滚方式：按逆序 `git revert 6fc6a73 d8f26ae`；无数据迁移。
 
 ### 文档更新建议
 

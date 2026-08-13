@@ -8,8 +8,8 @@
 - Worktree：`C:\Users\Fantasy\Desktop\Spark-worktrees\agent-6`
 - 基线提交：`4474bcffd8a1e9c49baba0be9bfe1b7398d35c5c`
 - 负责人：Fantasy（编排者）
-- 状态：开发中
-- 最近更新：2026-08-13 18:16
+- 状态：开发完成，待测试
+- 最近更新：2026-08-13 18:34
 
 ## 目标
 
@@ -50,7 +50,7 @@
 - `lib/main.dart`、`lib/src/app/`：仅接入客户端顶层诊断边界。
 - `lib/src/core/storage/local_json_store.dart`：仅补原子写恢复失败的诊断，不改变恢复顺序。
 - `lib/src/features/{papers,search,chat,local_data}/`：仅改造最终消费异常的 catch 与对应测试，不重构业务职责。
-- `test/architecture_boundaries_test.dart`：仅增加匿名 broad catch 静态门禁。
+- `test/architecture_boundaries_test.dart`：增加匿名 broad catch 与生产代码禁止旁路诊断入口的静态门禁。
 - `server/spark_papers/{api,cli,pipeline,dataset,storage,sources}.py`：仅补进程/请求/同步边界诊断和响应脱敏，不改变数据契约与同步算法。
 - `server/tests/`：仅增加诊断、脱敏及既有错误契约回归。
 
@@ -66,7 +66,7 @@
 3. 第三轮：扩展 PDF/Chat/外链固定 operation；改造 PDF provider/service、Chat conversation/session controller、DeepSeek SSE request、Reader、Sources panel 与 Chat app bar，并在对应定向测试中区分用户取消和取消清理失败。
 4. 第四轮：扩展本地数据、评论、频道偏好、交互、关键词、阅读和翻译固定 operation；改造 7 个状态控制器的读取、保存、清理和生成失败边界，在对应 7 个测试文件中同时断言诊断事件与原 fallback；在 `architecture_boundaries_test.dart` 增加匿名 broad catch 静态门禁。
 5. 第五轮：新增 `server/spark_papers/diagnostics.py`，以固定 operation、异常类型和不含异常文本/局部变量的文件名-行号-函数 stack 使用 Python 标准 logging；HTTP 防御边界固定 500 响应，CLI 按固定子命令记录未预期失败；`SourceError`、逐记录拒绝和导入失败状态保持原报告/计数及继续传播语义，不重复日志；在 API、CLI、pipeline 与独立诊断测试中覆盖事件、stack、400/500 和隐私。
-6. 实现完成后补齐跨模块隐私回归，执行 `/test` 全量门禁并进入 `/review` 只读审查。
+6. 第六轮：在客户端诊断总测试中校验全部固定 operation 的唯一性、安全字符集和异常零字符串化；在架构测试中禁止生产 Dart 代码绕过统一入口直接输出日志；在服务端诊断总测试中加入同等 operation/旁路日志门禁，并补强 HTTP/CLI 单次故障仅产生一个安全事件。定向验证通过后，另行执行 `/test` 全量门禁并进入 `/review` 只读审查。
 
 ## 当前进度
 
@@ -86,7 +86,9 @@
 - 已完成：第五轮新增仅接受固定枚举 operation 的服务端诊断模块；日志只含 operation、异常运行时类型及最多 20 帧的文件名/行号/函数 stack，不持有异常对象且不调用异常字符串化。
 - 已完成：Paper API 分发和 JSON 序列化异常统一记录一次并返回固定 500；400 仍保留原 `invalid_request` 契约，默认 HTTP access log 继续关闭以免泄露查询。
 - 已完成：CLI 按五个固定子命令记录最终未预期异常并固定退出 1；显式 `SystemExit`、`KeyboardInterrupt`、`SourceError` 报告、分页拒绝和数据集坏行计数不重复记录。
-- 下一步：第六轮补齐跨模块隐私与事件去重总回归，然后执行 `/test` 全量门禁和 `/review` 只读审查。
+- 已完成：第六轮遍历客户端与服务端全部固定 operation，锁定唯一性、安全字符集和异常零字符串化；生产 Dart/Python 模块禁止绕过统一诊断入口直接接入日志实现。
+- 已完成：HTTP 与 CLI 未预期失败的隐私回归明确断言单次故障恰好产生一条事件；ChatPaper 分层失败回归保持最终控制器单次记录。
+- 下一步：执行独立 `/test` 全量门禁；通过后进入 `/review` 只读审查。
 - 阻塞项：无。
 
 ## 决策记录
@@ -132,6 +134,12 @@
 | 第五轮 `flutter analyze` | 通过；No issues found | 2026-08-13 |
 | 第五轮 `.\tool\verify_changed_dart_format.ps1` | 通过；跨串联基线识别的 92 个 Dart 文件均无需格式化 | 2026-08-13 |
 | 第五轮 `git diff --check` | 通过；实现与测试提交无空白错误 | 2026-08-13 |
+| 第六轮客户端诊断、架构与 ChatPaper 定向测试 | 通过；35 项，覆盖全部 operation 安全性、禁止旁路日志和分层故障单事件 | 2026-08-13 |
+| 第六轮服务端诊断、API 与 CLI 定向测试 | 通过；使用 `PYTHONPATH=server` 运行 19 项，覆盖全部 operation 安全性、禁止旁路 logging 与 HTTP/CLI 单事件；首次从仓库根未设置导入路径的调用失败后已按项目布局纠正 | 2026-08-13 |
+| 第六轮 `python -m compileall -q server/spark_papers server/tests` | 通过；生产包与测试均可编译 | 2026-08-13 |
+| 第六轮 `flutter analyze` | 通过；No issues found | 2026-08-13 |
+| 第六轮 `.\tool\verify_changed_dart_format.ps1` | 通过；跨串联基线识别的 92 个 Dart 文件均无需格式化 | 2026-08-13 |
+| 第六轮 `git diff --check` | 通过；测试门禁提交无空白错误 | 2026-08-13 |
 
 ## 审查结论
 
@@ -152,25 +160,26 @@
 | `5cb07d9` | `修复（诊断）：覆盖 PDF 与聊天异常边界` | 第三轮 `/develop` | PDF/Chat/展示层最终消费异常可诊断；71 项定向测试、75 文件格式、analyze 与 diff check 通过 |
 | `5889fa7` | `修复（诊断）：覆盖本地状态异常边界` | 第四轮 `/develop` | 客户端 broad catch 归零并加入静态门禁；58 项状态/架构测试、13 项 DeepSeek 回归、92 文件格式与 analyze 通过 |
 | `d3f52ca` | `修复（服务端诊断）：脱敏异常日志与固定 500 响应` | 第五轮 `/develop` | HTTP/CLI 安全诊断、固定 500 与预期同步零日志；35 项定向、60 项服务端全量、Python 编译、Flutter analyze 与格式通过 |
+| `11f2f44` | `测试（诊断）：锁定隐私与单事件门禁` | 第六轮 `/develop` | 客户端/服务端 operation、旁路日志和单事件总回归；35 项 Flutter 定向、19 项服务端定向、Python 编译、92 文件格式与 analyze 通过 |
 
 ## 交付准备（合并前收集）
 
 ### 交付摘要
 
-待实现与验证后填写。
+客户端与 Paper API 服务端现已具备统一、可测试且不接收动态 payload 的运行时诊断边界；所有已分类的最终消费异常使用固定 operation 记录异常类型和 stack trace，预期取消/数据拒绝不记录，HTTP 500 不再暴露底层错误文本。开发阶段定向验证已完成，待 `/test` 全量门禁与 `/review` 只读审查。
 
 ### 实际变更
 
-- 领域与业务逻辑：待填写。
-- 数据与基础设施：待填写。
-- 界面与交互：待填写。
-- 测试与工具：待填写。
-- 文档：待填写。
+- 领域与业务逻辑：不改变领域模型；保留现有离线降级、取消、重试和用户提示语义。
+- 数据与基础设施：新增客户端与服务端安全诊断适配器；Paper API 未预期错误固定返回 `internal_error`，CLI 未预期错误固定退出 1。
+- 界面与交互：仅在展示层最终消费异常处接入诊断，不新增界面或改变交互。
+- 测试与工具：新增诊断单元、跨 feature fallback、隐私、operation、单事件、顶层传播和旁路日志静态门禁。
+- 文档：持续维护本任务台账；不影响 `docs/development.md` 产品能力状态。
 
 ### 兼容性与迁移
 
 - 本地数据迁移：无。
-- API 或领域契约变化：Paper API 500 错误消息计划固定化；其他 API/领域契约不变。
+- API 或领域契约变化：Paper API 500 错误消息已固定化；其他 API/领域契约不变。
 - 旧版本兼容性：不改变持久化 schema。
 
 ### 已知风险与回滚

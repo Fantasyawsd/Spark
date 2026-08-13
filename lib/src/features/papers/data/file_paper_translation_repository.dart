@@ -2,6 +2,7 @@ import '../../../core/storage/local_json_store.dart';
 import '../../../core/storage/versioned_local_json_store.dart';
 import '../domain/paper_translation.dart';
 import 'cache/paper_record_cache_policy.dart';
+import 'paper_translation_cache_record.dart';
 import 'paper_translation_json_mapper.dart';
 
 const paperTranslationDefaultCachePolicy = PaperRecordCachePolicy(
@@ -50,7 +51,9 @@ class FilePaperTranslationRepository implements PaperTranslationRepository {
         throw const FormatException('Paper translation record is invalid.');
       }
       final record = PaperTranslationJsonMapper.fromJson(paperId, value);
-      return _policy.isExpired(record.generatedAt, _clock()) ? null : record;
+      return _policy.isExpired(record.generatedAt, _clock())
+          ? null
+          : record.toDomain();
     } catch (error) {
       throw PaperTranslationPersistenceException('无法读取中文翻译。', error);
     }
@@ -59,9 +62,12 @@ class FilePaperTranslationRepository implements PaperTranslationRepository {
   @override
   Future<void> save(PaperTranslationRecord record) async {
     try {
+      final cacheRecord = PaperTranslationCacheRecord.fromDomain(record);
       await _store.updateMap((current) {
         final json = current ?? <String, dynamic>{};
-        json[record.paperId] = PaperTranslationJsonMapper.toJson(record);
+        json[cacheRecord.paperId] = PaperTranslationJsonMapper.toJson(
+          cacheRecord,
+        );
         return retainNewestPaperRecords(
           json,
           now: _clock(),

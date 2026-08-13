@@ -1,4 +1,4 @@
-import '../domain/paper_translation.dart';
+import 'paper_translation_cache_record.dart';
 
 class PaperTranslationJsonMapper {
   const PaperTranslationJsonMapper._();
@@ -19,7 +19,7 @@ class PaperTranslationJsonMapper {
     }
   }
 
-  static PaperTranslationRecord fromJson(
+  static PaperTranslationCacheRecord fromJson(
     String paperId,
     Map<String, dynamic> json,
   ) {
@@ -39,11 +39,9 @@ class PaperTranslationJsonMapper {
     }
     final parsedGeneratedAt = DateTime.tryParse(generatedAt);
     if (parsedGeneratedAt == null) {
-      throw const FormatException(
-        'Paper translation generatedAt is invalid.',
-      );
+      throw const FormatException('Paper translation generatedAt is invalid.');
     }
-    return PaperTranslationRecord(
+    return PaperTranslationCacheRecord(
       paperId: paperId,
       markdown: markdown,
       inputFingerprint: inputFingerprint,
@@ -52,7 +50,7 @@ class PaperTranslationJsonMapper {
     );
   }
 
-  static Map<String, dynamic> toJson(PaperTranslationRecord record) => {
+  static Map<String, dynamic> toJson(PaperTranslationCacheRecord record) => {
         'markdown': record.markdown,
         'inputFingerprint': record.inputFingerprint,
         'promptVersion': record.promptVersion,

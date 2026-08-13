@@ -5,7 +5,6 @@ import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import 'package:syncfusion_flutter_pdf/pdf.dart';
 
-import '../../../core/diagnostics/diagnostics.dart';
 import '../domain/paper_pdf.dart';
 
 const paperPdfExtractionVersion = 2;
@@ -97,12 +96,10 @@ class PaperPdfExtractionService {
     } on PaperPdfException {
       rethrow;
     } on Object catch (error, stackTrace) {
-      SparkDiagnostics.reportUnexpected(
-        operation: SparkDiagnosticOperation.paperPdfDownload,
-        error: error,
-        stackTrace: stackTrace,
+      Error.throwWithStackTrace(
+        const PaperPdfException('无法下载 PDF，请检查网络后重试。'),
+        stackTrace,
       );
-      throw const PaperPdfException('无法下载 PDF，请检查网络后重试。');
     } finally {
       if (_injectedClient == null) client.close();
     }
@@ -185,11 +182,6 @@ class PaperPdfExtractionService {
 
     resultPort.listen((message) {
       if (message is! List || message.isEmpty) {
-        SparkDiagnostics.reportUnexpected(
-          operation: SparkDiagnosticOperation.paperPdfWorkerProtocol,
-          error: const _PaperPdfWorkerProtocolException(),
-          stackTrace: StackTrace.current,
-        );
         completeWithError(
           const PaperPdfException('PDF 解析 worker 返回了无效结果。'),
           StackTrace.current,
@@ -219,22 +211,12 @@ class PaperPdfExtractionService {
           final stack = message.length > 1 ? message[1] : null;
           final stackTrace =
               StackTrace.fromString(stack is String ? stack : '');
-          SparkDiagnostics.reportUnexpected(
-            operation: SparkDiagnosticOperation.paperPdfExtract,
-            error: const _PaperPdfWorkerUnexpectedException(),
-            stackTrace: stackTrace,
-          );
           completeWithError(
             const PaperPdfException('PDF 解析失败，文件可能已损坏。'),
             stackTrace,
           );
           return;
       }
-      SparkDiagnostics.reportUnexpected(
-        operation: SparkDiagnosticOperation.paperPdfWorkerProtocol,
-        error: const _PaperPdfWorkerProtocolException(),
-        stackTrace: StackTrace.current,
-      );
       completeWithError(
         const PaperPdfException('PDF 解析 worker 返回了无效结果。'),
         StackTrace.current,
@@ -243,11 +225,6 @@ class PaperPdfExtractionService {
     errorPort.listen((message) {
       final stack = message is List && message.length > 1 ? message[1] : null;
       final stackTrace = StackTrace.fromString(stack is String ? stack : '');
-      SparkDiagnostics.reportUnexpected(
-        operation: SparkDiagnosticOperation.paperPdfExtract,
-        error: const _PaperPdfWorkerCrashedException(),
-        stackTrace: stackTrace,
-      );
       completeWithError(
         const PaperPdfException('PDF 解析失败，文件可能已损坏。'),
         stackTrace,
@@ -278,11 +255,6 @@ class PaperPdfExtractionService {
           }
         },
         onError: (Object error, StackTrace stackTrace) {
-          SparkDiagnostics.reportUnexpected(
-            operation: SparkDiagnosticOperation.paperPdfWorkerSpawn,
-            error: error,
-            stackTrace: stackTrace,
-          );
           completeWithError(
             const PaperPdfException('无法启动 PDF 解析 worker。'),
             stackTrace,
@@ -555,14 +527,6 @@ void _extractPaperPdfInWorker(_PaperPdfWorkerRequest request) {
       ],
     );
   }
-}
-
-final class _PaperPdfWorkerProtocolException implements Exception {
-  const _PaperPdfWorkerProtocolException();
-}
-
-final class _PaperPdfWorkerCrashedException implements Exception {
-  const _PaperPdfWorkerCrashedException();
 }
 
 final class _PaperPdfWorkerUnexpectedException implements Exception {

@@ -88,8 +88,34 @@ class ApiTest(unittest.TestCase):
     def test_invalid_query_is_rejected(self) -> None:
         with self.assertNoLogs(DIAGNOSTIC_LOGGER_NAME, level="ERROR"):
             status, payload = self.get("/api/v1/channels/subject/cs.AI?from=not-a-date")
+            seed_status, seed_payload = self.get(
+                "/api/v1/feed/recommended?seed=not-an-integer"
+            )
         self.assertEqual(status, 400)
         self.assertEqual(payload["error"], "invalid_request")
+        self.assertEqual(seed_status, 400)
+        self.assertEqual(
+            seed_payload,
+            {"error": "invalid_request", "message": "seed must be an integer"},
+        )
+
+    def test_internal_value_error_uses_fixed_500_without_leaking_text(self) -> None:
+        secret_error = ValueError("token=private-db-secret")
+        with (
+            patch.object(self.store, "count", side_effect=secret_error),
+            self.assertLogs(DIAGNOSTIC_LOGGER_NAME, level="ERROR") as logs,
+        ):
+            status, payload = self.get("/api/v1/health")
+
+        self.assertEqual(status, 500)
+        self.assertEqual(
+            payload,
+            {"error": "internal_error", "message": INTERNAL_ERROR_MESSAGE},
+        )
+        self.assertEqual(len(logs.records), 1)
+        self.assertIn("type=ValueError", logs.records[0].getMessage())
+        self.assertNotIn("private-db-secret", logs.records[0].getMessage())
+        self.assertNotIn("private-db-secret", json.dumps(payload))
 
     def test_internal_failure_is_logged_without_leaking_request_or_error(self) -> None:
         secret_error = RuntimeError(

@@ -19,6 +19,10 @@ from .recommendation import RecommendationEngine
 INTERNAL_ERROR_MESSAGE = "Paper service is temporarily unavailable."
 
 
+class _InvalidRequestError(ValueError):
+    """A client-controlled request value failed explicit validation."""
+
+
 def encode_cursor(cursor: tuple[str, str] | None) -> str | None:
     if cursor is None:
         return None
@@ -33,8 +37,8 @@ def decode_cursor(value: str | None) -> tuple[str, str] | None:
         padding = "=" * (-len(value) % 4)
         payload = json.loads(base64.urlsafe_b64decode((value + padding).encode()).decode())
         return str(payload["published_at"]), str(payload["paper_id"])
-    except (ValueError, KeyError, TypeError, json.JSONDecodeError):
-        raise ValueError("invalid cursor")
+    except (ValueError, KeyError, TypeError, json.JSONDecodeError) as error:
+        raise _InvalidRequestError("invalid cursor") from error
 
 
 class PaperApiService:
@@ -62,7 +66,7 @@ class PaperApiService:
     def subject(self, subject: str, query: Mapping[str, list[str]]) -> dict[str, Any]:
         sort = _first(query, "sort") or "latest"
         if sort not in {"latest", "quality"}:
-            raise ValueError("sort must be latest or quality")
+            raise _InvalidRequestError("sort must be latest or quality")
         items, next_cursor = self.store.list_papers(
             limit=_limit(query),
             cursor=decode_cursor(_first(query, "cursor")),
@@ -77,12 +81,12 @@ class PaperApiService:
     def conference(self, venue: str, query: Mapping[str, list[str]]) -> dict[str, Any]:
         sort = _first(query, "sort") or "latest"
         if sort not in {"latest", "quality"}:
-            raise ValueError("sort must be latest or quality")
+            raise _InvalidRequestError("sort must be latest or quality")
         year_value = _first(query, "year")
         try:
             year = int(year_value) if year_value else None
         except ValueError as error:
-            raise ValueError("year must be an integer") from error
+            raise _InvalidRequestError("year must be an integer") from error
         items, next_cursor = self.store.list_papers(
             limit=_limit(query),
             cursor=decode_cursor(_first(query, "cursor")),
@@ -98,7 +102,7 @@ class PaperApiService:
         subjects = {item.strip().lower() for item in (_first(query, "subjects") or "").split(",") if item.strip()}
         venues = {item.strip().lower() for item in (_first(query, "venues") or "").split(",") if item.strip()}
         if not (authors or subjects or venues):
-            raise ValueError("following requires authors, subjects, or venues")
+            raise _InvalidRequestError("following requires authors, subjects, or venues")
         items, next_cursor = self.store.list_following(
             authors=authors,
             subjects=subjects,
@@ -111,7 +115,10 @@ class PaperApiService:
     def recommended(self, query: Mapping[str, list[str]]) -> dict[str, Any]:
         read_ids = [value for value in (_first(query, "read_ids") or "").split(",") if value]
         seed_value = _first(query, "seed")
-        seed = int(seed_value) if seed_value else None
+        try:
+            seed = int(seed_value) if seed_value else None
+        except ValueError as error:
+            raise _InvalidRequestError("seed must be an integer") from error
         batch_id, items = self.recommendation.generate(limit=_limit(query), read_ids=read_ids, seed=seed)
         return {
             "schema_version": API_SCHEMA_VERSION,
@@ -143,7 +150,7 @@ def _limit(query: Mapping[str, list[str]]) -> int:
     try:
         return max(1, min(int(value), 100))
     except ValueError as error:
-        raise ValueError("limit must be an integer") from error
+        raise _InvalidRequestError("limit must be an integer") from error
 
 
 def _query_date(query: Mapping[str, list[str]], key: str) -> datetime | None:
@@ -152,7 +159,7 @@ def _query_date(query: Mapping[str, list[str]], key: str) -> datetime | None:
         return None
     parsed = parse_datetime(value)
     if parsed is None:
-        raise ValueError(f"{key} must be an ISO-8601 date")
+        raise _InvalidRequestError(f"{key} must be an ISO-8601 date")
     return parsed
 
 
@@ -161,10 +168,13 @@ class PaperRequestHandler(BaseHTTPRequestHandler):
 
     def do_GET(self) -> None:  # noqa: N802
         try:
-            parsed = urlsplit(self.path)
-            query = parse_qs(parsed.query, keep_blank_values=True)
+            try:
+                parsed = urlsplit(self.path)
+                query = parse_qs(parsed.query, keep_blank_values=True)
+            except ValueError as error:
+                raise _InvalidRequestError("invalid request target") from error
             payload, status = self._dispatch(parsed.path, query)
-        except ValueError as error:
+        except _InvalidRequestError as error:
             payload, status = {"error": "invalid_request", "message": str(error)}, HTTPStatus.BAD_REQUEST
         except Exception as error:
             payload, status = _internal_error_response(error)

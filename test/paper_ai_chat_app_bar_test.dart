@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
 import 'package:spark/src/core/diagnostics/diagnostics.dart';
 import 'package:spark/src/features/chat/domain/chat_context.dart';
 import 'package:spark/src/features/chat/presentation/widgets/paper_ai_chat_app_bar.dart';
+import 'package:spark/src/features/papers/data/paper_pdf_extraction_service.dart';
 
 void main() {
   testWidgets('title and full-text state survive selection mode changes', (
@@ -68,50 +70,107 @@ void main() {
     expect(fullTextLoads, 1);
   });
 
-  testWidgets('full-text failures report once and reset loading state',
+  testWidgets('mapped PDF download failures report once at the final boundary',
       (tester) async {
     final events = <SparkDiagnosticEvent>[];
+    final extractionService = PaperPdfExtractionService(
+      client: _ThrowingPdfClient(),
+    );
 
     await SparkDiagnostics.runWithSink(events.add, () async {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            appBar: PaperAiChatAppBar(
-              initialTitle: '标题',
-              subtitle: '论文标题',
-              previewMode: false,
-              onPreviewModeChanged: (_) {},
-              onOpenSettings: () {},
-              onApplyFullText: (_) => true,
-              fullTextAvailable: true,
-              onLoadFullText: () async {
-                throw StateError('private-pdf-path');
-              },
-              selectionActive: false,
-              selectionCount: 0,
-              onCancelSelection: () {},
-            ),
-          ),
-        ),
-      );
+      await tester.pumpWidget(_fullTextFailureApp(
+        onLoadFullText: () async {
+          await extractionService.download(
+            Uri.parse('https://example.test/private-paper.pdf'),
+          );
+          throw StateError('unreachable');
+        },
+      ));
 
       await tester.tap(find.byKey(const ValueKey('paper-ai-fulltext-toggle')));
       await tester.pumpAndSettle();
     });
 
-    expect(find.text('无法读取论文全文，请稍后重试。'), findsOneWidget);
+    _expectRetryableFullTextFailure(tester, events);
+    expect(events.single.errorType, 'PaperPdfException');
     expect(
-      events.map((event) => event.operation),
-      [SparkDiagnosticOperation.chatLoadFullText],
-    );
-    expect(events.single.summary, isNot(contains('private-pdf-path')));
-    expect(
-      tester
-          .widget<IconButton>(
-            find.byKey(const ValueKey('paper-ai-fulltext-toggle')),
-          )
-          .tooltip,
-      '读取论文全文',
+      events.single.stackTrace.toString(),
+      contains('_ThrowingPdfClient.send'),
     );
   });
+
+  testWidgets('mapped PDF worker failures report once at the final boundary',
+      (tester) async {
+    final events = <SparkDiagnosticEvent>[];
+    final extractionService = PaperPdfExtractionService();
+
+    await SparkDiagnostics.runWithSink(events.add, () async {
+      await tester.pumpWidget(_fullTextFailureApp(
+        onLoadFullText: () async {
+          await extractionService.extract(
+            paperId: 'private-paper',
+            version: 'v1',
+            bytes: const [0x25, 0x50, 0x44, 0x46, 0x2d],
+          );
+          throw StateError('unreachable');
+        },
+      ));
+
+      await tester.tap(find.byKey(const ValueKey('paper-ai-fulltext-toggle')));
+      await tester.pumpAndSettle();
+    });
+
+    _expectRetryableFullTextFailure(tester, events);
+    expect(events.single.errorType, 'PaperPdfException');
+    expect(events.single.stackTrace.toString(), isNotEmpty);
+  });
+}
+
+Widget _fullTextFailureApp({
+  required Future<ChatContext> Function() onLoadFullText,
+}) {
+  return MaterialApp(
+    home: Scaffold(
+      appBar: PaperAiChatAppBar(
+        initialTitle: '标题',
+        subtitle: '论文标题',
+        previewMode: false,
+        onPreviewModeChanged: (_) {},
+        onOpenSettings: () {},
+        onApplyFullText: (_) => true,
+        fullTextAvailable: true,
+        onLoadFullText: onLoadFullText,
+        selectionActive: false,
+        selectionCount: 0,
+        onCancelSelection: () {},
+      ),
+    ),
+  );
+}
+
+void _expectRetryableFullTextFailure(
+  WidgetTester tester,
+  List<SparkDiagnosticEvent> events,
+) {
+  expect(find.text('无法读取论文全文，请稍后重试。'), findsOneWidget);
+  expect(
+    events.map((event) => event.operation),
+    [SparkDiagnosticOperation.chatLoadFullText],
+  );
+  expect(events.single.summary, isNot(contains('private')));
+  expect(
+    tester
+        .widget<IconButton>(
+          find.byKey(const ValueKey('paper-ai-fulltext-toggle')),
+        )
+        .tooltip,
+    '读取论文全文',
+  );
+}
+
+final class _ThrowingPdfClient extends http.BaseClient {
+  @override
+  Future<http.StreamedResponse> send(http.BaseRequest request) async {
+    throw StateError('private-pdf-path');
+  }
 }

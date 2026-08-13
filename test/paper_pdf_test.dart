@@ -92,27 +92,30 @@ void main() {
       expect(events, isEmpty);
     });
 
-    test('reports unexpected parser failures returned by the worker', () async {
+    test('maps worker failures without reporting before final consumption',
+        () async {
       final service = PaperPdfExtractionService();
       final events = <SparkDiagnosticEvent>[];
+      Object? caughtError;
+      StackTrace? caughtStackTrace;
 
-      await expectLater(
-        SparkDiagnostics.runWithSink(
-          events.add,
-          () => service.extract(
+      await SparkDiagnostics.runWithSink(events.add, () async {
+        try {
+          await service.extract(
             paperId: 'paper-1',
             version: 'v1',
             bytes: const [0x25, 0x50, 0x44, 0x46, 0x2d],
-          ),
-        ),
-        throwsA(isA<PaperPdfException>()),
-      );
+          );
+        } on Object catch (error, stackTrace) {
+          caughtError = error;
+          caughtStackTrace = stackTrace;
+        }
+      });
 
-      expect(
-        events.map((event) => event.operation),
-        [SparkDiagnosticOperation.paperPdfExtract],
-      );
-      expect(events.single.stackTrace.toString(), isNotEmpty);
+      expect(caughtError, isA<PaperPdfException>());
+      expect(caughtStackTrace, isNotNull);
+      expect(caughtStackTrace!.toString(), isNotEmpty);
+      expect(events, isEmpty);
     });
 
     test('accepts the input byte boundary and rejects one byte below it',
@@ -330,23 +333,26 @@ void main() {
       expect(client.streamCancelled, isTrue);
     });
 
-    test('reports unexpected download failures before mapping them', () async {
+    test('maps download failures with the original stack and no early report',
+        () async {
       final service = PaperPdfExtractionService(client: _ThrowingClient());
       final events = <SparkDiagnosticEvent>[];
+      Object? caughtError;
+      StackTrace? caughtStackTrace;
 
-      await expectLater(
-        SparkDiagnostics.runWithSink(
-          events.add,
-          () => service.download(Uri.parse('https://example.test/paper.pdf')),
-        ),
-        throwsA(isA<PaperPdfException>()),
-      );
+      await SparkDiagnostics.runWithSink(events.add, () async {
+        try {
+          await service.download(Uri.parse('https://example.test/paper.pdf'));
+        } on Object catch (error, stackTrace) {
+          caughtError = error;
+          caughtStackTrace = stackTrace;
+        }
+      });
 
-      expect(
-        events.map((event) => event.operation),
-        [SparkDiagnosticOperation.paperPdfDownload],
-      );
-      expect(events.single.errorType, 'StateError');
+      expect(caughtError, isA<PaperPdfException>());
+      expect(caughtStackTrace, isNotNull);
+      expect(caughtStackTrace!.toString(), contains('_ThrowingClient.send'));
+      expect(events, isEmpty);
     });
   });
 

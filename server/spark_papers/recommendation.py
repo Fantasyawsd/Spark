@@ -34,10 +34,11 @@ class ScoreConfig:
         ("venue_score", 0.20),
     )
     trend_weights: tuple[tuple[str, float], ...] = (
-        ("hf_heat", 0.30),
-        ("github_star_velocity", 0.25),
-        ("short_citation_velocity", 0.20),
-        ("freshness", 0.25),
+        ("hf_heat", 0.25),
+        ("github_star_velocity", 0.20),
+        ("short_citation_velocity", 0.15),
+        ("freshness", 0.20),
+        ("web_heat", 0.20),
     )
     boost: BoostConfig = BoostConfig()
 
@@ -57,6 +58,7 @@ def _signal(paper: PaperRecord, name: str, as_of: datetime | None = None) -> flo
     semantic = paper.signals.get("semantic_scholar", {})
     github = paper.signals.get("github", {})
     hf = paper.signals.get("huggingface", {})
+    web_heat = paper.signals.get("web_heat", {})
     openalex_is_outlier = openalex.get("citation_count_outlier") is True
     values = {
         "citation_count": _first_number(
@@ -75,6 +77,7 @@ def _signal(paper: PaperRecord, name: str, as_of: datetime | None = None) -> flo
             None if openalex_is_outlier else openalex.get("short_citation_velocity"),
             None if openalex_is_outlier else semantic.get("short_citation_velocity"),
         ),
+        "web_heat": _number(web_heat.get("web_heat_score")),
     }
     if name == "freshness":
         age_days = max(((as_of or datetime.now(UTC)) - paper.published_at).total_seconds() / 86400, 0)

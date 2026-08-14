@@ -21,6 +21,7 @@ from .index_storage import IndexStorage
 from .models import PaperRecord, parse_datetime, utc_now
 from .ports import IngestOutcome, IngestStatus
 from .paper_record_merger import merge_paper_records
+from .star_velocity import compute_star_velocity
 from .storage_schema import StorageSchemaManager
 from .sync_storage import SyncStorage
 
@@ -65,6 +66,57 @@ class PaperStore:
         except Exception:
             self._connection.rollback()
             raise
+
+    def _derive_github_star_velocity(
+        self,
+        connection: sqlite3.Connection,
+        paper: PaperRecord,
+        as_of: datetime,
+    ) -> float | None:
+        github_signal = paper.signals.get("github") or {}
+        stars = github_signal.get("stars")
+        if stars is None:
+            return None
+        observed_at = parse_datetime(github_signal.get("stars_updated_at")) or as_of
+        connection.execute(
+            """INSERT INTO github_star_history(paper_id, observed_at, stars)
+               VALUES (?, ?, ?)
+               ON CONFLICT(paper_id, observed_at) DO UPDATE SET stars=excluded.stars""",
+            (paper.paper_id, observed_at.isoformat(), int(stars)),
+        )
+        rows = connection.execute(
+            "SELECT observed_at, stars FROM github_star_history WHERE paper_id = ?",
+            (paper.paper_id,),
+        ).fetchall()
+        observations = [
+            (parse_datetime(row["observed_at"]) or as_of, row["stars"])
+            for row in rows
+        ]
+        velocity = compute_star_velocity(observations, as_of)
+        if velocity is None:
+            return None
+        connection.execute(
+            """INSERT INTO provenance
+               (paper_id, field_name, source, fetched_at, source_updated_at, evidence_json)
+               VALUES (?, ?, ?, ?, NULL, ?)
+               ON CONFLICT(paper_id, field_name, source) DO UPDATE SET
+                fetched_at=excluded.fetched_at, source_updated_at=excluded.source_updated_at,
+                evidence_json=excluded.evidence_json""",
+            (
+                paper.paper_id,
+                "github_star_velocity",
+                "derived",
+                as_of.isoformat(),
+                encode_json(
+                    {
+                        "method": "windowed_star_delta",
+                        "window_days": 30,
+                        "observations": len(observations),
+                    }
+                ),
+            ),
+        )
+        return velocity
 
     def _row_to_paper(self, row: sqlite3.Row) -> PaperRecord:
         return self._rows_to_papers((row,))[0]
@@ -245,6 +297,17 @@ class PaperStore:
                            discovered_at=excluded.discovered_at""",
                     (merged.paper_id, arxiv_id, str(github_url), fetched_at.isoformat()),
                 )
+            velocity = self._derive_github_star_velocity(connection, merged, fetched_at)
+            if velocity is not None:
+                github_fields = dict(merged.signals.get("github") or {})
+                github_fields["star_velocity"] = velocity
+                derived_signals = dict(merged.signals)
+                derived_signals["github"] = github_fields
+                connection.execute(
+                    "UPDATE papers SET signals_json = ? WHERE paper_id = ?",
+                    (encode_json(derived_signals), merged.paper_id),
+                )
+                merged = replace(merged, signals=derived_signals)
             provenance_fields = _provenance_fields(merged)
             provenance_fields["missing_fields"] = _source_missing_fields(raw_payload)
             for field_name, evidence in provenance_fields.items():

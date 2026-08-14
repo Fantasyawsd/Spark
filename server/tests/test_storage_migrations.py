@@ -43,7 +43,7 @@ class StorageMigrationTest(unittest.TestCase):
                     for row in migrated._connection.execute("PRAGMA table_info(sync_state)")
                 }
                 version = migrated._connection.execute("PRAGMA user_version").fetchone()[0]
-                self.assertEqual(version, 1)
+                self.assertEqual(version, 2)
                 self.assertTrue(
                     {"completed_through", "window_from", "window_until"}.issubset(columns)
                 )
@@ -51,6 +51,13 @@ class StorageMigrationTest(unittest.TestCase):
                     state["completed_through"],
                     "2026-08-12T00:00:00+00:00",
                 )
+                history_tables = {
+                    row["name"]
+                    for row in migrated._connection.execute(
+                        "SELECT name FROM sqlite_master WHERE type = 'table'"
+                    )
+                }
+                self.assertIn("github_star_history", history_tables)
             finally:
                 migrated.close()
 
@@ -58,7 +65,7 @@ class StorageMigrationTest(unittest.TestCase):
             try:
                 self.assertEqual(
                     reopened._connection.execute("PRAGMA user_version").fetchone()[0],
-                    1,
+                    2,
                 )
             finally:
                 reopened.close()
@@ -67,10 +74,10 @@ class StorageMigrationTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "papers.sqlite3"
             connection = sqlite3.connect(path)
-            connection.execute("PRAGMA user_version = 2")
+            connection.execute("PRAGMA user_version = 3")
             connection.close()
 
-            with self.assertRaisesRegex(RuntimeError, "newer than supported version 1"):
+            with self.assertRaisesRegex(RuntimeError, "newer than supported version 2"):
                 PaperStore(path)
 
     def test_built_wheel_contains_and_applies_migration(self) -> None:
@@ -116,6 +123,10 @@ class StorageMigrationTest(unittest.TestCase):
                     "spark_papers/database/migrations/001_oai_sync_windows.sql",
                     archive.namelist(),
                 )
+                self.assertIn(
+                    "spark_papers/database/migrations/002_github_star_history.sql",
+                    archive.namelist(),
+                )
 
             subprocess.run(
                 [
@@ -147,7 +158,7 @@ connection.execute(
 )
 connection.close()
 store = PaperStore(path)
-assert store._connection.execute('PRAGMA user_version').fetchone()[0] == 1
+assert store._connection.execute('PRAGMA user_version').fetchone()[0] == 2
 store.close()
 """
             subprocess.run(

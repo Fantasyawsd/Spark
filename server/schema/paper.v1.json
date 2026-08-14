@@ -47,6 +47,18 @@
             "citation_count_outlier": {"type": "boolean"}
           },
           "additionalProperties": true
+        },
+        "github": {
+          "type": "object",
+          "properties": {
+            "url": {"type": ["string", "null"]},
+            "stars": {"type": ["integer", "null"], "minimum": 0},
+            "forks": {"type": ["integer", "null"], "minimum": 0},
+            "last_updated_at": {"type": ["string", "null"], "format": "date-time"},
+            "stars_updated_at": {"type": ["string", "null"], "format": "date-time"},
+            "star_velocity": {"type": ["number", "null"], "minimum": 0}
+          },
+          "additionalProperties": true
         }
       },
       "additionalProperties": {"type": "object"}

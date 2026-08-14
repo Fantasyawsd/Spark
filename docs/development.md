@@ -107,7 +107,7 @@ OpenAlex / Semantic Scholar / GitHub 增强 ─┘                              
 | Phase 2：基础 Feed API | 已完成 | 详情、最新、主题、会议、关注和推荐 API 已在真实库验证；development App 开放 19 个真实会议频道，推荐刷新排除当前列表与已读论文，保留旧 batch 并将新 batch 追加到阅读流下方 |
 | Phase 2.5：真实数据落库与端到端验收 | 已完成 | 真实数据库、外部来源、索引、API、会议入口、推荐刷新语义、自动化门禁和 Windows development App 人工验收均已完成 |
 | Phase 3：热点能力增强 | 已完成 | GitHub star velocity、citation velocity、Web Heat、LLM Trend Scout、24–72 小时 Trend Boost 与热点原因全部落地：3.1–3.7 七个子任务串行迭代合入 main，score 口径升至 score.v3，客户端信息流展示「Trending · 原因」，服务端 pytest 140 项与客户端 flutter test 588 项全过 |
-| Phase 4：个性化推荐 | 后续阶段 | 行为日志、用户画像与论文向量、Personalized Pool、个性化排序、Diversity 与 Exploration |
+| Phase 4：个性化推荐 | 进行中 | 行为日志、用户画像与论文向量、Personalized Pool、个性化排序、Diversity 与 Exploration；按下方 4.1–4.7 子任务串行推进（与 Phase 3 相同迭代模式）；无账号阶段采用「设备本地行为日志 + 匿名偏好画像随推荐请求上送」的隐私边界 |
 | Phase 5：高级推荐系统 | 后续阶段 | 多路召回、Two-Tower、Learning to Rank、Reranker、序列推荐、实时兴趣更新与 A/B Test |
 
 Phase 3 子任务（串行依赖，每个合入 `main` 后基于新基线开发下一个）：
@@ -121,6 +121,18 @@ Phase 3 子任务（串行依赖，每个合入 `main` 后基于新基线开发�
 | 3.5 | 24–72 小时 Trend Boost 与衰减 | 已完成 | `trend_boost.py` 纯函数（72h 窗口、24h 半衰、指数衰减）；引擎仅对带 `trend_detected_at` 论文施加增益，展示分数 clamp [0,1]；SCORE_VERSION 升 score.v2；pytest 136 项全过 |
 | 3.6 | 热点原因 Client 展示 | 已完成 | Paper 领域模型 + mapper 提取 signals.web_heat；信息流卡片渲染「Trending · 原因」chip，无信号零展示变化；workflow 子代理实现 + 只读审查；analyze 无问题、flutter test 588 项全过；双目标构建证据见台账 |
 | 3.7 | Web Heat 接入 TrendScore 权重版本 | 已完成 | trend_weights 纳入 web_heat（0.20）总和保持 1.0，缺失信号重归一化不惩罚；SCORE_VERSION 升 score.v3；batch 按版本追溯；pytest 140 项全过 |
+
+Phase 4 子任务（串行依赖，每个合入 `main` 后基于新基线开发下一个）：
+
+| # | 任务 | 状态 | 完成条件 |
+| --- | --- | --- | --- |
+| 4.1 | 行为事件日志契约与本地采集 | 开发中 | `behavior` 模块：事件模型（类型/论文 ID/时间/上下文）、本地存储（保留期滚动清理、大小上限）、同意开关门控（关闭即停采并可清除）；论文打开/点赞/收藏三类埋点接入；纯 Dart 单测覆盖 |
+| 4.2 | 用户画像本地聚合 | 待开始 | 从行为事件聚合主题/关键词/会议偏好权重（显式高权重、隐式低权重、负信号扣减）；版本化画像 schema；聚合与衰减测试 |
+| 4.3 | 匿名画像推荐请求契约 | 待开始 | 推荐请求携带匿名偏好画像（不含原始行为）；服务端大小上限与 DTO 校验；契约测试 |
+| 4.4 | Personalized Pool 候选召回 | 待开始 | 服务端按画像召回主题/关键词/会议候选；标题/摘要关键词重合度相似召回（向量 Embedding 接口契约预留）；测试 |
+| 4.5 | UserPreferenceScore 与个性化排序 | 待开始 | 画像与论文特征匹配打分；Diversity 与 Exploration 配置（60/20/10/10 可配置实验）；测试 |
+| 4.6 | 三信号混排与版本化 | 待开始 | RecommendationScore 纳入 Personalization 分量；SCORE_VERSION 升 score.v4；batch 追溯与回放兼容测试 |
+| 4.7 | 个性化开关与偏好展示 | 待开始 | 隐私设置：个性化开关、清除行为数据；推荐偏好来源展示；Widget 测试 |
 
 Phase 1 按以下依赖顺序拆分：
 

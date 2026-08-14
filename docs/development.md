@@ -130,7 +130,7 @@ Phase 4 子任务（串行依赖，每个合入 `main` 后基于新基线开发�
 | 4.2 | 用户画像本地聚合 | 已完成 | `UserProfile`（profile.v1）主题/关键词/会议权重；`ProfileAggregator` 纯函数（点赞 2.0/收藏 1.5/打开 0.5，30 天半衰衰减）；`FileProfileStore` 持久化；会话初始化后台刷新；analyze 无问题、flutter test 599 项全过 |
 | 4.3 | 匿名画像推荐请求契约 | 已完成 | 服务端 `anonymous_profile.py` 解析校验（profile.v1、键数 ≤64、权重 [-10,10]）非法 400；客户端 base64url 编码上送聚合权重（不含原始行为）；pytest 149、flutter test 601 全过；双目标构建证据见台账 |
 | 4.4 | Personalized Pool 候选召回 | 已完成 | `personalized_pool.py` 按画像三类召回（as_of 上界保证回放确定性）+ `SimilarPaperRecallPort`（标题关键词重合度基础实现，向量 Embedding 预留）；关键词 LIKE 为临时方案（FTS 迁移边界见台账）；workflow + openai/gpt-5.6-sol 实现与审查，2 个阻断项已修复；pytest 157 项全过 |
-| 4.5 | UserPreferenceScore 与个性化排序 | 待开始 | 画像与论文特征匹配打分；Diversity 与 Exploration 配置（60/20/10/10 可配置实验）；测试 |
+| 4.5 | UserPreferenceScore 与个性化排序 | 已完成 | `preference_score.py` 三分量加权与重归一化（中文/短语子串匹配）；generate 三池混排（personalized 按偏好加权抽样、配额恒等）；无画像/ratio=0 与旧版一致；SCORE_VERSION 升 score.v4；pytest 167 项全过 |
 | 4.6 | 三信号混排与版本化 | 待开始 | RecommendationScore 纳入 Personalization 分量；SCORE_VERSION 升 score.v4；batch 追溯与回放兼容测试 |
 | 4.7 | 个性化开关与偏好展示 | 待开始 | 隐私设置：个性化开关、清除行为数据；推荐偏好来源展示；Widget 测试 |
 

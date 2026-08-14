@@ -11,6 +11,11 @@ from . import SCORE_VERSION
 from .anonymous_profile import AnonymousProfile
 from .dto import recommendation_to_api
 from .models import PaperRecord, RecommendationItem, parse_datetime, utc_now
+from .personalized_pool import (
+    SimilarPaperRecallPort,
+    TitleKeywordSimilarityRecall,
+    build_personalized_candidates,
+)
 from .ports import RecommendationRepository
 from .trend_boost import BoostConfig, compute_trend_boost
 
@@ -263,9 +268,15 @@ def age_bucket(published_at: datetime, as_of: datetime) -> str:
 
 
 class RecommendationEngine:
-    def __init__(self, store: RecommendationRepository, config: ScoreConfig = ScoreConfig()) -> None:
+    def __init__(
+        self,
+        store: RecommendationRepository,
+        config: ScoreConfig = ScoreConfig(),
+        similar_recall: SimilarPaperRecallPort | None = None,
+    ) -> None:
         self.store = store
         self.config = config
+        self.similar_recall = similar_recall or TitleKeywordSimilarityRecall(store)
 
     def generate(
         self,
@@ -276,10 +287,6 @@ class RecommendationEngine:
         as_of: datetime | None = None,
         anonymous_profile: AnonymousProfile | None = None,
     ) -> tuple[str, list[RecommendationItem]]:
-        # 4.3 only accepts the contract; 4.4/4.5 consume the profile for
-        # personalization scoring. Keep the parameter so callers can already
-        # pass validated profiles end to end.
-        del anonymous_profile
         limit = max(1, min(int(limit), 100))
         if as_of is None:
             as_of = utc_now()
@@ -292,6 +299,20 @@ class RecommendationEngine:
             per_pool_limit=max(limit * 50, 500),
             as_of=as_of,
         )
+        if anonymous_profile is not None:
+            personalized = build_personalized_candidates(
+                self.store,
+                anonymous_profile,
+                as_of=as_of,
+                similar_recall=self.similar_recall,
+            )
+            candidates = list(
+                {
+                    paper.paper_id: paper
+                    for paper in (*candidates, *personalized)
+                    if paper.paper_id not in read
+                }.values()
+            )
         effective_seed = seed if seed is not None else int(as_of.timestamp())
         if not candidates:
             return self._batch_id(effective_seed, as_of, limit, read, ()), []

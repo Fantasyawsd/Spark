@@ -527,6 +527,41 @@ class PaperStore:
             next_cursor = (items[-1].published_at.isoformat(), items[-1].paper_id)
         return items, next_cursor
 
+    def list_papers_by_keyword(
+        self,
+        keyword: str,
+        *,
+        limit: int = 50,
+        to_date: datetime | None = None,
+    ) -> list[PaperRecord]:
+        """LIKE 关键词召回（临时方案）：参数化与 ESCAPE 防注入；to_date 约束发布上界。
+
+        当前无 FTS/关键词索引，每次查询扫描准入论文集合；调用方必须以
+        每键 LIMIT 与键数上限控制成本，库规模显著增长时迁移 FTS5。
+        """
+        normalized = keyword.strip().lower()
+        if not normalized:
+            return []
+        escaped = normalized.replace("!", "!!").replace("%", "!%").replace("_", "!_")
+        pattern = f"%{escaped}%"
+        clauses = [
+            "admitted = 1",
+            "withdrawn = 0",
+            "(lower(title) LIKE ? ESCAPE '!' OR lower(COALESCE(abstract, '')) LIKE ? ESCAPE '!')",
+        ]
+        params: list[Any] = [pattern, pattern]
+        if to_date is not None:
+            clauses.append("published_at <= ?")
+            params.append(to_date.isoformat())
+        params.append(max(1, min(int(limit), 100)))
+        rows = self._connection.execute(
+            "SELECT * FROM papers WHERE "
+            + " AND ".join(clauses)
+            + " ORDER BY published_at DESC, paper_id DESC LIMIT ?",
+            params,
+        ).fetchall()
+        return self._rows_to_papers(rows)
+
     def list_following(
         self,
         *,

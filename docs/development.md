@@ -118,7 +118,7 @@ Phase 3 子任务（串行依赖，每个合入 `main` 后基于新基线开发�
 | 3.2 | Citation velocity 短期增速补全 | 已完成 | OpenAlex 同步保留 `counts_by_year`；`citation_velocity`（近 3 年年均）与 `short_citation_velocity`（近 12 个月插值）由 ingest 派生写入 signals 并附 `derived` 证据；缺失不冒充 0；pytest 107 项全过 |
 | 3.3 | Web Heat 信号契约与存储 | 已完成 | `signals.web_heat` 六字段进入 schema 并经既有 DTO/API 透出；`record_web_heat` 幂等覆盖、未知论文拒绝创建、附 `web_heat` 来源证据；pytest 112 项全过 |
 | 3.4 | LLM Trend Scout 候选发现与身份核验 | 已完成 | `trend_scout.py` 端口与 runner：LLM 候选经精确 ID 与 admitted/标题三重核验后写 web_heat，模糊高置信仅入待核验队列；密钥仅从环境变量读取；workflow 子代理实现 + 只读审查无阻断项；pytest 126 项全过 |
-| 3.5 | 24–72 小时 Trend Boost 与衰减 | 待开始 | 版本化 boost 配置（窗口、增益、半衰期）；trend_detected_at 起算的确定性衰减；测试覆盖 |
+| 3.5 | 24–72 小时 Trend Boost 与衰减 | 已完成 | `trend_boost.py` 纯函数（72h 窗口、24h 半衰、指数衰减）；引擎仅对带 `trend_detected_at` 论文施加增益，展示分数 clamp [0,1]；SCORE_VERSION 升 score.v2；pytest 136 项全过 |
 | 3.6 | 热点原因 Client 展示 | 待开始 | 推荐 API 返回 trend_reason/trend_topics；客户端卡片展示「Trending · 原因」；Widget 测试 |
 | 3.7 | Web Heat 接入 TrendScore 权重版本 | 待开始 | trend_weights 新版本纳入 web_heat；SCORE_VERSION 递增；离线回放兼容测试 |
 

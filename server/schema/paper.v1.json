@@ -44,7 +44,20 @@
             "citation_count": {"type": ["integer", "null"], "minimum": 0},
             "fwci": {"type": ["number", "null"]},
             "match_method": {"type": ["string", "null"]},
-            "citation_count_outlier": {"type": "boolean"}
+            "citation_count_outlier": {"type": "boolean"},
+            "counts_by_year": {
+              "type": ["array", "null"],
+              "items": {
+                "type": "object",
+                "properties": {
+                  "year": {"type": "integer"},
+                  "cited_by_count": {"type": "integer", "minimum": 0}
+                },
+                "additionalProperties": true
+              }
+            },
+            "citation_velocity": {"type": ["number", "null"], "minimum": 0},
+            "short_citation_velocity": {"type": ["number", "null"], "minimum": 0}
           },
           "additionalProperties": true
         },

@@ -20,6 +20,7 @@ from .identity_resolution import (
 from .index_storage import IndexStorage
 from .models import PaperRecord, parse_datetime, utc_now
 from .ports import IngestOutcome, IngestStatus
+from .citation_velocity import compute_citation_velocities
 from .paper_record_merger import merge_paper_records
 from .star_velocity import compute_star_velocity
 from .storage_schema import StorageSchemaManager
@@ -117,6 +118,45 @@ class PaperStore:
             ),
         )
         return velocity
+
+    def _derive_openalex_citation_velocities(
+        self,
+        connection: sqlite3.Connection,
+        paper: PaperRecord,
+        as_of: datetime,
+    ) -> tuple[float | None, float | None] | None:
+        openalex_signal = paper.signals.get("openalex") or {}
+        counts_by_year = openalex_signal.get("counts_by_year")
+        if not counts_by_year:
+            return None
+        total, short = compute_citation_velocities(counts_by_year, as_of)
+        if total is None and short is None:
+            return None
+        connection.execute(
+            """INSERT INTO provenance
+               (paper_id, field_name, source, fetched_at, source_updated_at, evidence_json)
+               VALUES (?, ?, ?, ?, NULL, ?)
+               ON CONFLICT(paper_id, field_name, source) DO UPDATE SET
+                fetched_at=excluded.fetched_at, source_updated_at=excluded.source_updated_at,
+                evidence_json=excluded.evidence_json""",
+            (
+                paper.paper_id,
+                "openalex_citation_velocity",
+                "derived",
+                as_of.isoformat(),
+                encode_json(
+                    {
+                        "method": "calendar_year_windows",
+                        "counts_by_year": [
+                            entry
+                            for entry in counts_by_year
+                            if isinstance(entry, Mapping)
+                        ][:10],
+                    }
+                ),
+            ),
+        )
+        return total, short
 
     def _row_to_paper(self, row: sqlite3.Row) -> PaperRecord:
         return self._rows_to_papers((row,))[0]
@@ -303,6 +343,18 @@ class PaperStore:
                 github_fields["star_velocity"] = velocity
                 derived_signals = dict(merged.signals)
                 derived_signals["github"] = github_fields
+                connection.execute(
+                    "UPDATE papers SET signals_json = ? WHERE paper_id = ?",
+                    (encode_json(derived_signals), merged.paper_id),
+                )
+                merged = replace(merged, signals=derived_signals)
+            citations = self._derive_openalex_citation_velocities(connection, merged, fetched_at)
+            if citations is not None:
+                openalex_fields = dict(merged.signals.get("openalex") or {})
+                openalex_fields["citation_velocity"] = citations[0]
+                openalex_fields["short_citation_velocity"] = citations[1]
+                derived_signals = dict(merged.signals)
+                derived_signals["openalex"] = openalex_fields
                 connection.execute(
                     "UPDATE papers SET signals_json = ? WHERE paper_id = ?",
                     (encode_json(derived_signals), merged.paper_id),

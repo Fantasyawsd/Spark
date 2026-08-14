@@ -636,6 +636,7 @@ def _normalize_openalex_record(item: Mapping[str, Any]) -> dict[str, Any]:
             "fwci": item.get("fwci"),
             "citation_normalized_percentile": item.get("citation_normalized_percentile"),
             "topics": topics,
+            "counts_by_year": item.get("counts_by_year"),
         }
     }
     return {

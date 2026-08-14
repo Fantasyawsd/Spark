@@ -1,7 +1,8 @@
 # 批量读取 provenance 任务台账
 
-> 状态：待审查
-> 最近更新：2026-08-13
+> 状态：已合并
+> 合并归档：实现提交已随审计串行批次合入 main（2026-08-13 至 2026-08-14）；合并后 flutter analyze 无问题、flutter test 582 项通过、Windows 开发版人工验收通过，批次集成记录见 audit--deepseek-report-final 台账。
+> 最近更新：2026-08-14
 
 ## 目标
 

@@ -10,8 +10,9 @@
 - Worktree：`C:\Users\Fantasy\Desktop\PaperFlow-worktrees\feature--spark-logo`
 - 基线提交：`2dd2b4d`
 - 负责人：Fantasy
-- 状态：开发中
-- 最近更新：2026-08-07 00:50
+- 状态：已合并
+- 合并归档：分支 feature/spark-logo 已于 2026-08-07 合并（集成提交 3a3f92a）；台账此前停留在开发中，本次勘误归档。
+- 最近更新：2026-08-14
 
 ## 目标
 

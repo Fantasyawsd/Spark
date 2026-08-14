@@ -8,8 +8,11 @@ import '../core/theme/theme_controller.dart';
 import '../core/theme/theme_preference_repository.dart';
 import '../features/ai_settings/data/deepseek_api_credential_validator.dart';
 import '../features/behavior/application/behavior_logger.dart';
+import '../features/behavior/application/behavior_profile_service.dart';
+import '../features/behavior/application/profile_aggregator.dart';
 import '../features/behavior/data/behavior_consent_store.dart';
 import '../features/behavior/data/behavior_event_store.dart';
+import '../features/behavior/data/file_profile_store.dart';
 import '../features/ai_settings/data/in_memory_deepseek_credential_repository.dart';
 import '../features/ai_settings/data/secure_deepseek_credential_repository.dart';
 import '../features/ai_settings/domain/deepseek_credential_repository.dart';
@@ -99,6 +102,7 @@ class SparkDependencies {
     required this.themeController,
     required this.themePreferenceRepository,
     required this.behaviorLogger,
+    required this.behaviorProfileService,
   });
 
   factory SparkDependencies.production() => _persistent();
@@ -139,9 +143,28 @@ class SparkDependencies {
     final behaviorConsentStore = LocalJsonStore(
       fileName: 'behavior_consent.json',
     );
+    final behaviorEventRepository = BehaviorEventStore(
+      store: behaviorEventStore,
+    );
     final behaviorLogger = BehaviorLogger(
       consent: BehaviorConsentStore(store: behaviorConsentStore),
-      events: BehaviorEventStore(store: behaviorEventStore),
+      events: behaviorEventRepository,
+    );
+    final profileStore = LocalJsonStore(fileName: 'user_profile.json');
+    final profileRepository = FileProfileStore(store: profileStore);
+    final profileMetadata = <String, PaperProfileMetadata>{
+      for (final paper in seedRepository.getAll())
+        paper.id: (
+          subjects: paper.subjects,
+          keywords: paper.contentKeywords,
+          venue: paper.venue,
+        ),
+    };
+    final behaviorProfileService = BehaviorProfileService(
+      events: behaviorEventRepository,
+      profiles: profileRepository,
+      resolveMetadata: (paperId) => profileMetadata[paperId] ??
+          (subjects: const <String>[], keywords: const <String>[], venue: null),
     );
     final keywordRepository = FilePaperKeywordRepository(store: keywordStore);
     final pdfRepository = FilePaperPdfRepository(store: pdfExtractStore);
@@ -234,6 +257,7 @@ class SparkDependencies {
       ),
       themeController: themeController,
       behaviorLogger: behaviorLogger,
+      behaviorProfileService: behaviorProfileService,
     );
   }
 
@@ -267,6 +291,7 @@ class SparkDependencies {
     ThemePreferenceRepository? themePreferenceRepository,
     ThemeController? themeController,
     BehaviorLogger? behaviorLogger,
+    BehaviorProfileService? behaviorProfileService,
   }) {
     final resolvedCredentialRepository =
         deepSeekCredentialRepository ?? InMemoryDeepSeekCredentialRepository();
@@ -352,6 +377,23 @@ class SparkDependencies {
               ),
             ),
           ),
+      behaviorProfileService: behaviorProfileService ??
+          BehaviorProfileService(
+            events: BehaviorEventStore(
+              store: LocalJsonStore(
+                fileName: 'behavior_events.json',
+                file: File('${Directory.systemTemp.path}/spark_preview_behavior_events.json'),
+              ),
+            ),
+            profiles: FileProfileStore(
+              store: LocalJsonStore(
+                fileName: 'user_profile.json',
+                file: File('${Directory.systemTemp.path}/spark_preview_user_profile.json'),
+              ),
+            ),
+            resolveMetadata: (paperId) =>
+                (subjects: const <String>[], keywords: const <String>[], venue: null),
+          ),
     );
   }
 
@@ -381,4 +423,5 @@ class SparkDependencies {
   final ThemeController themeController;
   final ThemePreferenceRepository themePreferenceRepository;
   final BehaviorLogger behaviorLogger;
+  final BehaviorProfileService behaviorProfileService;
 }

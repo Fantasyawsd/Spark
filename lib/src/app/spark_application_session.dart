@@ -56,6 +56,7 @@ class SparkApplicationSession extends ChangeNotifier {
     );
     translationServiceFactory = dependencies.translationServiceFactory;
     paperChatContextLoader = dependencies.paperChatContextLoader;
+    unawaited(dependencies.behaviorProfileService.refresh());
     searchHistoryRepository = dependencies.searchHistoryRepository;
     linkService = dependencies.linkService;
     credentialController = DeepSeekCredentialController(

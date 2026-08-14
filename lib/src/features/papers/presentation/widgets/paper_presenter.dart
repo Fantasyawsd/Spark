@@ -37,19 +37,23 @@ String? topicLabel(Paper paper) {
 /// 无热点原因时返回 null，不渲染。
 String? trendLabel(Paper paper) {
   final reason = paper.webTrendReason;
-  if (reason == null || reason.trim().isEmpty) return null;
-  final clamped = reason.trim().length > 24
-      ? '${reason.trim().substring(0, 24)}…'
-      : reason.trim();
-  return 'Trending · $clamped';
+  if (reason != null && reason.trim().isNotEmpty) {
+    final clamped = reason.trim().length > 24
+        ? '${reason.trim().substring(0, 24)}…'
+        : reason.trim();
+    return 'Trending · $clamped';
+  }
+  if (paper.recommendationPool == 'trending') return 'Trending';
+  return null;
 }
 
-/// 个性化推荐 chip 文案：个性化分数为正时返回「为你推荐」；
-/// 分数缺失或非正时返回 null，不渲染。
+/// 个性化推荐 chip 文案：个性化分数为正或来自 personalized 池时返回「为你推荐」；
+/// 其余返回 null，不渲染。
 String? personalizationLabel(Paper paper) {
   final score = paper.personalizationScore;
-  if (score == null || score <= 0) return null;
-  return '为你推荐';
+  if (score != null && score > 0) return '为你推荐';
+  if (paper.recommendationPool == 'personalized') return '为你推荐';
+  return null;
 }
 
 /// 引用数文案；引用数未知时返回 null，不显示「被引 0」。

@@ -83,6 +83,32 @@ void main() {
     expect(requestedUris[1].queryParameters['seed'], '101');
   });
 
+  test('recommended items map the pool field to recommendationPool', () async {
+    final client = PaperApiClient(
+      baseUrl: 'http://127.0.0.1:8000/api/v1',
+      client: MockClient((_) async {
+        return http.Response(
+          jsonEncode({
+            'schema_version': 'api.v1',
+            'channel': 'recommended',
+            'items': [
+              _paperJson()..['pool'] = 'trending',
+            ],
+            'next_cursor': null,
+          }),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      }),
+    );
+
+    final page = await client.loadFeed(
+      const PaperFeedQuery(channel: PaperFeedChannel.recommended),
+    );
+
+    expect(page.items.single.recommendationPool, 'trending');
+  });
+
   test('subject and following feeds encode channel-specific filters', () async {
     final requestedUris = <Uri>[];
     final client = PaperApiClient(

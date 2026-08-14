@@ -178,9 +178,16 @@ class PaperFeedController extends ChangeNotifier {
     final nextOffset = state?.nextOffset;
     final nextCursor = state?.nextCursor;
     if (_disposed ||
-        (nextOffset == null && nextCursor == null) ||
         _catalogOperations.loading ||
         _catalogOperations.loadingMore) {
+      return Future.value();
+    }
+    if (nextOffset == null && nextCursor == null) {
+      // 推荐频道无分页游标：滑到底触发一次追加批次刷新（新 seed 新 batch，
+      // 排除当前列表与已读，服务端返回净新增后追加到阅读流下方）。
+      if (_catalogChannel == PaperFeedChannel.recommended) {
+        return refreshCatalog(forceRefresh: true);
+      }
       return Future.value();
     }
     final query = PaperFeedQuery(

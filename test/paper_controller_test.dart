@@ -759,6 +759,49 @@ void main() {
       );
     });
 
+    test('recommended feed refreshes a new batch when paging reaches the end',
+        () async {
+      final catalog = _IncrementalRecommendationCatalogRepository();
+      final feed = PaperFeedController.fromPapers(
+        const [],
+        catalogRepository: catalog,
+        readPaperIdsProvider: () => const <String>{},
+      );
+      addTearDown(feed.dispose);
+
+      await feed.initializeCatalog();
+      expect(feed.papers, hasLength(10));
+      expect(catalog.queries, hasLength(1));
+      expect(catalog.queries.single.forceRefresh, isFalse);
+
+      await feed.loadMoreCatalog();
+
+      expect(catalog.queries, hasLength(2));
+      expect(catalog.queries.last.channel, PaperFeedChannel.recommended);
+      expect(catalog.queries.last.forceRefresh, isTrue);
+      expect(feed.papers, hasLength(30));
+    });
+
+    test('non-recommended channels stay quiet when paging reaches the end',
+        () async {
+      final catalog = _PagedPaperCatalogRepository(firstPage: const []);
+      final feed = PaperFeedController.fromPapers(
+        const [],
+        catalogRepository: catalog,
+      );
+      addTearDown(feed.dispose);
+
+      feed.selectChannel(FixedPaperChannel.latest.index);
+      await feed.flushCatalogOperations();
+      expect(catalog.queries, hasLength(1));
+
+      await feed.loadMoreCatalog();
+      await feed.flushCatalogOperations();
+
+      expect(catalog.queries, hasLength(1));
+      expect(catalog.queries.single.channel, PaperFeedChannel.latest);
+    });
+
     test('recommended refresh excludes the current channel buffer', () async {
       final catalog = _PagedPaperCatalogRepository(
         firstPage: List.generate(10, (index) => _catalogPaper('p$index')),

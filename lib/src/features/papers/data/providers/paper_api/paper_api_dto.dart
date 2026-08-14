@@ -12,6 +12,7 @@ final class PaperApiPaperDto {
     required this.signals,
     required this.metadata,
     this.personalizationScore,
+    this.recommendationPool,
   });
 
   factory PaperApiPaperDto.fromJson(Map<String, dynamic> json) {
@@ -34,6 +35,7 @@ final class PaperApiPaperDto {
       signals: _nestedMap(json['signals'], field: 'signals'),
       metadata: _dynamicMap(json['metadata'], field: 'metadata'),
       personalizationScore: _optionalNumber(json['personalization_score']),
+      recommendationPool: _optionalString(json['pool']),
     );
   }
 
@@ -49,6 +51,7 @@ final class PaperApiPaperDto {
   final Map<String, Map<String, dynamic>> signals;
   final Map<String, dynamic> metadata;
   final double? personalizationScore;
+  final String? recommendationPool;
 }
 
 final class PaperApiPageDto {

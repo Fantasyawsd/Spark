@@ -78,7 +78,10 @@ void main() {
     addTearDown(comments.dispose);
     addTearDown(reading.dispose);
 
-    await feed.initializeCatalog();
+    // 分页游标语义属于 latest 频道；推荐频道“滑到底刷新新批次”
+    // 由 paper_controller_test 的控制器测试覆盖。
+    feed.selectChannel(FixedPaperChannel.latest.index);
+    await feed.flushCatalogOperations();
     feed.toggleGridMode();
     await tester.pumpWidget(
       MaterialApp(

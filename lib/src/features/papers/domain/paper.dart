@@ -30,6 +30,7 @@ class Paper {
     this.license,
     this.source = 'demo',
     this.personalizationScore,
+    this.recommendationPool,
   })  : authors = List.unmodifiable(authors),
         affiliations = List.unmodifiable(affiliations),
         contentKeywords = List.unmodifiable(contentKeywords),
@@ -75,6 +76,10 @@ class Paper {
 
   /// 个性化推荐分数；null 表示未参与个性化排序。
   final double? personalizationScore;
+
+  /// 服务端推荐池标记（high_impact / trending / personalized）；
+  /// production arXiv 直连时无此字段。
+  final String? recommendationPool;
 
   String get firstAuthor => authors.firstWhere(
         (author) => author.trim().isNotEmpty,
@@ -133,6 +138,7 @@ class Paper {
     String? source,
     double? personalizationScore,
     bool clearPersonalizationScore = false,
+    String? recommendationPool,
   }) {
     return Paper(
       id: id ?? this.id,
@@ -161,9 +167,8 @@ class Paper {
       arxivId: clearArxivId ? null : arxivId ?? this.arxivId,
       doi: clearDoi ? null : doi ?? this.doi,
       paperUrl: clearPaperUrl ? null : paperUrl ?? this.paperUrl,
-      webTrendReason: clearWebTrendReason
-          ? null
-          : webTrendReason ?? this.webTrendReason,
+      webTrendReason:
+          clearWebTrendReason ? null : webTrendReason ?? this.webTrendReason,
       webTrendTopics: webTrendTopics ?? this.webTrendTopics,
       pdfUrl: clearPdfUrl ? null : pdfUrl ?? this.pdfUrl,
       publishedAt: clearPublishedAt ? null : publishedAt ?? this.publishedAt,
@@ -173,6 +178,7 @@ class Paper {
       personalizationScore: clearPersonalizationScore
           ? null
           : personalizationScore ?? this.personalizationScore,
+      recommendationPool: recommendationPool ?? this.recommendationPool,
     );
   }
 }

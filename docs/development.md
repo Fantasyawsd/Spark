@@ -128,7 +128,7 @@ Phase 4 子任务（串行依赖，每个合入 `main` 后基于新基线开发�
 | --- | --- | --- | --- |
 | 4.1 | 行为事件日志契约与本地采集 | 已完成 | `behavior` 模块：事件模型、本地存储（90 天保留期 + 10000 条上限）、同意门控与清除；papers 经公开入口依赖 domain 端口，三类埋点接入；flutter analyze 无问题、flutter test 594 项全过；双目标构建证据见台账 |
 | 4.2 | 用户画像本地聚合 | 已完成 | `UserProfile`（profile.v1）主题/关键词/会议权重；`ProfileAggregator` 纯函数（点赞 2.0/收藏 1.5/打开 0.5，30 天半衰衰减）；`FileProfileStore` 持久化；会话初始化后台刷新；analyze 无问题、flutter test 599 项全过 |
-| 4.3 | 匿名画像推荐请求契约 | 待开始 | 推荐请求携带匿名偏好画像（不含原始行为）；服务端大小上限与 DTO 校验；契约测试 |
+| 4.3 | 匿名画像推荐请求契约 | 已完成 | 服务端 `anonymous_profile.py` 解析校验（profile.v1、键数 ≤64、权重 [-10,10]）非法 400；客户端 base64url 编码上送聚合权重（不含原始行为）；pytest 149、flutter test 601 全过；双目标构建证据见台账 |
 | 4.4 | Personalized Pool 候选召回 | 待开始 | 服务端按画像召回主题/关键词/会议候选；标题/摘要关键词重合度相似召回（向量 Embedding 接口契约预留）；测试 |
 | 4.5 | UserPreferenceScore 与个性化排序 | 待开始 | 画像与论文特征匹配打分；Diversity 与 Exploration 配置（60/20/10/10 可配置实验）；测试 |
 | 4.6 | 三信号混排与版本化 | 待开始 | RecommendationScore 纳入 Personalization 分量；SCORE_VERSION 升 score.v4；batch 追溯与回放兼容测试 |

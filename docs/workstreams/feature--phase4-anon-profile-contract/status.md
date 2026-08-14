@@ -1,6 +1,6 @@
 # Phase 4.3 匿名画像推荐请求契约任务台账
 
-> 状态：待合并
+> 状态：已合并
 > 最近更新：2026-08-14
 
 ## 目标
@@ -48,6 +48,17 @@
 | SHA | 提交信息 | 对应阶段 | 验证摘要 |
 | --- | --- | --- | --- |
 | 待提交 | `新增（推荐）：匿名画像推荐请求契约` | 实现 | pytest 149、flutter 601 全过 |
+
+## 合并归档
+
+- 合并方式：本地快进合并（`main` `1f2a5c6..7463d74`）
+- 最终集成提交：`7463d74`
+- 合并时间：2026-08-14
+- 集成验证（/finish 双目标构建，Windows 已清理重建并核验时间戳）：
+  - Windows release：`build/windows/x64/runner/Release/spark.exe`，101,888 bytes，SHA-256 `688D2F426838FD14FBD2DF1A8845F86A7995DA137E4D6955DC574A268696F56C`
+  - Android development profile：`build/app/outputs/flutter-apk/app-development-profile.apk`，119,671,692 bytes，SHA-256 `1C43FEC29EE4488D01E3F28576FDC2EA9165B63A43FAA2163144EE57207A8BFA`
+  - Gradle daemon：`--stop` 后无运行中残留
+- 真实后续项：4.4 Personalized Pool 候选召回（下一迭代基线，复杂任务走 workflow + openai/gpt-5.6-sol）。
 
 ## 审查结论
 

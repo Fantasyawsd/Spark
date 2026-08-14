@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 
+import '../../behavior/behavior.dart';
 import '../domain/paper.dart';
 import '../domain/paper_catalog.dart';
 import '../domain/paper_channel.dart';
@@ -19,6 +20,7 @@ class PaperController extends ChangeNotifier {
     PaperCatalogRepository? catalogRepository,
     PaperChannelPreferenceRepository? channelPreferenceRepository,
     Iterable<String> Function()? readPaperIdsProvider,
+    BehaviorLogPort? behaviorLogger,
   }) {
     return PaperController._fromPapers(
       repository.getAll(),
@@ -27,6 +29,7 @@ class PaperController extends ChangeNotifier {
       catalogRepository: catalogRepository,
       channelPreferenceRepository: channelPreferenceRepository,
       readPaperIdsProvider: readPaperIdsProvider,
+      behaviorLogger: behaviorLogger,
     );
   }
 
@@ -37,9 +40,11 @@ class PaperController extends ChangeNotifier {
     PaperCatalogRepository? catalogRepository,
     PaperChannelPreferenceRepository? channelPreferenceRepository,
     Iterable<String> Function()? readPaperIdsProvider,
+    BehaviorLogPort? behaviorLogger,
   }) {
     final interactions = PaperInteractionController(
       repository: interactionRepository,
+      behaviorLogger: behaviorLogger,
     );
     final feed = PaperFeedController.fromPapers(
       papers,
@@ -48,6 +53,7 @@ class PaperController extends ChangeNotifier {
       channelPreferenceRepository: channelPreferenceRepository,
       readPaperIdsProvider: readPaperIdsProvider,
       followedPaperIdsListenable: interactions.followedPaperIdsListenable,
+      behaviorLogger: behaviorLogger,
     );
     return PaperController._(feed: feed, interactions: interactions);
   }

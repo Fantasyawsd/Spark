@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 
 import '../../../core/diagnostics/diagnostics.dart';
+import '../../behavior/behavior.dart';
 import '../domain/paper.dart';
 import '../domain/arxiv_subject_catalog.dart';
 import '../domain/paper_catalog.dart';
@@ -40,7 +41,9 @@ class PaperFeedController extends ChangeNotifier {
     PaperChannelPreferenceRepository? channelPreferenceRepository,
     Iterable<String> Function()? readPaperIdsProvider,
     ValueListenable<Set<String>>? followedPaperIdsListenable,
-  })  : _allPapers = List.unmodifiable(papers),
+    BehaviorLogPort? behaviorLogger,
+  })  : _behaviorLogger = behaviorLogger,
+        _allPapers = List.unmodifiable(papers),
         _catalogRepository = catalogRepository,
         _readPaperIdsProvider = readPaperIdsProvider,
         _followedPaperIdsListenable = followedPaperIdsListenable,
@@ -66,6 +69,7 @@ class PaperFeedController extends ChangeNotifier {
   static const _catalogPrefetchThreshold = 10;
   static const _maxReadPaperIdsPerRequest = 200;
 
+  final BehaviorLogPort? _behaviorLogger;
   List<Paper> _allPapers;
   late final List<Paper> _initialPapers;
   late List<Paper> _visiblePapers;
@@ -242,6 +246,7 @@ class PaperFeedController extends ChangeNotifier {
     _currentPaperIndex = index;
     _gridMode = false;
     notifyListeners();
+    _behaviorLogger?.logPaperOpened(_visiblePapers[index].id);
     _queuePreferencePersistence();
     _prefetchCatalogForIndex(index);
   }
@@ -262,6 +267,7 @@ class PaperFeedController extends ChangeNotifier {
     _channelPapers[key] = List.unmodifiable(list);
     _refreshVisiblePapers();
     _currentPaperIndex = index.clamp(0, _visiblePapers.length - 1);
+    _behaviorLogger?.logPaperOpened(paper.id);
     _preferences.rememberPosition(currentChannelKey, _currentPaperIndex);
     _gridMode = false;
     notifyListeners();

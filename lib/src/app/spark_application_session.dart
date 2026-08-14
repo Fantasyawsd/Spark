@@ -30,6 +30,7 @@ class SparkApplicationSession extends ChangeNotifier {
       preferenceRepository: dependencies.preferenceRepository,
       catalogRepository: dependencies.paperCatalogRepository,
       readPaperIdsProvider: () => readingController.readPaperIds,
+      behaviorLogger: dependencies.behaviorLogger,
     )..addListener(_handlePaperStateChanged);
     readingController = PaperReadingController(
       repository: dependencies.readingRepository,

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 
 import '../../../core/diagnostics/diagnostics.dart';
+import '../../behavior/behavior.dart';
 import '../domain/favorite_group.dart';
 import '../domain/paper.dart';
 import '../domain/paper_interaction_repository.dart';
@@ -12,7 +13,9 @@ class PaperInteractionController extends ChangeNotifier {
     Iterable<String> initiallySaved = const [],
     Iterable<String> initiallyFollowed = const [],
     PaperInteractionRepository? repository,
-  })  : _followedPaperIds = ValueNotifier<Set<String>>(
+    BehaviorLogPort? behaviorLogger,
+  })  : _behaviorLogger = behaviorLogger,
+        _followedPaperIds = ValueNotifier<Set<String>>(
           Set<String>.unmodifiable(initiallyFollowed),
         ),
         _repository = repository {
@@ -23,6 +26,7 @@ class PaperInteractionController extends ChangeNotifier {
     _initialized = repository == null;
   }
 
+  final BehaviorLogPort? _behaviorLogger;
   final Set<String> _likedPaperIds = {};
   final Map<String, FavoriteGroup> _favoriteGroups = {};
   final Map<String, Set<String>> _favoritePaperIdsByGroup = {};
@@ -125,10 +129,14 @@ class PaperInteractionController extends ChangeNotifier {
   }
 
   void toggleLike(String paperId) {
+    _behaviorLogger?.logPaperLiked(paperId);
     _mutate(_InteractionMutation(_InteractionMutationType.like, paperId));
   }
 
   void toggleSave(String paperId) {
+    if (!isSavedInGroup(paperId, defaultFavoriteGroupId)) {
+      _behaviorLogger?.logPaperSaved(paperId);
+    }
     _mutate(
       _InteractionMutation.favoriteMembership(
         paperId: paperId,

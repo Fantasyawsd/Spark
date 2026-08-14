@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import '../core/storage/local_json_store.dart';
 import '../core/config/app_config.dart';
 import '../core/theme/file_theme_preference_repository.dart';
@@ -5,6 +7,9 @@ import '../core/theme/in_memory_theme_preference_repository.dart';
 import '../core/theme/theme_controller.dart';
 import '../core/theme/theme_preference_repository.dart';
 import '../features/ai_settings/data/deepseek_api_credential_validator.dart';
+import '../features/behavior/application/behavior_logger.dart';
+import '../features/behavior/data/behavior_consent_store.dart';
+import '../features/behavior/data/behavior_event_store.dart';
 import '../features/ai_settings/data/in_memory_deepseek_credential_repository.dart';
 import '../features/ai_settings/data/secure_deepseek_credential_repository.dart';
 import '../features/ai_settings/domain/deepseek_credential_repository.dart';
@@ -93,6 +98,7 @@ class SparkDependencies {
     required this.localDataRepository,
     required this.themeController,
     required this.themePreferenceRepository,
+    required this.behaviorLogger,
   });
 
   factory SparkDependencies.production() => _persistent();
@@ -126,6 +132,16 @@ class SparkDependencies {
     final themeStore = LocalJsonStore(fileName: 'theme_preferences.json');
     final aiSessionSettingsStore = LocalJsonStore(
       fileName: 'chat_session_settings.json',
+    );
+    final behaviorEventStore = LocalJsonStore(
+      fileName: 'behavior_events.json',
+    );
+    final behaviorConsentStore = LocalJsonStore(
+      fileName: 'behavior_consent.json',
+    );
+    final behaviorLogger = BehaviorLogger(
+      consent: BehaviorConsentStore(store: behaviorConsentStore),
+      events: BehaviorEventStore(store: behaviorEventStore),
     );
     final keywordRepository = FilePaperKeywordRepository(store: keywordStore);
     final pdfRepository = FilePaperPdfRepository(store: pdfExtractStore);
@@ -217,6 +233,7 @@ class SparkDependencies {
         store: themeStore,
       ),
       themeController: themeController,
+      behaviorLogger: behaviorLogger,
     );
   }
 
@@ -249,6 +266,7 @@ class SparkDependencies {
     LocalDataRepository? localDataRepository,
     ThemePreferenceRepository? themePreferenceRepository,
     ThemeController? themeController,
+    BehaviorLogger? behaviorLogger,
   }) {
     final resolvedCredentialRepository =
         deepSeekCredentialRepository ?? InMemoryDeepSeekCredentialRepository();
@@ -315,6 +333,25 @@ class SparkDependencies {
       themePreferenceRepository:
           themePreferenceRepository ?? InMemoryThemePreferenceRepository(),
       themeController: themeController ?? ThemeController(),
+      behaviorLogger: behaviorLogger ??
+          BehaviorLogger(
+            consent: BehaviorConsentStore(
+              store: LocalJsonStore(
+                fileName: 'behavior_consent.json',
+                file: File(
+                  '${Directory.systemTemp.path}/spark_preview_behavior_consent.json',
+                ),
+              ),
+            ),
+            events: BehaviorEventStore(
+              store: LocalJsonStore(
+                fileName: 'behavior_events.json',
+                file: File(
+                  '${Directory.systemTemp.path}/spark_preview_behavior_events.json',
+                ),
+              ),
+            ),
+          ),
     );
   }
 
@@ -343,4 +380,5 @@ class SparkDependencies {
   final LocalDataRepository localDataRepository;
   final ThemeController themeController;
   final ThemePreferenceRepository themePreferenceRepository;
+  final BehaviorLogger behaviorLogger;
 }

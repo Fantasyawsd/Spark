@@ -72,6 +72,18 @@
             "star_velocity": {"type": ["number", "null"], "minimum": 0}
           },
           "additionalProperties": true
+        },
+        "web_heat": {
+          "type": "object",
+          "properties": {
+            "web_heat_score": {"type": ["number", "null"], "minimum": 0},
+            "web_mentions": {"type": ["integer", "null"], "minimum": 0},
+            "web_source_count": {"type": ["integer", "null"], "minimum": 0},
+            "trend_detected_at": {"type": ["string", "null"], "format": "date-time"},
+            "trend_reason": {"type": ["string", "null"]},
+            "trend_topics": {"type": ["array", "null"], "items": {"type": "string"}}
+          },
+          "additionalProperties": true
         }
       },
       "additionalProperties": {"type": "object"}

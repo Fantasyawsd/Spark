@@ -180,6 +180,50 @@ class PaperStore:
         row = self._connection.execute("SELECT * FROM papers WHERE paper_id = ?", (paper_id,)).fetchone()
         return self._row_to_paper(row) if row else None
 
+    def record_web_heat(
+        self,
+        paper_id: str,
+        web_heat: Mapping[str, Any],
+        *,
+        as_of: datetime | None = None,
+    ) -> bool:
+        """Idempotently write web heat signals for an existing paper.
+
+        Unknown papers are left untouched (returns False) so a trend scout can
+        never create a partial paper. The payload becomes the signals.web_heat
+        mapping with a web_heat provenance entry recording the verification
+        evidence.
+        """
+        as_of = as_of or utc_now()
+        existing = self.get(paper_id)
+        if existing is None:
+            return False
+        signals = {key: dict(value) for key, value in existing.signals.items()}
+        signals["web_heat"] = {
+            key: value for key, value in web_heat.items() if value is not None
+        }
+        with self.transaction() as connection:
+            connection.execute(
+                "UPDATE papers SET signals_json = ? WHERE paper_id = ?",
+                (encode_json(signals), paper_id),
+            )
+            connection.execute(
+                """INSERT INTO provenance
+                   (paper_id, field_name, source, fetched_at, source_updated_at, evidence_json)
+                   VALUES (?, ?, ?, ?, NULL, ?)
+                   ON CONFLICT(paper_id, field_name, source) DO UPDATE SET
+                    fetched_at=excluded.fetched_at, source_updated_at=excluded.source_updated_at,
+                    evidence_json=excluded.evidence_json""",
+                (
+                    paper_id,
+                    "web_heat",
+                    "web_heat",
+                    as_of.isoformat(),
+                    encode_json(dict(web_heat)),
+                ),
+            )
+        return True
+
     def count(self) -> int:
         return int(self._connection.execute("SELECT COUNT(*) FROM papers").fetchone()[0])
 

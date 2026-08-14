@@ -1,6 +1,6 @@
 # Phase 4.2 用户画像本地聚合任务台账
 
-> 状态：待合并
+> 状态：已合并
 > 最近更新：2026-08-14
 
 ## 目标
@@ -47,6 +47,17 @@
 | SHA | 提交信息 | 对应阶段 | 验证摘要 |
 | --- | --- | --- | --- |
 | 待提交 | `新增（行为）：本地聚合版本化用户画像` | 实现 | analyze 无问题、599 项通过 |
+
+## 合并归档
+
+- 合并方式：本地快进合并（`main` `9aed509..707bf3f`）
+- 最终集成提交：`707bf3f`
+- 合并时间：2026-08-14
+- 集成验证（/finish 双目标构建，Windows 已清理 build/windows 重建并核验时间戳）：
+  - Windows release：`build/windows/x64/runner/Release/spark.exe`，101,888 bytes，SHA-256 `5CF675333CEE144B80CDCEE4B3581D67207A7C30C364E6A7016D75DAEE52219A`
+  - Android development profile：`build/app/outputs/flutter-apk/app-development-profile.apk`，119,671,692 bytes，SHA-256 `099DB050FDF8F9DE4114C2504BA46BE402272498AB56BCC81E504BC6E993F864`
+  - Gradle daemon：`--stop` 后无运行中残留
+- 真实后续项：4.3 匿名画像推荐请求契约（下一迭代基线）。
 
 ## 审查结论
 

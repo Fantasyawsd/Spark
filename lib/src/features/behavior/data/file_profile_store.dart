@@ -25,4 +25,7 @@ class FileProfileStore implements ProfileRepository {
   Future<void> write(UserProfile profile) {
     return _store.write(profile.toJson());
   }
+
+  @override
+  Future<void> clear() => _store.clear();
 }

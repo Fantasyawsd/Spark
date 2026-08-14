@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:spark/src/features/behavior/behavior.dart';
 
 import '../../../core/config/app_version.dart';
 import '../../../core/theme/spark_theme.dart';
@@ -17,6 +18,7 @@ class ProfileSettingsSection extends StatelessWidget {
     this.localDataListenable,
     this.localDataDescriptionBuilder,
     this.onOpenLocalData,
+    this.personalizationController,
   });
 
   final String? catalogSourceDescription;
@@ -27,6 +29,7 @@ class ProfileSettingsSection extends StatelessWidget {
   final String Function()? localDataDescriptionBuilder;
   final VoidCallback? onOpenLocalData;
   final ThemeController themeController;
+  final PersonalizationPrivacyController? personalizationController;
 
   @override
   Widget build(BuildContext context) {
@@ -90,6 +93,35 @@ class ProfileSettingsSection extends StatelessWidget {
               trailing: const Icon(Icons.chevron_right_rounded),
               onTap: () => _showPrivacyNotice(context),
             ),
+            if (personalizationController case final controller?) ...[
+              const Divider(height: 1),
+              ListTile(
+                leading: const Icon(Icons.recommend_outlined),
+                title: const Text('个性化推荐'),
+                subtitle: const Text('根据设备本地的阅读与互动行为提供个性化推荐，关闭后停止采集'),
+                trailing: ListenableBuilder(
+                  listenable: controller,
+                  builder: (context, _) {
+                    final personalized = controller.personalized;
+                    return Switch(
+                      key: const ValueKey('profile-personalization-switch'),
+                      value: personalized ?? false,
+                      onChanged: personalized == null
+                          ? null
+                          : (value) => controller.setPersonalized(value),
+                    );
+                  },
+                ),
+              ),
+              const Divider(height: 1),
+              ListTile(
+                key: const ValueKey('profile-clear-behavior-data'),
+                leading: const Icon(Icons.delete_outline_rounded),
+                title: const Text('清除行为数据'),
+                trailing: const Icon(Icons.chevron_right_rounded),
+                onTap: () => _confirmClearBehaviorData(context, controller),
+              ),
+            ],
             const Divider(height: 1),
             ListTile(
               key: const ValueKey('profile-open-source-licenses'),
@@ -149,5 +181,35 @@ Future<void> _showPrivacyNotice(BuildContext context) {
         ),
       ],
     ),
+  );
+}
+
+Future<void> _confirmClearBehaviorData(
+  BuildContext context,
+  PersonalizationPrivacyController controller,
+) async {
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      title: const Text('清除行为数据'),
+      content: const Text('将删除设备本地的行为事件与偏好画像，清除后不可恢复。'),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(dialogContext, false),
+          child: const Text('取消'),
+        ),
+        FilledButton(
+          key: const ValueKey('profile-clear-behavior-confirm'),
+          onPressed: () => Navigator.pop(dialogContext, true),
+          child: const Text('清除'),
+        ),
+      ],
+    ),
+  );
+  if (confirmed != true || !context.mounted) return;
+  await controller.clearBehaviorData();
+  if (!context.mounted) return;
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(content: Text('已清除行为数据')),
   );
 }

@@ -11,6 +11,7 @@ final class PaperApiPaperDto {
     required this.discoverySources,
     required this.signals,
     required this.metadata,
+    this.personalizationScore,
   });
 
   factory PaperApiPaperDto.fromJson(Map<String, dynamic> json) {
@@ -32,6 +33,7 @@ final class PaperApiPaperDto {
       ),
       signals: _nestedMap(json['signals'], field: 'signals'),
       metadata: _dynamicMap(json['metadata'], field: 'metadata'),
+      personalizationScore: _optionalNumber(json['personalization_score']),
     );
   }
 
@@ -46,6 +48,7 @@ final class PaperApiPaperDto {
   final List<String> discoverySources;
   final Map<String, Map<String, dynamic>> signals;
   final Map<String, dynamic> metadata;
+  final double? personalizationScore;
 }
 
 final class PaperApiPageDto {
@@ -93,6 +96,11 @@ String _requiredString(Map<String, dynamic> json, String field) {
   final value = _optionalString(json[field]);
   if (value == null) throw FormatException('Paper API is missing $field.');
   return value;
+}
+
+double? _optionalNumber(Object? value) {
+  if (value is! num) return null;
+  return value.toDouble();
 }
 
 String? _optionalString(Object? value) {

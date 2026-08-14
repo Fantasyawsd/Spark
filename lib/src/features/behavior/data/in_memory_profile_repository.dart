@@ -12,4 +12,9 @@ class InMemoryProfileRepository implements ProfileRepository {
   Future<void> write(UserProfile profile) async {
     _profile = profile;
   }
+
+  @override
+  Future<void> clear() async {
+    _profile = null;
+  }
 }

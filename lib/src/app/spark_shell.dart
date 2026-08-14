@@ -105,6 +105,8 @@ class _SparkShellState extends State<SparkShell> {
                     controller: _session.credentialController,
                   ),
                   themeController: _session.dependencies.themeController,
+                  personalizationController:
+                      _session.dependencies.personalizationPrivacyController,
                   localDataListenable: _session.localDataController,
                   localDataDescriptionBuilder: () =>
                       '占用 ${formatLocalDataBytes(_session.localDataController.usage.totalBytes)}',

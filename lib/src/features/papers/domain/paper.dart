@@ -29,6 +29,7 @@ class Paper {
     this.updatedAt,
     this.license,
     this.source = 'demo',
+    this.personalizationScore,
   })  : authors = List.unmodifiable(authors),
         affiliations = List.unmodifiable(affiliations),
         contentKeywords = List.unmodifiable(contentKeywords),
@@ -71,6 +72,9 @@ class Paper {
   final DateTime? updatedAt;
   final String? license;
   final String source;
+
+  /// 个性化推荐分数；null 表示未参与个性化排序。
+  final double? personalizationScore;
 
   String get firstAuthor => authors.firstWhere(
         (author) => author.trim().isNotEmpty,
@@ -127,6 +131,8 @@ class Paper {
     String? license,
     bool clearLicense = false,
     String? source,
+    double? personalizationScore,
+    bool clearPersonalizationScore = false,
   }) {
     return Paper(
       id: id ?? this.id,
@@ -164,6 +170,9 @@ class Paper {
       updatedAt: clearUpdatedAt ? null : updatedAt ?? this.updatedAt,
       license: clearLicense ? null : license ?? this.license,
       source: source ?? this.source,
+      personalizationScore: clearPersonalizationScore
+          ? null
+          : personalizationScore ?? this.personalizationScore,
     );
   }
 }

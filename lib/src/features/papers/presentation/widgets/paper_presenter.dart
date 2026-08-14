@@ -44,6 +44,14 @@ String? trendLabel(Paper paper) {
   return 'Trending · $clamped';
 }
 
+/// 个性化推荐 chip 文案：个性化分数为正时返回「为你推荐」；
+/// 分数缺失或非正时返回 null，不渲染。
+String? personalizationLabel(Paper paper) {
+  final score = paper.personalizationScore;
+  if (score == null || score <= 0) return null;
+  return '为你推荐';
+}
+
 /// 引用数文案；引用数未知时返回 null，不显示「被引 0」。
 String? citationLine(Paper paper) {
   final citations = paper.metrics.citations;

@@ -112,12 +112,15 @@ void main() {
       findsOneWidget,
     );
 
-    await tester.ensureVisible(
+    await tester.scrollUntilVisible(
       find.byKey(ValueKey('profile-read-later-paper-${paper.id}')),
-    );
-    await tester.drag(
-      find.byKey(const ValueKey('profile-scroll')),
-      const Offset(0, -140),
+      140,
+      scrollable: find
+          .descendant(
+            of: find.byKey(const ValueKey('profile-scroll')),
+            matching: find.byType(Scrollable),
+          )
+          .first,
     );
     await tester.pumpAndSettle();
     await tester.tap(

@@ -5,4 +5,6 @@ abstract interface class ProfileRepository {
   Future<UserProfile?> read();
 
   Future<void> write(UserProfile profile);
+
+  Future<void> clear();
 }

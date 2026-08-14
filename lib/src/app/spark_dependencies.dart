@@ -9,6 +9,7 @@ import '../core/theme/theme_preference_repository.dart';
 import '../features/ai_settings/data/deepseek_api_credential_validator.dart';
 import '../features/behavior/application/behavior_logger.dart';
 import '../features/behavior/application/behavior_profile_service.dart';
+import '../features/behavior/application/personalization_privacy_controller.dart';
 import '../features/behavior/application/profile_aggregator.dart';
 import '../features/behavior/data/behavior_consent_store.dart';
 import '../features/behavior/data/behavior_event_store.dart';
@@ -106,6 +107,7 @@ class SparkDependencies {
     required this.behaviorLogger,
     required this.behaviorProfileService,
     required this.profileRepository,
+    required this.personalizationPrivacyController,
   });
 
   factory SparkDependencies.production() => _persistent();
@@ -149,8 +151,11 @@ class SparkDependencies {
     final behaviorEventRepository = BehaviorEventStore(
       store: behaviorEventStore,
     );
+    final behaviorConsentRepository = BehaviorConsentStore(
+      store: behaviorConsentStore,
+    );
     final behaviorLogger = BehaviorLogger(
-      consent: BehaviorConsentStore(store: behaviorConsentStore),
+      consent: behaviorConsentRepository,
       events: behaviorEventRepository,
     );
     final profileStore = LocalJsonStore(fileName: 'user_profile.json');
@@ -168,6 +173,11 @@ class SparkDependencies {
       profiles: profileRepository,
       resolveMetadata: (paperId) => profileMetadata[paperId] ??
           (subjects: const <String>[], keywords: const <String>[], venue: null),
+    );
+    final personalizationPrivacyController = PersonalizationPrivacyController(
+      consent: behaviorConsentRepository,
+      events: behaviorEventRepository,
+      profiles: profileRepository,
     );
     final keywordRepository = FilePaperKeywordRepository(store: keywordStore);
     final pdfRepository = FilePaperPdfRepository(store: pdfExtractStore);
@@ -253,6 +263,9 @@ class SparkDependencies {
           readingStore,
           searchHistoryStore,
           themeStore,
+          behaviorEventStore,
+          behaviorConsentStore,
+          profileStore,
         ],
       ),
       themePreferenceRepository: FileThemePreferenceRepository(
@@ -262,6 +275,7 @@ class SparkDependencies {
       behaviorLogger: behaviorLogger,
       behaviorProfileService: behaviorProfileService,
       profileRepository: profileRepository,
+      personalizationPrivacyController: personalizationPrivacyController,
     );
   }
 
@@ -297,6 +311,7 @@ class SparkDependencies {
     BehaviorLogger? behaviorLogger,
     BehaviorProfileService? behaviorProfileService,
     ProfileRepository? profileRepository,
+    PersonalizationPrivacyController? personalizationPrivacyController,
   }) {
     final resolvedCredentialRepository =
         deepSeekCredentialRepository ?? InMemoryDeepSeekCredentialRepository();
@@ -318,6 +333,24 @@ class SparkDependencies {
           repository: resolvedPdfRepository,
           extractionService: resolvedPdfExtractionService,
         );
+    final previewBehaviorConsent = BehaviorConsentStore(
+      store: LocalJsonStore(
+        fileName: 'behavior_consent.json',
+        file: File(
+          '${Directory.systemTemp.path}/spark_preview_behavior_consent.json',
+        ),
+      ),
+    );
+    final previewBehaviorEvents = BehaviorEventStore(
+      store: LocalJsonStore(
+        fileName: 'behavior_events.json',
+        file: File(
+          '${Directory.systemTemp.path}/spark_preview_behavior_events.json',
+        ),
+      ),
+    );
+    final resolvedProfileRepository =
+        profileRepository ?? InMemoryProfileRepository();
     return SparkDependencies(
       paperRepository: paperRepository ?? const ArxivSeedRepository(),
       paperCatalogRepository: paperCatalogRepository,
@@ -365,41 +398,23 @@ class SparkDependencies {
       themeController: themeController ?? ThemeController(),
       behaviorLogger: behaviorLogger ??
           BehaviorLogger(
-            consent: BehaviorConsentStore(
-              store: LocalJsonStore(
-                fileName: 'behavior_consent.json',
-                file: File(
-                  '${Directory.systemTemp.path}/spark_preview_behavior_consent.json',
-                ),
-              ),
-            ),
-            events: BehaviorEventStore(
-              store: LocalJsonStore(
-                fileName: 'behavior_events.json',
-                file: File(
-                  '${Directory.systemTemp.path}/spark_preview_behavior_events.json',
-                ),
-              ),
-            ),
+            consent: previewBehaviorConsent,
+            events: previewBehaviorEvents,
           ),
       behaviorProfileService: behaviorProfileService ??
           BehaviorProfileService(
-            events: BehaviorEventStore(
-              store: LocalJsonStore(
-                fileName: 'behavior_events.json',
-                file: File('${Directory.systemTemp.path}/spark_preview_behavior_events.json'),
-              ),
-            ),
-            profiles: FileProfileStore(
-              store: LocalJsonStore(
-                fileName: 'user_profile.json',
-                file: File('${Directory.systemTemp.path}/spark_preview_user_profile.json'),
-              ),
-            ),
+            events: previewBehaviorEvents,
+            profiles: resolvedProfileRepository,
             resolveMetadata: (paperId) =>
                 (subjects: const <String>[], keywords: const <String>[], venue: null),
           ),
-      profileRepository: profileRepository ?? InMemoryProfileRepository(),
+      profileRepository: resolvedProfileRepository,
+      personalizationPrivacyController: personalizationPrivacyController ??
+          PersonalizationPrivacyController(
+            consent: previewBehaviorConsent,
+            events: previewBehaviorEvents,
+            profiles: resolvedProfileRepository,
+          ),
     );
   }
 
@@ -431,4 +446,5 @@ class SparkDependencies {
   final BehaviorLogger behaviorLogger;
   final BehaviorProfileService behaviorProfileService;
   final ProfileRepository profileRepository;
+  final PersonalizationPrivacyController personalizationPrivacyController;
 }

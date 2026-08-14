@@ -33,6 +33,7 @@ final class PaperApiMapper {
       updatedAt: dto.updatedAt,
       license: _string(dto.metadata['license']),
       source: dto.discoverySources.firstOrNull ?? 'spark-api',
+      personalizationScore: dto.personalizationScore,
     );
   }
 

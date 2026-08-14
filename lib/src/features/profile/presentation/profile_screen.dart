@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:spark/src/features/behavior/behavior.dart';
 
 import '../../../core/theme/spark_theme.dart';
 import '../../../core/theme/theme_controller.dart';
@@ -30,6 +31,7 @@ class ProfileScreen extends StatelessWidget {
     this.onCreateFavoriteGroup,
     this.onRenameFavoriteGroup,
     this.onDeleteFavoriteGroup,
+    this.personalizationController,
   });
 
   final WidgetBuilder? aiSettingsBuilder;
@@ -50,6 +52,7 @@ class ProfileScreen extends StatelessWidget {
   final ValueChanged<String>? onCreateFavoriteGroup;
   final void Function(String groupId, String name)? onRenameFavoriteGroup;
   final ValueChanged<String>? onDeleteFavoriteGroup;
+  final PersonalizationPrivacyController? personalizationController;
 
   @override
   Widget build(BuildContext context) {
@@ -117,6 +120,7 @@ class ProfileScreen extends StatelessWidget {
               localDataDescriptionBuilder: localDataDescriptionBuilder,
               onOpenLocalData: onOpenLocalData,
               themeController: themeController,
+              personalizationController: personalizationController,
             ),
           ],
         ),

@@ -2,7 +2,7 @@
 
 > 开发文档按产品领域和工程主题持续维护；只有发布资料按版本归档。
 > 每份文档的维护状态见下表（活跃：持续维护；归档：只读历史，只补勘误）。
-> 最近更新：2026-08-14
+> 最近更新：2026-08-15
 
 ## 总文档
 
@@ -16,6 +16,7 @@
 | [发布与兼容性管理](standards/release-management.md)：五层版本、环境渠道、数据/API 兼容和 Feature Flag 规则 | 活跃 |
 | [开发技能](../.claude/skills/)：`/start`、`/develop`、`/test`、`/review`、`/finish`、`/version`、`/release`，入口见 AGENTS.md「Skill 工作流」 | 活跃 |
 | [任务台账模板](templates/workstream-status.md)：单文件任务台账，skill 引用 | 活跃 |
+| [运行时架构图](diagrams/spark-runtime-architecture.html)：Flutter 客户端与 Paper 服务端的运行时组件、主路径与信任边界（archify 生成产物） | 活跃 |
 
 ## 任务与过程
 

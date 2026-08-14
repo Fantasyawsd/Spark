@@ -17,6 +17,7 @@ from .personalized_pool import (
     build_personalized_candidates,
 )
 from .ports import RecommendationRepository
+from .preference_score import PreferenceScoreConfig, compute_user_preference
 from .trend_boost import BoostConfig, compute_trend_boost
 
 UTC = timezone.utc
@@ -27,6 +28,8 @@ class ScoreConfig:
     version: str = SCORE_VERSION
     quality_pool_ratio: float = 0.6
     trend_pool_ratio: float = 0.4
+    personalized_pool_ratio: float = 0.4
+    preference_config: PreferenceScoreConfig = PreferenceScoreConfig()
     age_bucket_targets: tuple[tuple[str, float], ...] = (
         ("0-1y", 0.40),
         ("1-3y", 0.30),
@@ -299,13 +302,18 @@ class RecommendationEngine:
             per_pool_limit=max(limit * 50, 500),
             as_of=as_of,
         )
-        if anonymous_profile is not None:
+        personalization_enabled = (
+            anonymous_profile is not None and self.config.personalized_pool_ratio > 0
+        )
+        personalized_candidate_ids: set[str] = set()
+        if personalization_enabled:
             personalized = build_personalized_candidates(
                 self.store,
                 anonymous_profile,
                 as_of=as_of,
                 similar_recall=self.similar_recall,
             )
+            personalized_candidate_ids = {paper.paper_id for paper in personalized}
             candidates = list(
                 {
                     paper.paper_id: paper
@@ -317,23 +325,63 @@ class RecommendationEngine:
         if not candidates:
             return self._batch_id(effective_seed, as_of, limit, read, ()), []
         scored = _score_candidates(candidates, self.config, as_of)
+        preferences: dict[str, float] = {}
+        if personalization_enabled:
+            for paper, _, _, signals in scored:
+                preference = compute_user_preference(
+                    paper,
+                    anonymous_profile,
+                    self.config.preference_config,
+                    as_of=as_of,
+                )
+                if preference is not None:
+                    signals["personalization.preference"] = round(preference, 6)
+                    preferences[paper.paper_id] = preference
         quality_pool = sorted(scored, key=lambda item: (item[1], item[0].published_at, item[0].paper_id), reverse=True)[: max(limit * 8, 20)]
         trend_pool = sorted(scored, key=lambda item: (item[2], item[0].published_at, item[0].paper_id), reverse=True)[: max(limit * 8, 20)]
+        personalized_pool = sorted(
+            (
+                item
+                for item in scored
+                if item[0].paper_id in personalized_candidate_ids
+                and preferences.get(item[0].paper_id, 0.0) > 0
+            ),
+            key=lambda item: (
+                preferences[item[0].paper_id],
+                item[0].published_at,
+                item[0].paper_id,
+            ),
+            reverse=True,
+        )[: max(limit * 8, 20)]
         quality_ids = {item[0].paper_id for item in quality_pool}
         trend_ids = {item[0].paper_id for item in trend_pool}
+        personalized_ids = {item[0].paper_id for item in personalized_pool}
         by_id = {paper.paper_id: (paper, quality, trend, signals) for paper, quality, trend, signals in scored}
         rng = random.Random(effective_seed)
         quotas = _allocate_quotas(limit, self.config.age_bucket_targets, candidates, as_of)
         selected: list[RecommendationItem] = []
         remaining = set(by_id)
-        high_target = round(limit * self.config.quality_pool_ratio)
+        personalized_target = (
+            round(limit * self.config.personalized_pool_ratio)
+            if personalization_enabled
+            else 0
+        )
+        high_target = round(
+            (limit - personalized_target) * self.config.quality_pool_ratio
+        )
+        personalized_count = 0
         high_count = 0
         trend_count = 0
         last_author: str | None = None
         last_subjects: set[str] = set()
         for bucket, quota in quotas.items():
             for _ in range(quota):
-                desired_pool = "high_impact" if high_count < high_target else "trending"
+                if personalized_count < personalized_target:
+                    desired_pool = "personalized"
+                elif high_count < high_target:
+                    desired_pool = "high_impact"
+                else:
+                    desired_pool = "trending"
                 options: list[tuple[PaperRecord, float, float, dict[str, float], str, float]] = []
                 for paper_id in sorted(remaining):
                     paper, quality, trend, signals = by_id[paper_id]
@@ -341,7 +389,8 @@ class RecommendationEngine:
                         continue
                     in_quality = paper_id in quality_ids
                     in_trend = paper_id in trend_ids
-                    if not in_quality and not in_trend:
+                    in_personalized = paper_id in personalized_ids
+                    if desired_pool == "personalized" and not in_personalized:
                         continue
                     if desired_pool == "high_impact" and not in_quality:
                         continue
@@ -352,7 +401,11 @@ class RecommendationEngine:
                     if last_author and author == last_author or last_subjects.intersection(subjects):
                         continue
                     pool = desired_pool
-                    score = quality if pool == "high_impact" else trend
+                    score = (
+                        preferences[paper_id]
+                        if pool == "personalized"
+                        else quality if pool == "high_impact" else trend
+                    )
                     options.append((paper, quality, trend, signals, pool, max(score, 0.001)))
                 if not options:
                     options = _fallback_options(
@@ -365,6 +418,8 @@ class RecommendationEngine:
                         last_subjects,
                         quality_ids,
                         trend_ids,
+                        personalized_ids,
+                        preferences,
                         enforce_diversity=False,
                     )
                 if not options:
@@ -378,6 +433,8 @@ class RecommendationEngine:
                         last_subjects,
                         quality_ids,
                         trend_ids,
+                        personalized_ids,
+                        preferences,
                         enforce_diversity=False,
                     )
                 if not options:
@@ -386,7 +443,9 @@ class RecommendationEngine:
                 paper, quality, trend, signals, pool, weight = chosen
                 remaining.remove(paper.paper_id)
                 selected.append(RecommendationItem(paper, pool, bucket, quality, min(trend, 1.0), weight, signals))
-                if pool == "high_impact":
+                if pool == "personalized":
+                    personalized_count += 1
+                elif pool == "high_impact":
                     high_count += 1
                 else:
                     trend_count += 1
@@ -445,6 +504,8 @@ def _fallback_options(
     last_subjects: set[str],
     quality_ids: set[str],
     trend_ids: set[str],
+    personalized_ids: set[str],
+    preferences: Mapping[str, float],
     *,
     enforce_diversity: bool,
 ) -> list[tuple[PaperRecord, float, float, dict[str, float], str, float]]:
@@ -455,11 +516,14 @@ def _fallback_options(
             continue
         in_quality = paper_id in quality_ids
         in_trend = paper_id in trend_ids
+        in_personalized = paper_id in personalized_ids
+        if desired_pool == "personalized" and not in_personalized:
+            continue
         if desired_pool == "high_impact" and not in_quality:
             continue
         if desired_pool == "trending" and not in_trend:
             continue
-        if not in_quality and not in_trend:
+        if desired_pool != "personalized" and not in_quality and not in_trend:
             continue
         author = paper.authors[0].lower() if paper.authors else ""
         subjects = {subject.lower() for subject in paper.subjects}
@@ -473,7 +537,11 @@ def _fallback_options(
                 pool = "high_impact"
             else:
                 pool = "trending"
-        score = quality if pool == "high_impact" else trend
+        score = (
+            preferences[paper_id]
+            if pool == "personalized"
+            else quality if pool == "high_impact" else trend
+        )
         options.append((paper, quality, trend, signals, pool, max(score, 0.001)))
     return options
 

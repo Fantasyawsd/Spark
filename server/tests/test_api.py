@@ -81,14 +81,14 @@ class ApiTest(unittest.TestCase):
         encoded = quote(encode_anonymous_profile(profile), safe='')
         status, payload = self.get(f"/api/v1/feed/recommended?limit=2&seed=3&profile={encoded}")
         self.assertEqual(status, 200)
-        self.assertEqual(payload['score_version'], 'score.v3')
+        self.assertEqual(payload['score_version'], 'score.v4')
         status, payload = self.get("/api/v1/feed/recommended?limit=2&seed=3&profile=%%%broken%%%")
         self.assertEqual(status, 400)
 
     def test_recommended_and_detail_errors(self) -> None:
         status, payload = self.get("/api/v1/feed/recommended?limit=3&seed=7")
         self.assertEqual(status, 200)
-        self.assertEqual(payload["score_version"], "score.v3")
+        self.assertEqual(payload["score_version"], "score.v4")
         read_id = payload["items"][0]["paper_id"]
         status, filtered = self.get(f"/api/v1/feed/recommended?limit=3&seed=7&read_ids={read_id}")
         self.assertEqual(status, 200)

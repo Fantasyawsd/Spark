@@ -10,7 +10,7 @@ from spark_papers.personalized_pool import (
     TitleKeywordSimilarityRecall,
     build_personalized_candidates,
 )
-from spark_papers.recommendation import RecommendationEngine
+from spark_papers.recommendation import RecommendationEngine, ScoreConfig
 from spark_papers.storage import PaperStore
 
 UTC = timezone.utc
@@ -202,6 +202,81 @@ class PersonalizedPoolTest(unittest.TestCase):
         )
 
         self.assertEqual([item.paper.paper_id for item in items], ["profile-paper"])
+
+    def test_generate_uses_personalized_pool_with_quota_limit(self) -> None:
+        for index in range(8):
+            _ingest(
+                self.store,
+                f"personal-{index}",
+                title=f"Topic{index} Research",
+                subjects=(f"cs.X{index}",),
+                days_old=index + 1,
+            )
+        profile = AnonymousProfile(
+            keywords={f"topic{index}": float(8 - index) for index in range(8)}
+        )
+
+        _, items = RecommendationEngine(
+            self.store,
+            similar_recall=RecordingSimilarRecall({}),
+        ).generate(limit=5, seed=11, as_of=NOW, anonymous_profile=profile)
+
+        personalized = [item for item in items if item.pool == "personalized"]
+        self.assertTrue(personalized)
+        self.assertLessEqual(len(personalized), round(5 * 0.4))
+        self.assertTrue(
+            all("personalization.preference" in item.signals for item in personalized)
+        )
+
+    def test_higher_preference_is_selected_more_often(self) -> None:
+        _ingest(self.store, "high", title="HighPreference", subjects=("cs.HI",))
+        _ingest(self.store, "low", title="LowPreference", subjects=("cs.LO",))
+        profile = AnonymousProfile(keywords={"highpreference": 10.0, "lowpreference": 0.1})
+        engine = RecommendationEngine(
+            self.store,
+            config=ScoreConfig(personalized_pool_ratio=1.0),
+            similar_recall=RecordingSimilarRecall({}),
+        )
+        selected = [
+            engine.generate(limit=1, seed=seed, as_of=NOW, anonymous_profile=profile)[1][0].paper.paper_id
+            for seed in range(40)
+        ]
+
+        self.assertGreater(selected.count("high"), selected.count("low"))
+        self.assertTrue(
+            all(
+                engine.generate(limit=1, seed=seed, as_of=NOW, anonymous_profile=profile)[1][0].pool
+                == "personalized"
+                for seed in range(3)
+            )
+        )
+
+    def test_zero_personalized_ratio_matches_no_profile_behavior(self) -> None:
+        _ingest(self.store, "one", title="One", subjects=("cs.AI",))
+        _ingest(self.store, "two", title="Two", subjects=("cs.LG",), days_old=2)
+        engine = RecommendationEngine(
+            self.store,
+            config=ScoreConfig(personalized_pool_ratio=0.0),
+            similar_recall=RecordingSimilarRecall({}),
+        )
+
+        batch_without, items_without = engine.generate(limit=2, seed=9, as_of=NOW)
+        batch_with, items_with = engine.generate(
+            limit=2,
+            seed=9,
+            as_of=NOW,
+            anonymous_profile=AnonymousProfile(keywords={"one": 1.0}),
+        )
+
+        self.assertEqual(batch_with, batch_without)
+        self.assertEqual(
+            [item.paper.paper_id for item in items_with],
+            [item.paper.paper_id for item in items_without],
+        )
+        self.assertTrue(all(item.pool != "personalized" for item in items_with))
+        self.assertTrue(
+            all("personalization.preference" not in item.signals for item in items_with)
+        )
 
     def test_as_of_upper_bound_excludes_future_papers(self) -> None:
         _ingest(self.store, "past", title="Past", subjects=("cs.LG",))

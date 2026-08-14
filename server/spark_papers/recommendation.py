@@ -9,8 +9,9 @@ from typing import Any, Iterable, Mapping
 
 from . import SCORE_VERSION
 from .dto import recommendation_to_api
-from .models import PaperRecord, RecommendationItem, utc_now
+from .models import PaperRecord, RecommendationItem, parse_datetime, utc_now
 from .ports import RecommendationRepository
+from .trend_boost import BoostConfig, compute_trend_boost
 
 UTC = timezone.utc
 
@@ -38,6 +39,7 @@ class ScoreConfig:
         ("short_citation_velocity", 0.20),
         ("freshness", 0.25),
     )
+    boost: BoostConfig = BoostConfig()
 
 
 def _number(value: Any) -> float | None:
@@ -86,6 +88,12 @@ def _first_number(*values: Any) -> float | None:
         if parsed is not None:
             return parsed
     return None
+
+
+def _trend_boost_for(paper: PaperRecord, as_of: datetime, config: ScoreConfig) -> float:
+    web_heat = paper.signals.get("web_heat") or {}
+    detected_at = parse_datetime(web_heat.get("trend_detected_at"))
+    return compute_trend_boost(detected_at, as_of, config.boost)
 
 
 _UNKNOWN_SUBJECT = "__unknown__"
@@ -156,9 +164,12 @@ def score_paper(paper: PaperRecord, candidates: Iterable[PaperRecord], config: S
             trend_values[name] = normalized
             trend_weight += weight
     trend = sum(trend_values[name] * weight for name, weight in config.trend_weights if name in trend_values) / trend_weight if trend_weight else 0.0
+    boost = _trend_boost_for(paper, as_of, config)
+    boosted_trend = trend * boost
     signals = {f"quality.{name}": value for name, value in quality_values.items()}
     signals.update({f"trend.{name}": value for name, value in trend_values.items()})
-    return quality, trend, signals
+    signals["trend.boost"] = round(boost, 6)
+    return quality, boosted_trend, signals
 
 
 def _score_candidates(
@@ -227,9 +238,12 @@ def _score_candidates(
             if trend_weight
             else 0.0
         )
+        boost = _trend_boost_for(paper, as_of, config)
+        boosted_trend = trend * boost
         signals = {f"quality.{name}": value for name, value in quality_values.items()}
         signals.update({f"trend.{name}": value for name, value in trend_values.items()})
-        scored.append((paper, quality, trend, signals))
+        signals["trend.boost"] = round(boost, 6)
+        scored.append((paper, quality, boosted_trend, signals))
     return scored
 
 
@@ -341,7 +355,7 @@ class RecommendationEngine:
                 chosen = _weighted_choice(options, rng)
                 paper, quality, trend, signals, pool, weight = chosen
                 remaining.remove(paper.paper_id)
-                selected.append(RecommendationItem(paper, pool, bucket, quality, trend, weight, signals))
+                selected.append(RecommendationItem(paper, pool, bucket, quality, min(trend, 1.0), weight, signals))
                 if pool == "high_impact":
                     high_count += 1
                 else:
@@ -356,7 +370,7 @@ class RecommendationEngine:
                 options.append((paper, quality, trend, signals, pool, max(max(quality, trend), 0.001)))
             paper, quality, trend, signals, pool, weight = _weighted_choice(options, rng)
             remaining.remove(paper.paper_id)
-            selected.append(RecommendationItem(paper, pool, age_bucket(paper.published_at, as_of), quality, trend, weight, signals))
+            selected.append(RecommendationItem(paper, pool, age_bucket(paper.published_at, as_of), quality, min(trend, 1.0), weight, signals))
         selected = [
             RecommendationItem(
                 self.store.get(item.paper.paper_id) or item.paper,

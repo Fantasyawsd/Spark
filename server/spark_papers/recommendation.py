@@ -442,7 +442,18 @@ class RecommendationEngine:
                 chosen = _weighted_choice(options, rng)
                 paper, quality, trend, signals, pool, weight = chosen
                 remaining.remove(paper.paper_id)
-                selected.append(RecommendationItem(paper, pool, bucket, quality, min(trend, 1.0), weight, signals))
+                selected.append(
+                    RecommendationItem(
+                        paper,
+                        pool,
+                        bucket,
+                        quality,
+                        min(trend, 1.0),
+                        preferences.get(paper_id, 0.0),
+                        weight,
+                        signals,
+                    )
+                )
                 if pool == "personalized":
                     personalized_count += 1
                 elif pool == "high_impact":
@@ -459,7 +470,18 @@ class RecommendationEngine:
                 options.append((paper, quality, trend, signals, pool, max(max(quality, trend), 0.001)))
             paper, quality, trend, signals, pool, weight = _weighted_choice(options, rng)
             remaining.remove(paper.paper_id)
-            selected.append(RecommendationItem(paper, pool, age_bucket(paper.published_at, as_of), quality, min(trend, 1.0), weight, signals))
+            selected.append(
+                RecommendationItem(
+                    paper,
+                    pool,
+                    age_bucket(paper.published_at, as_of),
+                    quality,
+                    min(trend, 1.0),
+                    preferences.get(paper_id, 0.0),
+                    weight,
+                    signals,
+                )
+            )
         selected = [
             RecommendationItem(
                 self.store.get(item.paper.paper_id) or item.paper,
@@ -467,6 +489,7 @@ class RecommendationEngine:
                 item.age_bucket,
                 item.quality_score,
                 item.trend_score,
+                item.personalization_score,
                 item.recommendation_weight,
                 item.signals,
             )

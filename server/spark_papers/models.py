@@ -97,5 +97,6 @@ class RecommendationItem:
     age_bucket: str
     quality_score: float
     trend_score: float
-    recommendation_weight: float
-    signals: Mapping[str, Any]
+    personalization_score: float = 0.0
+    recommendation_weight: float = 0.0
+    signals: Mapping[str, Any] = field(default_factory=dict)

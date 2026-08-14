@@ -44,6 +44,7 @@ def recommendation_to_api(value: RecommendationItem) -> dict[str, Any]:
             "age_bucket": value.age_bucket,
             "quality_score": round(value.quality_score, 6),
             "trend_score": round(value.trend_score, 6),
+            "personalization_score": round(value.personalization_score, 6),
             "recommendation_weight": round(value.recommendation_weight, 6),
             "score_signals": dict(value.signals),
         }

@@ -1,6 +1,6 @@
 # Phase 3.6 热点原因 Client 展示任务台账
 
-> 状态：待合并
+> 状态：已合并
 > 最近更新：2026-08-14
 
 ## 目标
@@ -34,7 +34,7 @@
 - [x] 卡片 Trending chip 有/无信号行为正确
 - [x] Widget 测试覆盖两种渲染
 - [x] `flutter analyze` 无问题、`flutter test` 全量通过（588 项）
-- [ ] 合并后 development APK（profile）与 Windows release 构建成功并记录产物（/finish 执行）
+- [x] 合并后 development APK（profile）与 Windows release 构建成功并记录产物（/finish 执行）
 
 ## 验证记录
 
@@ -51,6 +51,17 @@
 | SHA | 提交信息 | 对应阶段 | 验证摘要 |
 | --- | --- | --- | --- |
 | 待提交 | `新增（论文）：信息流卡片展示热点原因` | 实现（workflow） | analyze 无问题、588 项通过 |
+
+## 合并归档
+
+- 合并方式：本地快进合并（`main` `a1de85c..d1dcfd1`）
+- 最终集成提交：`d1dcfd1`
+- 合并时间：2026-08-14
+- 集成验证（/finish 双目标构建）：
+  - Windows release：`build/windows/x64/runner/Release/spark.exe`，101,888 bytes，SHA-256 `CDFCDE6D1129AA3B01FAF6DDCBC8FEAAB9D92B647A6B7BD00B9C712E579BA28A`
+  - Android development profile：`build/app/outputs/flutter-apk/app-development-profile.apk`，119,638,924 bytes，SHA-256 `A053943CAFEE9D13E17A1EB82973A20F4BBF389B037D43A60EAF862FCBE2F924`；无 `android/key.properties`，按规范使用 profile
+  - Gradle daemon：`--stop` 后 `--status` 显示 STOPPED，无运行中残留
+- 真实后续项：3.7 Web Heat 接入 TrendScore 权重版本（最后一个 Phase 3 子任务）。
 
 ## 审查结论
 

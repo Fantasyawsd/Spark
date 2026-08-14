@@ -115,7 +115,7 @@ Phase 3 子任务（串行依赖，每个合入 `main` 后基于新基线开发�
 | # | 任务 | 状态 | 完成条件 |
 | --- | --- | --- | --- |
 | 3.1 | GitHub star velocity 真实计算 | 已完成 | `github_star_history` 观测表随 002 迁移创建并幂等追加；30 天窗口增速计算，单观测与缺失返回 `null`；`signals.github.star_velocity` 由历史观测派生并进入 TrendScore；schema 契约与 pytest 覆盖（98 项全过） |
-| 3.2 | Citation velocity 短期增速补全 | 待开始 | OpenAlex 同步保留 `counts_by_year`；总引用增速与近 12 个月短期引用增速计算写入 signals；缺失不冒充 0；测试覆盖 |
+| 3.2 | Citation velocity 短期增速补全 | 已完成 | OpenAlex 同步保留 `counts_by_year`；`citation_velocity`（近 3 年年均）与 `short_citation_velocity`（近 12 个月插值）由 ingest 派生写入 signals 并附 `derived` 证据；缺失不冒充 0；pytest 107 项全过 |
 | 3.3 | Web Heat 信号契约与存储 | 待开始 | `signals.web_heat`（web_heat_score/web_mentions/web_source_count/trend_detected_at/trend_reason/trend_topics）进入 schema、DTO 与 API；测试覆盖 |
 | 3.4 | LLM Trend Scout 候选发现与身份核验 | 待开始 | Web 信号经 LLM 发现热点候选与理由；arXiv/DOI 身份核验后写 web_heat；幂等可重放；mock LLM 测试 |
 | 3.5 | 24–72 小时 Trend Boost 与衰减 | 待开始 | 版本化 boost 配置（窗口、增益、半衰期）；trend_detected_at 起算的确定性衰减；测试覆盖 |

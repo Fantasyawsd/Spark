@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
@@ -67,6 +68,10 @@ class PapersScreen extends StatefulWidget {
 
 class _PapersScreenState extends State<PapersScreen> {
   late final PageController _pageController;
+  late final ScrollController _gridScrollController;
+  final GlobalKey _gridAnchorKey = GlobalKey();
+  int? _gridAnchorIndex;
+  bool _wasGridMode = false;
   String? _activePaperId;
   DateTime? _activeSince;
   int _lastInteractionErrorRevision = 0;
@@ -79,6 +84,8 @@ class _PapersScreenState extends State<PapersScreen> {
   void initState() {
     super.initState();
     _pageController = PageController(initialPage: _feed.currentPaperIndex);
+    _gridScrollController = ScrollController();
+    _wasGridMode = _feed.gridMode;
     _feed.addListener(_handleControllerChanged);
     _interactions.addListener(_handleControllerChanged);
     widget.commentController.addListener(_handleControllerChanged);
@@ -127,6 +134,7 @@ class _PapersScreenState extends State<PapersScreen> {
     widget.readingController.removeListener(_handleControllerChanged);
     _finishActivePaper();
     _pageController.dispose();
+    _gridScrollController.dispose();
     super.dispose();
   }
 
@@ -206,6 +214,7 @@ class _PapersScreenState extends State<PapersScreen> {
           onRefresh: _feed.refreshCatalog,
           child: MasonryGridView.count(
             key: const ValueKey('paper-grid'),
+            controller: _gridScrollController,
             physics: const AlwaysScrollableScrollPhysics(),
             crossAxisCount: 2,
             mainAxisSpacing: 10,
@@ -213,6 +222,7 @@ class _PapersScreenState extends State<PapersScreen> {
             padding: const EdgeInsets.fromLTRB(12, 8, 12, 80),
             itemCount: papers.length,
             itemBuilder: (context, index) => PaperGridCard(
+              key: index == _gridAnchorIndex ? _gridAnchorKey : null,
               paper: papers[index],
               index: index,
               liked: _interactions.isLiked(papers[index].id),
@@ -300,6 +310,58 @@ class _PapersScreenState extends State<PapersScreen> {
       unawaited(_feed.loadMoreCatalog());
     }
     return false;
+  }
+
+  /// 网格卡片为瀑布流可变高度，无法直接由索引求精确偏移：
+  /// 先按平均行高估算跳转，再用目标卡片的锚点 key 做 ensureVisible 精确对齐；
+  /// 锚点尚未构建（估算偏离较远）时按视口步进，逐帧逼近。
+  static const double _gridRowHeightEstimate = 260;
+  static const int _maxGridAnchorAttempts = 12;
+
+  double _estimateGridOffset(int index) {
+    final row = index ~/ 2;
+    return 8.0 + row * (_gridRowHeightEstimate + 10.0);
+  }
+
+  void _refineGridAnchor(int attempt) {
+    final anchorIndex = _gridAnchorIndex;
+    if (!mounted ||
+        anchorIndex == null ||
+        !_feed.gridMode ||
+        !_gridScrollController.hasClients) {
+      return;
+    }
+    if (attempt == 0) {
+      final target = _estimateGridOffset(anchorIndex);
+      _gridScrollController.jumpTo(
+        target.clamp(0.0, _gridScrollController.position.maxScrollExtent),
+      );
+    }
+    final anchorContext = _gridAnchorKey.currentContext;
+    if (anchorContext != null) {
+      Scrollable.ensureVisible(
+        anchorContext,
+        alignment: 0.1,
+        duration: Duration.zero,
+        curve: Curves.easeOut,
+      );
+      setState(() => _gridAnchorIndex = null);
+      return;
+    }
+    if (attempt >= _maxGridAnchorAttempts) {
+      setState(() => _gridAnchorIndex = null);
+      return;
+    }
+    final position = _gridScrollController.position;
+    final target = _estimateGridOffset(anchorIndex);
+    final step = position.viewportDimension * 0.8;
+    final next = position.pixels < target
+        ? math.min(position.pixels + step, position.maxScrollExtent)
+        : math.max(position.pixels - step, 0.0);
+    _gridScrollController.jumpTo(next);
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => _refineGridAnchor(attempt + 1),
+    );
   }
 
   void _syncActivePaper() {
@@ -425,6 +487,18 @@ class _PapersScreenState extends State<PapersScreen> {
 
   void _handleControllerChanged() {
     if (!mounted) return;
+    final gridMode = _feed.gridMode;
+    if (gridMode != _wasGridMode) {
+      _wasGridMode = gridMode;
+      if (gridMode) {
+        // 单栏切双栏：让网格停在当前论文所在的区域，而不是从头开始。
+        _gridAnchorIndex = _feed.currentPaperIndex;
+        WidgetsBinding.instance
+            .addPostFrameCallback((_) => _refineGridAnchor(0));
+      } else {
+        _gridAnchorIndex = null;
+      }
+    }
     setState(() {});
     _showInteractionErrorIfNeeded();
     _showCatalogErrorIfNeeded();

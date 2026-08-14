@@ -116,6 +116,68 @@ void main() {
   });
 
   testWidgets(
+    'switching from fullscreen to grid keeps the current paper in view',
+    (tester) async {
+      await tester.binding.setSurfaceSize(const Size(378, 810));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      final papers = List.generate(60, _gridPaper);
+      final feed = PaperFeedController.fromPapers(papers);
+      final interactions = PaperInteractionController();
+      final comments = PaperCommentController();
+      final reading = PaperReadingController();
+      addTearDown(feed.dispose);
+      addTearDown(interactions.dispose);
+      addTearDown(comments.dispose);
+      addTearDown(reading.dispose);
+
+      feed.selectPaper(31);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: PapersScreen(
+              readingController: reading,
+              feedController: feed,
+              interactionController: interactions,
+              commentController: comments,
+              aiDiscussionBuilder: paperAiDiscussionBuilder(
+                const FakeChatAiService(),
+              ),
+              keywordService: const FakeChatAiService(),
+              translationServiceFactory:
+                  const FakePaperTranslationServiceFactory(),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.byKey(const ValueKey('paper-feed')), findsOneWidget);
+      expect(find.byKey(const ValueKey('paper-grid')), findsNothing);
+
+      feed.toggleGridMode();
+      await tester.pumpAndSettle();
+
+      // 网格停在当前论文所在区域：滚动偏移远离顶部，
+      // 且当前论文卡片标题可见于视口内。
+      final gridScrollable = find.descendant(
+        of: find.byKey(const ValueKey('paper-grid')),
+        matching: find.byType(Scrollable),
+      );
+      final position = tester.state<ScrollableState>(gridScrollable).position;
+      expect(position.pixels, greaterThan(1000));
+
+      final currentTitle = find.text(
+        'Grid paper 31 with a sufficiently descriptive title',
+      );
+      expect(currentTitle, findsOneWidget);
+      final rect = tester.getRect(currentTitle);
+      expect(rect.top, greaterThanOrEqualTo(0));
+      expect(rect.top, lessThan(810));
+    },
+  );
+
+  testWidgets(
     'channel bar keeps fixed channels and opens the channel manager',
     (tester) async {
       await tester.binding.setSurfaceSize(const Size(378, 810));

@@ -106,9 +106,21 @@ OpenAlex / Semantic Scholar / GitHub 增强 ─┘                              
 | Phase 1：论文数据底座 | 已完成 | 680,199 篇真实论文已落库，其中 680,187 篇由 arXiv 发现、326 篇由 HF Daily 发现；326 条 HF、498 条 Semantic Scholar、50 条 GitHub 真实同步记录及 2,895 个唯一 OpenAlex 增强 ID 已验证；arXiv OAI 逐页快照、独立完成水位、分页断点、幂等重放、删除处理和统一定时入口均已接通 |
 | Phase 2：基础 Feed API | 已完成 | 详情、最新、主题、会议、关注和推荐 API 已在真实库验证；development App 开放 19 个真实会议频道，推荐刷新排除当前列表与已读论文，保留旧 batch 并将新 batch 追加到阅读流下方 |
 | Phase 2.5：真实数据落库与端到端验收 | 已完成 | 真实数据库、外部来源、索引、API、会议入口、推荐刷新语义、自动化门禁和 Windows development App 人工验收均已完成 |
-| Phase 3：热点能力增强 | 后续阶段 | GitHub star velocity、citation velocity、Web Heat、LLM Trend Scout、24–72 小时 Trend Boost 与热点原因 |
+| Phase 3：热点能力增强 | 进行中 | GitHub star velocity、citation velocity、Web Heat、LLM Trend Scout、24–72 小时 Trend Boost 与热点原因；按下方 3.1–3.7 子任务串行推进，每个子任务独立 worktree、合入 main 后作为下一个子任务基线 |
 | Phase 4：个性化推荐 | 后续阶段 | 行为日志、用户画像与论文向量、Personalized Pool、个性化排序、Diversity 与 Exploration |
 | Phase 5：高级推荐系统 | 后续阶段 | 多路召回、Two-Tower、Learning to Rank、Reranker、序列推荐、实时兴趣更新与 A/B Test |
+
+Phase 3 子任务（串行依赖，每个合入 `main` 后基于新基线开发下一个）：
+
+| # | 任务 | 状态 | 完成条件 |
+| --- | --- | --- | --- |
+| 3.1 | GitHub star velocity 真实计算 | 开发中 | `github_star_history` 观测表随同步幂等追加；30 天窗口增速计算，单观测与缺失返回 `null`；`signals.github.star_velocity` 由历史观测派生并进入 TrendScore；schema 契约与 pytest 覆盖 |
+| 3.2 | Citation velocity 短期增速补全 | 待开始 | OpenAlex 同步保留 `counts_by_year`；总引用增速与近 12 个月短期引用增速计算写入 signals；缺失不冒充 0；测试覆盖 |
+| 3.3 | Web Heat 信号契约与存储 | 待开始 | `signals.web_heat`（web_heat_score/web_mentions/web_source_count/trend_detected_at/trend_reason/trend_topics）进入 schema、DTO 与 API；测试覆盖 |
+| 3.4 | LLM Trend Scout 候选发现与身份核验 | 待开始 | Web 信号经 LLM 发现热点候选与理由；arXiv/DOI 身份核验后写 web_heat；幂等可重放；mock LLM 测试 |
+| 3.5 | 24–72 小时 Trend Boost 与衰减 | 待开始 | 版本化 boost 配置（窗口、增益、半衰期）；trend_detected_at 起算的确定性衰减；测试覆盖 |
+| 3.6 | 热点原因 Client 展示 | 待开始 | 推荐 API 返回 trend_reason/trend_topics；客户端卡片展示「Trending · 原因」；Widget 测试 |
+| 3.7 | Web Heat 接入 TrendScore 权重版本 | 待开始 | trend_weights 新版本纳入 web_heat；SCORE_VERSION 递增；离线回放兼容测试 |
 
 Phase 1 按以下依赖顺序拆分：
 

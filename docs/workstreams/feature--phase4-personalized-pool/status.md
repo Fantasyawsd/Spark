@@ -5,7 +5,7 @@
 
 ## 目标
 
-服务端按匿名画像召回个性化候选（实现：workflow + openai/gpt-5.6-sol）：
+服务端按匿名画像召回个性化候选（实现：workflow + pd/gpt-5.6-sol）：
 
 1. 新模块 `personalized_pool.py`：`PersonalizedPoolConfig`（每类候选上限、最小权重阈值）与 `build_personalized_candidates`——画像主题经 channel_index 精确召回、会议经 venue_index、关键词经 title/abstract LIKE（每键 LIMIT，标注性能边界）；去重并排除未准入/撤回。
 2. 相似召回端口 `SimilarPaperRecallPort`：标题/摘要关键词重合度基础实现 `TitleKeywordSimilarityRecall`，向量 Embedding 接口契约预留（未来替换实现）。
@@ -22,7 +22,7 @@
 - 分支：`feature/phase4-personalized-pool`
 - Worktree：`C:\Users\Fantasy\Desktop\Spark-worktrees\agent-1`
 - 基线：`35e10fc`
-- 负责人：Fantasy（编排者，目标迭代授权）；实现：workflow + openai/gpt-5.6-sol
+- 负责人：Fantasy（编排者，目标迭代授权）；实现：workflow + pd/gpt-5.6-sol
 
 ## 验收标准
 
@@ -37,8 +37,8 @@
 
 | 命令或人工检查 | 结果 | 日期 |
 | --- | --- | --- |
-| workflow 实现 agent（openai/gpt-5.6-sol） | personalized_pool.py + 6 项测试，全量 155 项通过 | 2026-08-14 |
-| workflow 审查 agent（openai/gpt-5.6-sol） | 2 个阻断项：as_of 上界缺失、LIKE 性能边界未标注 | 2026-08-14 |
+| workflow 实现 agent（pd/gpt-5.6-sol） | personalized_pool.py + 6 项测试，全量 155 项通过 | 2026-08-14 |
+| workflow 审查 agent（pd/gpt-5.6-sol） | 2 个阻断项：as_of 上界缺失、LIKE 性能边界未标注 | 2026-08-14 |
 | 阻断修复（编排者） | 全部召回路径施加 as_of 上界（含相似端口与关键词查询）；LIKE 转义参数化并标注临时方案边界；补未来论文排除与 wildcard 转义测试 | 2026-08-14 |
 | `python -m pytest -q`（全量） | 157 项通过 | 2026-08-14 |
 

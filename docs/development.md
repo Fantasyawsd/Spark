@@ -136,7 +136,7 @@ Phase 4 子任务（串行依赖，每个合入 `main` 后基于新基线开发�
 | 4.1 | 行为事件日志契约与本地采集 | 已完成 | `behavior` 模块：事件模型、本地存储（90 天保留期 + 10000 条上限）、同意门控与清除；papers 经公开入口依赖 domain 端口，三类埋点接入；flutter analyze 无问题、flutter test 594 项全过；双目标构建证据见台账 |
 | 4.2 | 用户画像本地聚合 | 已完成 | `UserProfile`（profile.v1）主题/关键词/会议权重；`ProfileAggregator` 纯函数（点赞 2.0/收藏 1.5/打开 0.5，30 天半衰衰减）；`FileProfileStore` 持久化；会话初始化后台刷新；analyze 无问题、flutter test 599 项全过 |
 | 4.3 | 匿名画像推荐请求契约 | 已完成 | 服务端 `anonymous_profile.py` 解析校验（profile.v1、键数 ≤64、权重 [-10,10]）非法 400；客户端 base64url 编码上送聚合权重（不含原始行为）；pytest 149、flutter test 601 全过；双目标构建证据见台账 |
-| 4.4 | Personalized Pool 候选召回 | 已完成 | `personalized_pool.py` 按画像三类召回（as_of 上界保证回放确定性）+ `SimilarPaperRecallPort`（标题关键词重合度基础实现，向量 Embedding 预留）；关键词 LIKE 为临时方案（FTS 迁移边界见台账）；workflow + openai/gpt-5.6-sol 实现与审查，2 个阻断项已修复；pytest 157 项全过 |
+| 4.4 | Personalized Pool 候选召回 | 已完成 | `personalized_pool.py` 按画像三类召回（as_of 上界保证回放确定性）+ `SimilarPaperRecallPort`（标题关键词重合度基础实现，向量 Embedding 预留）；关键词 LIKE 为临时方案（FTS 迁移边界见台账）；workflow + pd/gpt-5.6-sol 实现与审查，2 个阻断项已修复；pytest 157 项全过 |
 | 4.5 | UserPreferenceScore 与个性化排序 | 已完成 | `preference_score.py` 三分量加权与重归一化（中文/短语子串匹配）；generate 三池混排（personalized 按偏好加权抽样、配额恒等）；无画像/ratio=0 与旧版一致；SCORE_VERSION 升 score.v4；pytest 167 项全过 |
 | 4.6 | 三信号混排与版本化 | 已完成 | `personalization_score` 经 RecommendationItem/API 透出（personalized 池携带偏好分）；SCORE_VERSION score.v4（4.5 已升）；v3/v4 batch 并存追溯与同 seed 不同版本 batch_id 隔离测试；pytest 170 项全过 |
 | 4.7 | 个性化开关与偏好展示 | 已完成 | `PersonalizationPrivacyController`（开关与同意同步、清除事件与画像）；隐私设置个性化区；behavior 三文件纳入本地数据统计与清理；「为你推荐」chip 有/无信号渲染正确；workflow + kimi-coding/k3-256k 实现；analyze 无问题、flutter test 608 项全过；双目标构建证据见台账 |

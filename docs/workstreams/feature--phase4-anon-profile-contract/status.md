@@ -58,7 +58,7 @@
   - Windows release：`build/windows/x64/runner/Release/spark.exe`，101,888 bytes，SHA-256 `688D2F426838FD14FBD2DF1A8845F86A7995DA137E4D6955DC574A268696F56C`
   - Android development profile：`build/app/outputs/flutter-apk/app-development-profile.apk`，119,671,692 bytes，SHA-256 `1C43FEC29EE4488D01E3F28576FDC2EA9165B63A43FAA2163144EE57207A8BFA`
   - Gradle daemon：`--stop` 后无运行中残留
-- 真实后续项：4.4 Personalized Pool 候选召回（下一迭代基线，复杂任务走 workflow + openai/gpt-5.6-sol）。
+- 真实后续项：4.4 Personalized Pool 候选召回（下一迭代基线，复杂任务走 workflow + pd/gpt-5.6-sol）。
 
 ## 审查结论
 

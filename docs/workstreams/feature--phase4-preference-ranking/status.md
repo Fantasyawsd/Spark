@@ -5,7 +5,7 @@
 
 ## 目标
 
-把匿名画像转化为推荐偏好分并接入混排（实现：workflow + openai/gpt-5.6-sol）：
+把匿名画像转化为推荐偏好分并接入混排（实现：workflow + pd/gpt-5.6-sol）：
 
 1. `preference_score.py`：`compute_user_preference`——主题匹配（0.5）、会议匹配（0.2）、标题/摘要关键词重合（0.3），各分量归一化并按可用权重重归一化；无任何匹配返回 None（缺失不冒充 0）。
 2. 引擎接入：`ScoreConfig` 增 `personalized_pool_ratio`（默认 0.4）；generate 带画像时构建 personalized 池（偏好分 > 0 的画像候选）并按配额轮转三池（quality/trend/personalized），personalized 池内按偏好分加权抽样；同作者/同主题多样性约束保持。
@@ -24,7 +24,7 @@
 - 分支：`feature/phase4-preference-ranking`
 - Worktree：`C:\Users\Fantasy\Desktop\Spark-worktrees\agent-1`
 - 基线：`6a73d54`
-- 负责人：Fantasy（编排者，目标迭代授权）；实现：workflow + openai/gpt-5.6-sol
+- 负责人：Fantasy（编排者，目标迭代授权）；实现：workflow + pd/gpt-5.6-sol
 
 ## 验收标准
 
@@ -38,8 +38,8 @@
 
 | 命令或人工检查 | 结果 | 日期 |
 | --- | --- | --- |
-| workflow 实现 agent（openai/gpt-5.6-sol） | preference_score.py + 三池混排 + score.v4，全量 165 项通过 | 2026-08-14 |
-| workflow 审查 agent（openai/gpt-5.6-sol） | 两次调用均失败（provider 服务抖动）；编排者直接只读审查 diff（配额恒等、回归等价、多样性、加权抽样逐项核对） | 2026-08-14 |
+| workflow 实现 agent（pd/gpt-5.6-sol） | preference_score.py + 三池混排 + score.v4，全量 165 项通过 | 2026-08-14 |
+| workflow 审查 agent（pd/gpt-5.6-sol） | 两次调用均失败（provider 服务抖动）；编排者直接只读审查 diff（配额恒等、回归等价、多样性、加权抽样逐项核对） | 2026-08-14 |
 | 编排者审查发现并修复 | 中文/短语关键词无法经英文 token 匹配 → 改子串匹配并过滤单字键（keyword_total 只计参与键）；补中文与单字键测试 | 2026-08-14 |
 | `python -m pytest -q`（全量） | 167 项通过 | 2026-08-14 |
 

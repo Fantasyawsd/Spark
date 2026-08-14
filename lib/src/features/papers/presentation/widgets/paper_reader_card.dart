@@ -16,8 +16,6 @@ import 'paper_action_bar.dart';
 import 'paper_full_reader_page.dart';
 import 'paper_metadata.dart';
 import 'paper_pdf_button.dart';
-import 'paper_presenter.dart';
-import 'topic_chip.dart';
 import 'paper_related_papers.dart';
 import 'paper_tab_body.dart';
 import 'paper_translation_content.dart';
@@ -184,20 +182,6 @@ class _PaperReaderCardState extends State<PaperReaderCard> {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  if (trendLabel(paper) != null ||
-                      personalizationLabel(paper) != null) ...[
-                    Wrap(
-                      spacing: 7,
-                      runSpacing: 7,
-                      children: [
-                        if (trendLabel(paper) case final trend?)
-                          TopicChip(label: trend, compact: true),
-                        if (personalizationLabel(paper) case final label?)
-                          TopicChip(label: label, compact: true),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-                  ],
                   PaperMetadata(
                     paper: paper,
                     followed: widget.followed,

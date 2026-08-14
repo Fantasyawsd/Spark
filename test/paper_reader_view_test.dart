@@ -16,7 +16,6 @@ import 'package:spark/src/features/papers/domain/paper_share.dart';
 import 'package:spark/src/features/papers/domain/paper_translation.dart';
 import 'package:spark/src/features/papers/presentation/widgets/paper_reader_card.dart';
 import 'package:spark/src/features/papers/presentation/widgets/paper_reader_view.dart';
-import 'package:spark/src/features/papers/presentation/widgets/topic_chip.dart';
 
 void main() {
   testWidgets('reader initializes only the active tab cache once', (
@@ -281,80 +280,6 @@ void main() {
       SparkDiagnosticOperation.paperReaderOpenLink,
       SparkDiagnosticOperation.paperReaderShare,
     ]);
-  });
-
-  testWidgets('swipe card renders trending and personalized chips', (
-    tester,
-  ) async {
-    await tester.binding.setSurfaceSize(const Size(900, 900));
-    addTearDown(() => tester.binding.setSurfaceSize(null));
-    final base = const ArxivSeedRepository().getAll().first;
-
-    Future<void> pumpCard(Paper paper) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: PaperReaderCard(
-              paper: paper,
-              liked: false,
-              saved: false,
-              read: false,
-              readLater: false,
-              followed: false,
-              shareCountDelta: 0,
-              commentCountDelta: 0,
-              onLike: () {},
-              onSave: () {},
-              onSaveLongPress: () {},
-              onToggleRead: () {},
-              onToggleReadLater: () {},
-              onFollow: () {},
-              onComment: (_, {required keywordCacheFailed}) {},
-              onAnalyze: (_, {required keywordCacheFailed}) {},
-              onShare: () {},
-              translationServiceFactory: const _FakeTranslationServiceFactory(),
-              keywordService: const _FakeAiService(),
-              translationRepository: _CountingTranslationRepository(),
-              keywordRepository: _CountingKeywordRepository(),
-              actionBarBottomInset: 0,
-            ),
-          ),
-        ),
-      );
-      await tester.pump();
-    }
-
-    // 无热点无个性化信号的普通论文不渲染任何 chip。
-    await pumpCard(base);
-    expect(find.byType(TopicChip), findsNothing);
-
-    // 推荐池 trending：显示 Trending chip。
-    await pumpCard(base.copyWith(recommendationPool: 'trending'));
-    expect(find.text('Trending'), findsOneWidget);
-    expect(find.text('为你推荐'), findsNothing);
-
-    // 推荐池 personalized：显示「为你推荐」chip。
-    await pumpCard(base.copyWith(recommendationPool: 'personalized'));
-    expect(find.text('为你推荐'), findsOneWidget);
-    expect(find.text('Trending'), findsNothing);
-
-    // 个性化分数为正：显示「为你推荐」chip。
-    await pumpCard(base.copyWith(personalizationScore: 0.75));
-    expect(find.text('为你推荐'), findsOneWidget);
-
-    // 热点原因：显示「Trending · 原因」chip。
-    await pumpCard(base.copyWith(webTrendReason: 'Hugging Face 热度飙升'));
-    expect(find.text('Trending · Hugging Face 热度飙升'), findsOneWidget);
-
-    // 两种信号同时存在时并排显示两个 chip。
-    await pumpCard(
-      base.copyWith(
-        recommendationPool: 'trending',
-        personalizationScore: 0.5,
-      ),
-    );
-    expect(find.text('Trending'), findsOneWidget);
-    expect(find.text('为你推荐'), findsOneWidget);
   });
 }
 

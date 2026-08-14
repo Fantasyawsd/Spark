@@ -23,7 +23,6 @@ final class PaperApiMapper {
       citations: _citationCount(dto.signals),
       webTrendReason: _webHeatReason(dto.signals),
       webTrendTopics: _webHeatTopics(dto.signals),
-      recommendationPool: dto.recommendationPool,
       arxivId: arxivId,
       doi: dto.externalIds['doi'],
       paperUrl: _string(dto.metadata['abs_url']) ??

@@ -1,7 +1,7 @@
 # Spark AI Agent 开发规范
 
 > 本文件是 Claude Code 及其他 AI Agent 在本仓库工作的统一入口。
-> 最近更新：2026-08-07
+> 最近更新：2026-08-14
 
 ## 1. 指令优先级与语言
 
@@ -14,7 +14,7 @@
 ## 2. 项目关键信息
 
 - 产品：面向个人研究者的 Flutter 论文发现、阅读和 ChatPaper 应用。
-- 当前代码版本：`0.0.1+1`（未正式发布），一级页面为论文、ChatPaper、我的。
+- 当前代码版本：`0.1.0+2`（0.1.0 已于 2026-08-10 作为 GitHub Release 发布，未走应用商店），一级页面为论文、ChatPaper、我的。
 - 当前重点方向：论文频道、时间索引、结构化元数据和 PDF AI 解读；持续计划见 `docs/development.md`，不预先绑定发布版本。
 - 开发验收：代码任务（尤其 UI/功能修复）完成后，用 `flutter pub get` + `flutter run -d windows` 在 Windows 桌面启动应用，由用户实际运行检验；启动前先与用户确认。
 - Flutter：`D:\App\flutter`，当前稳定版 Flutter 3.44.8 / Dart 3.12.2；执行前仍应以 `flutter --version` 为准。

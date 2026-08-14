@@ -1,7 +1,7 @@
 # Spark 发布与兼容性管理
 
 > 状态：强制执行
-> 最近更新：2026-08-02
+> 最近更新：2026-08-14
 > 适用范围：客户端发布、构建渠道、本地数据、自有 API 和功能开放
 
 Spark 分开管理代码版本、发布版本、数据版本、接口版本和功能版本。五者具有不同生命周期，不能用 Git 分支或单一版本号替代。
@@ -22,8 +22,7 @@ Spark 分开管理代码版本、发布版本、数据版本、接口版本和�
 
 - `main` 始终保持可构建、测试通过和可作为发布候选基线。
 - 每个任务使用短生命周期 workstream 分支和独立 worktree。
-- Agent 分支格式为 `<agent>/<type>-<slug>`，例如 `codex/feature-paper-channel`、`claude/fix-feed-cache`。
-- 人类直接开发可使用 `feature/*`、`fix/*`、`hotfix/*`、`refactor/*`。
+- 所有分支统一使用 `<type>/<slug>` 格式，例如 `feature/paper-channels`、`fix/pdf-cache`；历史 `<agent>/...` 前缀分支不再新建。
 - 普通功能通过 Pull Request 合并到 `main`；紧急修复也必须保留审查和 CI 记录。
 - CI 对本次变更涉及的 Dart 文件执行格式门禁；历史代码的全仓格式迁移必须单独提交，不混入功能分支。
 - 分支合并后及时删除，不长期维护 `develop` 或通用 release 分支。
@@ -71,11 +70,12 @@ Android 使用三个 flavor：
 | `staging` | `app.spark.reader.staging` | Spark Beta | 内测与候选验收 |
 | `production` | `app.spark.reader` | Spark | 正式发布 |
 
-构建命令：
+构建命令（验收与交付一律发布版；debug 构建不得用于验收或交付，CI 可构建性验证可保留 debug）：
 
 ```powershell
-flutter build apk --debug --flavor development --dart-define=SPARK_ENV=development
-flutter build apk --debug --flavor staging --dart-define=SPARK_ENV=staging
+# Android 无 android/key.properties 签名时，development/staging 改用 --profile（AOT 编译、debug 签名可直接安装）
+flutter build apk --profile --flavor development --dart-define=SPARK_ENV=development
+flutter build apk --profile --flavor staging --dart-define=SPARK_ENV=staging
 flutter build appbundle --release --flavor production --dart-define=SPARK_ENV=production
 ```
 
@@ -130,4 +130,4 @@ SPARK_FEATURE_PDF_AI
 6. 创建并推送 annotated Tag；Tag CI 再校验当前 `main`、历史发布单调性、CHANGELOG 日期和链接。
 7. 将构建产物上传到对应 GitHub Release 附件；归档提交 SHA、迁移版本、已知问题和回滚方案；更新版本说明状态。如经应用商店发布，再完成商店测试与审核门。
 
-当前仍是代码候选（版本号 `0.0.1+1`，未正式发布）；在签名、真机和商店发布门完成前不得创建正式发布 Tag。
+0.1.0 已于 2026-08-10 作为 GitHub Release 发布（版本号 `0.1.0+2`，annotated Tag `v0.1.0`，发布归档见 `docs/releases/0.1.0/`）。应用商店发布仍需签名、真机和商店门全部通过后才能创建下一个正式发布 Tag。

@@ -69,5 +69,5 @@
 - 方式：fast-forward 合入 `main`（无冲突，无 PR；日常开发由编排者确认后直接合并）
 - 集成 SHA：`b32ec4e`
 - 合并时间：2026-08-14
-- 集成验证：main 上 `flutter analyze`、`flutter test` 全量、双目标发布构建见「验证记录」补录。
+- 集成验证：分支通过全部门禁（analyze / 611 测试 / 格式检查）；合入后在 main 复跑 `flutter analyze` + `flutter test` 全量并通过，双目标发布构建产物见「发布产物」。
 - 回滚：回退 `b32ec4e` 即可（ff 无中间状态）。

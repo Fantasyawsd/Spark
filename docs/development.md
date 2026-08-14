@@ -51,7 +51,7 @@ Spark 面向个人研究者，核心闭环由三个一级能力组成：
 | 应用入口 | 论文 / ChatPaper / 我的三个一级页面形成单机闭环；社区和私信不在生产导航 |
 | 论文目录 | production Client 仍直连 arXiv Atom并使用版本化本地缓存与内置种子回退；development 环境可切换本地 Paper API；推荐、关注、最新固定频道及 arXiv 主题频道可用 |
 | 频道体验 | 频道偏好、列表状态、浏览位置、发布时间筛选和懒加载按频道保存；主题/会议管理页已存在 |
-| 论文阅读 | 提供 Abstract、中文摘要、关键词、作者、AI 解读、相关论文六页结构；中文摘要与内容关键词按需生成并版本化缓存 |
+| 论文阅读 | 提供 Abstract、中文摘要、关键词、作者、论文解读、相关论文六页结构；中文摘要与内容关键词按需生成并版本化缓存 |
 | 本地研究数据 | 搜索、点赞、收藏、评论、分享、阅读历史、稍后阅读和自定义收藏分组保存在设备本地 |
 | ChatPaper | 提供主聊天和论文聊天、DeepSeek BYOK 流式回答、联网搜索、会话设置、本地恢复，以及可选 PDF 文本提取、分块和页码引用；应用进程存活时离开聊天界面不会中断未完成回复 |
 | 我的 | 提供收藏与历史入口、主题外观、本地数据管理、DeepSeek Key 管理、隐私说明和开源许可 |
@@ -304,10 +304,10 @@ RecommendationScore =
 **会议频道**（保留官方缩写）：
 
 ```
-AAAI   ACL    COLM   COLT   CoRL   CVPR
-ECCV   EMNLP  ICCV   ICLR   ICML   IJCAI
-INTERSPEECH  IWSLT  MICCAI  MLSYS  NAACL  NDSS
-NeurIPS  OSDI  UAI  USENIX-Fast  USENIX-Sec
+NeurIPS  CVPR    ICML    ICLR    ACL
+AAAI     EMNLP   ECCV    ICCV    ICASSP
+NAACL    IJCAI   Interspeech  WACV  KDD
+COLING   SIGIR   CoRL    MLSys
 ```
 
 > **约束**：会议频道必须接入真实数据源后再进入正式版本，不能只提供空白 UI。
@@ -356,7 +356,7 @@ NeurIPS 2025 · Poster
 #### 六页结构
 
 ```
-Abstract  摘要  关键词  作者  AI 解读  相关论文
+Abstract  摘要  关键词  作者  论文解读  相关论文
 ```
 
 - 标签采用内容宽度和横向滚动，不做六等分矩形布局
@@ -561,4 +561,4 @@ AI 解读生成的六问答案作为论文 ChatPaper 会话的默认背景信息
 
 开发任务默认不绑定版本。只有当一组已经实现并验证的能力被选入发布候选后，才在 `releases/<version>/` 建立版本说明（README.md），记录发布范围、交付物与已知问题。
 
-当前尚未正式发布，没有发布归档。达到发布标准后由 `/release` 在 `releases/<version>/` 建立版本说明。发布归档记录历史事实，不反向成为日常功能开发的唯一入口。
+0.1.0 已于 2026-08-10 作为 GitHub Release 发布，发布归档见 `releases/0.1.0/`。达到应用商店发布标准后由 `/release` 建立新版本说明。发布归档记录历史事实，不反向成为日常功能开发的唯一入口。

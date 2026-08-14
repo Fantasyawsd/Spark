@@ -62,6 +62,7 @@
   - Android development profile：`build/app/outputs/flutter-apk/app-development-profile.apk`，119,638,924 bytes，SHA-256 `A053943CAFEE9D13E17A1EB82973A20F4BBF389B037D43A60EAF862FCBE2F924`；无 `android/key.properties`，按规范使用 profile
   - Gradle daemon：`--stop` 后 `--status` 显示 STOPPED，无运行中残留
 - 真实后续项：3.7 Web Heat 接入 TrendScore 权重版本（最后一个 Phase 3 子任务）。
+- 勘误（2026-08-14）：本台账记录的 Windows 产物 SHA `CDFCDE6D…` 与 2026-08-11 构建相同，事后在 4.1 收尾时发现 Windows 增量构建存在产物陈旧问题；4.1 已清理 `build/windows` 强制重建并记录真实 SHA `4E1601CC…`，此后验证流程一律检查产物时间戳。
 
 ## 审查结论
 

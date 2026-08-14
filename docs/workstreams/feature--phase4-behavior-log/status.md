@@ -1,6 +1,6 @@
 # Phase 4.1 行为事件日志契约与本地采集任务台账
 
-> 状态：待合并
+> 状态：已合并
 > 最近更新：2026-08-14
 
 ## 目标
@@ -46,6 +46,17 @@
 | SHA | 提交信息 | 对应阶段 | 验证摘要 |
 | --- | --- | --- | --- |
 | 待提交 | `新增（行为）：设备本地行为事件日志与同意门控` | 实现 | analyze 无问题、594 项通过 |
+
+## 合并归档
+
+- 合并方式：本地快进合并（`main` `51be307..fd15e33`）
+- 最终集成提交：`fd15e33`
+- 合并时间：2026-08-14
+- 集成验证（/finish 双目标构建）：
+  - Windows release：`build/windows/x64/runner/Release/spark.exe`，101,888 bytes，SHA-256 `4E1601CCE3776439E8E0C51620A25EE8E87C17A149E1B5475A8D5EBA3CD765F2`（清理 build/windows 后重建；发现并修正了此前增量构建产物陈旧问题）
+  - Android development profile：`build/app/outputs/flutter-apk/app-development-profile.apk`，119,638,924 bytes，SHA-256 `81DBE9BD98C705DF8FF21191096F4F0F4EF45E9AB7409DE68111914981918A29`
+  - Gradle daemon：`--stop` 后无运行中残留
+- 真实后续项：4.2 用户画像本地聚合（下一迭代基线）。
 
 ## 审查结论
 

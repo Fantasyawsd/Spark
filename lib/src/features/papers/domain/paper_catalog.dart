@@ -25,6 +25,9 @@ class PaperFeedQuery {
     this.cursor,
     this.limit = 20,
     this.forceRefresh = false,
+    this.profileSubjects = const {},
+    this.profileKeywords = const {},
+    this.profileVenues = const {},
   })  : assert(offset >= 0),
         assert(limit > 0);
 
@@ -37,6 +40,9 @@ class PaperFeedQuery {
   final String? cursor;
   final int limit;
   final bool forceRefresh;
+  final Map<String, double> profileSubjects;
+  final Map<String, double> profileKeywords;
+  final Map<String, double> profileVenues;
 
   PaperFeedQuery nextPage(int nextOffset) {
     return PaperFeedQuery(

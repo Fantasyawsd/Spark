@@ -21,6 +21,7 @@ class PaperController extends ChangeNotifier {
     PaperChannelPreferenceRepository? channelPreferenceRepository,
     Iterable<String> Function()? readPaperIdsProvider,
     BehaviorLogPort? behaviorLogger,
+    ProfileRepository? profileRepository,
   }) {
     return PaperController._fromPapers(
       repository.getAll(),
@@ -30,6 +31,7 @@ class PaperController extends ChangeNotifier {
       channelPreferenceRepository: channelPreferenceRepository,
       readPaperIdsProvider: readPaperIdsProvider,
       behaviorLogger: behaviorLogger,
+      profileRepository: profileRepository,
     );
   }
 
@@ -41,6 +43,7 @@ class PaperController extends ChangeNotifier {
     PaperChannelPreferenceRepository? channelPreferenceRepository,
     Iterable<String> Function()? readPaperIdsProvider,
     BehaviorLogPort? behaviorLogger,
+    ProfileRepository? profileRepository,
   }) {
     final interactions = PaperInteractionController(
       repository: interactionRepository,
@@ -54,6 +57,7 @@ class PaperController extends ChangeNotifier {
       readPaperIdsProvider: readPaperIdsProvider,
       followedPaperIdsListenable: interactions.followedPaperIdsListenable,
       behaviorLogger: behaviorLogger,
+      profileRepository: profileRepository,
     );
     return PaperController._(feed: feed, interactions: interactions);
   }

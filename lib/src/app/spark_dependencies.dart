@@ -13,6 +13,8 @@ import '../features/behavior/application/profile_aggregator.dart';
 import '../features/behavior/data/behavior_consent_store.dart';
 import '../features/behavior/data/behavior_event_store.dart';
 import '../features/behavior/data/file_profile_store.dart';
+import '../features/behavior/data/in_memory_profile_repository.dart';
+import '../features/behavior/domain/profile_repository.dart';
 import '../features/ai_settings/data/in_memory_deepseek_credential_repository.dart';
 import '../features/ai_settings/data/secure_deepseek_credential_repository.dart';
 import '../features/ai_settings/domain/deepseek_credential_repository.dart';
@@ -103,6 +105,7 @@ class SparkDependencies {
     required this.themePreferenceRepository,
     required this.behaviorLogger,
     required this.behaviorProfileService,
+    required this.profileRepository,
   });
 
   factory SparkDependencies.production() => _persistent();
@@ -258,6 +261,7 @@ class SparkDependencies {
       themeController: themeController,
       behaviorLogger: behaviorLogger,
       behaviorProfileService: behaviorProfileService,
+      profileRepository: profileRepository,
     );
   }
 
@@ -292,6 +296,7 @@ class SparkDependencies {
     ThemeController? themeController,
     BehaviorLogger? behaviorLogger,
     BehaviorProfileService? behaviorProfileService,
+    ProfileRepository? profileRepository,
   }) {
     final resolvedCredentialRepository =
         deepSeekCredentialRepository ?? InMemoryDeepSeekCredentialRepository();
@@ -394,6 +399,7 @@ class SparkDependencies {
             resolveMetadata: (paperId) =>
                 (subjects: const <String>[], keywords: const <String>[], venue: null),
           ),
+      profileRepository: profileRepository ?? InMemoryProfileRepository(),
     );
   }
 
@@ -424,4 +430,5 @@ class SparkDependencies {
   final ThemePreferenceRepository themePreferenceRepository;
   final BehaviorLogger behaviorLogger;
   final BehaviorProfileService behaviorProfileService;
+  final ProfileRepository profileRepository;
 }

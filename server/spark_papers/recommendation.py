@@ -8,6 +8,7 @@ from datetime import datetime, timezone
 from typing import Any, Iterable, Mapping
 
 from . import SCORE_VERSION
+from .anonymous_profile import AnonymousProfile
 from .dto import recommendation_to_api
 from .models import PaperRecord, RecommendationItem, parse_datetime, utc_now
 from .ports import RecommendationRepository
@@ -273,7 +274,12 @@ class RecommendationEngine:
         read_ids: Iterable[str] = (),
         seed: int | None = None,
         as_of: datetime | None = None,
+        anonymous_profile: AnonymousProfile | None = None,
     ) -> tuple[str, list[RecommendationItem]]:
+        # 4.3 only accepts the contract; 4.4/4.5 consume the profile for
+        # personalization scoring. Keep the parameter so callers can already
+        # pass validated profiles end to end.
+        del anonymous_profile
         limit = max(1, min(int(limit), 100))
         if as_of is None:
             as_of = utc_now()

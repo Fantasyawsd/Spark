@@ -42,7 +42,9 @@ class PaperFeedController extends ChangeNotifier {
     Iterable<String> Function()? readPaperIdsProvider,
     ValueListenable<Set<String>>? followedPaperIdsListenable,
     BehaviorLogPort? behaviorLogger,
+    ProfileRepository? profileRepository,
   })  : _behaviorLogger = behaviorLogger,
+        _profileRepository = profileRepository,
         _allPapers = List.unmodifiable(papers),
         _catalogRepository = catalogRepository,
         _readPaperIdsProvider = readPaperIdsProvider,
@@ -70,6 +72,8 @@ class PaperFeedController extends ChangeNotifier {
   static const _maxReadPaperIdsPerRequest = 200;
 
   final BehaviorLogPort? _behaviorLogger;
+  final ProfileRepository? _profileRepository;
+  UserProfile? _profileSnapshot;
   List<Paper> _allPapers;
   late final List<Paper> _initialPapers;
   late List<Paper> _visiblePapers;
@@ -157,6 +161,9 @@ class PaperFeedController extends ChangeNotifier {
       timeRange: timeRange,
       limit: 20,
       forceRefresh: forceRefresh,
+      profileSubjects: _profileSnapshot?.subjects ?? const {},
+      profileKeywords: _profileSnapshot?.keywords ?? const {},
+      profileVenues: _profileSnapshot?.venues ?? const {},
     );
     return _catalogOperations.refresh(
       channelKey: channelKey,
@@ -185,6 +192,9 @@ class PaperFeedController extends ChangeNotifier {
       offset: nextOffset ?? 0,
       cursor: nextCursor,
       limit: 20,
+      profileSubjects: _profileSnapshot?.subjects ?? const {},
+      profileKeywords: _profileSnapshot?.keywords ?? const {},
+      profileVenues: _profileSnapshot?.venues ?? const {},
     );
     return _catalogOperations.loadMore(
       channelKey: channelKey,
@@ -230,10 +240,28 @@ class PaperFeedController extends ChangeNotifier {
 
   Future<void> initializePreferences() async {
     if (_disposed) return;
+    await _loadProfileSnapshot();
     await _preferences.initializeFeedPreferences();
     if (_disposed) return;
     _restorePosition();
     _notify();
+  }
+
+  Future<void> _loadProfileSnapshot() async {
+    final repository = _profileRepository;
+    if (repository == null) return;
+    try {
+      final profile = await repository.read();
+      if (_disposed || profile == null) return;
+      _profileSnapshot = profile;
+    } on Object catch (error, stackTrace) {
+      // 画像加载失败不阻塞信息流初始化，但保留诊断证据。
+      SparkDiagnostics.reportUnexpected(
+        operation: SparkDiagnosticOperation.paperFeedRefresh,
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
   }
 
   void toggleGridMode() {

@@ -9,6 +9,7 @@ from urllib.parse import parse_qs, unquote, urlsplit
 from typing import Any, Iterable, Mapping
 
 from . import API_SCHEMA_VERSION, SCORE_VERSION
+from .anonymous_profile import decode_anonymous_profile
 from .diagnostics import ServerDiagnosticOperation, report_unexpected
 from .dto import paper_to_api, recommendation_to_api
 from .models import PaperRecord, parse_datetime
@@ -119,7 +120,20 @@ class PaperApiService:
             seed = int(seed_value) if seed_value else None
         except ValueError as error:
             raise _InvalidRequestError("seed must be an integer") from error
-        batch_id, items = self.recommendation.generate(limit=_limit(query), read_ids=read_ids, seed=seed)
+        profile_value = _first(query, "profile")
+        anonymous_profile = None
+        if profile_value:
+            anonymous_profile = decode_anonymous_profile(profile_value)
+            if anonymous_profile is None:
+                raise _InvalidRequestError(
+                    "profile must be a valid anonymized preference profile"
+                )
+        batch_id, items = self.recommendation.generate(
+            limit=_limit(query),
+            read_ids=read_ids,
+            seed=seed,
+            anonymous_profile=anonymous_profile,
+        )
         return {
             "schema_version": API_SCHEMA_VERSION,
             "score_version": SCORE_VERSION,

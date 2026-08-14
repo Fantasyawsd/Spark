@@ -73,6 +73,18 @@ class ApiTest(unittest.TestCase):
         self.assertEqual(len(following["items"]), 2)
         self.assertTrue(following["next_cursor"])
 
+    def test_recommended_accepts_anonymous_profile(self) -> None:
+        from urllib.parse import quote
+        from spark_papers.anonymous_profile import AnonymousProfile, encode_anonymous_profile
+
+        profile = AnonymousProfile(subjects={'cs.AI': 2.5}, keywords={'多模态': 1.5}, venues={'ICML': 1.0})
+        encoded = quote(encode_anonymous_profile(profile), safe='')
+        status, payload = self.get(f"/api/v1/feed/recommended?limit=2&seed=3&profile={encoded}")
+        self.assertEqual(status, 200)
+        self.assertEqual(payload['score_version'], 'score.v3')
+        status, payload = self.get("/api/v1/feed/recommended?limit=2&seed=3&profile=%%%broken%%%")
+        self.assertEqual(status, 400)
+
     def test_recommended_and_detail_errors(self) -> None:
         status, payload = self.get("/api/v1/feed/recommended?limit=3&seed=7")
         self.assertEqual(status, 200)

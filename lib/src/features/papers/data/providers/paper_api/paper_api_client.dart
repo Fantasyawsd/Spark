@@ -92,6 +92,8 @@ final class PaperApiClient implements PaperApiSource {
         if (query.forceRefresh) {
           parameters['seed'] = '${_seedGenerator()}';
         }
+        final profile = _encodeProfile(query);
+        if (profile != null) parameters['profile'] = profile;
         return (
           uri: _uri(['feed', 'recommended'], parameters),
           expectedChannel: 'recommended',
@@ -130,6 +132,20 @@ final class PaperApiClient implements PaperApiSource {
   }
 
   static int _defaultSeedGenerator() => DateTime.now().microsecondsSinceEpoch;
+
+  static String? _encodeProfile(PaperFeedQuery query) {
+    final hasProfile = query.profileSubjects.isNotEmpty ||
+        query.profileKeywords.isNotEmpty ||
+        query.profileVenues.isNotEmpty;
+    if (!hasProfile) return null;
+    final payload = jsonEncode({
+      'profile_version': 'profile.v1',
+      'subjects': query.profileSubjects,
+      'keywords': query.profileKeywords,
+      'venues': query.profileVenues,
+    });
+    return base64UrlEncode(utf8.encode(payload)).replaceAll('=', '');
+  }
 
   void _addDateBounds(Map<String, String> parameters, PaperFeedQuery query) {
     final bounds = query.timeRange.bounds(now: DateTime.now());

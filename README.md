@@ -15,7 +15,7 @@ Current release: `0.1.0`. The primary acceptance platform is Android phones.
 - arXiv remote paper feed, pagination, search, and offline caching.
 - Recommended / Following / Latest and arXiv topic channels, with channel management, per-channel time filtering, independent scroll positions, and lazy loading.
 - Single-column swipe browsing and a two-column layout option.
-- Markdown, LaTeX, English abstract, Chinese summary, content keywords, and a six-page paper reader (Abstract / Summary / Keywords / Authors / AI Insights / Related Papers).
+- Markdown, LaTeX, English abstract, Chinese summary, content keywords, and a six-page paper reader (Abstract / Summary / Keywords / Authors / Paper Insights / Related Papers).
 - Like, comment, share, mark-as-read, read-later, and favorites groups.
 - Dedicated fullscreen reading pages reachable from search, favorites, history, and related papers.
 
@@ -54,6 +54,7 @@ Community, direct messages, notifications, accounts, cloud sync, and content pub
 |-- assets/                    Logo, launch images, and app static assets
 |-- android/                   Android project, manifest, and signing config entry
 |-- windows/                   Windows desktop host project
+|-- server/                    Python paper-data service: Paper Database, Paper API, and offline sync
 |-- docs/
 |   |-- README.md              Development documentation index
 |   |-- development.md         Development plan (product boundaries, priorities, domain directions)

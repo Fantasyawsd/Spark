@@ -15,7 +15,7 @@ Spark 是面向个人研究者的 Flutter 论文发现、阅读和 AI 研究助�
 - arXiv 远程论文流、分页、搜索和离线缓存。
 - 推荐 / 关注 / 最新及 arXiv 主题频道，支持频道管理、频道级时间筛选、独立浏览位置和懒加载。
 - 单页刷论文与双栏浏览选择。
-- Markdown、LaTeX、英文 Abstract、中文摘要、内容关键词和六页论文阅读器（Abstract / 摘要 / 关键词 / 作者 / AI 解读 / 相关论文）。
+- Markdown、LaTeX、英文 Abstract、中文摘要、内容关键词和六页论文阅读器（Abstract / 摘要 / 关键词 / 作者 / 论文解读 / 相关论文）。
 - 点赞、评论、分享、已读、稍后阅读和收藏分组。
 - 从搜索、收藏、历史和相关论文进入独立全屏阅读页。
 
@@ -54,6 +54,7 @@ Spark 是面向个人研究者的 Flutter 论文发现、阅读和 AI 研究助�
 |-- assets/                    Logo、启动图和应用静态资源
 |-- android/                   Android 工程、清单和签名配置入口
 |-- windows/                   Windows 桌面宿主工程
+|-- server/                    Python 论文数据服务：Paper Database、Paper API 与离线同步
 |-- docs/
 |   |-- README.md              开发文档总入口
 |   |-- development.md         开发计划（产品边界、优先级、领域方向）
@@ -74,7 +75,6 @@ Spark 是面向个人研究者的 Flutter 论文发现、阅读和 AI 研究助�
 |           |-- profile/       我的页面与个人研究数据入口
 |           |-- local_data/    本地数据统计和清理
 |           |-- community/     延期模块，不进入生产导航
-|           `-- messages/      旧模块，不进入生产导航
 |-- test/                      单元测试和 Widget 测试
 |-- tool/                      开发、构建和密钥安全辅助脚本
 |-- pubspec.yaml               Flutter 包、资源和版本配置

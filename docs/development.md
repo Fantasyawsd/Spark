@@ -107,7 +107,7 @@ OpenAlex / Semantic Scholar / GitHub 增强 ─┘                              
 | Phase 2：基础 Feed API | 已完成 | 详情、最新、主题、会议、关注和推荐 API 已在真实库验证；development App 开放 19 个真实会议频道，推荐刷新排除当前列表与已读论文，保留旧 batch 并将新 batch 追加到阅读流下方 |
 | Phase 2.5：真实数据落库与端到端验收 | 已完成 | 真实数据库、外部来源、索引、API、会议入口、推荐刷新语义、自动化门禁和 Windows development App 人工验收均已完成 |
 | Phase 3：热点能力增强 | 已完成 | GitHub star velocity、citation velocity、Web Heat、LLM Trend Scout、24–72 小时 Trend Boost 与热点原因全部落地：3.1–3.7 七个子任务串行迭代合入 main，score 口径升至 score.v3，客户端信息流展示「Trending · 原因」，服务端 pytest 140 项与客户端 flutter test 588 项全过 |
-| Phase 4：个性化推荐 | 进行中 | 行为日志、用户画像与论文向量、Personalized Pool、个性化排序、Diversity 与 Exploration；按下方 4.1–4.7 子任务串行推进（与 Phase 3 相同迭代模式）；无账号阶段采用「设备本地行为日志 + 匿名偏好画像随推荐请求上送」的隐私边界 |
+| Phase 4：个性化推荐 | 已完成 | 行为日志、用户画像与匿名画像契约、Personalized Pool、UserPreferenceScore 与个性化三池混排、三信号收口与 batch 版本追溯、个性化开关与偏好展示全部落地：4.1–4.7 七个子任务串行迭代合入 main，score 口径升至 score.v4，无账号阶段采用「设备本地行为日志 + 匿名偏好画像上送」隐私边界；服务端 pytest 170 项与客户端 flutter test 608 项全过 |
 | Phase 5：高级推荐系统 | 后续阶段 | 多路召回、Two-Tower、Learning to Rank、Reranker、序列推荐、实时兴趣更新与 A/B Test |
 
 Phase 3 子任务（串行依赖，每个合入 `main` 后基于新基线开发下一个）：
@@ -132,7 +132,7 @@ Phase 4 子任务（串行依赖，每个合入 `main` 后基于新基线开发�
 | 4.4 | Personalized Pool 候选召回 | 已完成 | `personalized_pool.py` 按画像三类召回（as_of 上界保证回放确定性）+ `SimilarPaperRecallPort`（标题关键词重合度基础实现，向量 Embedding 预留）；关键词 LIKE 为临时方案（FTS 迁移边界见台账）；workflow + openai/gpt-5.6-sol 实现与审查，2 个阻断项已修复；pytest 157 项全过 |
 | 4.5 | UserPreferenceScore 与个性化排序 | 已完成 | `preference_score.py` 三分量加权与重归一化（中文/短语子串匹配）；generate 三池混排（personalized 按偏好加权抽样、配额恒等）；无画像/ratio=0 与旧版一致；SCORE_VERSION 升 score.v4；pytest 167 项全过 |
 | 4.6 | 三信号混排与版本化 | 已完成 | `personalization_score` 经 RecommendationItem/API 透出（personalized 池携带偏好分）；SCORE_VERSION score.v4（4.5 已升）；v3/v4 batch 并存追溯与同 seed 不同版本 batch_id 隔离测试；pytest 170 项全过 |
-| 4.7 | 个性化开关与偏好展示 | 待开始 | 隐私设置：个性化开关、清除行为数据；推荐偏好来源展示；Widget 测试 |
+| 4.7 | 个性化开关与偏好展示 | 已完成 | `PersonalizationPrivacyController`（开关与同意同步、清除事件与画像）；隐私设置个性化区；behavior 三文件纳入本地数据统计与清理；「为你推荐」chip 有/无信号渲染正确；workflow + kimi-coding/k3-256k 实现；analyze 无问题、flutter test 608 项全过；双目标构建证据见台账 |
 
 Phase 1 按以下依赖顺序拆分：
 

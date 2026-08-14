@@ -1,6 +1,6 @@
 # Phase 4.7 个性化开关与偏好展示任务台账
 
-> 状态：待合并
+> 状态：已合并
 > 最近更新：2026-08-14
 
 ## 目标
@@ -46,6 +46,17 @@ Phase 4 客户端收口（UI 任务，实现：workflow + kimi-coding/k3-256k）
 | SHA | 提交信息 | 对应阶段 | 验证摘要 |
 | --- | --- | --- | --- |
 | 待提交 | `新增（我的）：个性化开关与偏好展示` | 实现（workflow + 编排者审查修复） | analyze 无问题、608 项通过 |
+
+## 合并归档
+
+- 合并方式：本地快进合并（`main` `2dd574e..0e878ce`）
+- 最终集成提交：`0e878ce`
+- 合并时间：2026-08-14
+- 集成验证（/finish 双目标构建，Windows 已清理重建并核验时间戳）：
+  - Windows release：`build/windows/x64/runner/Release/spark.exe`，101,888 bytes，SHA-256 `18380FF19D4163421ACAE877DAD1039E3FA5DEDC37539F25D6ED2C20FDD03EE9`
+  - Android development profile：`build/app/outputs/flutter-apk/app-development-profile.apk`，119,688,076 bytes，SHA-256 `46AC313F2A98416965B7F8C176D9FDA8ECAE11212DA2CF785AF0BFBA9CFDBF0F`
+  - Gradle daemon：`--stop` 后无运行中残留
+- 真实后续项：Phase 4 全部完成；Phase 5 高级推荐系统为后续阶段。
 
 ## 审查结论
 

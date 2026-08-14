@@ -21,6 +21,8 @@ final class PaperApiMapper {
       chineseAbstractMarkdown: '中文摘要尚未生成。',
       readMinutes: _estimateReadMinutes(abstractText),
       citations: _citationCount(dto.signals),
+      webTrendReason: _webHeatReason(dto.signals),
+      webTrendTopics: _webHeatTopics(dto.signals),
       arxivId: arxivId,
       doi: dto.externalIds['doi'],
       paperUrl: _string(dto.metadata['abs_url']) ??
@@ -50,6 +52,16 @@ final class PaperApiMapper {
       if (value is num) return value.toInt();
     }
     return null;
+  }
+
+  static String? _webHeatReason(Map<String, Map<String, dynamic>> signals) {
+    return _string(signals['web_heat']?['trend_reason']);
+  }
+
+  static List<String> _webHeatTopics(
+    Map<String, Map<String, dynamic>> signals,
+  ) {
+    return _stringList(signals['web_heat']?['trend_topics']);
   }
 
   static String? _string(Object? value) {

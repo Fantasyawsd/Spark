@@ -73,6 +73,8 @@ class PaperGridCard extends StatelessWidget {
                   const SizedBox(height: 9),
                   if (topicLabel(paper) case final label?)
                     TopicChip(label: label, compact: true),
+                  if (trendLabel(paper) case final trend?)
+                    TopicChip(label: trend, compact: true),
                   const SizedBox(height: 10),
                   Row(
                     children: [

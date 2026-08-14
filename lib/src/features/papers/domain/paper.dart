@@ -22,6 +22,8 @@ class Paper {
     this.arxivId,
     this.doi,
     this.paperUrl,
+    this.webTrendReason,
+    List<String> webTrendTopics = const [],
     this.pdfUrl,
     this.publishedAt,
     this.updatedAt,
@@ -32,6 +34,7 @@ class Paper {
         contentKeywords = List.unmodifiable(contentKeywords),
         subjects = List.unmodifiable(subjects),
         relatedPapers = List.unmodifiable(relatedPapers),
+        webTrendTopics = List.unmodifiable(webTrendTopics),
         content = PaperContent(
           originalAbstractMarkdown: abstractText,
           chineseAbstractMarkdown: chineseAbstractMarkdown,
@@ -61,6 +64,8 @@ class Paper {
   final String? arxivId;
   final String? doi;
   final String? paperUrl;
+  final String? webTrendReason;
+  final List<String> webTrendTopics;
   final String? pdfUrl;
   final DateTime? publishedAt;
   final DateTime? updatedAt;
@@ -110,6 +115,9 @@ class Paper {
     bool clearDoi = false,
     String? paperUrl,
     bool clearPaperUrl = false,
+    String? webTrendReason,
+    bool clearWebTrendReason = false,
+    List<String>? webTrendTopics,
     String? pdfUrl,
     bool clearPdfUrl = false,
     DateTime? publishedAt,
@@ -147,6 +155,10 @@ class Paper {
       arxivId: clearArxivId ? null : arxivId ?? this.arxivId,
       doi: clearDoi ? null : doi ?? this.doi,
       paperUrl: clearPaperUrl ? null : paperUrl ?? this.paperUrl,
+      webTrendReason: clearWebTrendReason
+          ? null
+          : webTrendReason ?? this.webTrendReason,
+      webTrendTopics: webTrendTopics ?? this.webTrendTopics,
       pdfUrl: clearPdfUrl ? null : pdfUrl ?? this.pdfUrl,
       publishedAt: clearPublishedAt ? null : publishedAt ?? this.publishedAt,
       updatedAt: clearUpdatedAt ? null : updatedAt ?? this.updatedAt,

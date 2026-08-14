@@ -33,6 +33,17 @@ String? topicLabel(Paper paper) {
   return null;
 }
 
+/// 展示用热点 chip 文案：返回 `Trending · 原因`；原因超长截断加省略号。
+/// 无热点原因时返回 null，不渲染。
+String? trendLabel(Paper paper) {
+  final reason = paper.webTrendReason;
+  if (reason == null || reason.trim().isEmpty) return null;
+  final clamped = reason.trim().length > 24
+      ? '${reason.trim().substring(0, 24)}…'
+      : reason.trim();
+  return 'Trending · $clamped';
+}
+
 /// 引用数文案；引用数未知时返回 null，不显示「被引 0」。
 String? citationLine(Paper paper) {
   final citations = paper.metrics.citations;

@@ -14,6 +14,8 @@ Current release: `0.1.0`. The primary acceptance platform is Android phones.
 
 - arXiv remote paper feed, pagination, search, and offline caching.
 - Recommended / Following / Latest and arXiv topic channels, with channel management, per-channel time filtering, independent scroll positions, and lazy loading.
+- Recommended feed mixes high-impact, trending (recent heat: GitHub star velocity, short citation velocity, web heat with identity verification, 24–72h trend boost) and personalized candidates; cards show "Trending · reason" and "For you" badges.
+- Personalized recommendations use an on-device behavior log aggregated into an anonymous preference profile sent with each request; logging can be turned off and cleared at any time.
 - Single-column swipe browsing and a two-column layout option.
 - Markdown, LaTeX, English abstract, Chinese summary, content keywords, and a six-page paper reader (Abstract / Summary / Keywords / Authors / Paper Insights / Related Papers).
 - Like, comment, share, mark-as-read, read-later, and favorites groups.
@@ -31,6 +33,7 @@ Current release: `0.1.0`. The primary acceptance platform is Android phones.
 
 - Default favorites and custom favorites groups.
 - Favorites, read-later, and reading history open full paper lists; theme settings, storage usage statistics, and categorized cleanup.
+- Personalization toggle and "clear behavior data" control; behavior data is included in local-data usage statistics and cleanup.
 - DeepSeek API key validation, save, replace, and delete.
 - App version, privacy statement, and open-source licenses.
 

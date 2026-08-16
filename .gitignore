@@ -59,3 +59,6 @@ app.*.map.json
 
 # Local deep-work progress state.
 .slim/deepwork/
+
+# Server-side local runtime data (SQLite databases and WAL/SHM artifacts).
+server/data/

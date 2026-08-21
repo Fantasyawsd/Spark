@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:spark/src/features/chat/application/chat_conversation_controller.dart';
 import 'package:spark/src/features/chat/application/chat_session_controller.dart';
 import 'package:spark/src/features/chat/application/main_ai_chat_definition.dart';
+import 'package:spark/src/features/chat/application/side_chat_dismiss_preference_controller.dart';
 import 'package:spark/src/features/chat/data/in_memory_chat_session_repository.dart';
 import 'package:spark/src/features/chat/domain/chat_ai_service.dart';
 import 'package:spark/src/features/chat/domain/chat_context.dart';
@@ -78,6 +79,7 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: MainAiChatScreen(
+          sideChatPreferenceController: _NoopSideChatPreference(),
           aiService: service,
           sessionRepository: repository,
           conversationController: conversation,
@@ -130,4 +132,12 @@ class _CapturingChatAiService implements ChatAiService {
     this.context = context;
     return 'answer';
   }
+}
+
+class _NoopSideChatPreference implements SideChatDismissPreferenceController {
+  @override
+  Future<bool> load() async => false;
+
+  @override
+  Future<void> save(bool suppress) async {}
 }

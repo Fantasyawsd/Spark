@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:spark/src/features/chat/application/side_chat_dismiss_preference_controller.dart';
 import 'package:spark/src/features/chat/domain/chat_ai_service.dart';
 import 'package:spark/src/features/chat/domain/chat_context.dart';
 import 'package:spark/src/features/chat/domain/chat_message.dart';
@@ -141,6 +142,7 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: MainAiChatScreen(
+          sideChatPreferenceController: _NoopSideChatPreference(),
           aiService: const _FakeChatAiService(),
           sessionRepository:
               const _FakeChatSessionRepository(messages: sourceMessages),
@@ -199,4 +201,12 @@ class _FakeChatSessionRepository implements ChatSessionRepository {
 
   @override
   Future<void> setPinned(String contextId, bool pinned) async {}
+}
+
+class _NoopSideChatPreference implements SideChatDismissPreferenceController {
+  @override
+  Future<bool> load() async => false;
+
+  @override
+  Future<void> save(bool suppress) async {}
 }

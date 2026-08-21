@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:spark/src/core/storage/local_json_store.dart';
 import 'package:spark/src/features/chat/application/chat_conversation_controller.dart';
 import 'package:spark/src/features/chat/application/main_ai_chat_definition.dart';
+import 'package:spark/src/features/chat/application/side_chat_dismiss_preference_controller.dart';
 import 'package:spark/src/features/chat/data/in_memory_chat_session_repository.dart';
 import 'package:spark/src/features/chat/data/side_chat_dismiss_preference_store.dart';
 import 'package:spark/src/features/chat/domain/chat_ai_service.dart';
@@ -22,7 +23,7 @@ void main() {
       sessionRepository: repository,
     );
     addTearDown(conversation.dispose);
-    final prefStore = _MemorySideChatPreferenceStore();
+    final prefStore = _MemorySideChatPreferenceController();
 
     await tester.pumpWidget(
       MaterialApp(
@@ -30,7 +31,7 @@ void main() {
           aiService: service,
           sessionRepository: repository,
           conversationController: conversation,
-          sideChatPreferenceStore: prefStore,
+          sideChatPreferenceController: prefStore,
         ),
       ),
     );
@@ -81,7 +82,7 @@ void main() {
       sessionRepository: repository,
     );
     addTearDown(conversation.dispose);
-    final prefStore = _MemorySideChatPreferenceStore();
+    final prefStore = _MemorySideChatPreferenceController();
 
     await tester.pumpWidget(
       MaterialApp(
@@ -89,7 +90,7 @@ void main() {
           aiService: service,
           sessionRepository: repository,
           conversationController: conversation,
-          sideChatPreferenceStore: prefStore,
+          sideChatPreferenceController: prefStore,
         ),
       ),
     );
@@ -133,7 +134,7 @@ void main() {
     await conversation.send('主线问题');
     await tester.pumpAndSettle();
     final beforeCount = conversation.messages.length;
-    final prefStore = _MemorySideChatPreferenceStore(suppress: true);
+    final prefStore = _MemorySideChatPreferenceController(suppress: true);
 
     await tester.pumpWidget(
       MaterialApp(
@@ -141,7 +142,7 @@ void main() {
           aiService: service,
           sessionRepository: repository,
           conversationController: conversation,
-          sideChatPreferenceStore: prefStore,
+          sideChatPreferenceController: prefStore,
         ),
       ),
     );
@@ -172,7 +173,9 @@ void main() {
     addTearDown(() async {
       try {
         await dir.delete(recursive: true);
-      } on Object {}
+      } catch (error) {
+        // 临时目录清理失败可忽略，不影响断言结果。
+      }
     });
     final store = SideChatDismissPreferenceStore(
       store: LocalJsonStore(
@@ -197,8 +200,9 @@ class _FakeAiService implements ChatAiService {
       'fake-answer';
 }
 
-class _MemorySideChatPreferenceStore extends SideChatDismissPreferenceStore {
-  _MemorySideChatPreferenceStore({bool suppress = false})
+class _MemorySideChatPreferenceController
+    implements SideChatDismissPreferenceController {
+  _MemorySideChatPreferenceController({bool suppress = false})
       : _suppress = suppress;
 
   bool _suppress;

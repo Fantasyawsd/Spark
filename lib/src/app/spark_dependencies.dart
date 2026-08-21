@@ -19,11 +19,13 @@ import '../features/behavior/domain/profile_repository.dart';
 import '../features/ai_settings/data/in_memory_deepseek_credential_repository.dart';
 import '../features/ai_settings/data/secure_deepseek_credential_repository.dart';
 import '../features/ai_settings/domain/deepseek_credential_repository.dart';
+import '../features/chat/application/side_chat_dismiss_preference_controller.dart';
 import '../features/chat/data/deepseek_chat_ai_service.dart';
 import '../features/chat/data/deepseek_web_search_chat_ai_service.dart';
 import '../features/chat/data/file_chat_session_repository.dart';
 import '../features/chat/data/file_chat_session_settings_repository.dart';
 import '../features/chat/data/in_memory_chat_session_repository.dart';
+import '../features/chat/data/side_chat_dismiss_preference_store.dart';
 import '../features/chat/data/in_memory_chat_session_settings_repository.dart';
 import '../features/chat/domain/chat_ai_service.dart';
 import '../features/chat/domain/chat_session_repository.dart';
@@ -95,6 +97,7 @@ class SparkDependencies {
     required this.webSearchAiService,
     required this.aiSessionRepository,
     required this.chatSessionSettingsRepository,
+    required this.sideChatDismissPreferenceController,
     required this.translationServiceFactory,
     required this.translationRepository,
     required this.keywordRepository,
@@ -171,7 +174,8 @@ class SparkDependencies {
     final behaviorProfileService = BehaviorProfileService(
       events: behaviorEventRepository,
       profiles: profileRepository,
-      resolveMetadata: (paperId) => profileMetadata[paperId] ??
+      resolveMetadata: (paperId) =>
+          profileMetadata[paperId] ??
           (subjects: const <String>[], keywords: const <String>[], venue: null),
     );
     final personalizationPrivacyController = PersonalizationPrivacyController(
@@ -223,6 +227,9 @@ class SparkDependencies {
       aiSessionRepository: FileChatSessionRepository(store: aiSessionStore),
       chatSessionSettingsRepository: FileChatSessionSettingsRepository(
         store: aiSessionSettingsStore,
+      ),
+      sideChatDismissPreferenceController: SideChatDismissPreferenceController(
+        preference: SideChatDismissPreferenceStore(),
       ),
       translationServiceFactory: DeepSeekPaperTranslationServiceFactory(
         chatClientFactory: () => DeepSeekChatAiService(
@@ -296,6 +303,7 @@ class SparkDependencies {
     ChatAiService? webSearchAiService,
     ChatSessionRepository? aiSessionRepository,
     ChatSessionSettingsRepository? chatSessionSettingsRepository,
+    SideChatDismissPreferenceController? sideChatDismissPreferenceController,
     PaperTranslationServiceFactory? translationServiceFactory,
     PaperTranslationRepository? translationRepository,
     PaperKeywordRepository? keywordRepository,
@@ -374,6 +382,11 @@ class SparkDependencies {
           aiSessionRepository ?? InMemoryChatSessionRepository(),
       chatSessionSettingsRepository: chatSessionSettingsRepository ??
           InMemoryChatSessionSettingsRepository(),
+      sideChatDismissPreferenceController:
+          sideChatDismissPreferenceController ??
+              SideChatDismissPreferenceController(
+                preference: SideChatDismissPreferenceStore(),
+              ),
       translationServiceFactory: translationServiceFactory ??
           DeepSeekPaperTranslationServiceFactory(
             chatClientFactory: () => DeepSeekChatAiService(
@@ -405,8 +418,11 @@ class SparkDependencies {
           BehaviorProfileService(
             events: previewBehaviorEvents,
             profiles: resolvedProfileRepository,
-            resolveMetadata: (paperId) =>
-                (subjects: const <String>[], keywords: const <String>[], venue: null),
+            resolveMetadata: (paperId) => (
+              subjects: const <String>[],
+              keywords: const <String>[],
+              venue: null
+            ),
           ),
       profileRepository: resolvedProfileRepository,
       personalizationPrivacyController: personalizationPrivacyController ??
@@ -434,6 +450,7 @@ class SparkDependencies {
   final ChatAiService webSearchAiService;
   final ChatSessionRepository aiSessionRepository;
   final ChatSessionSettingsRepository chatSessionSettingsRepository;
+  final SideChatDismissPreferenceController sideChatDismissPreferenceController;
   final PaperTranslationServiceFactory translationServiceFactory;
   final PaperTranslationRepository translationRepository;
   final PaperKeywordRepository keywordRepository;

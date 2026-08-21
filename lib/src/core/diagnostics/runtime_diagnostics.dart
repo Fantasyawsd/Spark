@@ -43,6 +43,8 @@ enum SparkDiagnosticOperation {
   chatSessionPin('chat.sessions.pin'),
   chatSessionDelete('chat.sessions.delete'),
   chatSessionLoad('chat.sessions.load'),
+  chatSideChatPreferenceLoad('chat.side_chat.preference_load'),
+  chatSideChatPreferenceSave('chat.side_chat.preference_save'),
   deepSeekCancelSubscription('chat.deepseek.cancel_subscription'),
   paperReaderOpenLink('papers.reader.open_link'),
   paperReaderShare('papers.reader.share'),

@@ -1,9 +1,10 @@
 import '../../../core/storage/local_json_store.dart';
+import '../domain/side_chat_dismiss_preference.dart';
 
 /// side chat 返回提示的“不再显示”偏好。
 ///
 /// 仅持久化一个 bool，不保存任何会话内容。
-class SideChatDismissPreferenceStore {
+class SideChatDismissPreferenceStore implements SideChatDismissPreference {
   SideChatDismissPreferenceStore({LocalJsonStore? store})
       : _store =
             store ?? LocalJsonStore(fileName: 'side_chat_preferences.json');
@@ -12,6 +13,7 @@ class SideChatDismissPreferenceStore {
 
   static const String _key = 'suppressSideChatDismissTip';
 
+  @override
   Future<bool> load() async {
     final raw = await _store.read();
     if (raw is Map) {
@@ -21,6 +23,7 @@ class SideChatDismissPreferenceStore {
     return false;
   }
 
+  @override
   Future<void> save(bool suppress) async {
     await _store.write({_key: suppress});
   }

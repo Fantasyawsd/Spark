@@ -79,6 +79,11 @@ class _SparkBootstrapState extends State<SparkBootstrap>
 
   @override
   Widget build(BuildContext context) {
+    final palette = SparkColors.of(context);
+    // 品牌化启动屏：canvas 向强调色 5% 染色过渡的渐变底；
+    // logo 尺寸随窗口收缩，避免小窗口溢出。
+    final splashSize = MediaQuery.sizeOf(context);
+    final logoSize = (splashSize.width * 0.62).clamp(160.0, 240.0);
     return Stack(
       fit: StackFit.expand,
       children: [
@@ -87,16 +92,28 @@ class _SparkBootstrapState extends State<SparkBootstrap>
           AbsorbPointer(
             child: FadeTransition(
               opacity: _opacity,
-              child: ColoredBox(
+              child: DecoratedBox(
                 key: const ValueKey('spark-splash'),
-                color: SparkColors.of(context).canvas,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      palette.canvas,
+                      Color.alphaBlend(
+                        palette.primary.withValues(alpha: 0.05),
+                        palette.canvas,
+                      ),
+                    ],
+                  ),
+                ),
                 child: Center(
                   child: ScaleTransition(
                     scale: _scale,
                     child: Image.asset(
                       'assets/images/spark_logo.png',
-                      width: 240,
-                      height: 240,
+                      width: logoSize,
+                      height: logoSize,
                       filterQuality: FilterQuality.high,
                     ),
                   ),

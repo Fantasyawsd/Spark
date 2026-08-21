@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../core/config/app_config.dart';
+import '../core/motion/motion_tokens.dart';
 import '../core/navigation/spark_route_observer.dart';
 import '../core/theme/spark_theme.dart';
 import '../core/theme/theme_controller.dart';
@@ -52,6 +53,9 @@ class _SparkAppState extends State<SparkApp> {
         debugShowCheckedModeBanner: widget.config.showDebugBanner,
         theme: SparkTheme.light(_themeController.color),
         darkTheme: SparkTheme.dark(_themeController.color),
+        // 主题/强调色切换走动效刻度，避免默认线性动画的生硬感。
+        themeAnimationDuration: MotionTokens.pageDuration,
+        themeAnimationCurve: MotionTokens.emphasizedCurve,
         themeMode: switch (_themeController.mode) {
           AppThemeMode.system => ThemeMode.system,
           AppThemeMode.light => ThemeMode.light,

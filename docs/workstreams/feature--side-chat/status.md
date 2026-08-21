@@ -65,9 +65,9 @@
 
 ## 当前进度
 
-- 已完成：领域层与展示层核心实现已在分支内就绪（6 文件：2 新增 + 4 修改），`flutter analyze` 已无问题
-- 正在进行：台账初始化与剩余测试补齐
-- 下一步：补齐 side chat 单元/widget 测试，跑完整验证门禁，原子提交
+- 已完成：领域层、数据层、展示层全部实现与测试已落提交 `8407fa5`；`flutter analyze` 无阻断（仅 1 info empty_catches）、专项 12 项与回归 26 项全过
+- 正在进行：分支内最终格式与验证收口
+- 下一步：合入 main 并在 main 完成归档
 - 阻塞项：无
 
 ## 决策记录
@@ -83,7 +83,10 @@
 
 | 命令或人工检查 | 结果 | 日期 |
 | --- | --- | --- |
-| `flutter analyze` | No issues found | 2026-08-21 |
+| `flutter analyze` | No issues found（分支内仅 1 info empty_catches） | 2026-08-21 |
+| `flutter test test/side_chat_fork_test.dart test/side_chat_test.dart` | 12 passed | 2026-08-21 |
+| `flutter test test/chat_presentation_screens_test.dart test/chat_conversation_controller_test.dart test/chat_session_controller_test.dart` | 26 passed | 2026-08-21 |
+| `dart format --set-exit-if-changed` | 格式已对齐 | 2026-08-21 |
 
 ## 审查结论
 
@@ -96,20 +99,21 @@
 
 | SHA | 提交信息 | 对应阶段 | 验证摘要 |
 | --- | --- | --- | --- |
+| `8407fa5` | 新增（chat）：主聊天侧边追问 side chat | 实现 | analyze 无阻断、side chat 12 项 + 回归 26 项全过 |
 
 ## 交付准备（合并前收集）
 
 ### 交付摘要
 
-说明用户可以观察到的结果，以及与原计划是否一致。
+主聊天右上角虚线气泡可进出 side chat；side chat 差异化主题、标题追加“（临时聊天）”；每次进入从当时主聊天状态重新 fork（systemPrompt + 消息快照只读注入），临时会话内存 only，退出即丢弃且不污染主线；切回主聊天时提示“临时聊天内容不会保存”并支持“不再显示”偏好持久化。与 `docs/development.md §4.3` 一致。
 
 ### 实际变更
 
-- 领域与业务逻辑：
-- 数据与基础设施：
-- 界面与交互：
-- 测试与工具：
-- 文档：
+- 领域与业务逻辑：新增 `SideChatFork` 纯函数（固定临时 id、背景注入、截断保护）
+- 数据与基础设施：新增 `SideChatDismissPreferenceStore`（`side_chat_preferences.json` 独立持久化）
+- 界面与交互：`MainAiChatScreen` 改 Stateful 支持 side chat 切换与返回提示；`PaperAiChatScreen`/`PaperAiChatAppBar`/`PaperAiUiTokens` 新增 side chat 入口与差异化 canvas
+- 测试与工具：新增 `side_chat_fork_test.dart`（8 项）、`side_chat_test.dart`（4 项，含隔离性与偏好）
+- 文档：新增 `docs/workstreams/feature--side-chat/status.md`
 
 ### 兼容性与迁移
 

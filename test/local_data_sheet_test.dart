@@ -50,6 +50,12 @@ void main() {
           )
           .first,
     );
+    // 底部悬浮导航栏会遮挡视口底缘的行，再向上推一段确保命中。
+    await tester.drag(
+      find.byKey(const ValueKey('profile-scroll')),
+      const Offset(0, -100),
+    );
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('profile-local-data')));
     await tester.pumpAndSettle();
 

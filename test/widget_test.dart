@@ -88,6 +88,17 @@ void main() {
 
     await tester.tap(find.byKey(const ValueKey('bottom-nav-2')));
     await tester.pumpAndSettle();
+    // 设置分组卡化后页面更高，版本行需滚动到视口内再断言。
+    await tester.scrollUntilVisible(
+      find.text(AppVersion.current.display),
+      200,
+      scrollable: find
+          .descendant(
+            of: find.byKey(const ValueKey('profile-scroll')),
+            matching: find.byType(Scrollable),
+          )
+          .first,
+    );
     expect(find.text(AppVersion.current.display), findsOneWidget);
   });
 

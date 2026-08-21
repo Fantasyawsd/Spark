@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/spark_design_tokens.dart';
 import '../../../core/theme/spark_font_sizes.dart';
 import '../../../core/theme/spark_theme.dart';
+import '../../../core/widgets/spark_empty_state.dart';
 import '../../papers/papers.dart';
 import '../application/paper_search_controller.dart';
 
@@ -175,7 +176,7 @@ class _SearchHeader extends StatelessWidget {
                 contentPadding: const EdgeInsets.symmetric(vertical: 10),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(
-                    SparkDesignTokens.radiusMd,
+                    SparkDesignTokens.radiusField,
                   ),
                   borderSide: BorderSide.none,
                 ),
@@ -334,24 +335,12 @@ class _NoSearchResults extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       key: const ValueKey('paper-search-empty'),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            Icons.search_off_rounded,
-            color: SparkColors.of(context).muted,
-            size: 36,
-          ),
-          const SizedBox(height: 10),
-          Text(
-            message ?? '没有找到相关论文',
-            style: TextStyle(
-              color: SparkColors.of(context).ink,
-              fontSize: SparkFontSizes.body,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ],
+      child: SingleChildScrollView(
+        child: SparkEmptyState(
+          icon: Icons.search_off_rounded,
+          title: message ?? '没有找到相关论文',
+          message: '换个关键词，或用标题、作者、arXiv ID 再试一次',
+        ),
       ),
     );
   }

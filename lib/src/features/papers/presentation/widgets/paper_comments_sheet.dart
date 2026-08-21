@@ -215,6 +215,14 @@ class _PaperCommentsSheetState extends State<_PaperCommentsSheet> {
 
   List<PaperCommentData> get _commentsForDisplay {
     final comments = widget.commentController.commentsFor(widget.paper.id);
+    final palette = SparkColors.of(context);
+    // 头像色按 id 稳定轮换，恢复按用户区分色彩的信息价值。
+    final avatarColors = [
+      palette.blue,
+      palette.purple,
+      palette.green,
+      palette.orange,
+    ];
     return comments.map((comment) {
       final replies = comment.parentId == null
           ? comments.where((item) => item.parentId == comment.id).length
@@ -228,7 +236,7 @@ class _PaperCommentsSheetState extends State<_PaperCommentsSheet> {
         body: comment.body,
         likes: comment.likes,
         replies: replies,
-        color: SparkColors.of(context).primary,
+        color: avatarColors[comment.id.hashCode.abs() % avatarColors.length],
         parentId: comment.parentId,
         canDelete: comment.isLocalUser,
         liked: comment.likedByLocalUser,

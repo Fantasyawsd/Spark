@@ -1,8 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../application/chat_conversation_controller.dart';
 import '../application/main_ai_chat_definition.dart';
-import '../data/side_chat_dismiss_preference_store.dart';
+import '../application/side_chat_dismiss_preference_controller.dart';
 import '../domain/chat_ai_service.dart';
 import '../domain/chat_session_repository.dart';
 import '../domain/chat_session_settings.dart';
@@ -23,7 +25,7 @@ class MainAiChatScreen extends StatefulWidget {
     this.settingsRepository,
     this.conversationController,
     this.onOpenSource,
-    this.sideChatPreferenceStore,
+    required this.sideChatPreferenceController,
   });
 
   final ChatAiService aiService;
@@ -32,7 +34,7 @@ class MainAiChatScreen extends StatefulWidget {
   final ChatSessionSettingsRepository? settingsRepository;
   final ChatConversationController? conversationController;
   final Future<bool> Function(Uri uri)? onOpenSource;
-  final SideChatDismissPreferenceStore? sideChatPreferenceStore;
+  final SideChatDismissPreferenceController sideChatPreferenceController;
 
   @override
   State<MainAiChatScreen> createState() => _MainAiChatScreenState();
@@ -43,7 +45,6 @@ class _MainAiChatScreenState extends State<MainAiChatScreen> {
   bool _suppressDismissTip = false;
   bool _dismissTipLoaded = false;
   ChatConversationController? _sideChatController;
-  late final SideChatDismissPreferenceStore _preferenceStore;
 
   ChatConversationController? get _mainController =>
       widget.conversationController;
@@ -51,23 +52,17 @@ class _MainAiChatScreenState extends State<MainAiChatScreen> {
   @override
   void initState() {
     super.initState();
-    _preferenceStore =
-        widget.sideChatPreferenceStore ?? SideChatDismissPreferenceStore();
     _loadDismissPreference();
   }
 
+  // 偏好读写失败已在 controller 内降级并上报，此处无需再捕获。
   Future<void> _loadDismissPreference() async {
-    try {
-      final suppressed = await _preferenceStore.load();
-      if (!mounted) return;
-      setState(() {
-        _suppressDismissTip = suppressed;
-        _dismissTipLoaded = true;
-      });
-    } on Object {
-      if (!mounted) return;
-      setState(() => _dismissTipLoaded = true);
-    }
+    final suppressed = await widget.sideChatPreferenceController.load();
+    if (!mounted) return;
+    setState(() {
+      _suppressDismissTip = suppressed;
+      _dismissTipLoaded = true;
+    });
   }
 
   @override
@@ -171,13 +166,10 @@ class _MainAiChatScreenState extends State<MainAiChatScreen> {
               key: const ValueKey('confirm-exit-side-chat'),
               onPressed: () async {
                 if (dontShowAgain) {
-                  try {
-                    await _preferenceStore.save(true);
-                    if (mounted) {
-                      setState(() => _suppressDismissTip = true);
-                    }
-                  } on Object {
-                    // 偏好保存失败不阻断返回。
+                  // 偏好保存失败已在 controller 内降级上报，不阻断返回。
+                  unawaited(widget.sideChatPreferenceController.save(true));
+                  if (mounted) {
+                    setState(() => _suppressDismissTip = true);
                   }
                 }
                 if (context.mounted) Navigator.pop(context, true);

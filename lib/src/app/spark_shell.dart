@@ -326,6 +326,8 @@ class _SparkShellState extends State<SparkShell> {
           settingsRepository:
               _session.dependencies.chatSessionSettingsRepository,
           onOpenSource: _session.linkService.open,
+          sideChatPreferenceController:
+              _session.dependencies.sideChatDismissPreferenceController,
           conversationController:
               _session.chatConversationCoordinator.conversation(
             context: MainAiChatDefinition.context,

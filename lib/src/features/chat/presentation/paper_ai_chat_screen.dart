@@ -37,6 +37,9 @@ class PaperAiChatScreen extends StatefulWidget {
     this.conversationController,
     this.onOpenSource,
     this.keyboardDismissal = platformPaperAiKeyboardDismissal,
+    this.isSideChatMode = false,
+    this.onToggleSideChat,
+    this.sideChatMode = false,
   });
 
   final ChatContext chatContext;
@@ -57,6 +60,9 @@ class PaperAiChatScreen extends StatefulWidget {
   final ChatConversationController? conversationController;
   final Future<bool> Function(Uri uri)? onOpenSource;
   final PaperAiKeyboardDismissal keyboardDismissal;
+  final bool isSideChatMode;
+  final VoidCallback? onToggleSideChat;
+  final bool sideChatMode;
 
   @override
   State<PaperAiChatScreen> createState() => _PaperAiChatScreenState();
@@ -118,10 +124,13 @@ class _PaperAiChatScreenState extends State<PaperAiChatScreen> {
   @override
   Widget build(BuildContext context) {
     final selectionActive = _selectionController.active;
+    final canvasColor = widget.isSideChatMode
+        ? PaperAiUiTokens.sideChatCanvas(context)
+        : PaperAiUiTokens.canvas(context);
     return Scaffold(
       key: const ValueKey('paper-ai-chat-screen'),
       resizeToAvoidBottomInset: defaultTargetPlatform != TargetPlatform.android,
-      backgroundColor: PaperAiUiTokens.canvas(context),
+      backgroundColor: canvasColor,
       appBar: PaperAiChatAppBar(
         initialTitle: widget.screenTitle,
         subtitle: _conversationSubtitle,
@@ -134,6 +143,8 @@ class _PaperAiChatScreenState extends State<PaperAiChatScreen> {
         selectionActive: selectionActive,
         selectionCount: _selectionController.selectedIndexes.length,
         onCancelSelection: _selectionController.clear,
+        sideChatMode: widget.sideChatMode,
+        onToggleSideChat: widget.onToggleSideChat,
       ),
       body: Column(
         children: [

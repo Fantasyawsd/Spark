@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 abstract final class PaperAiUiTokens {
   static Color canvas(BuildContext context) => _accentBlend(context, 0.02);
 
+  static Color sideChatCanvas(BuildContext context) => _accentBlend(context, 0.10);
+
   static Color composer(BuildContext context) => _accentBlend(context, 0.06);
 
   static Color composerBorder(BuildContext context) {

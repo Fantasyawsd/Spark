@@ -234,7 +234,7 @@ class _SearchHistory extends StatelessWidget {
             child: Text(
               error!,
               style: TextStyle(
-                color: SparkColors.of(context).primary,
+                color: SparkColors.of(context).danger,
                 fontSize: SparkFontSizes.caption,
               ),
             ),

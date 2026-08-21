@@ -188,9 +188,15 @@ class _DeepSeekCredentialSheetState extends State<_DeepSeekCredentialSheet> {
                 Row(
                   children: [
                     if (controller.configured)
-                      TextButton.icon(
+                      OutlinedButton.icon(
                         key: const ValueKey('delete-deepseek-api-key'),
                         onPressed: controller.saving ? null : _delete,
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: SparkColors.of(context).danger,
+                          side: BorderSide(
+                            color: SparkColors.of(context).dangerBorder,
+                          ),
+                        ),
                         icon: const Icon(Icons.delete_outline_rounded),
                         label: const Text('删除'),
                       ),

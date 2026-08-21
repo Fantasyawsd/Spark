@@ -33,9 +33,14 @@ class ProfileAvatar extends StatelessWidget {
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: SparkColors.of(context).ink.withValues(alpha: 0.1),
+                  // 阴影固定用黑色系：ink 在暗色下是亮色，会变成光晕。
+                  color: Colors.black.withValues(
+                    alpha: Theme.of(context).brightness == Brightness.dark
+                        ? 0.40
+                        : 0.12,
+                  ),
                   blurRadius: 12,
-                  offset: Offset(0, 4),
+                  offset: const Offset(0, 4),
                 ),
               ],
             ),

@@ -73,19 +73,20 @@ class SparkPalette extends ThemeExtension<SparkPalette> {
     );
   }
 
-  /// 暗色 palette；primarySoft / primaryPale 由强调色按卡片表面混合派生。
+  /// 暗色 palette；primary 系列使用强调色的暗色提亮变体，
+  /// primarySoft / primaryPale 由 darkValue 按卡片表面混合派生。
   factory SparkPalette.dark([
     SparkThemeColor accentColor = SparkThemeColor.pink,
   ]) {
     const darkCard = Color(0xFF171D27);
     return SparkPalette(
-      primary: accentColor.value,
+      primary: accentColor.darkValue,
       primarySoft: Color.alphaBlend(
-        accentColor.value.withValues(alpha: 0.28),
+        accentColor.darkValue.withValues(alpha: 0.28),
         darkCard,
       ),
       primaryPale: Color.alphaBlend(
-        accentColor.value.withValues(alpha: 0.14),
+        accentColor.darkValue.withValues(alpha: 0.14),
         darkCard,
       ),
       ink: const Color(0xFFE8ECF2),

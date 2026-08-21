@@ -3,21 +3,22 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/spark_theme.dart';
 
 class PaperDiagram extends StatelessWidget {
-  const PaperDiagram({super.key, this.accent = const Color(0xFF4A7FCA)});
+  const PaperDiagram({super.key, this.accent = const Color(0xFF356FAE)});
 
   final Color accent;
 
   @override
   Widget build(BuildContext context) {
+    final palette = SparkColors.of(context);
     return Container(
       height: 88,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: palette.card,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: SparkColors.of(context).line),
+        border: Border.all(color: palette.line),
       ),
       child: CustomPaint(
-        painter: _PaperDiagramPainter(accent, SparkColors.of(context).ink),
+        painter: _PaperDiagramPainter(accent, palette.ink, palette.card),
         child: const SizedBox.expand(),
       ),
     );
@@ -25,10 +26,11 @@ class PaperDiagram extends StatelessWidget {
 }
 
 class _PaperDiagramPainter extends CustomPainter {
-  const _PaperDiagramPainter(this.accent, this.ink);
+  const _PaperDiagramPainter(this.accent, this.ink, this.surface);
 
   final Color accent;
   final Color ink;
+  final Color surface;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -37,7 +39,7 @@ class _PaperDiagramPainter extends CustomPainter {
       ..strokeWidth = 1.5
       ..style = PaintingStyle.stroke;
     final fill = Paint()..color = accent.withValues(alpha: 0.28);
-    final nodeFill = Paint()..color = Colors.white;
+    final nodeFill = Paint()..color = surface;
 
     final left = Rect.fromLTWH(18, 22, 65, 44);
     final rightA = Rect.fromLTWH(size.width - 132, 30, 44, 28);

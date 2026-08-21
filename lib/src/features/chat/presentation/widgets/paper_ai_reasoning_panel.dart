@@ -197,20 +197,24 @@ class _ShimmerTextState extends State<_ShimmerText>
 
   @override
   Widget build(BuildContext context) {
+    final text = Text(
+      widget.text,
+      style: TextStyle(
+        color: PaperAiUiTokens.assistantReasoningText(context),
+        fontSize: SparkFontSizes.bodyLarge,
+        fontWeight: FontWeight.w600,
+      ),
+    );
+    if (MediaQuery.maybeOf(context)?.disableAnimations == true) {
+      return text;
+    }
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, child) => Opacity(
         opacity: 0.55 + (_controller.value * 0.45),
         child: child,
       ),
-      child: Text(
-        widget.text,
-        style: TextStyle(
-          color: PaperAiUiTokens.assistantReasoningText(context),
-          fontSize: SparkFontSizes.bodyLarge,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
+      child: text,
     );
   }
 }

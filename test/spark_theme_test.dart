@@ -29,6 +29,19 @@ void main() {
     }
   });
 
+  test('dark palette keeps accent text readable on the dark card', () {
+    for (final color in SparkThemeColor.values) {
+      final palette = SparkPalette.dark(color);
+      final contrast = (palette.primary.computeLuminance() + 0.05) /
+          (palette.card.computeLuminance() + 0.05);
+      expect(
+        contrast,
+        greaterThanOrEqualTo(4.5),
+        reason: '${color.label} must stay readable as text on the dark card',
+      );
+    }
+  });
+
   testWidgets('theme sheet shows all palettes and updates the accent', (
     tester,
   ) async {
@@ -159,7 +172,7 @@ void main() {
 
     expect(
       Theme.of(shellContext).colorScheme.primary,
-      SparkThemeColor.blue.value,
+      SparkThemeColor.blue.darkValue,
     );
     expect(Theme.of(shellContext).brightness, Brightness.dark);
   });

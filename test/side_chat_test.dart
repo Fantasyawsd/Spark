@@ -47,7 +47,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('主聊天（临时聊天）'), findsOneWidget);
-    expect(find.text('临时追问'), findsOneWidget);
+    expect(find.text('临时会话'), findsOneWidget);
     expect(find.byKey(const ValueKey('side-chat-screen')), findsOneWidget);
 
     // 退出：弹出“不会保存”提示

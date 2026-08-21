@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/spark_design_tokens.dart';
 import '../../../core/theme/spark_font_sizes.dart';
 import '../../../core/theme/spark_theme.dart';
+import '../../../core/widgets/spark_empty_state.dart';
 import '../../papers/papers.dart';
 
 /// Full list page for favorites, read-later papers, and reading history.
@@ -111,24 +112,9 @@ class _PaperShelfListScreenState extends State<PaperShelfListScreen> {
   Widget _buildEmpty() {
     return Center(
       key: const ValueKey('paper-shelf-empty'),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            Icons.inbox_outlined,
-            color: SparkColors.of(context).muted,
-            size: 34,
-          ),
-          const SizedBox(height: 10),
-          Text(
-            widget._grouped ? '这个分组还是空的' : '还没有内容',
-            style: TextStyle(
-              color: SparkColors.of(context).ink,
-              fontSize: SparkFontSizes.body,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ],
+      child: SparkEmptyState(
+        icon: Icons.inbox_outlined,
+        title: widget._grouped ? '这个分组还是空的' : '还没有内容',
       ),
     );
   }

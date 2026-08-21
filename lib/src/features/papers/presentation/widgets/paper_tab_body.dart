@@ -172,7 +172,6 @@ class _CollapsedPaperContent extends StatelessWidget {
                     0,
                     PaperTabBody.bottomActionHeight,
                   ),
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
                 iconAlignment: IconAlignment.end,
                 icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 18),

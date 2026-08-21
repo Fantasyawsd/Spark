@@ -172,25 +172,46 @@ class PaperReaderAiInterpretButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FilledButton.icon(
-      key: const ValueKey('paper-ai-entry'),
-      onPressed: onPressed,
-      style: FilledButton.styleFrom(
-        backgroundColor: SparkColors.of(context).primary,
-        foregroundColor: Colors.white,
-        minimumSize: const Size(0, 34),
-        padding: const EdgeInsets.symmetric(
-          horizontal: SparkDesignTokens.space3,
+    final palette = SparkColors.of(context);
+    final brightness = Theme.of(context).brightness;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(999),
+        gradient: LinearGradient(
+          colors: [palette.primary, palette.primary.withValues(alpha: 0.85)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
-        visualDensity: VisualDensity.compact,
-        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        boxShadow: [
+          ...SparkDesignTokens.floatingShadowFor(brightness),
+          BoxShadow(
+            color: palette.primary.withValues(alpha: 0.30),
+            blurRadius: 20,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
-      icon: const Icon(Icons.auto_awesome_rounded, size: 16),
-      label: const Text(
-        'AI 解读',
-        style: TextStyle(
-          fontSize: SparkFontSizes.footnote,
-          fontWeight: FontWeight.w800,
+      child: FilledButton.icon(
+        key: const ValueKey('paper-ai-entry'),
+        onPressed: onPressed,
+        style: FilledButton.styleFrom(
+          backgroundColor: Colors.transparent,
+          foregroundColor: Theme.of(context).colorScheme.onPrimary,
+          minimumSize: const Size(0, 38),
+          padding: const EdgeInsets.symmetric(
+            horizontal: SparkDesignTokens.space4,
+          ),
+          tapTargetSize: MaterialTapTargetSize.padded,
+          elevation: 0,
+          shape: const StadiumBorder(),
+        ),
+        icon: const Icon(Icons.auto_awesome_rounded, size: 18),
+        label: const Text(
+          'AI 解读',
+          style: TextStyle(
+            fontSize: SparkFontSizes.footnote,
+            fontWeight: FontWeight.w700,
+          ),
         ),
       ),
     );

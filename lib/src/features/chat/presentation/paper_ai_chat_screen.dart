@@ -180,7 +180,7 @@ class _PaperAiChatScreenState extends State<PaperAiChatScreen> {
             loading: _conversation.loading,
             sending: _conversation.sending,
             error: _conversation.error,
-            onPrompt: (_) {},
+            onPrompt: _applyPrompt,
             onRetry: _conversation.retry,
             onCancel: _conversation.cancel,
             onDelete: _deleteMessage,
@@ -285,6 +285,18 @@ class _PaperAiChatScreenState extends State<PaperAiChatScreen> {
     _composer.value = TextEditingValue(
       text: content,
       selection: TextSelection.collapsed(offset: content.length),
+    );
+    setState(() {});
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _composerFocusNode.requestFocus();
+    });
+  }
+
+  /// 欢迎页建议词回填输入框并聚焦；不进入编辑重发状态。
+  void _applyPrompt(String text) {
+    _composer.value = TextEditingValue(
+      text: text,
+      selection: TextSelection.collapsed(offset: text.length),
     );
     setState(() {});
     WidgetsBinding.instance.addPostFrameCallback((_) {

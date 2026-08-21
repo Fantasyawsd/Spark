@@ -141,12 +141,12 @@ class _CommentTile extends StatelessWidget {
                         onPressed: onDelete,
                         padding: EdgeInsets.zero,
                         constraints: const BoxConstraints.tightFor(
-                          width: 24,
-                          height: 24,
+                          width: 40,
+                          height: 40,
                         ),
                         icon: const Icon(
                           Icons.delete_outline_rounded,
-                          size: 16,
+                          size: 18,
                         ),
                       ),
                   ],
@@ -170,41 +170,55 @@ class _CommentTile extends StatelessWidget {
                         fontSize: SparkFontSizes.caption,
                       ),
                     ),
-                    const SizedBox(width: 14),
+                    const SizedBox(width: 6),
                     GestureDetector(
+                      behavior: HitTestBehavior.opaque,
                       onTap: onReply,
-                      child: Text(
-                        '回复',
-                        style: TextStyle(
-                          color: SparkColors.of(context).muted,
-                          fontSize: SparkFontSizes.caption,
-                          fontWeight: FontWeight.w600,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 12,
+                        ),
+                        child: Text(
+                          '回复',
+                          style: TextStyle(
+                            color: SparkColors.of(context).muted,
+                            fontSize: SparkFontSizes.caption,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
                     ),
                     const Spacer(),
                     GestureDetector(
+                      behavior: HitTestBehavior.opaque,
                       onTap: onLike,
-                      child: Row(
-                        children: [
-                          Icon(
-                            comment.liked
-                                ? Icons.favorite_rounded
-                                : Icons.favorite_border_rounded,
-                            size: 20,
-                            color: comment.liked
-                                ? SparkColors.of(context).primary
-                                : SparkColors.of(context).muted,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            '${comment.likes}',
-                            style: TextStyle(
-                              color: SparkColors.of(context).muted,
-                              fontSize: SparkFontSizes.caption,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 8,
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              comment.liked
+                                  ? Icons.favorite_rounded
+                                  : Icons.favorite_border_rounded,
+                              size: 20,
+                              color: comment.liked
+                                  ? SparkColors.of(context).primary
+                                  : SparkColors.of(context).muted,
                             ),
-                          ),
-                        ],
+                            const SizedBox(width: 4),
+                            Text(
+                              '${comment.likes}',
+                              style: TextStyle(
+                                color: SparkColors.of(context).muted,
+                                fontSize: SparkFontSizes.caption,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ],

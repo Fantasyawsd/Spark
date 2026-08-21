@@ -10,7 +10,7 @@ class SparkTabBar extends StatelessWidget {
     required this.selectedIndex,
     required this.onSelected,
     this.pageController,
-    this.height = 38,
+    this.height = 44,
     this.indicatorWidth = 38,
     this.textSize = 12,
     this.contentWidth = false,

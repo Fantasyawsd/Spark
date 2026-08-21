@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/motion/motion_tokens.dart';
 import '../../../core/theme/spark_design_tokens.dart';
 import '../../../core/theme/spark_font_sizes.dart';
+import '../../../core/theme/spark_theme.dart';
 import '../application/chat_session_controller.dart';
 import '../domain/chat_session_repository.dart';
 import 'paper_ai_ui_tokens.dart';
@@ -200,99 +202,92 @@ class _AiSessionList extends StatelessWidget {
           onClose: onCloseActions,
           onTogglePinned: () => onTogglePinned(entry),
           onDelete: () => onDelete(entry),
-          child: Material(
-            color: Theme.of(context).colorScheme.surface,
-            borderRadius: BorderRadius.circular(SparkDesignTokens.radius2Xl),
-            child: InkWell(
-              key: ValueKey('ai-session-$contextId'),
-              onTap: () => onOpen(entry),
-              borderRadius: BorderRadius.circular(SparkDesignTokens.radius2Xl),
-              child: Padding(
-                padding: const EdgeInsets.all(13),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.primaryContainer,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        Icons.auto_awesome_rounded,
-                        color: Theme.of(context).colorScheme.onPrimaryContainer,
-                        size: 21,
-                      ),
+          child: _SessionCard(
+            key: ValueKey('ai-session-$contextId'),
+            onTap: () => onOpen(entry),
+            child: Padding(
+              padding: const EdgeInsets.all(13),
+              child: Row(
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.primaryContainer,
+                      shape: BoxShape.circle,
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              if (session.pinned) ...[
-                                Icon(
-                                  Icons.push_pin_rounded,
-                                  color: Theme.of(context).colorScheme.primary,
-                                  size: 14,
-                                ),
-                                const SizedBox(width: 5),
-                              ],
-                              Expanded(
-                                child: Text(
-                                  entry.context.title,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(
-                                    color:
-                                        Theme.of(context).colorScheme.onSurface,
-                                    fontSize: SparkFontSizes.body,
-                                    fontWeight: FontWeight.w800,
-                                  ),
+                    child: Icon(
+                      Icons.auto_awesome_rounded,
+                      color: Theme.of(context).colorScheme.onPrimaryContainer,
+                      size: 21,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            if (session.pinned) ...[
+                              Icon(
+                                Icons.push_pin_rounded,
+                                color: Theme.of(context).colorScheme.primary,
+                                size: 14,
+                              ),
+                              const SizedBox(width: 5),
+                            ],
+                            Expanded(
+                              child: Text(
+                                entry.context.title,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color:
+                                      Theme.of(context).colorScheme.onSurface,
+                                  fontSize: SparkFontSizes.body,
+                                  fontWeight: FontWeight.w800,
                                 ),
                               ),
-                            ],
-                          ),
-                          const SizedBox(height: 5),
-                          Text(
-                            session.preview.replaceAll('\n', ' '),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSurfaceVariant,
-                              fontSize: SparkFontSizes.footnote,
                             ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(
-                          _relativeTime(session.updatedAt),
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.outline,
-                            fontSize: SparkFontSizes.caption,
-                          ),
+                          ],
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 5),
                         Text(
-                          '${session.messageCount} 条',
+                          session.preview.replaceAll('\n', ' '),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             color:
                                 Theme.of(context).colorScheme.onSurfaceVariant,
-                            fontSize: SparkFontSizes.caption,
+                            fontSize: SparkFontSizes.footnote,
                           ),
                         ),
                       ],
                     ),
-                  ],
-                ),
+                  ),
+                  const SizedBox(width: 8),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        _relativeTime(session.updatedAt),
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.outline,
+                          fontSize: SparkFontSizes.caption,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        '${session.messageCount} 条',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          fontSize: SparkFontSizes.caption,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
           ),
@@ -308,6 +303,67 @@ class _AiSessionList extends StatelessWidget {
     if (difference.inHours < 1) return '${difference.inMinutes} 分钟前';
     if (difference.inDays < 1) return '${difference.inHours} 小时前';
     return '${difference.inDays} 天前';
+  }
+}
+
+/// 会话卡：hairline 描边 + level 1 阴影 + 按压缩放。
+class _SessionCard extends StatefulWidget {
+  const _SessionCard({super.key, required this.onTap, required this.child});
+
+  final VoidCallback onTap;
+  final Widget child;
+
+  @override
+  State<_SessionCard> createState() => _SessionCardState();
+}
+
+class _SessionCardState extends State<_SessionCard> {
+  final WidgetStatesController _statesController = WidgetStatesController();
+
+  @override
+  void initState() {
+    super.initState();
+    _statesController.addListener(_handleStatesChanged);
+  }
+
+  @override
+  void dispose() {
+    _statesController.removeListener(_handleStatesChanged);
+    _statesController.dispose();
+    super.dispose();
+  }
+
+  void _handleStatesChanged() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final radius = BorderRadius.circular(SparkDesignTokens.radius2Xl);
+    return AnimatedScale(
+      scale: _statesController.value.contains(WidgetState.pressed) ? 0.98 : 1,
+      duration: MotionTokens.duration(context, MotionTokens.feedbackDuration),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: radius,
+          boxShadow: SparkDesignTokens.interactiveShadowFor(
+              Theme.of(context).brightness),
+        ),
+        child: Material(
+          color: Theme.of(context).colorScheme.surface,
+          shape: RoundedRectangleBorder(
+            borderRadius: radius,
+            side: BorderSide(color: context.sparkColors.line),
+          ),
+          child: InkWell(
+            statesController: _statesController,
+            onTap: widget.onTap,
+            borderRadius: radius,
+            child: widget.child,
+          ),
+        ),
+      ),
+    );
   }
 }
 

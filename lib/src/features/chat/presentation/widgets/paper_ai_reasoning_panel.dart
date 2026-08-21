@@ -186,8 +186,15 @@ class _ShimmerTextState extends State<_ShimmerText>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 1100),
-  )..repeat(reverse: true);
+    duration: const Duration(milliseconds: 1400),
+  );
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (MediaQuery.maybeOf(context)?.disableAnimations == true) return;
+    if (!_controller.isAnimating) _controller.repeat();
+  }
 
   @override
   void dispose() {
@@ -197,10 +204,11 @@ class _ShimmerTextState extends State<_ShimmerText>
 
   @override
   Widget build(BuildContext context) {
+    final color = PaperAiUiTokens.assistantReasoningText(context);
     final text = Text(
       widget.text,
       style: TextStyle(
-        color: PaperAiUiTokens.assistantReasoningText(context),
+        color: color,
         fontSize: SparkFontSizes.bodyLarge,
         fontWeight: FontWeight.w600,
       ),
@@ -210,8 +218,16 @@ class _ShimmerTextState extends State<_ShimmerText>
     }
     return AnimatedBuilder(
       animation: _controller,
-      builder: (context, child) => Opacity(
-        opacity: 0.55 + (_controller.value * 0.45),
+      builder: (context, child) => ShaderMask(
+        shaderCallback: (bounds) => LinearGradient(
+          colors: [
+            color.withValues(alpha: 0.45),
+            color,
+            color.withValues(alpha: 0.45),
+          ],
+          begin: Alignment(-3 + 4 * _controller.value, 0),
+          end: Alignment(-1 + 4 * _controller.value, 0),
+        ).createShader(bounds),
         child: child,
       ),
       child: text,

@@ -21,6 +21,8 @@ class SparkBottomNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final palette = SparkColors.of(context);
     final items = <_NavigationItem>[
       const _NavigationItem(
         label: '论文',
@@ -50,13 +52,15 @@ class SparkBottomNav extends StatelessWidget {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(SparkDesignTokens.radiusXl),
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+          filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
           child: Container(
             padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(
-              color: SparkColors.of(context).popover.withValues(alpha: 0.96),
+              color: palette.popover.withValues(alpha: isDark ? 0.68 : 0.80),
               borderRadius: BorderRadius.circular(SparkDesignTokens.radiusXl),
-              border: Border.all(color: SparkColors.of(context).line),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: isDark ? 0.08 : 0.55),
+              ),
               boxShadow: SparkDesignTokens.floatingShadowFor(
                 Theme.of(context).brightness,
               ),
@@ -113,9 +117,9 @@ class _NavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = SparkColors.of(context);
     final selected = index == selectedIndex;
-    final color =
-        selected ? SparkColors.of(context).ink : SparkColors.of(context).muted;
+    final color = selected ? palette.primary : palette.muted;
     return Expanded(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 2),
@@ -134,7 +138,7 @@ class _NavItem extends StatelessWidget {
               curve: MotionTokens.enterCurve,
               decoration: BoxDecoration(
                 color: selected
-                    ? SparkColors.of(context).accent
+                    ? palette.primary.withValues(alpha: 0.10)
                     : Colors.transparent,
                 borderRadius: BorderRadius.circular(SparkDesignTokens.radiusMd),
               ),
@@ -159,7 +163,7 @@ class _NavItem extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       color: color,
-                      fontSize: SparkFontSizes.tiny,
+                      fontSize: SparkFontSizes.footnote,
                       fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
                     ),
                   ),

@@ -41,8 +41,12 @@ class PaperAiUserMessage extends StatelessWidget {
                     const EdgeInsets.symmetric(horizontal: 15, vertical: 9),
                 decoration: BoxDecoration(
                   color: PaperAiUiTokens.userBubble(context),
-                  borderRadius:
-                      BorderRadius.circular(SparkDesignTokens.radius2Xl),
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(SparkDesignTokens.radius2Xl),
+                    topRight: Radius.circular(SparkDesignTokens.radius2Xl),
+                    bottomLeft: Radius.circular(SparkDesignTokens.radius2Xl),
+                    bottomRight: Radius.circular(SparkDesignTokens.bubbleTail),
+                  ),
                 ),
                 child: SparkMarkdown(
                   data: message.content,

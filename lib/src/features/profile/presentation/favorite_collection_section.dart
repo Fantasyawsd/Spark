@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/theme/spark_font_sizes.dart';
-import '../../../core/theme/spark_theme.dart';
+import '../../../core/widgets/spark_empty_state.dart';
 import '../../../core/widgets/surface_card.dart';
 import '../../papers/papers.dart';
 import 'profile_section_header.dart';
@@ -110,17 +109,9 @@ class _FavoriteCollectionSectionState extends State<FavoriteCollectionSection> {
           ),
           const SizedBox(height: 14),
           if (papers.isEmpty)
-            SizedBox(
-              height: 72,
-              child: Center(
-                child: Text(
-                  selectedGroup.isDefault ? '还没有收藏论文' : '这个分组还是空的',
-                  style: TextStyle(
-                    color: SparkColors.of(context).muted,
-                    fontSize: SparkFontSizes.bodySmall,
-                  ),
-                ),
-              ),
+            SparkEmptyState(
+              icon: Icons.bookmark_border_rounded,
+              title: selectedGroup.isDefault ? '还没有收藏论文' : '这个分组还是空的',
             )
           else
             SizedBox(

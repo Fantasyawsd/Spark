@@ -131,10 +131,9 @@ class _MessageActionButton extends StatelessWidget {
             : PaperAiUiTokens.action(context),
       ),
       style: IconButton.styleFrom(
-        minimumSize: const Size(32, 32),
-        maximumSize: const Size(32, 32),
+        minimumSize: const Size(40, 40),
+        maximumSize: const Size(40, 40),
         padding: EdgeInsets.zero,
-        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
       ),
     );
   }

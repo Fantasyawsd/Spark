@@ -15,7 +15,7 @@ class SparkSegmentedControl extends StatelessWidget {
     required this.tabs,
     required this.selectedIndex,
     required this.onSelected,
-    this.height = 38,
+    this.height = 44,
   });
 
   final List<String> tabs;

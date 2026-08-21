@@ -25,8 +25,8 @@ class PaperPdfButton extends StatelessWidget {
         style: TextButton.styleFrom(
           foregroundColor: SparkColors.of(context).ink,
           padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 2),
-          minimumSize: const Size(0, 32),
-          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          minimumSize: const Size(0, 40),
+          tapTargetSize: MaterialTapTargetSize.padded,
         ),
         icon: Icon(
           hasPdf ? Icons.picture_as_pdf_outlined : Icons.open_in_new_rounded,

@@ -10,8 +10,8 @@
 - Worktree：`../agent-2`
 - 基线提交：`b95c259`
 - 负责人：Fantasy
-- 状态：开发中
-- 最近更新：`2026-08-21`
+- 状态：已合并
+- 最近更新：`2026-08-21`（main 归档）
 
 ## 目标
 
@@ -140,9 +140,9 @@
 
 - 最终状态：已合并
 - 合入分支：`main`
-- 最终集成提交：`<merge-sha-or-fast-forward-tip>`
-- Pull Request：无 / `<url-or-number>`
-- 合并时间：`YYYY-MM-DD HH:mm`
-- main 集成验证：`<commands-and-results>`
-- 开发计划更新：`<updated-sections-or-not-applicable-with-reason>`
-- 最终后续项：无 / `<remaining-work>`
+- 最终集成提交：`ae98f3e`（Merge feature/side-chat）
+- Pull Request：无（日常直接合 main）
+- 合并时间：`2026-08-21`
+- main 集成验证：`flutter analyze` 仅 1 info（empty_catches）；`flutter test test/side_chat_fork_test.dart test/side_chat_test.dart test/chat_presentation_screens_test.dart` 15 passed
+- 开发计划更新：本任务完成 `docs/development.md §3.2 #3`，由编排者按需更新开发计划
+- 最终后续项：无（side chat 已按 §4.3 完整落地）

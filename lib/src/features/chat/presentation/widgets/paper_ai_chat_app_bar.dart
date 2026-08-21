@@ -20,6 +20,8 @@ class PaperAiChatAppBar extends StatefulWidget implements PreferredSizeWidget {
     required this.onCancelSelection,
     this.fullTextAvailable = false,
     this.onLoadFullText,
+    this.sideChatMode = false,
+    this.onToggleSideChat,
   });
 
   final String initialTitle;
@@ -33,6 +35,8 @@ class PaperAiChatAppBar extends StatefulWidget implements PreferredSizeWidget {
   final VoidCallback onCancelSelection;
   final bool fullTextAvailable;
   final Future<ChatContext> Function()? onLoadFullText;
+  final bool sideChatMode;
+  final VoidCallback? onToggleSideChat;
 
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
@@ -123,6 +127,25 @@ class _PaperAiChatAppBarState extends State<PaperAiChatAppBar> {
 
   List<Widget> _buildActions() {
     return [
+      if (widget.onToggleSideChat != null)
+        IconButton(
+          key: const ValueKey('paper-ai-side-chat-toggle'),
+          tooltip: widget.sideChatMode ? '返回主聊天' : '临时追问',
+          onPressed: widget.onToggleSideChat,
+          icon: Icon(
+            widget.sideChatMode
+                ? Icons.chat_bubble_rounded
+                : Icons.chat_bubble_outline_rounded,
+            size: 24,
+          ),
+          style: widget.sideChatMode
+              ? IconButton.styleFrom(
+                  foregroundColor: Theme.of(context).colorScheme.primary,
+                  backgroundColor:
+                      Theme.of(context).colorScheme.primaryContainer,
+                )
+              : null,
+        ),
       if (widget.fullTextAvailable)
         IconButton(
           key: const ValueKey('paper-ai-fulltext-toggle'),

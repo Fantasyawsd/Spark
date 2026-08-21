@@ -4,6 +4,7 @@ import '../../../../core/theme/spark_design_tokens.dart';
 import '../../../../core/theme/spark_font_sizes.dart';
 import '../../../../core/widgets/spark_entry_animation.dart';
 import '../../application/chat_conversation_controller.dart';
+import '../../application/main_ai_chat_definition.dart';
 import '../../domain/chat_context.dart';
 import '../../domain/chat_message.dart';
 import '../paper_ai_ui_tokens.dart';
@@ -476,17 +477,20 @@ class _AiWelcome extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              for (final suggestion in _suggestions)
-                _SuggestionChip(
-                  label: suggestion,
-                  onTap: () => onPrompt(suggestion),
-                ),
-            ],
-          ),
+          // 建议提示词只在主聊天空会话展示；论文聊天（AI 解读等）
+          // 保持欢迎区紧凑，避免把正文内容挤出视口。
+          if (chatContext.id == MainAiChatDefinition.sessionId)
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (final suggestion in _suggestions)
+                  _SuggestionChip(
+                    label: suggestion,
+                    onTap: () => onPrompt(suggestion),
+                  ),
+              ],
+            ),
         ],
       ),
     );

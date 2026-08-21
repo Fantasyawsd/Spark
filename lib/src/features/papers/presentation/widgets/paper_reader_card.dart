@@ -1,12 +1,10 @@
 import 'dart:async';
-import 'dart:ui';
 
 import 'package:flutter/material.dart';
 
 import '../../../../core/motion/motion_tokens.dart';
 import '../../../../core/platform/external_http_uri.dart';
 import '../../../../core/platform/spark_clipboard.dart';
-import '../../../../core/theme/spark_design_tokens.dart';
 import '../../../../core/theme/spark_font_sizes.dart';
 import '../../../../core/theme/spark_theme.dart';
 import '../../../../core/widgets/spark_segmented_control.dart';
@@ -165,8 +163,7 @@ class _PaperReaderCardState extends State<PaperReaderCard> {
                 16,
                 widget.contentTopInset,
                 16,
-                // 维持原避让尺寸：内容底部「展开全文」与 AI 解读悬浮钮
-                // 都在右下角，进一步缩小间距会互相遮挡（穿透不可行）。
+                // 操作栏融入卡片底色，内容避让栏高与 AI 解读悬浮钮。
                 safePadding.bottom + widget.actionBarBottomInset + 96,
               ),
               child: Column(
@@ -229,43 +226,21 @@ class _PaperReaderCardState extends State<PaperReaderCard> {
             right: 16,
             bottom: safePadding.bottom + widget.actionBarBottomInset,
             height: 52,
-            child: ClipRect(
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: SparkColors.of(context).card.withValues(
-                          alpha: Theme.of(context).brightness == Brightness.dark
-                              ? 0.58
-                              : 0.74,
-                        ),
-                    borderRadius: BorderRadius.circular(
-                      SparkDesignTokens.radiusField,
-                    ),
-                    border: Border.all(color: SparkColors.of(context).line),
-                    boxShadow: SparkDesignTokens.floatingShadowFor(
-                      Theme.of(context).brightness,
-                    ),
-                  ),
-                  child: PaperActionBar(
-                    paper: paper,
-                    liked: widget.liked,
-                    saved: widget.saved,
-                    shareCountDelta: widget.shareCountDelta,
-                    commentCountDelta: widget.commentCountDelta,
-                    onLike: widget.onLike,
-                    onComment: () =>
-                        unawaited(_openDiscussion(widget.onComment)),
-                    onSave: widget.onSave,
-                    onSaveLongPress: widget.onSaveLongPress,
-                    onShare: widget.onShare,
-                    read: widget.read,
-                    readLater: widget.readLater,
-                    onToggleRead: widget.onToggleRead,
-                    onToggleReadLater: widget.onToggleReadLater,
-                  ),
-                ),
-              ),
+            child: PaperActionBar(
+              paper: paper,
+              liked: widget.liked,
+              saved: widget.saved,
+              shareCountDelta: widget.shareCountDelta,
+              commentCountDelta: widget.commentCountDelta,
+              onLike: widget.onLike,
+              onComment: () => unawaited(_openDiscussion(widget.onComment)),
+              onSave: widget.onSave,
+              onSaveLongPress: widget.onSaveLongPress,
+              onShare: widget.onShare,
+              read: widget.read,
+              readLater: widget.readLater,
+              onToggleRead: widget.onToggleRead,
+              onToggleReadLater: widget.onToggleReadLater,
             ),
           ),
         ],

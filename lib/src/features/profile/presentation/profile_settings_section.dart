@@ -3,7 +3,6 @@ import 'package:spark/src/features/behavior/behavior.dart';
 
 import '../../../core/config/app_version.dart';
 import '../../../core/theme/spark_design_tokens.dart';
-import '../../../core/theme/spark_font_sizes.dart';
 import '../../../core/theme/spark_theme.dart';
 import '../../../core/theme/theme_controller.dart';
 import '../../../core/widgets/surface_card.dart';
@@ -35,16 +34,13 @@ class ProfileSettingsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        _sectionTitle(context, '外观与 AI'),
-        const SizedBox(height: 6),
-        SurfaceCard(
-          padding: EdgeInsets.zero,
-          child: Material(
-            color: Colors.transparent,
-            child: ListTile(
+    return SurfaceCard(
+      padding: EdgeInsets.zero,
+      child: Material(
+        color: Colors.transparent,
+        child: Column(
+          children: [
+            ListTile(
               key: const ValueKey('profile-theme-row'),
               leading: _settingsIcon(context, Icons.palette_outlined),
               title: const Text('主题'),
@@ -60,136 +56,101 @@ class ProfileSettingsSection extends StatelessWidget {
                 controller: themeController,
               ),
             ),
-          ),
-        ),
-        const SizedBox(height: SparkDesignTokens.space3),
-        _sectionTitle(context, '数据与隐私'),
-        const SizedBox(height: 6),
-        SurfaceCard(
-          padding: EdgeInsets.zero,
-          child: Material(
-            color: Colors.transparent,
-            child: Column(
-              children: [
-                if (catalogSourceDescription case final description?) ...[
-                  ListTile(
-                    key: const ValueKey('profile-paper-source'),
-                    leading: _settingsIcon(context, Icons.cloud_outlined),
-                    title: const Text('论文数据源'),
-                    subtitle: Text(description),
-                    trailing: Text(
-                      catalogStateLabel ?? '',
-                      style: TextStyle(
-                        color: catalogOffline
-                            ? SparkColors.of(context).warning
-                            : SparkColors.of(context).muted,
-                        fontWeight: FontWeight.w600,
+            const Divider(height: 1),
+            if (catalogSourceDescription case final description?) ...[
+              ListTile(
+                key: const ValueKey('profile-paper-source'),
+                leading: _settingsIcon(context, Icons.cloud_outlined),
+                title: const Text('论文数据源'),
+                subtitle: Text(description),
+                trailing: Text(
+                  catalogStateLabel ?? '',
+                  style: TextStyle(
+                    color: catalogOffline
+                        ? SparkColors.of(context).warning
+                        : SparkColors.of(context).muted,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              const Divider(height: 1),
+            ],
+            ListTile(
+              key: const ValueKey('profile-local-data'),
+              leading: _settingsIcon(context, Icons.storage_outlined),
+              title: const Text('本地数据'),
+              subtitle: _buildLocalDataDescription(),
+              trailing: onOpenLocalData == null
+                  ? null
+                  : const Icon(Icons.chevron_right_rounded),
+              onTap: onOpenLocalData,
+            ),
+            const Divider(height: 1),
+            ListTile(
+              key: const ValueKey('profile-privacy'),
+              leading: _settingsIcon(context, Icons.privacy_tip_outlined),
+              title: const Text('隐私'),
+              subtitle: const Text('了解本地存储与 DeepSeek 数据传输'),
+              trailing: const Icon(Icons.chevron_right_rounded),
+              onTap: () => _showPrivacyNotice(context),
+            ),
+            if (personalizationController case final controller?) ...[
+              const Divider(height: 1),
+              ListTile(
+                leading: _settingsIcon(context, Icons.recommend_outlined),
+                title: const Text('个性化推荐'),
+                subtitle: const Text('根据设备本地的阅读与互动行为提供个性化推荐，关闭后停止采集'),
+                trailing: ListenableBuilder(
+                  listenable: controller,
+                  builder: (context, _) {
+                    final personalized = controller.personalized;
+                    return Switch(
+                      key: const ValueKey(
+                        'profile-personalization-switch',
                       ),
-                    ),
-                  ),
-                  const Divider(height: 1),
-                ],
-                ListTile(
-                  key: const ValueKey('profile-local-data'),
-                  leading: _settingsIcon(context, Icons.storage_outlined),
-                  title: const Text('本地数据'),
-                  subtitle: _buildLocalDataDescription(),
-                  trailing: onOpenLocalData == null
-                      ? null
-                      : const Icon(Icons.chevron_right_rounded),
-                  onTap: onOpenLocalData,
+                      value: personalized ?? false,
+                      onChanged: personalized == null
+                          ? null
+                          : (value) => controller.setPersonalized(value),
+                    );
+                  },
                 ),
-                const Divider(height: 1),
-                ListTile(
-                  key: const ValueKey('profile-privacy'),
-                  leading: _settingsIcon(context, Icons.privacy_tip_outlined),
-                  title: const Text('隐私'),
-                  subtitle: const Text('了解本地存储与 DeepSeek 数据传输'),
-                  trailing: const Icon(Icons.chevron_right_rounded),
-                  onTap: () => _showPrivacyNotice(context),
+              ),
+              const Divider(height: 1),
+              ListTile(
+                key: const ValueKey('profile-clear-behavior-data'),
+                leading: _settingsIcon(
+                  context,
+                  Icons.delete_outline_rounded,
                 ),
-                if (personalizationController case final controller?) ...[
-                  const Divider(height: 1),
-                  ListTile(
-                    leading: _settingsIcon(context, Icons.recommend_outlined),
-                    title: const Text('个性化推荐'),
-                    subtitle: const Text('根据设备本地的阅读与互动行为提供个性化推荐，关闭后停止采集'),
-                    trailing: ListenableBuilder(
-                      listenable: controller,
-                      builder: (context, _) {
-                        final personalized = controller.personalized;
-                        return Switch(
-                          key: const ValueKey(
-                            'profile-personalization-switch',
-                          ),
-                          value: personalized ?? false,
-                          onChanged: personalized == null
-                              ? null
-                              : (value) => controller.setPersonalized(value),
-                        );
-                      },
-                    ),
-                  ),
-                  const Divider(height: 1),
-                  ListTile(
-                    key: const ValueKey('profile-clear-behavior-data'),
-                    leading: _settingsIcon(
-                      context,
-                      Icons.delete_outline_rounded,
-                    ),
-                    title: const Text('清除行为数据'),
-                    trailing: const Icon(Icons.chevron_right_rounded),
-                    onTap: () => _confirmClearBehaviorData(context, controller),
-                  ),
-                ],
-              ],
+                title: const Text('清除行为数据'),
+                trailing: const Icon(Icons.chevron_right_rounded),
+                onTap: () => _confirmClearBehaviorData(context, controller),
+              ),
+            ],
+            const Divider(height: 1),
+            ListTile(
+              key: const ValueKey('profile-open-source-licenses'),
+              leading: _settingsIcon(context, Icons.article_outlined),
+              title: const Text('开源许可'),
+              trailing: const Icon(Icons.chevron_right_rounded),
+              onTap: () => showLicensePage(
+                context: context,
+                applicationName: 'Spark',
+                applicationVersion: AppVersion.current.display,
+              ),
             ),
-          ),
-        ),
-        const SizedBox(height: SparkDesignTokens.space3),
-        _sectionTitle(context, '关于'),
-        const SizedBox(height: 6),
-        SurfaceCard(
-          padding: EdgeInsets.zero,
-          child: Material(
-            color: Colors.transparent,
-            child: Column(
-              children: [
-                ListTile(
-                  key: const ValueKey('profile-open-source-licenses'),
-                  leading: _settingsIcon(context, Icons.article_outlined),
-                  title: const Text('开源许可'),
-                  trailing: const Icon(Icons.chevron_right_rounded),
-                  onTap: () => showLicensePage(
-                    context: context,
-                    applicationName: 'Spark',
-                    applicationVersion: AppVersion.current.display,
-                  ),
-                ),
-                const Divider(height: 1),
-                ListTile(
-                  leading: _settingsIcon(context, Icons.info_outline_rounded),
-                  title: const Text('Spark'),
-                  trailing: Text(
-                    AppVersion.current.display,
-                    style: TextStyle(color: SparkColors.of(context).muted),
-                  ),
-                ),
-              ],
+            const Divider(height: 1),
+            ListTile(
+              leading: _settingsIcon(context, Icons.info_outline_rounded),
+              title: const Text('Spark'),
+              trailing: Text(
+                AppVersion.current.display,
+                style: TextStyle(color: SparkColors.of(context).muted),
+              ),
             ),
-          ),
+          ],
         ),
-      ],
-    );
-  }
-
-  Widget _sectionTitle(BuildContext context, String title) {
-    return Text(
-      title,
-      style: TextStyle(
-        fontSize: SparkFontSizes.caption,
-        color: SparkColors.of(context).subtle,
-        letterSpacing: 0.5,
       ),
     );
   }

@@ -130,7 +130,7 @@ class _PaperAiChatAppBarState extends State<PaperAiChatAppBar> {
       if (widget.onToggleSideChat != null)
         IconButton(
           key: const ValueKey('paper-ai-side-chat-toggle'),
-          tooltip: widget.sideChatMode ? '返回主聊天' : '临时追问',
+          tooltip: widget.sideChatMode ? '返回主聊天' : '临时会话',
           onPressed: widget.onToggleSideChat,
           icon: Icon(
             widget.sideChatMode

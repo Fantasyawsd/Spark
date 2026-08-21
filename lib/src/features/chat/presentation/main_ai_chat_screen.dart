@@ -206,7 +206,7 @@ class _MainAiChatScreenState extends State<MainAiChatScreen> {
         onOpenSource: widget.onOpenSource,
         screenTitle: '主聊天（临时聊天）',
         screenSubtitle: '临时会话 · 退出不保存',
-        welcomeTitle: '临时追问',
+        welcomeTitle: '临时会话',
         welcomeDescription: '在此追问概念与背景，不会污染主线对话',
         isSideChatMode: true,
         onToggleSideChat: _toggleSideChat,

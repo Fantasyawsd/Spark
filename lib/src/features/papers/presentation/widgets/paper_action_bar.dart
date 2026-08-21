@@ -59,6 +59,8 @@ class PaperActionBar extends StatelessWidget {
                 delta: liked ? 1 : 0,
               ),
               active: liked,
+              activeColor: SparkColors.of(context).danger,
+              bounceOnTap: true,
               onTap: onLike,
             ),
             _PaperActionButton(
@@ -208,6 +210,8 @@ class _PaperActionButton extends StatefulWidget {
     required this.icon,
     this.label,
     this.active = false,
+    this.activeColor,
+    this.bounceOnTap = false,
     this.onTap,
     this.onLongPress,
   });
@@ -216,6 +220,12 @@ class _PaperActionButton extends StatefulWidget {
   final IconData icon;
   final String? label;
   final bool active;
+
+  /// 激活态前景色；缺省用品牌 primary（点赞传 danger 呈现红心语义）。
+  final Color? activeColor;
+
+  /// 点击时先放大再弹性回落（点赞弹跳）。
+  final bool bounceOnTap;
   final VoidCallback? onTap;
   final VoidCallback? onLongPress;
 
@@ -228,9 +238,9 @@ class _PaperActionButtonState extends State<_PaperActionButton> {
 
   @override
   Widget build(BuildContext context) {
-    final color = widget.active
-        ? SparkColors.of(context).primary
-        : SparkColors.of(context).ink;
+    final palette = SparkColors.of(context);
+    final color =
+        widget.active ? (widget.activeColor ?? palette.primary) : palette.ink;
     return Expanded(
       child: Tooltip(
         message: widget.tooltip,
@@ -247,12 +257,21 @@ class _PaperActionButtonState extends State<_PaperActionButton> {
                 },
           radius: 28,
           child: AnimatedScale(
-            scale: _pressed ? 0.9 : 1,
+            scale: switch ((widget.bounceOnTap, _pressed)) {
+              (true, true) => 1.25,
+              (true, false) => 1,
+              (false, true) => 0.92,
+              (false, false) => 1,
+            },
             duration: MotionTokens.duration(
               context,
-              MotionTokens.feedbackDuration,
+              widget.bounceOnTap
+                  ? const Duration(milliseconds: 420)
+                  : MotionTokens.feedbackDuration,
             ),
-            curve: MotionTokens.pageCurve,
+            curve: widget.bounceOnTap
+                ? MotionTokens.springCurve
+                : MotionTokens.pageCurve,
             child: ConstrainedBox(
               constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
               child: Column(
@@ -272,12 +291,30 @@ class _PaperActionButtonState extends State<_PaperActionButton> {
                   ),
                   if (widget.label != null) ...[
                     const SizedBox(height: 2),
-                    Text(
-                      widget.label!,
-                      style: TextStyle(
-                        color: color,
-                        fontSize: SparkFontSizes.caption,
-                        fontWeight: FontWeight.w600,
+                    // 计数变化时上滑滚动，避免文字生硬替换。
+                    AnimatedSwitcher(
+                      duration: MotionTokens.duration(
+                        context,
+                        MotionTokens.tabDuration,
+                      ),
+                      transitionBuilder: (child, animation) => SlideTransition(
+                        position: Tween<Offset>(
+                          begin: const Offset(0, 0.5),
+                          end: Offset.zero,
+                        ).animate(animation),
+                        child: FadeTransition(
+                          opacity: animation,
+                          child: child,
+                        ),
+                      ),
+                      child: Text(
+                        widget.label!,
+                        key: ValueKey(widget.label),
+                        style: TextStyle(
+                          color: color,
+                          fontSize: SparkFontSizes.caption,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                   ],

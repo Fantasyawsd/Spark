@@ -8,7 +8,7 @@
 - Worktree：`../agent-2`
 - 基线提交：`bad410e`（feature/ui-tokens-v2 tip）
 - 负责人：编排者（人类）+ Claude Code Agent
-- 状态：开发中
+- 状态：已合并
 - 最近更新：2026-08-21 17:40
 
 ## 目标
@@ -100,7 +100,7 @@
 | flutter analyze | 无问题 | 2026-08-21 |
 | flutter test | 612 项全部通过 | 2026-08-21 |
 | tool/verify_changed_dart_format.ps1 | 通过 | 2026-08-21 |
-| 双端发布版构建 | 统一在界面焕新系列全部合入后于 main 执行一次 | - |
+| 双端发布版构建 | Windows release EXE：build/windows/x64/runner/Release/spark.exe（0.1MB 启动器 + 同目录 DLL），sha256=fabcf368e017ae6a69bd6151e5b9f3d5acb47ee2296b4bd387d99486a52c741f；Android **profile** APK（无 key.properties，按规范以 profile 替代 release）：build/app/outputs/flutter-apk/app-development-profile.apk（115.0MB），sha256=20b49e2dd6bccc5dc7032ed7aadce212546cf2f4c5de376791fbf3faed83fa14；构建后 gradlew --stop/--status 确认无残留 daemon | 2026-08-21 |
 
 ## 审查结论
 
@@ -113,12 +113,13 @@
 
 | SHA | 提交信息 | 对应阶段 | 验证摘要 |
 | --- | --- | --- | --- |
+| 见 git log 该分支全量提交 | 各原子提交见分支历史 | 全部实现 | 分支上 analyze/test(612)/format 全绿 |
 
 ## 交付准备（合并前收集）
 
 ### 交付摘要
 
-（待合并前补齐）
+见验收标准清单；P2/P3 含编排者人工验收反馈的三项修复（操作栏去毛玻璃、建议 chips 仅主聊天、设置恢复单卡）。
 
 ### 实际变更
 
@@ -149,10 +150,11 @@
 
 ## 合并归档（合并后在 main 补齐）
 
-- 最终状态：
-- 合入分支：
-- 最终集成提交：
-- 合并时间：
-- main 集成验证：
-- 开发计划更新：
-- 最终后续项：
+- 最终状态：已合并
+- 合入分支：`main`
+- 最终集成提交：`ad6ce77`（--no-ff 合并提交）
+- Pull Request：无（日常本地合并）
+- 合并时间：2026-08-21 19:10
+- main 集成验证：flutter analyze 无 error/warning（仅 side_chat_test.dart:175 empty_catches info，为 side chat 功能基线遗留）；flutter test 622 项中 620 通过，2 项失败（architecture_boundaries_test 的裸 on Object 与 presentation→data 越层依赖）经 git log 证实来自合并前 main 的 side chat 提交 ba76034/8407fa5，非本系列引入；双端发布版构建成功（证据见验证记录）
+- 开发计划更新：不适用（视觉/交互升级，不改变产品能力边界）
+- 最终后续项：衬线展示字体待编排者决策；操作栏穿透、SliverAppBar.large、流式光标见各阶段决策记录

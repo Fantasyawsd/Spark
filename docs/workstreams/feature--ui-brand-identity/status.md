@@ -8,7 +8,7 @@
 - Worktree：`../agent-3`
 - 基线提交：`4e9f902`（feature/ui-components-2026 tip）
 - 负责人：编排者（人类）+ Claude Code Agent
-- 状态：开发中
+- 状态：已合并
 - 最近更新：2026-08-21 18:20
 
 ## 目标
@@ -98,12 +98,13 @@
 
 | SHA | 提交信息 | 对应阶段 | 验证摘要 |
 | --- | --- | --- | --- |
+| 见 git log 该分支全量提交 | 各原子提交见分支历史 | 全部实现 | 分支上 analyze/test(612)/format 全绿 |
 
 ## 交付准备（合并前收集）
 
 ### 交付摘要
 
-（待合并前补齐）
+见验收标准清单；P2/P3 含编排者人工验收反馈的三项修复（操作栏去毛玻璃、建议 chips 仅主聊天、设置恢复单卡）。
 
 ### 实际变更
 
@@ -133,10 +134,11 @@
 
 ## 合并归档（合并后在 main 补齐）
 
-- 最终状态：
-- 合入分支：
-- 最终集成提交：
-- 合并时间：
-- main 集成验证：
-- 开发计划更新：
-- 最终后续项：
+- 最终状态：已合并
+- 合入分支：`main`
+- 最终集成提交：`bb11687`（--no-ff 合并提交）
+- Pull Request：无（日常本地合并）
+- 合并时间：2026-08-21 19:10
+- main 集成验证：flutter analyze 无 error/warning（仅 side_chat_test.dart:175 empty_catches info，为 side chat 功能基线遗留）；flutter test 622 项中 620 通过，2 项失败（architecture_boundaries_test 的裸 on Object 与 presentation→data 越层依赖）经 git log 证实来自合并前 main 的 side chat 提交 ba76034/8407fa5，非本系列引入；双端发布版构建成功（证据见验证记录）
+- 开发计划更新：不适用（视觉/交互升级，不改变产品能力边界）
+- 最终后续项：衬线展示字体待编排者决策；操作栏穿透、SliverAppBar.large、流式光标见各阶段决策记录

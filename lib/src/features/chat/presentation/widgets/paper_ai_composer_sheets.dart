@@ -188,7 +188,7 @@ class _ReasoningSheet extends StatelessWidget {
                       ),
                       onTap: () => onSelected(effort),
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
                         child: Text(
                           paperAiReasoningLabel(effort),
                           textAlign: TextAlign.center,

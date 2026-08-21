@@ -174,6 +174,7 @@ class _PaperAiConversation extends StatelessWidget {
           if (messages.isEmpty && !loading)
             _AiWelcome(
               chatContext: chatContext,
+              onPrompt: onPrompt,
               title: welcomeTitle,
               description: welcomeDescription,
             ),
@@ -216,7 +217,11 @@ class _PaperAiConversation extends StatelessWidget {
                   messages.isEmpty ||
                   messages.last.fromUser ||
                   _isEmptyAssistant(messages.last)))
-            _TypingIndicator(onCancel: onCancel, searching: searching),
+            _TypingIndicator(
+              key: const ValueKey('ai-typing-indicator'),
+              onCancel: onCancel,
+              searching: searching,
+            ),
           if (error != null)
             _AiErrorMessage(
               message: error!,
@@ -423,13 +428,22 @@ class _AiStoppedMessage extends StatelessWidget {
 class _AiWelcome extends StatelessWidget {
   const _AiWelcome({
     required this.chatContext,
+    required this.onPrompt,
     this.title,
     this.description,
   });
 
   final ChatContext chatContext;
+  final ValueChanged<String> onPrompt;
   final String? title;
   final String? description;
+
+  static const _suggestions = [
+    '总结这篇论文',
+    '提取研究方法',
+    '找相关文献',
+    '解释核心概念',
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -461,7 +475,52 @@ class _AiWelcome extends StatelessWidget {
               height: 1.5,
             ),
           ),
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final suggestion in _suggestions)
+                _SuggestionChip(
+                  label: suggestion,
+                  onTap: () => onPrompt(suggestion),
+                ),
+            ],
+          ),
         ],
+      ),
+    );
+  }
+}
+
+class _SuggestionChip extends StatelessWidget {
+  const _SuggestionChip({required this.label, required this.onTap});
+
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(SparkDesignTokens.radiusField),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 44),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: PaperAiUiTokens.composer(context),
+            borderRadius: BorderRadius.circular(SparkDesignTokens.radiusField),
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurface,
+              fontSize: SparkFontSizes.bodySmall,
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -514,7 +573,11 @@ class _AiErrorMessage extends StatelessWidget {
 }
 
 class _TypingIndicator extends StatelessWidget {
-  const _TypingIndicator({required this.onCancel, required this.searching});
+  const _TypingIndicator({
+    super.key,
+    required this.onCancel,
+    required this.searching,
+  });
 
   final VoidCallback onCancel;
   final bool searching;
@@ -527,11 +590,7 @@ class _TypingIndicator extends StatelessWidget {
         children: [
           _AssistantAvatar(size: 34),
           const SizedBox(width: 10),
-          const SizedBox(
-            width: 18,
-            height: 18,
-            child: CircularProgressIndicator(strokeWidth: 1.8),
-          ),
+          const _TypingDots(),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
@@ -563,5 +622,98 @@ class _AssistantAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return PaperAiModelAvatar(size: size);
+  }
+}
+
+/// 三点脉冲 typing 气泡：错相 scale/opacity 循环。
+class _TypingDots extends StatefulWidget {
+  const _TypingDots();
+
+  @override
+  State<_TypingDots> createState() => _TypingDotsState();
+}
+
+class _TypingDotsState extends State<_TypingDots>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1200),
+  );
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (MediaQuery.maybeOf(context)?.disableAnimations == true) return;
+    if (!_controller.isAnimating) _controller.repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final color = PaperAiUiTokens.accent(context);
+    if (MediaQuery.maybeOf(context)?.disableAnimations == true) {
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (var index = 0; index < 3; index++) _dot(color, 0),
+        ],
+      );
+    }
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, _) => Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (var index = 0; index < 3; index++)
+            _dot(color, _pulse(index).value),
+        ],
+      ),
+    );
+  }
+
+  Animation<double> _pulse(int index) {
+    return TweenSequence<double>([
+      TweenSequenceItem(
+        tween: Tween(
+          begin: 0.0,
+          end: 1.0,
+        ).chain(CurveTween(curve: Curves.easeOutCubic)),
+        weight: 0.5,
+      ),
+      TweenSequenceItem(
+        tween: Tween(
+          begin: 1.0,
+          end: 0.0,
+        ).chain(CurveTween(curve: Curves.easeOutCubic)),
+        weight: 0.5,
+      ),
+    ]).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: Interval(index * 0.2, index * 0.2 + 0.6),
+      ),
+    );
+  }
+
+  Widget _dot(Color color, double pulse) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 1.5),
+      child: Transform.scale(
+        scale: 1.0 + 0.35 * pulse,
+        child: Container(
+          width: 6,
+          height: 6,
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.4 + 0.6 * pulse),
+            shape: BoxShape.circle,
+          ),
+        ),
+      ),
+    );
   }
 }

@@ -194,14 +194,14 @@ class PaperAiComposerInputSurface extends StatelessWidget {
                   ? PaperAiUiTokens.accent(context)
                   : PaperAiUiTokens.disabledControl(context),
               foregroundColor: active ? scheme.onPrimary : scheme.outline,
-              minimumSize: const Size(40, 40),
-              maximumSize: const Size(40, 40),
+              minimumSize: const Size(44, 44),
+              maximumSize: const Size(44, 44),
               padding: EdgeInsets.zero,
               shape: const CircleBorder(),
             ),
             icon: Icon(
               sending ? Icons.stop_rounded : Icons.arrow_upward_rounded,
-              size: 20,
+              size: 22,
             ),
           ),
         ],
@@ -230,7 +230,6 @@ class _ToolbarAvatarButton extends StatelessWidget {
           minimumSize: const Size(36, 36),
           maximumSize: const Size(36, 36),
           padding: EdgeInsets.zero,
-          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
         ),
         icon: Opacity(
           opacity: onTap == null ? 0.45 : 1,
@@ -267,7 +266,6 @@ class _ToolbarIconButton extends StatelessWidget {
           minimumSize: const Size(36, 36),
           maximumSize: const Size(36, 36),
           padding: EdgeInsets.zero,
-          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
         ),
         icon: Icon(icon, size: 24, color: resolvedColor),
       ),

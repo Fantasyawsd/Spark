@@ -137,9 +137,11 @@ class _PaperGridCover extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final accent = paper.accent.color;
     final palette = SparkColors.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final accent = paper.accent.colorFor(
+      isDark ? Brightness.dark : Brightness.light,
+    );
     // 渐变基色按卡片表面色混合派生（暗色下 overlay alpha 上调），
     // 亮色呈现与透明渐变叠白底等价。
     final overlayTop = isDark ? 0.30 : 0.22;

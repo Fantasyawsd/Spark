@@ -30,12 +30,29 @@ PaperAccent _accentForTopic(Iterable<String> topics) {
 }
 
 extension PaperAccentColor on PaperAccent {
-  Color get color => switch (this) {
-        PaperAccent.blue => const Color(0xFF4B74A7),
-        PaperAccent.purple => const Color(0xFF735C9E),
-        PaperAccent.green => const Color(0xFF3E806F),
-        PaperAccent.pink => const Color(0xFFC95A73),
-        PaperAccent.azure => const Color(0xFF3F83B5),
-        PaperAccent.orange => const Color(0xFFB66A2C),
+  /// 亮色模式取值。
+  Color get color => colorFor(Brightness.light);
+
+  /// 按亮度取色：暗色变体整体提亮，
+  /// 保证作为小号文字/图标色时在暗色卡片上对比度 ≥ 4.5:1。
+  Color colorFor(Brightness brightness) => switch (this) {
+        PaperAccent.blue => brightness == Brightness.dark
+            ? const Color(0xFF7FA8D9)
+            : const Color(0xFF4B74A7),
+        PaperAccent.purple => brightness == Brightness.dark
+            ? const Color(0xFFA78BCF)
+            : const Color(0xFF735C9E),
+        PaperAccent.green => brightness == Brightness.dark
+            ? const Color(0xFF6FB3A0)
+            : const Color(0xFF3E806F),
+        PaperAccent.pink => brightness == Brightness.dark
+            ? const Color(0xFFE88A9E)
+            : const Color(0xFFC95A73),
+        PaperAccent.azure => brightness == Brightness.dark
+            ? const Color(0xFF79AEDD)
+            : const Color(0xFF3F83B5),
+        PaperAccent.orange => brightness == Brightness.dark
+            ? const Color(0xFFE0A066)
+            : const Color(0xFFB66A2C),
       };
 }

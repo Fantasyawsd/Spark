@@ -20,4 +20,8 @@ abstract final class SparkFontSizes {
   static const headlineSmall = 20.0;
   static const headline = 22.0;
   static const display = 24.0;
+  static const displaySmall = 26.0;
+
+  /// 页面级大标题（2025-2026 大标题排版层级）。
+  static const displayLarge = 28.0;
 }

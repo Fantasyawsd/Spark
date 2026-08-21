@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
@@ -102,13 +103,20 @@ abstract final class SparkTheme {
         scrolledUnderElevation: 0,
         centerTitle: false,
       ),
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: {
+          TargetPlatform.android: FadeForwardsPageTransitionsBuilder(),
+          TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.windows: FadeUpwardsPageTransitionsBuilder(),
+        },
+      ),
       cardTheme: CardThemeData(
         color: palette.card,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(SparkDesignTokens.radiusLg),
+          borderRadius: BorderRadius.circular(SparkDesignTokens.radiusCard),
           side: BorderSide(color: palette.line),
         ),
       ),
@@ -117,7 +125,7 @@ abstract final class SparkTheme {
         surfaceTintColor: Colors.transparent,
         elevation: 12,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(SparkDesignTokens.radius3Xl),
+          borderRadius: BorderRadius.circular(SparkDesignTokens.radiusOverlay),
         ),
       ),
       bottomSheetTheme: BottomSheetThemeData(
@@ -132,9 +140,9 @@ abstract final class SparkTheme {
         color: palette.card,
         surfaceTintColor: Colors.transparent,
         elevation: 8,
-        shadowColor: isDark ? const Color(0x3D000000) : const Color(0x1A182230),
+        shadowColor: SparkDesignTokens.shadowColorOf(brightness),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(SparkDesignTokens.radiusXl),
+          borderRadius: BorderRadius.circular(SparkDesignTokens.radiusOverlay),
         ),
         textStyle: TextStyle(
           color: palette.ink,
@@ -161,9 +169,9 @@ abstract final class SparkTheme {
         ),
         border: _inputBorder(Colors.transparent),
         enabledBorder: _inputBorder(Colors.transparent),
-        focusedBorder: _inputBorder(palette.primary, width: 1.4),
+        focusedBorder: _inputBorder(palette.primary, width: 2.0),
         errorBorder: _inputBorder(palette.danger),
-        focusedErrorBorder: _inputBorder(palette.danger, width: 1.4),
+        focusedErrorBorder: _inputBorder(palette.danger, width: 2.0),
       ),
       textSelectionTheme: TextSelectionThemeData(
         cursorColor: palette.primary,
@@ -179,7 +187,7 @@ abstract final class SparkTheme {
           minimumSize: const Size(44, 44),
           elevation: 0,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(SparkDesignTokens.radiusMd),
+            borderRadius: BorderRadius.circular(SparkDesignTokens.radiusField),
           ),
         ),
       ),
@@ -187,7 +195,7 @@ abstract final class SparkTheme {
         style: TextButton.styleFrom(
           foregroundColor: palette.primary,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(SparkDesignTokens.radiusMd),
+            borderRadius: BorderRadius.circular(SparkDesignTokens.radiusField),
           ),
         ),
       ),
@@ -201,7 +209,7 @@ abstract final class SparkTheme {
         behavior: SnackBarBehavior.floating,
         elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(SparkDesignTokens.radiusLg),
+          borderRadius: BorderRadius.circular(SparkDesignTokens.radiusField),
         ),
       ),
       chipTheme: ChipThemeData(
@@ -209,9 +217,7 @@ abstract final class SparkTheme {
         selectedColor: palette.primarySoft,
         disabledColor: palette.surfaceMuted,
         side: BorderSide.none,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(SparkDesignTokens.radiusSm),
-        ),
+        shape: const StadiumBorder(),
         labelStyle: TextStyle(
           color: palette.ink,
           fontSize: SparkFontSizes.footnote,
@@ -236,10 +242,10 @@ abstract final class SparkTheme {
     return TextTheme(
       headlineLarge: TextStyle(
         color: palette.ink,
-        fontSize: 30,
-        height: 1.15,
+        fontSize: SparkFontSizes.displayLarge,
+        height: 1.22,
         fontWeight: FontWeight.w800,
-        letterSpacing: 0,
+        letterSpacing: -0.5,
       ),
       headlineMedium: TextStyle(
         color: palette.ink,
@@ -257,6 +263,12 @@ abstract final class SparkTheme {
         fontSize: SparkFontSizes.titleSmall,
         fontWeight: FontWeight.w700,
       ),
+      titleSmall: TextStyle(
+        color: palette.ink,
+        fontSize: SparkFontSizes.bodyLarge,
+        height: 1.4,
+        fontWeight: FontWeight.w600,
+      ),
       bodyLarge: TextStyle(
         color: palette.ink,
         fontSize: SparkFontSizes.bodyLarge,
@@ -267,12 +279,35 @@ abstract final class SparkTheme {
         fontSize: SparkFontSizes.bodySmall,
         height: 1.45,
       ),
+      bodySmall: TextStyle(
+        color: palette.muted,
+        fontSize: SparkFontSizes.footnote,
+        height: 1.45,
+      ),
+      labelLarge: TextStyle(
+        color: palette.ink,
+        fontSize: SparkFontSizes.body,
+        height: 1.2,
+        fontWeight: FontWeight.w600,
+      ),
+      labelMedium: TextStyle(
+        color: palette.muted,
+        fontSize: SparkFontSizes.footnote,
+        height: 1.3,
+        fontWeight: FontWeight.w500,
+      ),
+      labelSmall: TextStyle(
+        color: palette.muted,
+        fontSize: SparkFontSizes.caption,
+        height: 1.3,
+        fontWeight: FontWeight.w500,
+      ),
     );
   }
 
   static OutlineInputBorder _inputBorder(Color color, {double width = 1}) {
     return OutlineInputBorder(
-      borderRadius: BorderRadius.circular(SparkDesignTokens.radiusMd),
+      borderRadius: BorderRadius.circular(SparkDesignTokens.radiusField),
       borderSide: BorderSide(color: color, width: width),
     );
   }

@@ -33,6 +33,9 @@ abstract final class SparkDesignTokens {
   static const radius2Xl = 18.0;
   static const radius3Xl = 22.0;
 
+  /// 聊天气泡朝向说话人一侧收小的尾巴圆角。
+  static const bubbleTail = 6.0;
+
   static const borderWidth = 1.0;
 
   /// 阴影基色：亮色下用墨蓝黑，暗色下用纯黑系保证可见。

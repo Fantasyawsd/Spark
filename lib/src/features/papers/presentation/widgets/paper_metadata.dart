@@ -53,11 +53,11 @@ class PaperMetadata extends StatelessWidget {
                       ? SparkColors.of(context).primary.withValues(alpha: 0.4)
                       : SparkColors.of(context).line,
                 ),
-                minimumSize: const Size(0, 30),
+                minimumSize: const Size(0, 36),
                 padding: const EdgeInsets.symmetric(
                   horizontal: SparkDesignTokens.space2,
                 ),
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                tapTargetSize: MaterialTapTargetSize.padded,
                 visualDensity: VisualDensity.compact,
               ),
               icon: Icon(

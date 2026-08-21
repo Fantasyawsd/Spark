@@ -32,9 +32,9 @@ class PaperTranslationContent extends StatelessWidget {
       key: const ValueKey('paper-translation-refresh'),
       onPressed: translating ? onCancel : onRefresh,
       style: TextButton.styleFrom(
-        minimumSize: const Size(0, 28),
+        minimumSize: const Size(0, 40),
         padding: const EdgeInsets.symmetric(horizontal: 6),
-        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        tapTargetSize: MaterialTapTargetSize.padded,
       ),
       child: Text(translating ? '停止' : '重新翻译'),
     );

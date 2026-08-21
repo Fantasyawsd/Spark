@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/motion/motion_tokens.dart';
 import '../../../../core/theme/spark_design_tokens.dart';
 import '../../../../core/theme/spark_font_sizes.dart';
+import '../../../../core/theme/spark_palette.dart';
 import '../../../../core/theme/spark_theme.dart';
 import '../../domain/paper.dart';
 import '../paper_accent.dart';
 import 'paper_presenter.dart';
 import 'topic_chip.dart';
 
-class PaperGridCard extends StatelessWidget {
+class PaperGridCard extends StatefulWidget {
   const PaperGridCard({
     super.key,
     required this.paper,
@@ -31,101 +33,148 @@ class PaperGridCard extends StatelessWidget {
   final VoidCallback onSaveLongPress;
 
   @override
+  State<PaperGridCard> createState() => _PaperGridCardState();
+}
+
+class _PaperGridCardState extends State<PaperGridCard> {
+  bool _pressed = false;
+
+  @override
   Widget build(BuildContext context) {
     final palette = SparkColors.of(context);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTap: onOpen,
-      child: Container(
-        clipBehavior: Clip.antiAlias,
-        decoration: BoxDecoration(
-          color: palette.card,
-          borderRadius: BorderRadius.circular(SparkDesignTokens.radius2Xl),
-          border: Border.all(color: palette.line),
-          boxShadow: [
-            BoxShadow(
-              color: isDark ? const Color(0x3D000000) : const Color(0x0F15213A),
-              blurRadius: 16,
-              offset: const Offset(0, 7),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _PaperGridCover(paper: paper, index: index),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(11, 10, 11, 11),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    compactAuthorLine(paper),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: SparkColors.of(context).muted,
-                      fontSize: SparkFontSizes.caption,
-                      height: 1.35,
+      onTap: widget.onOpen,
+      onTapDown: (_) => setState(() => _pressed = true),
+      onTapUp: (_) => setState(() => _pressed = false),
+      onTapCancel: () => setState(() => _pressed = false),
+      child: AnimatedScale(
+        scale: _pressed ? 0.97 : 1,
+        duration: MotionTokens.duration(context, MotionTokens.feedbackDuration),
+        curve: MotionTokens.springCurve,
+        child: Container(
+          clipBehavior: Clip.antiAlias,
+          decoration: BoxDecoration(
+            color: palette.card,
+            borderRadius: BorderRadius.circular(SparkDesignTokens.radius2Xl),
+            border: Border.all(color: palette.line),
+            boxShadow: SparkDesignTokens.interactiveShadowFor(
+                Theme.of(context).brightness),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _PaperGridCover(paper: widget.paper, index: widget.index),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(11, 10, 11, 11),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      compactAuthorLine(widget.paper),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: palette.muted,
+                        fontSize: SparkFontSizes.caption,
+                        height: 1.35,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 9),
-                  if (topicLabel(paper) case final label?)
-                    TopicChip(label: label, compact: true),
-                  if (trendLabel(paper) case final trend?)
-                    TopicChip(label: trend, compact: true),
-                  if (personalizationLabel(paper) case final label?)
-                    TopicChip(label: label, compact: true),
-                  const SizedBox(height: 10),
-                  Row(
-                    children: [
-                      GestureDetector(
-                        onTap: onLike,
-                        child: Icon(
-                          liked
-                              ? Icons.favorite_rounded
-                              : Icons.favorite_border_rounded,
-                          color: liked
-                              ? SparkColors.of(context).primary
-                              : SparkColors.of(context).muted,
-                          size: 18,
+                    const SizedBox(height: 9),
+                    if (_badges(paper: widget.paper, palette: palette)
+                        case final badges when badges.isNotEmpty)
+                      Wrap(spacing: 6, runSpacing: 6, children: badges),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: widget.onLike,
+                          child: SizedBox(
+                            width: 40,
+                            height: 40,
+                            child: Center(
+                              child: Icon(
+                                widget.liked
+                                    ? Icons.favorite_rounded
+                                    : Icons.favorite_border_rounded,
+                                color: widget.liked
+                                    ? palette.primary
+                                    : palette.muted,
+                                size: 18,
+                              ),
+                            ),
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        adjustedCompactCount(
-                          paper.metrics.likes,
-                          delta: liked ? 1 : 0,
+                        const SizedBox(width: 4),
+                        Text(
+                          adjustedCompactCount(
+                            widget.paper.metrics.likes,
+                            delta: widget.liked ? 1 : 0,
+                          ),
+                          style: TextStyle(
+                            color: palette.muted,
+                            fontSize: SparkFontSizes.tiny,
+                          ),
                         ),
-                        style: TextStyle(
-                          color: SparkColors.of(context).muted,
-                          fontSize: SparkFontSizes.tiny,
+                        const Spacer(),
+                        GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: widget.onSave,
+                          onLongPress: widget.onSaveLongPress,
+                          child: SizedBox(
+                            width: 40,
+                            height: 40,
+                            child: Center(
+                              child: Icon(
+                                widget.saved
+                                    ? Icons.bookmark_rounded
+                                    : Icons.bookmark_border_rounded,
+                                color: widget.saved
+                                    ? palette.primary
+                                    : palette.muted,
+                                size: 18,
+                              ),
+                            ),
+                          ),
                         ),
-                      ),
-                      const Spacer(),
-                      GestureDetector(
-                        onTap: onSave,
-                        onLongPress: onSaveLongPress,
-                        child: Icon(
-                          saved
-                              ? Icons.bookmark_rounded
-                              : Icons.bookmark_border_rounded,
-                          color: saved
-                              ? SparkColors.of(context).primary
-                              : SparkColors.of(context).muted,
-                          size: 18,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+                      ],
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
+  }
+
+  /// 徽标差异化：主题中性、Trending 琥珀火焰、「为你推荐」品牌粉。
+  List<Widget> _badges({
+    required Paper paper,
+    required SparkPalette palette,
+  }) {
+    return [
+      if (topicLabel(paper) case final label?)
+        TopicChip(label: label, compact: true),
+      if (trendLabel(paper) case final trend?)
+        TopicChip(
+          label: trend,
+          compact: true,
+          tonal: true,
+          color: palette.orange,
+          icon: Icons.local_fire_department_rounded,
+        ),
+      if (personalizationLabel(paper) case final label?)
+        TopicChip(
+          label: label,
+          compact: true,
+          tonal: true,
+          color: palette.primary,
+          icon: Icons.auto_awesome_rounded,
+        ),
+    ];
   }
 }
 
@@ -192,8 +241,8 @@ class _PaperGridCover extends StatelessWidget {
             style: TextStyle(
               color: SparkColors.of(context).ink,
               fontSize: SparkFontSizes.bodyLarge,
-              height: 1.2,
-              fontWeight: FontWeight.w900,
+              height: 1.3,
+              fontWeight: FontWeight.w800,
             ),
           ),
           const SizedBox(height: 11),

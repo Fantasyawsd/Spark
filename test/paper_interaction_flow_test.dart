@@ -246,7 +246,10 @@ void main() {
     await tester.pump();
     await tester.tap(find.byTooltip('发送'));
     await tester.pump(const Duration(milliseconds: 100));
-    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('ai-typing-indicator')),
+      findsOneWidget,
+    );
     await tester.pump(const Duration(milliseconds: 200));
     await tester.pumpAndSettle();
     expect(find.textContaining('DeepSeek Markdown'), findsOneWidget);

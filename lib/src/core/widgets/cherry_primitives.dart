@@ -82,10 +82,13 @@ class CherrySurface extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
     final shadow = switch (level) {
       CherrySurfaceLevel.flat => null,
-      CherrySurfaceLevel.interactive => SparkDesignTokens.interactiveShadow,
-      CherrySurfaceLevel.floating => SparkDesignTokens.floatingShadow,
+      CherrySurfaceLevel.interactive =>
+        SparkDesignTokens.interactiveShadowFor(brightness),
+      CherrySurfaceLevel.floating =>
+        SparkDesignTokens.floatingShadowFor(brightness),
     };
     return Container(
       margin: margin,

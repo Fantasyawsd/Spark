@@ -140,7 +140,9 @@ class _DiscoveryCardState extends State<_DiscoveryCard> {
         color: SparkColors.of(context).card,
         borderRadius: BorderRadius.circular(SparkDesignTokens.radius2Xl),
         border: Border.all(color: SparkColors.of(context).line),
-        boxShadow: SparkDesignTokens.interactiveShadow,
+        boxShadow: SparkDesignTokens.interactiveShadowFor(
+          Theme.of(context).brightness,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

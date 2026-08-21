@@ -57,7 +57,9 @@ class SparkBottomNav extends StatelessWidget {
               color: SparkColors.of(context).popover.withValues(alpha: 0.96),
               borderRadius: BorderRadius.circular(SparkDesignTokens.radiusXl),
               border: Border.all(color: SparkColors.of(context).line),
-              boxShadow: SparkDesignTokens.floatingShadow,
+              boxShadow: SparkDesignTokens.floatingShadowFor(
+                Theme.of(context).brightness,
+              ),
             ),
             child: SafeArea(
               top: false,

@@ -1,7 +1,7 @@
 # Spark 开发路线图
 
 > 状态：持续维护
-> 最近更新：2026-08-14
+> 最近更新：2026-08-21
 
 本文是开发计划的唯一文件，记录产品边界、当前能力、开发任务与后续方向。
 发布范围和证据归入 `releases/<version>/`；架构、Git 与发布规则分别见
@@ -312,6 +312,47 @@ RecommendationScore =
 | 1 | 收藏分组排序与批量移动 | 待开始 | 数据层已保留顺序能力；删除分组目前会一并移除组内收藏关系 |
 | 2 | 个人研究数据导出 / 导入 / 备份恢复 | 待开始 | 定义可验证的导出格式、冲突处理和恢复失败反馈 |
 | 3 | 用户侧迁移失败恢复 | 进行中 | 在现有占用统计、分类清理和版本迁移基础上，补齐显式恢复、损坏隔离结果和用户反馈 |
+
+### 3.4 代码质量审计修复（2026-08）
+
+2026-08-21 完成一轮全栈代码质量审计：16 路模块/维度并行扫描（Flutter 客户端 + Python 服务端 + 测试），每条发现经「事实核查 + 影响评估」双验证者对抗复核。客观基线全部通过：`flutter analyze` 无问题、`flutter test` 611 项全过、服务端 `pytest` 170 项全过。确认问题 58 条（high 3 / medium 12 / low 43），无 critical；架构合规整体良好，未发现 SQL 注入与密钥泄漏路径。本节记录需排期的确认项；low 级与争议项择要归档，完整明细（含证据与验证票记）由编排者留存，不在仓库维护副本。
+
+#### High（优先修复）
+
+| # | 问题 | 位置 | 说明 |
+| --- | --- | --- | --- |
+| H1 | 评论「孙回复」永久不可见 | `paper_comments_sheet.dart` | 对回复再回复时 `parentId` 指向回复而非根评论，展示层只渲染两级结构，数据已持久化但在 UI 永久不可见；发送前应将 `parentId` 归一化到根评论，或对回复禁用「回复」入口 |
+| H2 | 个性化画像元数据只覆盖内置种子 | `spark_dependencies.dart` | `profileMetadata` 仅由 6 篇种子论文构建，生产目录论文 ID 全部落空，画像在真实使用中几乎恒为空，行为采集却照常付出隐私成本；需在目录加载/刷新时合入远程论文元数据 |
+| H3 | 数据集重导入复活已撤稿论文 | `server/spark_papers/dataset_storage.py` | `apply_paper_batch` UPSERT 中 `withdrawn` 被 `excluded` 无条件覆盖，换文件名重跑 import-dataset 会清除撤稿标记使其重回推荐流；改为 `MAX(papers.withdrawn, excluded.withdrawn)` |
+
+#### Medium
+
+| # | 问题 | 位置 | 说明 |
+| --- | --- | --- | --- |
+| M1 | 「极致」推理档必然失败 | `deepseek_chat_ai_service.dart` | `max_tokens` 固定 4096 与 max 档 `budget_tokens` 相等，违反 Anthropic 协议 budget < max_tokens；low 档 512 低于 1024 下限同样违规；联网搜索服务同构代码相同 |
+| M2 | 长回答静默截断 | `deepseek_chat_ai_service.dart` | thinking 计入 max_tokens 后正文仅剩约 2048 token；SSE 解析忽略 `stop_reason=max_tokens`，残缺回答被标记完整并持久化 |
+| M3 | 行内代码被 LaTeX 预处理破坏 | `spark_markdown_processing.dart` | 预处理只保护围栏代码块，行内代码中的 `\(`、`$x$`、孤立 `{` 被改写甚至触发全文降级 |
+| M4 | LaTeX 兜底触发过宽 | `spark_markdown_processing.dart` | 正文出现单个孤立 `$` 或 `{` 即整篇放弃公式渲染并把命令剥成裸词 |
+| M5 | 流式翻译整卡高频重建 | `paper_tab_body.dart` | 翻译流式期间约 30fps 整卡 setState，每次重建对全文跑正则与 TextPainter 测高 |
+| M6 | 流式 Markdown O(n²) 重解析 | `spark_markdown.dart` | 每个增量 chunk 触发全文多遍扫描 + 全量 AST 重解析 + 代码重新分词，长回复打字机卡顿 |
+| M7 | 会话存储单文件无上限 | `file_chat_session_repository.dart` | 全部会话存单一 JSON 且每轮对话全量重写；会话列表反序列化全部消息只为取预览；需按会话拆分并限制规模 |
+| M8 | Markdown 高度误判致溢出 | `paper_tab_body.dart` | 以纯文本测高近似 Markdown 渲染高度，临界内容溢出渲染且此时无「展开全文」入口 |
+| M9 | 编辑标志与消息删除不同步 | `paper_ai_chat_screen.dart` | `_editingLatestPrompt` 布尔标志在消息删除后不复位，可误改写历史消息或静默丢弃输入；应记录被编辑消息标识并在删除时复位 |
+| M10 | star velocity 秒级观测放大 | `server/spark_papers/star_velocity.py` | 无最小时间基线，HF 与 GitHub 双源同日秒级间隔观测使 ±1 star 缓存差放大成极端速度，扭曲 trending 排序 |
+| M11 | 归一化测试打在非生产路径 | `server/spark_papers/recommendation.py` | 生产走 `_score_candidates`，`score_paper` 走语义不同的 `_normalized_signal`，全部归一化测试只覆盖后者，两套实现会静默漂移 |
+
+#### Low 与系统性主题（择要）
+
+- **占位假数据冒充真实数据**（违反 AGENTS.md §11，共 3 项）：中文摘要占位符「中文摘要尚未生成。」被注入 AI 提示词；本地评论硬编码「Alex Chen / 北京」伪造身份；community 种子以真实学者姓名伪造发言、认证标记与互动数。
+- **性能债**：OpenAlex 增强 N+1 串行请求；评论输入每字符整面板重建；`VersionedLocalJsonStore.updateMap` 同事务双重读取解码；AI 消息列表非虚拟化；行为事件每次 append 全量读写；个性化召回最多 84 次串行查询（venue/subject/keyword 全表扫描）；HF 默认配置下 etag 恒失效且快照无限累积。
+- **健壮性**：会话设置加载被消息加载失败连带跳过；行为采集链路零错误处理；非 2xx 非 JSON 错误体丢失 HTTP 状态码；GitHub 限速弃整批已抓数据；单页 sync 全部记录被拒仍推进 etag/cursor（对照分页路径已有保护）。
+- **死代码与假交互**：会话标题编辑不持久化；`PaperAiContent.onPrompt` 死参数；来源面板超出 4 条无查看途径；preview 工厂行为埋点写入系统临时目录；`_openAiChatById` 缺 catalog 兜底；Android 键盘圆角贴合失效。
+- **服务端一致性**：`admission_reason` 依赖 set 迭代顺序跨进程漂移；enrichment 导入事务外读-合并-写回；物化候选池 JOIN 缺 admitted/withdrawn 过滤；`trend_pool_ratio` 配置字段零读取点。
+- **并发契约**：`ThreadingHTTPServer` 多线程共享单一 `check_same_thread=False` SQLite 连接且无锁（Python sqlite3 文档要求调用方自行串行化）；当前写路径简单故危害有限，建议加 `threading.Lock`。
+- **架构**：`recommendation.py` 直接 import API DTO 并将其 JSON 写库，DTO 表现格式固化为存储格式（本轮唯一确认的分层违规）。
+- **测试补强**：`identity.py`（去重合并核心）无直接单测；`test_pipeline.py` 约半数缺 try/finally 保护 `store.close()`；`_waitForCompletedReply` 轮询耗尽静默通过。
+
+修复节奏：High 三项与小改动 Medium（M1/M2/M3/M9/M10）优先；M5–M7 性能项与 Low 主题随相关模块迭代安排，不设专项版本。
 
 ---
 

@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart' show kReleaseMode;
+
 import 'app_environment.dart';
 import 'feature_flags.dart';
 
@@ -32,12 +34,16 @@ final class AppConfig {
   }) {
     final flavor = platformFlavor?.trim();
     final requested = requestedEnvironment?.trim();
+    // release 构建固定 production,发布安全不依赖启动传参;
+    // debug/profile 运行默认 development,验收时实验功能不再因漏传
+    // SPARK_ENV 而静默消失。显式 flavor / SPARK_ENV 仍可覆盖默认值。
+    final fallbackEnvironment = kReleaseMode ? 'production' : 'development';
     final environment = AppEnvironment.parse(
       flavor?.isNotEmpty == true
           ? flavor!
           : requested?.isNotEmpty == true
               ? requested!
-              : 'production',
+              : fallbackEnvironment,
     );
 
     if (flavor?.isNotEmpty == true && requested?.isNotEmpty == true) {

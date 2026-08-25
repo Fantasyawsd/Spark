@@ -54,6 +54,17 @@ void main() {
     expect(config.features.experimentalPdfAi, isFalse);
   });
 
+  test('run-mode builds default to development without explicit environment',
+      () {
+    // flutter test 运行在非 release 构建(kReleaseMode == false),
+    // 因此无传参时应解析为 development 并开启实验功能;
+    // release 分支为编译期常量,无法在运行时测试覆盖。
+    final config = AppConfig.resolve();
+
+    expect(config.environment, AppEnvironment.development);
+    expect(config.features.experimentalConferenceChannels, isTrue);
+  });
+
   test('platform flavor and requested environment must match', () {
     final development = AppConfig.resolve(
       platformFlavor: 'development',

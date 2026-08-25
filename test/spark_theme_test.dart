@@ -134,8 +134,12 @@ void main() {
     final cardShape = light.cardTheme.shape as RoundedRectangleBorder?;
     expect(cardShape?.side, BorderSide.none);
 
-    final trackOn =
-        light.switchTheme!.trackColor!.resolve({WidgetState.selected});
+    // analyzer 与测试编译器对 trackColor 可空性视图不一致，经 Object?
+    // 显式收窄，两种工具均无告警。
+    final Object? trackProp = light.switchTheme.trackColor;
+    final trackOn = (trackProp as WidgetStateProperty<Color?>?)?.resolve(
+      const {WidgetState.selected},
+    );
     expect(trackOn, const Color(0xFF34C759));
 
     final dark = SparkTheme.dark();

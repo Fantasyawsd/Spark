@@ -30,10 +30,10 @@ class SparkSheetHandle extends StatelessWidget {
       height: height,
       child: Center(
         child: Container(
-          width: 34,
-          height: 4,
+          width: 36,
+          height: 5,
           decoration: BoxDecoration(
-            color: SparkColors.of(context).line,
+            color: SparkColors.of(context).subtle,
             borderRadius: BorderRadius.circular(99),
           ),
         ),

@@ -60,13 +60,13 @@ class SparkCodeTheme {
           boolean: const Color(0xFFC18401),
         );
 
-  /// 暗色表面取值与应用暗色体系（canvas #10151C / card #171D27 /
-  /// line #2A3140）同族，语法色保留 Atom One 配色。
+  /// 暗色中性层与应用暗色体系（canvas #000000 / card #1C1C1E /
+  /// line #38383A）同族，语法色保留 Atom One 配色。
   const SparkCodeTheme.dark()
       : this(
-          background: const Color(0xFF1B222E),
-          toolbarBackground: const Color(0xFF161C26),
-          border: const Color(0xFF2A3140),
+          background: const Color(0xFF2C2C2E),
+          toolbarBackground: const Color(0xFF242426),
+          border: const Color(0xFF3A3A3C),
           foreground: const Color(0xFFABB2BF),
           keyword: const Color(0xFFC678DD),
           string: const Color(0xFF98C379),

@@ -138,7 +138,7 @@ class _ChannelTab extends StatelessWidget {
                     ? SparkColors.of(context).ink
                     : SparkColors.of(context).muted,
                 fontSize: SparkFontSizes.body,
-                fontWeight: selected ? FontWeight.w800 : FontWeight.w500,
+                fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
                 fontFamily: SparkTheme.platformCjkFontFamily(),
               ),
             ),

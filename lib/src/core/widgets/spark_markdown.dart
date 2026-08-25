@@ -78,11 +78,11 @@ MarkdownStyleSheet paperReaderMarkdownStyle(BuildContext context) {
     p: body,
     h1: body.copyWith(
       fontSize: SparkFontSizes.headline,
-      fontWeight: FontWeight.w800,
+      fontWeight: FontWeight.w700,
     ),
     h2: body.copyWith(
       fontSize: SparkFontSizes.headlineSmall,
-      fontWeight: FontWeight.w800,
+      fontWeight: FontWeight.w700,
     ),
     h3: body.copyWith(
       fontSize: SparkFontSizes.titleLarge,
@@ -132,11 +132,11 @@ MarkdownStyleSheet sparkMarkdownStyle(
     p: body,
     h1: body.copyWith(
       fontSize: SparkFontSizes.titleLarge,
-      fontWeight: FontWeight.w800,
+      fontWeight: FontWeight.w700,
     ),
     h2: body.copyWith(
       fontSize: SparkFontSizes.titleSmall,
-      fontWeight: FontWeight.w800,
+      fontWeight: FontWeight.w700,
     ),
     h3: body.copyWith(
       fontSize: SparkFontSizes.body,

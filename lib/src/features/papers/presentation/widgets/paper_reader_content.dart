@@ -144,7 +144,7 @@ class PaperReaderEmptyState extends StatelessWidget {
           children: [
             Icon(icon, color: SparkColors.of(context).muted, size: 28),
             const SizedBox(height: 12),
-            Text(title, style: const TextStyle(fontWeight: FontWeight.w800)),
+            Text(title, style: const TextStyle(fontWeight: FontWeight.w700)),
             const SizedBox(height: 6),
             Text(
               message,

@@ -67,17 +67,13 @@ abstract final class SparkDesignTokens {
             BoxShadow(
                 color: Color(0x14000000), blurRadius: 8, offset: Offset(0, 4)),
             BoxShadow(
-                color: Color(0x1F000000),
-                blurRadius: 24,
-                offset: Offset(0, 8)),
+                color: Color(0x1F000000), blurRadius: 24, offset: Offset(0, 8)),
           ],
         Brightness.dark => const [
             BoxShadow(
                 color: Color(0x4D000000), blurRadius: 8, offset: Offset(0, 4)),
             BoxShadow(
-                color: Color(0x66000000),
-                blurRadius: 24,
-                offset: Offset(0, 8)),
+                color: Color(0x66000000), blurRadius: 24, offset: Offset(0, 8)),
           ],
       };
 

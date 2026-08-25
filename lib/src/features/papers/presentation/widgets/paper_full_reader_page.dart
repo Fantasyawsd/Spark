@@ -82,7 +82,7 @@ class _PaperFullReaderPageState extends State<PaperFullReaderPage> {
           style: TextStyle(
             color: palette.ink,
             fontSize: SparkFontSizes.titleSmall,
-            fontWeight: FontWeight.w800,
+            fontWeight: FontWeight.w700,
           ),
         ),
         actions: [

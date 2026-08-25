@@ -114,7 +114,7 @@ class _CommentTile extends StatelessWidget {
               style: TextStyle(
                 color: comment.color,
                 fontSize: compact ? 9 : 11,
-                fontWeight: FontWeight.w800,
+                fontWeight: FontWeight.w700,
               ),
             ),
           ),

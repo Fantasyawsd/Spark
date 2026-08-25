@@ -84,7 +84,7 @@ class _PaperFavoriteGroupSheetState extends State<_PaperFavoriteGroupSheet> {
                         style: TextStyle(
                           color: SparkColors.of(context).ink,
                           fontSize: SparkFontSizes.titleLarge,
-                          fontWeight: FontWeight.w800,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
                     ),

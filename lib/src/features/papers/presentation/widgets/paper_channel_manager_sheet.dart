@@ -76,7 +76,7 @@ class _PaperChannelManagerSheetState extends State<PaperChannelManagerSheet> {
                       style: TextStyle(
                         color: SparkColors.of(context).ink,
                         fontSize: SparkFontSizes.titleSmall,
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
                   ),

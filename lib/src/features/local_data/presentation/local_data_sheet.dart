@@ -54,7 +54,7 @@ class LocalDataSheet extends StatelessWidget {
                           style: TextStyle(
                             color: SparkColors.of(context).ink,
                             fontSize: SparkFontSizes.headlineSmall,
-                            fontWeight: FontWeight.w800,
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
                       ),

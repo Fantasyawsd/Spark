@@ -40,6 +40,10 @@ class SparkPalette extends ThemeExtension<SparkPalette> {
   });
 
   /// 亮色 palette；[accentColor] 决定 primary 系列。
+  ///
+  /// 中性色对齐 iOS HIG：canvas = systemGroupedBackground（#F2F2F7），
+  /// card = secondarySystemGroupedBackground（白），line = separator，
+  /// 灰阶层依次为 label / secondaryLabel / tertiaryLabel 的合成近似值。
   factory SparkPalette.light([
     SparkThemeColor accentColor = SparkThemeColor.pink,
   ]) {
@@ -47,38 +51,41 @@ class SparkPalette extends ThemeExtension<SparkPalette> {
       primary: accentColor.value,
       primarySoft: accentColor.soft,
       primaryPale: accentColor.pale,
-      ink: const Color(0xFF182230),
-      muted: const Color(0xFF667085),
-      subtle: const Color(0xFF98A2B3),
-      foregroundTertiary: const Color(0xFF7C8798),
-      foregroundDisabled: const Color(0xFFB6BFCC),
-      line: const Color(0xFFE4E7EC),
-      lineStrong: const Color(0xFFD0D5DD),
-      canvas: const Color(0xFFF7F8FA),
+      ink: const Color(0xFF000000),
+      muted: const Color(0xFF8A8A8E),
+      subtle: const Color(0xFFAEAEB2),
+      foregroundTertiary: const Color(0xFF8E8E93),
+      foregroundDisabled: const Color(0xFFC7C7CC),
+      line: const Color(0xFFE5E5EA),
+      lineStrong: const Color(0xFFD1D1D6),
+      canvas: const Color(0xFFF2F2F7),
       card: Colors.white,
-      popover: const Color(0xFFFCFCFD),
-      surfaceMuted: const Color(0xFFF2F4F7),
-      surfaceStrong: const Color(0xFFEAECF0),
-      accent: const Color(0xFFF0F2F5),
-      accentForeground: const Color(0xFF182230),
-      blue: const Color(0xFF356FAE),
-      purple: const Color(0xFF7256A8),
-      green: const Color(0xFF267A65),
-      orange: const Color(0xFFAD5A17),
-      danger: const Color(0xFFB42318),
-      dangerSoft: const Color(0xFFFEF3F2),
-      dangerBorder: const Color(0xFFF0B4AE),
-      warning: const Color(0xFFB54708),
-      barrier: const Color(0x66182230),
+      popover: const Color(0xFFF7F7F8),
+      surfaceMuted: const Color(0xFFEFF0F2),
+      surfaceStrong: const Color(0xFFE4E5E9),
+      accent: const Color(0xFFEEEEF0),
+      accentForeground: const Color(0xFF000000),
+      blue: const Color(0xFF007AFF),
+      purple: const Color(0xFFAF52DE),
+      green: const Color(0xFF248A3D),
+      orange: const Color(0xFFC93400),
+      danger: const Color(0xFFFF3B30),
+      dangerSoft: const Color(0xFFFFE5E3),
+      dangerBorder: const Color(0xFFF5B5B0),
+      warning: const Color(0xFFB25000),
+      barrier: const Color(0x663C3C43),
     );
   }
 
   /// 暗色 palette；primary 系列使用强调色的暗色提亮变体，
   /// primarySoft / primaryPale 由 darkValue 按卡片表面混合派生。
+  ///
+  /// 中性色对齐 iOS 暗色语义：canvas = 纯黑（systemBackground dark），
+  /// card = elevated #1C1C1E，popover / fill 层取 #2C2C2E–#3A3A3C。
   factory SparkPalette.dark([
     SparkThemeColor accentColor = SparkThemeColor.pink,
   ]) {
-    const darkCard = Color(0xFF171D27);
+    const darkCard = Color(0xFF1C1C1E);
     return SparkPalette(
       primary: accentColor.darkValue,
       primarySoft: Color.alphaBlend(
@@ -89,28 +96,31 @@ class SparkPalette extends ThemeExtension<SparkPalette> {
         accentColor.darkValue.withValues(alpha: 0.14),
         darkCard,
       ),
-      ink: const Color(0xFFE8ECF2),
-      muted: const Color(0xFF98A2B3),
-      subtle: const Color(0xFF667085),
-      foregroundTertiary: const Color(0xFF7C8798),
-      foregroundDisabled: const Color(0xFF525C6A),
-      line: const Color(0xFF2A3140),
-      lineStrong: const Color(0xFF3A4354),
-      canvas: const Color(0xFF10151C),
+      ink: const Color(0xFFFFFFFF),
+      muted: const Color(0xFF98989F),
+      subtle: const Color(0xFF6C6C70),
+      foregroundTertiary: const Color(0xFF7C7C80),
+      foregroundDisabled: const Color(0xFF48484A),
+      line: const Color(0xFF38383A),
+      lineStrong: const Color(0xFF48484A),
+      canvas: const Color(0xFF000000),
       card: darkCard,
-      popover: const Color(0xFF1B222E),
-      surfaceMuted: const Color(0xFF1E2530),
-      surfaceStrong: const Color(0xFF28303E),
-      accent: const Color(0xFF232B38),
-      accentForeground: const Color(0xFFE8ECF2),
-      blue: const Color(0xFF6FA3DC),
-      purple: const Color(0xFFA58AD0),
-      green: const Color(0xFF4FAD92),
-      orange: const Color(0xFFD98A4A),
-      danger: const Color(0xFFF04438),
-      dangerSoft: const Color(0xFF3B1512),
-      dangerBorder: const Color(0xFF8C2F25),
-      warning: const Color(0xFFF79009),
+      popover: const Color(0xFF2C2C2E),
+      surfaceMuted: const Color(0xFF2C2C2E),
+      surfaceStrong: const Color(0xFF3A3A3C),
+      accent: const Color(0xFF333336),
+      accentForeground: const Color(0xFFFFFFFF),
+      blue: const Color(0xFF0A84FF),
+      purple: const Color(0xFFBF5AF2),
+      green: const Color(0xFF30D158),
+      orange: const Color(0xFFFF9F0A),
+      danger: const Color(0xFFFF453A),
+      dangerSoft: const Color(0xFF3A1512),
+      dangerBorder: Color.alphaBlend(
+        const Color(0xFFFF453A).withValues(alpha: 0.5),
+        darkCard,
+      ),
+      warning: const Color(0xFFFF9F0A),
       barrier: const Color(0x8C000000),
     );
   }

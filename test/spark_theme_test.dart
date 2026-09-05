@@ -161,6 +161,77 @@ void main() {
     expect(theme.brightness, Brightness.dark);
   });
 
+  for (final brightness in Brightness.values) {
+    for (final color in SparkThemeColor.values) {
+      testWidgets(
+        '${brightness.name}/${color.name} switches distinguish disabled states and ignore taps',
+        (tester) async {
+          final theme = brightness == Brightness.dark
+              ? SparkTheme.dark(color)
+              : SparkTheme.light(color);
+          final changes = <bool>[];
+          await tester.pumpWidget(
+            MaterialApp(
+              theme: theme,
+              home: Scaffold(
+                body: Column(
+                  children: [
+                    for (final selected in [false, true]) ...[
+                      Switch(
+                        key: ValueKey('enabled-$selected'),
+                        value: selected,
+                        onChanged: changes.add,
+                      ),
+                      Switch(
+                        key: ValueKey('disabled-$selected'),
+                        value: selected,
+                        onChanged: null,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          );
+
+          final switchTheme = SwitchTheme.of(
+            tester.element(find.byKey(const ValueKey('enabled-true'))),
+          );
+          final track = switchTheme.trackColor!;
+          expect(
+            track.resolve(const {WidgetState.selected}),
+            brightness == Brightness.dark
+                ? const Color(0xFF30D158)
+                : const Color(0xFF34C759),
+          );
+          final disabledTracks = <Color?>[];
+          for (final selected in [false, true]) {
+            final enabledStates = <WidgetState>{
+              if (selected) WidgetState.selected,
+            };
+            final disabledStates = {...enabledStates, WidgetState.disabled};
+            final disabledTrack = track.resolve(disabledStates);
+            disabledTracks.add(disabledTrack);
+            expect(disabledTrack, isNot(track.resolve(enabledStates)));
+            expect(disabledTrack, isNotNull);
+
+            await tester.tap(find.byKey(ValueKey('disabled-$selected')));
+            await tester.pumpAndSettle();
+          }
+          expect(disabledTracks[0], isNot(disabledTracks[1]));
+          expect(changes, isEmpty);
+
+          await tester.tap(find.byKey(const ValueKey('enabled-false')));
+          await tester.pumpAndSettle();
+          await tester.tap(find.byKey(const ValueKey('enabled-true')));
+          await tester.pumpAndSettle();
+          expect(changes, [true, false]);
+          expect(tester.takeException(), isNull);
+        },
+      );
+    }
+  }
+
   testWidgets('dark mode paints the scaffold with the dark canvas',
       (tester) async {
     await tester.pumpWidget(

@@ -238,11 +238,27 @@ abstract final class SparkTheme {
       ),
       // iOS 开关签名色：选中轨道固定系统绿，不随强调色变化。
       switchTheme: SwitchThemeData(
-        thumbColor: WidgetStateProperty.all(Colors.white),
+        thumbColor: WidgetStateProperty.resolveWith(
+          (states) => states.contains(WidgetState.disabled)
+              ? Color.alphaBlend(
+                  Colors.white.withValues(alpha: 0.5),
+                  palette.card,
+                )
+              : Colors.white,
+        ),
         trackColor: WidgetStateProperty.resolveWith(
-          (states) => states.contains(WidgetState.selected)
-              ? (isDark ? const Color(0xFF30D158) : const Color(0xFF34C759))
-              : (isDark ? const Color(0xFF39393D) : const Color(0xFFE9E9EA)),
+          (states) {
+            final trackColor = states.contains(WidgetState.selected)
+                ? (isDark ? const Color(0xFF30D158) : const Color(0xFF34C759))
+                : (isDark ? const Color(0xFF39393D) : const Color(0xFFE9E9EA));
+            // 加载或不可用时仍保留开关值，用减淡轨道表达不可操作。
+            return states.contains(WidgetState.disabled)
+                ? Color.alphaBlend(
+                    trackColor.withValues(alpha: 0.5),
+                    palette.card,
+                  )
+                : trackColor;
+          },
         ),
         trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
       ),

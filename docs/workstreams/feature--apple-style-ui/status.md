@@ -64,7 +64,7 @@
 ## 当前进度
 
 - 已完成：Phase A（c295b5d）、Phase B（11daa5a）、Phase C（67184bb），2026-08-25 已通过格式检查、analyze 和全量测试；2026-09-05 补齐开关禁用态，26 项定向测试、analyze 和格式检查通过。
-- 正在进行：等待编排者确认启动 Windows release 应用并进行实机验收。
+- 正在进行：Windows release 应用已按编排者「验收」指令启动，等待人工验收反馈。
 - 下一步：Windows 实机验收 → /test → /review → /finish。
 - 阻塞项：无
 
@@ -90,14 +90,15 @@
 | `flutter analyze` | No issues found | 2026-09-05 |
 | `flutter test test/spark_theme_test.dart test/personalization_privacy_controller_test.dart` | 22 项通过（含 10 项开关主题矩阵回归） | 2026-09-05 |
 | `flutter test --no-pub test/profile_personalization_section_test.dart` | 4 项通过 | 2026-09-05 |
-| Windows 实机验收（flutter run -d windows，用户执行） | 待执行 | — |
+| `flutter run --no-pub -d windows --release --dart-define=SPARK_ENV=development`（此前已执行 `flutter pub get`） | Windows release 构建成功并已启动；Spark 窗口与 agent-1 产物进程已确认，人工验收结果待反馈 | 2026-09-05 |
 
 ### 备注
 
 - `spark_theme_test` 对白对比度门限由 4.5 放宽至 3.0：iOS 系统色作按钮底色配白字时 Apple 自身即 ~4.0（systemBlue #007AFF = 4.02），已在测试注释中写明依据；暗色对卡片 ≥4.5 门限保留且全部通过。
 - 工作区遗留 `windows/flutter/generated_*` 为 Flutter 构建自动再生文件，与本任务无关，不纳入提交，收尾时按仓库惯例处理。
 - 2026-09-05 仓库迁移后，从 `D:/Spark-worktrees/Spark` 执行 `git worktree repair D:/Spark-worktrees/agent-1`，修复双方仍指向旧桌面目录的关联；未移动源码或改动分支历史。
-- 本轮继续 `/develop`，未重新执行全量测试或发布构建；Windows 实机验收尚未执行。确认启动后使用 `flutter run -d windows --release --dart-define=SPARK_ENV=development`，以满足 release 验收要求并保留 development 功能。
+- 本轮继续 `/develop`，未重新执行全量测试。编排者随后要求「验收」，已启动 development 配置的 Windows release 应用；未执行 Android 构建，未进入 /test、/review 或 /finish。
+- 首次启动因迁移前 `.plugin_symlinks` 残留发生 `PathExistsException`；同时确认 CMake 缓存仍指向旧桌面目录。将 `windows/flutter/ephemeral` 与 `build/windows/x64` 隔离到本任务 `build/relocation-backup-20260905-230913/` 后重新生成，Windows release 在 97.7 秒内构建成功。产物：`build/windows/x64/runner/Release/spark.exe`。
 
 ## 审查结论
 

@@ -71,11 +71,10 @@ abstract final class SparkTheme {
       inversePrimary: palette.primarySoft,
       surfaceTint: Colors.transparent,
       surfaceContainerLowest: palette.card,
-      surfaceContainerLow:
-          isDark ? const Color(0xFF1B222E) : const Color(0xFFFAFBFC),
+      surfaceContainerLow: palette.popover,
       surfaceContainer: palette.surfaceMuted,
       surfaceContainerHigh:
-          isDark ? const Color(0xFF232B38) : const Color(0xFFEEF0F3),
+          isDark ? const Color(0xFF323234) : const Color(0xFFECECEF),
       surfaceContainerHighest: palette.surfaceStrong,
     );
     final textTheme = _textTheme(palette);
@@ -101,7 +100,12 @@ abstract final class SparkTheme {
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         scrolledUnderElevation: 0,
-        centerTitle: false,
+        centerTitle: true,
+        titleTextStyle: TextStyle(
+          color: palette.ink,
+          fontSize: SparkFontSizes.title,
+          fontWeight: FontWeight.w600,
+        ),
       ),
       pageTransitionsTheme: const PageTransitionsTheme(
         builders: {
@@ -117,15 +121,14 @@ abstract final class SparkTheme {
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(SparkDesignTokens.radiusCard),
-          side: BorderSide(color: palette.line),
         ),
       ),
       dialogTheme: DialogThemeData(
         backgroundColor: palette.card,
         surfaceTintColor: Colors.transparent,
-        elevation: 12,
+        elevation: 8,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(SparkDesignTokens.radiusOverlay),
+          borderRadius: BorderRadius.circular(SparkDesignTokens.radiusDialog),
         ),
       ),
       bottomSheetTheme: BottomSheetThemeData(
@@ -169,7 +172,7 @@ abstract final class SparkTheme {
         ),
         border: _inputBorder(Colors.transparent),
         enabledBorder: _inputBorder(Colors.transparent),
-        focusedBorder: _inputBorder(palette.primary, width: 2.0),
+        focusedBorder: _inputBorder(palette.primary, width: 1.5),
         errorBorder: _inputBorder(palette.danger),
         focusedErrorBorder: _inputBorder(palette.danger, width: 2.0),
       ),
@@ -233,6 +236,32 @@ abstract final class SparkTheme {
         iconColor: palette.muted,
         textColor: palette.ink,
       ),
+      // iOS 开关签名色：选中轨道固定系统绿，不随强调色变化。
+      switchTheme: SwitchThemeData(
+        thumbColor: WidgetStateProperty.resolveWith(
+          (states) => states.contains(WidgetState.disabled)
+              ? Color.alphaBlend(
+                  Colors.white.withValues(alpha: 0.5),
+                  palette.card,
+                )
+              : Colors.white,
+        ),
+        trackColor: WidgetStateProperty.resolveWith(
+          (states) {
+            final trackColor = states.contains(WidgetState.selected)
+                ? (isDark ? const Color(0xFF30D158) : const Color(0xFF34C759))
+                : (isDark ? const Color(0xFF39393D) : const Color(0xFFE9E9EA));
+            // 加载或不可用时仍保留开关值，用减淡轨道表达不可操作。
+            return states.contains(WidgetState.disabled)
+                ? Color.alphaBlend(
+                    trackColor.withValues(alpha: 0.5),
+                    palette.card,
+                  )
+                : trackColor;
+          },
+        ),
+        trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
+      ),
       splashFactory: InkRipple.splashFactory,
       highlightColor: Colors.transparent,
     );
@@ -244,24 +273,24 @@ abstract final class SparkTheme {
         color: palette.ink,
         fontSize: SparkFontSizes.displayLarge,
         height: 1.22,
-        fontWeight: FontWeight.w800,
+        fontWeight: FontWeight.w700,
         letterSpacing: -0.5,
       ),
       headlineMedium: TextStyle(
         color: palette.ink,
         fontSize: SparkFontSizes.display,
         height: 1.18,
-        fontWeight: FontWeight.w800,
+        fontWeight: FontWeight.w700,
       ),
       titleLarge: TextStyle(
         color: palette.ink,
         fontSize: SparkFontSizes.headlineSmall,
-        fontWeight: FontWeight.w800,
+        fontWeight: FontWeight.w600,
       ),
       titleMedium: TextStyle(
         color: palette.ink,
         fontSize: SparkFontSizes.titleSmall,
-        fontWeight: FontWeight.w700,
+        fontWeight: FontWeight.w600,
       ),
       titleSmall: TextStyle(
         color: palette.ink,

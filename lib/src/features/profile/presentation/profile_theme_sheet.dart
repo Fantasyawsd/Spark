@@ -38,7 +38,7 @@ void showProfileThemeSheet(
                 style: TextStyle(
                   color: SparkColors.of(context).ink,
                   fontSize: SparkFontSizes.titleLarge,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
               const SizedBox(height: 5),

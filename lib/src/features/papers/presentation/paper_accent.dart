@@ -33,26 +33,27 @@ extension PaperAccentColor on PaperAccent {
   /// 亮色模式取值。
   Color get color => colorFor(Brightness.light);
 
-  /// 按亮度取色：暗色变体整体提亮，
-  /// 保证作为小号文字/图标色时在暗色卡片上对比度 ≥ 4.5:1。
+  /// 按亮度取色：色相族对齐 Apple 系统色；green/orange/azure 采用
+  /// 加深可用变体保证小字号下对白 ≥ 3:1，暗色变体保证在
+  /// 暗色卡片（#1C1C1E）上的对比度 ≥ 4.5:1。
   Color colorFor(Brightness brightness) => switch (this) {
         PaperAccent.blue => brightness == Brightness.dark
-            ? const Color(0xFF7FA8D9)
-            : const Color(0xFF4B74A7),
+            ? const Color(0xFF0A84FF)
+            : const Color(0xFF007AFF),
         PaperAccent.purple => brightness == Brightness.dark
-            ? const Color(0xFFA78BCF)
-            : const Color(0xFF735C9E),
+            ? const Color(0xFFBF5AF2)
+            : const Color(0xFFAF52DE),
         PaperAccent.green => brightness == Brightness.dark
-            ? const Color(0xFF6FB3A0)
-            : const Color(0xFF3E806F),
+            ? const Color(0xFF30D158)
+            : const Color(0xFF248A3D),
         PaperAccent.pink => brightness == Brightness.dark
-            ? const Color(0xFFE88A9E)
-            : const Color(0xFFC95A73),
+            ? const Color(0xFFFF375F)
+            : const Color(0xFFFF2D55),
         PaperAccent.azure => brightness == Brightness.dark
-            ? const Color(0xFF79AEDD)
-            : const Color(0xFF3F83B5),
+            ? const Color(0xFF64D2FF)
+            : const Color(0xFF0088B0),
         PaperAccent.orange => brightness == Brightness.dark
-            ? const Color(0xFFE0A066)
-            : const Color(0xFFB66A2C),
+            ? const Color(0xFFFF9F0A)
+            : const Color(0xFFC93400),
       };
 }

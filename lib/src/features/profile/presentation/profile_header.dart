@@ -38,8 +38,9 @@ class ProfileHeader extends StatelessWidget {
                 '我的研究库',
                 style: TextStyle(
                   color: SparkColors.of(context).ink,
-                  fontSize: SparkFontSizes.display,
-                  fontWeight: FontWeight.w800,
+                  fontSize: SparkFontSizes.displayLarge,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: -0.5,
                 ),
               ),
             ),
@@ -113,7 +114,7 @@ class _ProfileStat extends StatelessWidget {
                   style: TextStyle(
                     color: SparkColors.of(context).ink,
                     fontSize: SparkFontSizes.headlineSmall,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
                 const SizedBox(height: 3),

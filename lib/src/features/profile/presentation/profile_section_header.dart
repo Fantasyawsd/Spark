@@ -30,7 +30,7 @@ class ProfileSectionHeader extends StatelessWidget {
             style: TextStyle(
               color: SparkColors.of(context).ink,
               fontSize: SparkFontSizes.titleSmall,
-              fontWeight: FontWeight.w800,
+              fontWeight: FontWeight.w600,
             ),
           ),
         ),

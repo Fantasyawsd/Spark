@@ -50,7 +50,7 @@ class DeepSeekSettingsSection extends StatelessWidget {
                       style: TextStyle(
                         color: SparkColors.of(context).ink,
                         fontSize: SparkFontSizes.bodyLarge,
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -146,7 +146,7 @@ class _DeepSeekCredentialSheetState extends State<_DeepSeekCredentialSheet> {
                   style: TextStyle(
                     color: SparkColors.of(context).ink,
                     fontSize: SparkFontSizes.titleLarge,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
                 const SizedBox(height: 16),

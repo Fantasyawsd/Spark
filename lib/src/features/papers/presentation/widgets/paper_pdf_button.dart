@@ -36,7 +36,7 @@ class PaperPdfButton extends StatelessWidget {
           hasPdf ? '查看 PDF' : '查看论文',
           style: const TextStyle(
             fontSize: SparkFontSizes.bodySmall,
-            fontWeight: FontWeight.w800,
+            fontWeight: FontWeight.w700,
           ),
         ),
       ),

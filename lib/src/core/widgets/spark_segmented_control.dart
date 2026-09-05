@@ -97,7 +97,7 @@ class _ContentTab extends StatelessWidget {
                   : SparkColors.of(context).muted,
               fontSize: SparkFontSizes.bodySmall,
               fontFamily: SparkTheme.platformCjkFontFamily(),
-              fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+              fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
             ),
           ),
         ),

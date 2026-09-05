@@ -104,7 +104,9 @@ class CherrySurface extends StatelessWidget {
       decoration: BoxDecoration(
         color: color ?? SparkColors.of(context).card,
         borderRadius: BorderRadius.circular(radius),
-        border: border ?? Border.all(color: SparkColors.of(context).line),
+        // iOS 式分层：默认无边框，靠 canvas 与 card 底色差形成层次；
+        // 显式传入的 border（如引用块、分段控件）仍然生效。
+        border: border,
         boxShadow: shadow,
       ),
       child: child,

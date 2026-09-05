@@ -63,7 +63,7 @@ class ProfileScreen extends StatelessWidget {
         bottom: false,
         child: ListView(
           key: const ValueKey('profile-scroll'),
-          padding: const EdgeInsets.fromLTRB(14, 10, 14, 94),
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 94),
           children: [
             ProfileHeader(
               savedCount: savedCount,
@@ -78,7 +78,7 @@ class ProfileScreen extends StatelessWidget {
               const SizedBox(height: 16),
               builder(context),
             ],
-            const SizedBox(height: 14),
+            const SizedBox(height: 16),
             FavoriteCollectionSection(
               groups: favoriteGroups,
               papersByGroup: favoritePapersByGroup,
@@ -87,7 +87,7 @@ class ProfileScreen extends StatelessWidget {
               onRenameGroup: onRenameFavoriteGroup,
               onDeleteGroup: onDeleteFavoriteGroup,
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 16),
             PaperShelfSection(
               icon: Icons.watch_later_outlined,
               title: '稍后阅读',
@@ -97,7 +97,7 @@ class ProfileScreen extends StatelessWidget {
               onOpenPaper: onOpenPaper,
               onViewAll: () => _openReadLater(context),
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 16),
             PaperShelfSection(
               icon: Icons.schedule_rounded,
               title: '阅读历史',
@@ -107,7 +107,7 @@ class ProfileScreen extends StatelessWidget {
               onOpenPaper: onOpenPaper,
               onViewAll: () => _openHistory(context),
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 16),
             ProfileSettingsSection(
               catalogSourceDescription: status?.description,
               catalogStateLabel: status?.stateLabel,

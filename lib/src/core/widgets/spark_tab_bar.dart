@@ -132,7 +132,7 @@ class SparkTabBar extends StatelessWidget {
               fontSize: textSize,
               fontFamily: SparkTheme.platformCjkFontFamily(),
               fontWeight:
-                  index == selectedIndex ? FontWeight.w700 : FontWeight.w600,
+                  index == selectedIndex ? FontWeight.w600 : FontWeight.w500,
             ),
           ),
         ),
@@ -148,7 +148,7 @@ class SparkTabBar extends StatelessWidget {
           style: TextStyle(
             fontSize: textSize,
             fontFamily: SparkTheme.platformCjkFontFamily(),
-            fontWeight: FontWeight.w700,
+            fontWeight: FontWeight.w600,
           ),
         ),
         textDirection: Directionality.of(context),

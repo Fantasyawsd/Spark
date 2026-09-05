@@ -221,7 +221,7 @@ class _SearchHistory extends StatelessWidget {
                 style: TextStyle(
                   color: SparkColors.of(context).ink,
                   fontSize: SparkFontSizes.bodyLarge,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
             ),

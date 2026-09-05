@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-/// Cherry Studio-inspired structural tokens for Spark.
+/// iOS HIG-inspired structural tokens for Spark.
 ///
-/// The reference uses surface layering and hairline borders as the default
-/// depth system. Shadows are intentionally limited to interactive and
+/// Depth comes from surface layering (canvas vs card fill) rather than
+/// borders; shadows are kept minimal and reserved for interactive and
 /// floating surfaces so the reading canvas stays quiet.
 abstract final class SparkDesignTokens {
   static const space1 = 4.0;
@@ -24,11 +24,14 @@ abstract final class SparkDesignTokens {
   static const radiusLg = 10.0;
   static const radiusXl = 14.0;
 
-  /// 卡片级圆角：SurfaceCard、列表卡、网格卡。
-  static const radiusCard = 18.0;
+  /// 卡片级圆角：SurfaceCard、列表卡、网格卡（iOS inset grouped 卡）。
+  static const radiusCard = 16.0;
 
-  /// 浮层级圆角：dialog、sheet、popup menu。
-  static const radiusOverlay = 22.0;
+  /// 浮层级圆角：sheet、popup menu。
+  static const radiusOverlay = 20.0;
+
+  /// iOS alert 风格对话框圆角。
+  static const radiusDialog = 14.0;
 
   static const radius2Xl = 18.0;
   static const radius3Xl = 22.0;
@@ -38,30 +41,22 @@ abstract final class SparkDesignTokens {
 
   static const borderWidth = 1.0;
 
-  /// 阴影基色：亮色下用墨蓝黑，暗色下用纯黑系保证可见。
+  /// 阴影基色：中性黑，亮色下低透明度保证安静。
   static Color shadowColorOf(Brightness brightness) => switch (brightness) {
-        Brightness.light => const Color(0x14182230),
+        Brightness.light => const Color(0x14000000),
         Brightness.dark => const Color(0x66000000),
       };
 
-  /// level 1 微浮：列表卡、会话卡。三层「接触 + 环境 + 远投影」组合。
+  /// level 1 微浮：列表卡、会话卡。iOS 式近扁平，仅保留一层轻接触影。
   static List<BoxShadow> interactiveShadowFor(Brightness brightness) =>
       switch (brightness) {
         Brightness.light => const [
             BoxShadow(
-                color: Color(0x0A182230), blurRadius: 2, offset: Offset(0, 1)),
-            BoxShadow(
-                color: Color(0x14182230), blurRadius: 8, offset: Offset(0, 2)),
-            BoxShadow(
-                color: Color(0x0A182230), blurRadius: 16, offset: Offset(0, 4)),
+                color: Color(0x0A000000), blurRadius: 6, offset: Offset(0, 2)),
           ],
         Brightness.dark => const [
             BoxShadow(
-                color: Color(0x33000000), blurRadius: 2, offset: Offset(0, 1)),
-            BoxShadow(
-                color: Color(0x4D000000), blurRadius: 8, offset: Offset(0, 2)),
-            BoxShadow(
-                color: Color(0x40000000), blurRadius: 16, offset: Offset(0, 4)),
+                color: Color(0x33000000), blurRadius: 6, offset: Offset(0, 2)),
           ],
       };
 
@@ -70,23 +65,15 @@ abstract final class SparkDesignTokens {
       switch (brightness) {
         Brightness.light => const [
             BoxShadow(
-                color: Color(0x14182230), blurRadius: 8, offset: Offset(0, 4)),
+                color: Color(0x14000000), blurRadius: 8, offset: Offset(0, 4)),
             BoxShadow(
-                color: Color(0x1F182230), blurRadius: 24, offset: Offset(0, 8)),
-            BoxShadow(
-                color: Color(0x14233030),
-                blurRadius: 48,
-                offset: Offset(0, 16)),
+                color: Color(0x1F000000), blurRadius: 24, offset: Offset(0, 8)),
           ],
         Brightness.dark => const [
             BoxShadow(
                 color: Color(0x4D000000), blurRadius: 8, offset: Offset(0, 4)),
             BoxShadow(
                 color: Color(0x66000000), blurRadius: 24, offset: Offset(0, 8)),
-            BoxShadow(
-                color: Color(0x59000000),
-                blurRadius: 48,
-                offset: Offset(0, 16)),
           ],
       };
 

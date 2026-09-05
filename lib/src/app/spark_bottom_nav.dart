@@ -50,16 +50,17 @@ class SparkBottomNav extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.fromLTRB(10, 0, 10, 8),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(SparkDesignTokens.radiusXl),
+        borderRadius: BorderRadius.circular(SparkDesignTokens.radiusOverlay),
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
           child: Container(
             padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(
               color: palette.popover.withValues(alpha: isDark ? 0.68 : 0.80),
-              borderRadius: BorderRadius.circular(SparkDesignTokens.radiusXl),
+              borderRadius:
+                  BorderRadius.circular(SparkDesignTokens.radiusOverlay),
               border: Border.all(
-                color: Colors.white.withValues(alpha: isDark ? 0.08 : 0.55),
+                color: Colors.white.withValues(alpha: isDark ? 0.10 : 0.55),
               ),
               boxShadow: SparkDesignTokens.floatingShadowFor(
                 Theme.of(context).brightness,
@@ -164,7 +165,7 @@ class _NavItem extends StatelessWidget {
                     style: TextStyle(
                       color: color,
                       fontSize: SparkFontSizes.footnote,
-                      fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                      fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
                     ),
                   ),
                 ],

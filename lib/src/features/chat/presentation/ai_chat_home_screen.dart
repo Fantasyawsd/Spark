@@ -246,7 +246,7 @@ class _AiSessionList extends StatelessWidget {
                                   color:
                                       Theme.of(context).colorScheme.onSurface,
                                   fontSize: SparkFontSizes.body,
-                                  fontWeight: FontWeight.w800,
+                                  fontWeight: FontWeight.w700,
                                 ),
                               ),
                             ),

@@ -55,7 +55,7 @@ class _PaperShelfListScreenState extends State<PaperShelfListScreen> {
           style: TextStyle(
             color: SparkColors.of(context).ink,
             fontSize: SparkFontSizes.title,
-            fontWeight: FontWeight.w800,
+            fontWeight: FontWeight.w700,
           ),
         ),
       ),

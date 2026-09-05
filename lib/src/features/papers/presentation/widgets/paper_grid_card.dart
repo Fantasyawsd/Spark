@@ -227,7 +227,7 @@ class _PaperGridCover extends StatelessWidget {
                   style: TextStyle(
                     color: accent,
                     fontSize: SparkFontSizes.tiny,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
               ),
@@ -242,7 +242,7 @@ class _PaperGridCover extends StatelessWidget {
               color: SparkColors.of(context).ink,
               fontSize: SparkFontSizes.bodyLarge,
               height: 1.3,
-              fontWeight: FontWeight.w800,
+              fontWeight: FontWeight.w600,
             ),
           ),
           const SizedBox(height: 11),

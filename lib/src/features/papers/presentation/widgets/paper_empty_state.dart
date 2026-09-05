@@ -39,7 +39,7 @@ class PaperEmptyState extends StatelessWidget {
               style: TextStyle(
                 color: SparkColors.of(context).ink,
                 fontSize: SparkFontSizes.title,
-                fontWeight: FontWeight.w800,
+                fontWeight: FontWeight.w700,
               ),
             ),
             const SizedBox(height: 7),

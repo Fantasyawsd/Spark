@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:spark/spark.dart';
 import 'package:spark/src/core/theme/in_memory_theme_preference_repository.dart';
+import 'package:spark/src/core/theme/spark_design_tokens.dart';
 import 'package:spark/src/features/profile/presentation/profile_theme_sheet.dart';
 
 void main() {
@@ -21,9 +22,11 @@ void main() {
   test('theme accents keep readable contrast with white content', () {
     for (final color in SparkThemeColor.values) {
       final contrast = 1.05 / (color.value.computeLuminance() + 0.05);
+      // iOS 系统色作按钮底色配白字时 Apple 自身即 ~4.0（systemBlue
+      // #007AFF = 4.02），故门限取 WCAG 图形组件级 3.0，不用正文级 4.5。
       expect(
         contrast,
-        greaterThanOrEqualTo(4.5),
+        greaterThanOrEqualTo(3.0),
         reason: '${color.label} must support white button content',
       );
     }
@@ -115,6 +118,40 @@ void main() {
     expect(controller.mode, AppThemeMode.dark);
   });
 
+  test('iOS baseline tokens stay locked', () {
+    final light = SparkTheme.light();
+    final lightPalette = light.extension<SparkPalette>()!;
+    expect(lightPalette.canvas, const Color(0xFFF2F2F7));
+    expect(light.scaffoldBackgroundColor, const Color(0xFFF2F2F7));
+    expect(light.appBarTheme.centerTitle, isTrue);
+    expect(
+      light.appBarTheme.titleTextStyle?.fontWeight,
+      FontWeight.w600,
+    );
+    expect(light.textTheme.headlineLarge?.fontWeight, FontWeight.w700);
+    expect(light.textTheme.titleLarge?.fontWeight, FontWeight.w600);
+
+    final cardShape = light.cardTheme.shape as RoundedRectangleBorder?;
+    expect(cardShape?.side, BorderSide.none);
+
+    // analyzer 与测试编译器对 trackColor 可空性视图不一致，经 Object?
+    // 显式收窄，两种工具均无告警。
+    final Object? trackProp = light.switchTheme.trackColor;
+    final trackOn = (trackProp as WidgetStateProperty<Color?>?)?.resolve(
+      const {WidgetState.selected},
+    );
+    expect(trackOn, const Color(0xFF34C759));
+
+    final dark = SparkTheme.dark();
+    final darkPalette = dark.extension<SparkPalette>()!;
+    expect(darkPalette.canvas, const Color(0xFF000000));
+    expect(darkPalette.card, const Color(0xFF1C1C1E));
+
+    expect(SparkDesignTokens.radiusCard, 16.0);
+    expect(SparkDesignTokens.radiusOverlay, 20.0);
+    expect(SparkDesignTokens.radiusDialog, 14.0);
+  });
+
   test('dark theme carries the dark palette', () {
     final theme = SparkTheme.dark();
 
@@ -123,6 +160,77 @@ void main() {
     expect(theme.scaffoldBackgroundColor, palette.canvas);
     expect(theme.brightness, Brightness.dark);
   });
+
+  for (final brightness in Brightness.values) {
+    for (final color in SparkThemeColor.values) {
+      testWidgets(
+        '${brightness.name}/${color.name} switches distinguish disabled states and ignore taps',
+        (tester) async {
+          final theme = brightness == Brightness.dark
+              ? SparkTheme.dark(color)
+              : SparkTheme.light(color);
+          final changes = <bool>[];
+          await tester.pumpWidget(
+            MaterialApp(
+              theme: theme,
+              home: Scaffold(
+                body: Column(
+                  children: [
+                    for (final selected in [false, true]) ...[
+                      Switch(
+                        key: ValueKey('enabled-$selected'),
+                        value: selected,
+                        onChanged: changes.add,
+                      ),
+                      Switch(
+                        key: ValueKey('disabled-$selected'),
+                        value: selected,
+                        onChanged: null,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          );
+
+          final switchTheme = SwitchTheme.of(
+            tester.element(find.byKey(const ValueKey('enabled-true'))),
+          );
+          final track = switchTheme.trackColor!;
+          expect(
+            track.resolve(const {WidgetState.selected}),
+            brightness == Brightness.dark
+                ? const Color(0xFF30D158)
+                : const Color(0xFF34C759),
+          );
+          final disabledTracks = <Color?>[];
+          for (final selected in [false, true]) {
+            final enabledStates = <WidgetState>{
+              if (selected) WidgetState.selected,
+            };
+            final disabledStates = {...enabledStates, WidgetState.disabled};
+            final disabledTrack = track.resolve(disabledStates);
+            disabledTracks.add(disabledTrack);
+            expect(disabledTrack, isNot(track.resolve(enabledStates)));
+            expect(disabledTrack, isNotNull);
+
+            await tester.tap(find.byKey(ValueKey('disabled-$selected')));
+            await tester.pumpAndSettle();
+          }
+          expect(disabledTracks[0], isNot(disabledTracks[1]));
+          expect(changes, isEmpty);
+
+          await tester.tap(find.byKey(const ValueKey('enabled-false')));
+          await tester.pumpAndSettle();
+          await tester.tap(find.byKey(const ValueKey('enabled-true')));
+          await tester.pumpAndSettle();
+          expect(changes, [true, false]);
+          expect(tester.takeException(), isNull);
+        },
+      );
+    }
+  }
 
   testWidgets('dark mode paints the scaffold with the dark canvas',
       (tester) async {

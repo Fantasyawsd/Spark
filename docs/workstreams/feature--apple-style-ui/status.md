@@ -29,7 +29,7 @@
 - [ ] light/dark 双模式色板对齐 iOS 语义色（canvas #F2F2F7 / dark 纯黑系）；五强调色为 iOS 系统色系变体。
 - [ ] 卡片无边框靠底色分层；阴影收敛；标题字重降档至 w700/w600。
 - [ ] AppBar 居中标题 17/w600；Switch 选中态系统绿。
-- [ ] 用户 Windows 实机验收通过。
+- [x] 用户 Windows 实机验收通过（2026-09-05，编排者反馈「可以」）。
 
 ## 写入范围
 
@@ -64,8 +64,8 @@
 ## 当前进度
 
 - 已完成：Phase A（c295b5d）、Phase B（11daa5a）、Phase C（67184bb），2026-08-25 已通过格式检查、analyze 和全量测试；2026-09-05 补齐开关禁用态，26 项定向测试、analyze 和格式检查通过。
-- 正在进行：Windows release 应用已按编排者「验收」指令启动，等待人工验收反馈。
-- 下一步：Windows 实机验收 → /test → /review → /finish。
+- 正在进行：Windows release 人工验收已通过，等待编排者触发 /test。
+- 下一步：/test → /review → /finish。
 - 阻塞项：无
 
 ## 决策记录
@@ -90,7 +90,7 @@
 | `flutter analyze` | No issues found | 2026-09-05 |
 | `flutter test test/spark_theme_test.dart test/personalization_privacy_controller_test.dart` | 22 项通过（含 10 项开关主题矩阵回归） | 2026-09-05 |
 | `flutter test --no-pub test/profile_personalization_section_test.dart` | 4 项通过 | 2026-09-05 |
-| `flutter run --no-pub -d windows --release --dart-define=SPARK_ENV=development`（此前已执行 `flutter pub get`） | Windows release 构建成功并已启动；Spark 窗口与 agent-1 产物进程已确认，人工验收结果待反馈 | 2026-09-05 |
+| `flutter run --no-pub -d windows --release --dart-define=SPARK_ENV=development`（此前已执行 `flutter pub get`） | Windows release 构建成功并已启动；Spark 窗口与 agent-1 产物进程已确认；编排者反馈「可以」，人工验收通过 | 2026-09-05 |
 
 ### 备注
 
@@ -140,9 +140,9 @@
 
 ### 已知风险与回滚
 
-- 已知风险：纯黑 canvas 下 PaperAccent/阴影观感待实机复核；去边框后个别底色未跟 token 处会失去层次（Phase C 逐页核查）。
+- 已知风险：Windows 实机验收已通过；Android 观感尚未在本轮验收，完整自动化门禁与正式审查仍待后续阶段确认。
 - 回滚方式：revert 本分支提交即可，无数据影响。
 
 ### 未完成与后续工作
 
-- 待 Windows 实机验收、/test、/review 和 /finish；SF Symbols 映射、Cupertino 化深化仍不在本任务范围。
+- Windows 实机验收已通过，待 /test、/review 和 /finish；SF Symbols 映射、Cupertino 化深化仍不在本任务范围。

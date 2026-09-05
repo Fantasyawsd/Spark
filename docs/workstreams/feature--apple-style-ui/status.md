@@ -9,7 +9,7 @@
 - 基线提交：`ca0fd28`
 - 负责人：Fantasy（编排者）
 - 状态：开发中
-- 最近更新：2026-08-25
+- 最近更新：2026-09-05
 
 ## 目标
 
@@ -59,12 +59,13 @@
 3. Phase C 页面推广：全局 w800 降档（19 文件 24 处）、paper_accent 色值、profile grouped 化与大标题试点。
 4. 验证：测试适配（门限 4.5→3.0 注明依据）+ 新增 iOS 快照断言；analyze + test 全绿。
 5. Windows 实机验收（用户执行）。
+6. 本轮补齐开关禁用态：修改 `lib/src/core/theme/spark_theme.dart`，在 `test/spark_theme_test.dart` 覆盖深浅色 × 五强调色 × 开关状态的色彩区分与禁用点击行为；运行定向测试、analyze 与格式检查。
 
 ## 当前进度
 
-- 已完成：Phase A（c295b5d）、Phase B（11daa5a）、Phase C（67184bb）；格式检查 + analyze + 全量测试通过。
-- 正在进行：等待编排者 Windows 实机验收。
-- 下一步：实机验收 → /test → /review → /finish。
+- 已完成：Phase A（c295b5d）、Phase B（11daa5a）、Phase C（67184bb），2026-08-25 已通过格式检查、analyze 和全量测试；2026-09-05 补齐开关禁用态，26 项定向测试、analyze 和格式检查通过。
+- 正在进行：等待编排者确认启动 Windows release 应用并进行实机验收。
+- 下一步：Windows 实机验收 → /test → /review → /finish。
 - 阻塞项：无
 
 ## 决策记录
@@ -72,8 +73,10 @@
 | 日期 | 决策 | 原因 | 影响 |
 | --- | --- | --- | --- |
 | 2026-08-25 | 强调色机制保留，色值向 iOS 系统色对齐；green/orange 用 Apple 加深变体 | 纯 #34C759/#FF9500 配白字对比度不可读 | spark_theme_test 对白门限放宽 ≥3.0 |
-| 2026-08-25 | 维持系统字体栈，不引 SF Pro/google_fonts | 版权限制 + 混排基线问题 | 仅靠字重与负字距塑形 |
+| 2026-08-25 | 维持系统字体栈，不引 SF Pro/google_fonts | 版权限制 + 混排基线问题 | 仅靠字重与负字距塑形；Windows 雅黑仅 Regular/Bold 两档，字重降档在 Windows 桌面无视觉差异 |
 | 2026-08-25 | dark 模式转中性黑灰系（#000000/#1C1C1E） | iOS 暗色语义 | spark_theme L74-78 蓝黑字面量需一并替换 |
+| 2026-08-25 | AppConfig.resolve 环境兜底按 kReleaseMode 裁决（a4ac989） | 漏传 SPARK_ENV 时实验功能静默消失，反复被误判为 UI 改动缺陷；编排者指示"不要让传参决定" | release 构建仍强制 production；显式 flavor/dart-define 可覆盖；AGENTS.md 验收条目无需 dart-define 即正确 |
+| 2026-09-05 | 开关禁用态以卡片底色混合减淡，仍区分选中与未选中 | 主题原先忽略 disabled，个性化状态加载期间与可操作开关观感相同 | 保持可用态系统绿，覆盖深浅色 × 五强调色的禁用与点击行为 |
 
 ## 验证记录
 
@@ -82,12 +85,19 @@
 | `.\tool\verify_changed_dart_format.ps1` | 通过（36 文件） | 2026-08-25 |
 | `flutter analyze` | No issues found | 2026-08-25 |
 | `flutter test` | 625 项全绿（含新增 iOS 基准快照与门限 3.0 调整） | 2026-08-25 |
+| `flutter --version` / `flutter pub get` | Flutter 3.44.8 / Dart 3.12.2；依赖恢复成功 | 2026-09-05 |
+| `.\tool\verify_changed_dart_format.ps1` / `git diff --check` | 通过（35 个 Dart 文件）；无空白错误 | 2026-09-05 |
+| `flutter analyze` | No issues found | 2026-09-05 |
+| `flutter test test/spark_theme_test.dart test/personalization_privacy_controller_test.dart` | 22 项通过（含 10 项开关主题矩阵回归） | 2026-09-05 |
+| `flutter test --no-pub test/profile_personalization_section_test.dart` | 4 项通过 | 2026-09-05 |
 | Windows 实机验收（flutter run -d windows，用户执行） | 待执行 | — |
 
 ### 备注
 
 - `spark_theme_test` 对白对比度门限由 4.5 放宽至 3.0：iOS 系统色作按钮底色配白字时 Apple 自身即 ~4.0（systemBlue #007AFF = 4.02），已在测试注释中写明依据；暗色对卡片 ≥4.5 门限保留且全部通过。
 - 工作区遗留 `windows/flutter/generated_*` 为 Flutter 构建自动再生文件，与本任务无关，不纳入提交，收尾时按仓库惯例处理。
+- 2026-09-05 仓库迁移后，从 `D:/Spark-worktrees/Spark` 执行 `git worktree repair D:/Spark-worktrees/agent-1`，修复双方仍指向旧桌面目录的关联；未移动源码或改动分支历史。
+- 本轮继续 `/develop`，未重新执行全量测试或发布构建；Windows 实机验收尚未执行。确认启动后使用 `flutter run -d windows --release --dart-define=SPARK_ENV=development`，以满足 release 验收要求并保留 development 功能。
 
 ## 审查结论
 
@@ -101,6 +111,11 @@
 | SHA | 提交信息 | 对应阶段 | 验证摘要 |
 | --- | --- | --- | --- |
 | c295b5d | 重构（主题）：色板、圆角阴影与组件级主题对齐 iOS 风格 | Phase A | analyze 无问题；spark_theme_test 9 项全绿 |
+| 11daa5a | 重构（组件）：自建组件层对齐 iOS 形态 | Phase B | analyze 无问题；全量 625 项全绿 |
+| 67184bb | 重构（界面）：页面层字重、论文强调色与 profile 分区对齐 iOS 风格 | Phase C | 格式/analyze/test 三门禁全绿 |
+| fa5cbc3 | 文档（台账）：记录苹果风改造三阶段进度与验证结果 | 台账 | — |
+| a4ac989 | 修复（配置）：非 release 运行默认 development 环境 | 环境修复 | analyze 无问题；全量 626 项全绿 |
+| 470cb66 | 修复（主题）：区分 iOS 开关的禁用状态 | 本轮补齐 | 26 项定向测试通过；analyze 无问题；35 文件格式检查通过 |
 
 ## 交付准备（合并前收集）
 
@@ -129,4 +144,4 @@
 
 ### 未完成与后续工作
 
-- 无（后续可选：SF Symbols 映射、Cupertino 化深化不在本任务范围）
+- 待 Windows 实机验收、/test、/review 和 /finish；SF Symbols 映射、Cupertino 化深化仍不在本任务范围。

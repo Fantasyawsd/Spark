@@ -8,7 +8,7 @@
 - Worktree：`../agent-1`
 - 基线提交：`ca0fd28`
 - 负责人：Fantasy（编排者）
-- 状态：待合并
+- 状态：已合并（归档）
 - 最近更新：2026-09-05
 
 ## 目标
@@ -64,8 +64,8 @@
 ## 当前进度
 
 - 已完成：Phase A（c295b5d）、Phase B（11daa5a）、Phase C（67184bb），2026-08-25 已通过格式检查、analyze 和全量测试；2026-09-05 补齐开关禁用态，26 项定向测试、analyze 和格式检查通过。
-- 正在进行：完整门禁与只读审查已通过，编排者已授权推送并合入 main。
-- 下一步：推送任务分支 → 合入 main → development APK 与 Windows release 双目标构建 → main 最终归档与推送。
+- 当前阶段：main 集成与双目标构建已完成；台账转为归档保留。
+- 下一步：本任务无剩余开发项；Android 真机观感与文字对比度专项检查作为后续验收，不属于已通过的 Windows 验收结论。
 - 阻塞项：无
 
 ## 决策记录
@@ -99,7 +99,7 @@
 - `spark_theme_test` 对白对比度门限由 4.5 放宽至 3.0：iOS 系统色作按钮底色配白字时 Apple 自身即 ~4.0（systemBlue #007AFF = 4.02），已在测试注释中写明依据；暗色对卡片 ≥4.5 门限保留且全部通过。
 - 工作区遗留 `windows/flutter/generated_*` 为 Flutter 构建自动再生文件，与本任务无关，不纳入提交，收尾时按仓库惯例处理。
 - 2026-09-05 仓库迁移后，从 `D:/Spark-worktrees/Spark` 执行 `git worktree repair D:/Spark-worktrees/agent-1`，修复双方仍指向旧桌面目录的关联；未移动源码或改动分支历史。
-- 本轮继续 `/develop`，未重新执行全量测试。编排者随后要求「验收」，已启动 development 配置的 Windows release 应用；未执行 Android 构建，未进入 /test、/review 或 /finish。
+- 首次续开发阶段仅执行定向验证，随后按编排者「验收」指令启动 Windows release 并获得通过反馈；最终按「推送并合并到 main」授权执行 /test、/review、/finish，结果见合并后归档。
 - 首次启动因迁移前 `.plugin_symlinks` 残留发生 `PathExistsException`；同时确认 CMake 缓存仍指向旧桌面目录。将 `windows/flutter/ephemeral` 与 `build/windows/x64` 隔离到本任务 `build/relocation-backup-20260905-230913/` 后重新生成，Windows release 在 97.7 秒内构建成功。产物：`build/windows/x64/runner/Release/spark.exe`。
 
 ## 审查结论
@@ -146,8 +146,40 @@
 ### 已知风险与回滚
 
 - 已知风险：Windows 实机验收已通过；Android 真机观感尚未验收。部分亮色强调色对白门限保持此前确认的 3.0，未声称完整文字无障碍达标。APK 缺少 release 签名时按规范交付 profile（AOT、debug 签名）。
-- 回滚方式：对本次合并提交执行 `git revert -m 1 <merge-sha>`，必要时同步回退开发计划状态；无数据迁移。
+- 回滚方式：对本次合并提交执行 `git revert -m 1 f31c6ad3e85335771974d7328ccb25721d02229a`，必要时同步回退开发计划状态；无数据迁移。
 
 ### 未完成与后续工作
 
-- Windows 实机验收、/test 与 /review 已通过；待 main 集成、双目标构建及归档。SF Symbols 映射、Cupertino 化深化不在本任务范围。
+- Windows 实机验收、/test、/review 与 main 双目标集成验证已通过。本任务无遗留开发阻塞；Android 真机观感尚未验收，SF Symbols 映射、Cupertino 化深化仍不在本任务范围。
+
+## 合并后归档
+
+- 最终状态：已合并；任务提交和本归档均位于 main，归档完成后只补勘误。
+- 任务分支顶端：`b6ce32381fbbb0c3cca7bf1bf6a099bb04d03de6`，已推送 `feature/apple-style-ui`；保留该分支供追溯。
+- 集成提交：`f31c6ad3e85335771974d7328ccb25721d02229a`（main，非快进合并，无冲突）。
+- 合并时间：2026-09-05 23:34:53 +08:00。
+- 可达性：`git merge-base --is-ancestor b6ce32381fbbb0c3cca7bf1bf6a099bb04d03de6 main` 通过；合并后 lib/test/android/windows/pubspec 与任务顶端无差异。
+- 开发计划：同步 `docs/development.md` §2.1 的 iOS 风格主题与运行环境默认行为；不改变既有功能计划，不升版本或创建发布 tag。
+- 其他任务：agent-2 及其他 Agent 的独立 worktree 不在本次提交或清理范围。main 既有 `.codex/` 和其他 Agent 创建的 `.claude/worktrees/` 本地目录未提交、未修改。
+
+### 集成验证
+
+| 命令或检查 | 结果 | 日期 |
+| --- | --- | --- |
+| `flutter test --no-pub test/app_config_test.dart test/spark_theme_test.dart test/profile_personalization_section_test.dart` | main 上 30 项通过 | 2026-09-05 |
+| `flutter build windows --no-pub --release --dart-define=SPARK_ENV=development` | 成功（90.3 秒）；迁移前 CMake 缓存与 ephemeral 先隔离到 main 的 build 备份目录并重新生成 | 2026-09-05 |
+| `flutter build apk --no-pub --profile --flavor development --dart-define=SPARK_ENV=development --android-project-arg=kotlin.incremental=false` | 成功（45.8 秒，87.3 MB）；缺少 release 签名，按规范使用 profile | 2026-09-05 |
+| 每次 APK 构建后的 `android/gradlew.bat --stop` 与 `--status` | 三次均已执行，最终 No Gradle daemons are running | 2026-09-05 |
+
+首次 APK 构建及仅隔离缓存后的重试均失败于 `url_launcher_android:compileProfileKotlin`：C 盘 Pub Cache 与 D 盘项目触发 Kotlin incremental cache 的 different roots 错误。通过 Flutter 的 `--android-project-arg=kotlin.incremental=false` 将属性直接传给 Gradle 后成功；仅影响本次构建的缓存策略，未修改仓库 Gradle 配置。两次失败日志与成功日志保存在 main 的 `build/agent1-main-apk*.log`（忽略文件）。
+
+### 双目标产物
+
+以下产物均由 main 集成提交 `f31c6ad3e85335771974d7328ccb25721d02229a` 在本次收尾中构建，未上传构建产物或进行正式版本发布。
+
+| 目标 | main 内路径 | 大小（字节） | SHA-256 |
+| --- | --- | ---: | --- |
+| development APK（profile，AOT、debug 签名） | `build/app/outputs/flutter-apk/app-development-profile.apk` | 91545809 | `E5512E3BFF582018B4E8214DB2CE17E2CAAD26CF15C51A5FBF676C7FD5E66E97` |
+| Windows EXE（release，development 配置） | `build/windows/x64/runner/Release/spark.exe` | 101888 | `DEAA77814AB7C2841C80D7C61924B90DFA08074E3C82AB4ECE576F322309E76D` |
+
+Windows 运行需保留同目录 DLL 与 data，EXE 不是单文件发行包。本轮未进行 Android 真机验收。

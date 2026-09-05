@@ -1,7 +1,7 @@
 # Spark 开发路线图
 
 > 状态：持续维护
-> 最近更新：2026-08-22
+> 最近更新：2026-09-05
 
 本文是开发计划的唯一文件，记录产品边界、当前能力、开发任务与后续方向。
 发布范围和证据归入 `releases/<version>/`；架构、Git 与发布规则分别见
@@ -51,7 +51,8 @@ Spark 面向个人研究者，核心闭环由三个一级能力组成：
 
 | 模块 | 当前状态 |
 | --- | --- |
-| 应用入口 | 论文 / ChatPaper / 我的三个一级页面形成单机闭环；社区和私信不在生产导航 |
+| 应用入口 | 论文 / ChatPaper / 我的三个一级页面形成单机闭环；社区和私信不在生产导航。无显式 flavor/SPARK_ENV 时，release 默认 production、非 release 默认 development；显式环境继续校验 |
+| 主题与视觉 | iOS 风格深浅色与五强调色已集成；卡片靠底色分层、圆角与阴影收敛、页面字重统一；AppBar 默认居中标题、系统绿开关包含禁用态；Windows 人工验收通过 |
 | 论文目录 | production Client 仍直连 arXiv Atom并使用版本化本地缓存与内置种子回退；development 环境可切换本地 Paper API；推荐、关注、最新固定频道及 arXiv 主题频道可用 |
 | 推荐系统 | 服务端三信号混排（score.v4）：High Impact（引用/会议/star）+ Trending（HF 热度/star 增速/短期引用增速/新鲜度/Web 热度，含 24–72h Trend Boost）+ Personalized（匿名画像召回与偏好加权抽样）；年龄桶配额、已读排除、同作者/同主题多样性、批次版本化可回放 |
 | 信息流展示 | 卡片展示「Trending · 原因」与「为你推荐」徽标（无信号零展示变化，production 直连不显示） |

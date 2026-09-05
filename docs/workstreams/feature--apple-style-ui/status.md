@@ -8,7 +8,7 @@
 - Worktree：`../agent-1`
 - 基线提交：`ca0fd28`
 - 负责人：Fantasy（编排者）
-- 状态：开发中
+- 状态：待合并
 - 最近更新：2026-09-05
 
 ## 目标
@@ -25,10 +25,10 @@
 
 ## 验收标准
 
-- [ ] `flutter analyze` 无告警；`flutter test` 全绿（含新增 iOS 基准快照测试与调整后的对比度门限）。
-- [ ] light/dark 双模式色板对齐 iOS 语义色（canvas #F2F2F7 / dark 纯黑系）；五强调色为 iOS 系统色系变体。
-- [ ] 卡片无边框靠底色分层；阴影收敛；标题字重降档至 w700/w600。
-- [ ] AppBar 居中标题 17/w600；Switch 选中态系统绿。
+- [x] `flutter analyze` 无告警；`flutter test` 全绿（含新增 iOS 基准快照测试与调整后的对比度门限）。
+- [x] light/dark 双模式色板对齐 iOS 语义色（canvas #F2F2F7 / dark 纯黑系）；五强调色为 iOS 系统色系变体。
+- [x] 卡片无边框靠底色分层；阴影收敛；标题字重降档至 w700/w600。
+- [x] AppBar 居中标题 17/w600；Switch 选中态系统绿。
 - [x] 用户 Windows 实机验收通过（2026-09-05，编排者反馈「可以」）。
 
 ## 写入范围
@@ -64,8 +64,8 @@
 ## 当前进度
 
 - 已完成：Phase A（c295b5d）、Phase B（11daa5a）、Phase C（67184bb），2026-08-25 已通过格式检查、analyze 和全量测试；2026-09-05 补齐开关禁用态，26 项定向测试、analyze 和格式检查通过。
-- 正在进行：Windows release 人工验收已通过，等待编排者触发 /test。
-- 下一步：/test → /review → /finish。
+- 正在进行：完整门禁与只读审查已通过，编排者已授权推送并合入 main。
+- 下一步：推送任务分支 → 合入 main → development APK 与 Windows release 双目标构建 → main 最终归档与推送。
 - 阻塞项：无
 
 ## 决策记录
@@ -92,6 +92,8 @@
 | `flutter test --no-pub test/profile_personalization_section_test.dart` | 4 项通过 | 2026-09-05 |
 | `flutter run --no-pub -d windows --release --dart-define=SPARK_ENV=development`（此前已执行 `flutter pub get`） | Windows release 构建成功并已启动；Spark 窗口与 agent-1 产物进程已确认；编排者反馈「可以」，人工验收通过 | 2026-09-05 |
 
+| 合并前格式检查 / `flutter analyze --no-pub` / `flutter test --no-pub` / `git diff --check` | 35 个 Dart 文件格式通过；No issues found；636 项全量测试通过；无空白错误 | 2026-09-05 |
+
 ### 备注
 
 - `spark_theme_test` 对白对比度门限由 4.5 放宽至 3.0：iOS 系统色作按钮底色配白字时 Apple 自身即 ~4.0（systemBlue #007AFF = 4.02），已在测试注释中写明依据；暗色对卡片 ≥4.5 门限保留且全部通过。
@@ -102,10 +104,13 @@
 
 ## 审查结论
 
-- 审查日期：
-- 阻断项：
-- 缺陷：
-- 结论：
+- 审查日期：2026-09-05
+- 审查范围：远端 merge-base 为 `062718611adede28fe7f9558dc918246d0ce3047`；本地 main 已含其后 85 个提交，因此本任务逐文件审查范围为任务基线 `ca0fd28..a238283`（36 文件，582 行新增、268 行删除），未将 main 既有历史当成本任务新改动。
+- 阻断项：无。逐项核对架构阻断条件，未新增 Widget I/O、具体仓储耦合、领域平台依赖、DTO 混层、反向或循环依赖、业务 utils、继承链或不可独立测试的业务行为。
+- 缺陷：未发现新的阻断性功能回归；AppConfig 非 release 默认 development 属于此前编排者明确要求的修复，未改变显式 flavor/环境校验与 production 功能屏蔽。
+- 规格核对：主题色板、卡片与字重、AppBar 默认标题、系统绿与禁用态均有代码或测试依据；636 项测试与 analyze/格式通过；Windows 人工验收通过。社区文件仅两处字重调整，不新增生产入口。
+- 建议与限制：保留此前已确认的 3.0 对比度门限，但它不能证明所有小字号文字的可读性；Android 真机视觉效果尚未验收。系统字体在 Windows 的字重显示仍受本机字体影响。
+- 结论：可合并。已核对 agent-2 当前修改位于独立 worktree，未纳入本次提交；其后续集成需基于更新后的 main 另行验证。
 
 ## 检查点与提交
 
@@ -122,27 +127,27 @@
 
 ### 交付摘要
 
-（待合并前填写）
+全局色板、圆角、阴影、Material 组件默认主题、自建组件和页面字重对齐 iOS 风格；保留五强调色和深浅色切换，补齐开关禁用态。修复非 release 运行遗漏环境参数时实验功能消失的问题；不改变持久化数据、论文接口或导航结构。
 
 ### 实际变更
 
 - 领域与业务逻辑：无
-- 数据与基础设施：无
-- 界面与交互：iOS 风格主题层重塑（待完成后填写明细）
-- 测试与工具：spark_theme_test 门限与快照更新
+- 数据与基础设施：AppConfig 无显式环境时按构建模式选择默认值（release 为 production，非 release 为 development）；无持久化或网络契约变化。
+- 界面与交互：深浅色 × 五强调色、纯黑暗色背景、卡片默认无边框、圆角与阴影收敛、页面标题字重调整、我的分组列表密度，以及系统绿开关的可用/禁用态。
+- 测试与工具：主题基准断言、开关状态矩阵及点击测试、AppConfig 默认环境断言；迁移后构建缓存修复仅涉及忽略目录。
 - 文档：本台账
 
 ### 兼容性与迁移
 
 - 本地数据迁移：无
 - API 或领域契约变化：无
-- 旧版本兼容性：无影响（纯视觉）
+- 旧版本兼容性：设备数据与既有 API 保持兼容；非 release 无参数启动现在默认 development。
 
 ### 已知风险与回滚
 
-- 已知风险：Windows 实机验收已通过；Android 观感尚未在本轮验收，完整自动化门禁与正式审查仍待后续阶段确认。
-- 回滚方式：revert 本分支提交即可，无数据影响。
+- 已知风险：Windows 实机验收已通过；Android 真机观感尚未验收。部分亮色强调色对白门限保持此前确认的 3.0，未声称完整文字无障碍达标。APK 缺少 release 签名时按规范交付 profile（AOT、debug 签名）。
+- 回滚方式：对本次合并提交执行 `git revert -m 1 <merge-sha>`，必要时同步回退开发计划状态；无数据迁移。
 
 ### 未完成与后续工作
 
-- Windows 实机验收已通过，待 /test、/review 和 /finish；SF Symbols 映射、Cupertino 化深化仍不在本任务范围。
+- Windows 实机验收、/test 与 /review 已通过；待 main 集成、双目标构建及归档。SF Symbols 映射、Cupertino 化深化不在本任务范围。

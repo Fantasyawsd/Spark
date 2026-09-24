@@ -1,0 +1,93 @@
+name: Paper Ember UI
+
+on:
+  push:
+    branches: [feature/paper-ember-ui]
+    paths:
+      - 'lib/**'
+      - 'test/**'
+      - 'pubspec.*'
+      - '.github/workflows/paper-ember-ui.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: paper-ember-ui-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    if: github.ref == 'refs/heads/feature/paper-ember-ui'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Export review source
+        run: git archive --format=zip --output="$RUNNER_TEMP/spark-ui-source.zip" HEAD
+
+      - name: Upload review source
+        uses: actions/upload-artifact@v4
+        with:
+          name: spark-ui-source-${{ github.sha }}
+          path: ${{ runner.temp }}/spark-ui-source.zip
+          retention-days: 3
+          if-no-files-found: error
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.44.8
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Check changed Dart formatting
+        id: formatting
+        continue-on-error: true
+        shell: bash
+        run: |
+          mapfile -d '' files < <(git diff --name-only -z --diff-filter=ACMR 7e71b36e7209da4e8d2385eba352b13d03e0fea0 HEAD -- '*.dart')
+          if [ "${#files[@]}" -gt 0 ]; then
+            dart format "${files[@]}"
+          fi
+          git diff --binary > "$RUNNER_TEMP/spark-ui-format.patch"
+          git diff --exit-code
+
+      - name: Analyze
+        id: analyze
+        continue-on-error: true
+        run: flutter analyze
+
+      - name: Test
+        id: tests
+        continue-on-error: true
+        run: flutter test
+
+      - name: Upload format patch
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: spark-ui-format-${{ github.sha }}
+          path: ${{ runner.temp }}/spark-ui-format.patch
+          retention-days: 3
+          if-no-files-found: ignore
+
+      - name: Verify all checks passed
+        if: always()
+        env:
+          FORMAT_RESULT: ${{ steps.formatting.outcome }}
+          ANALYZE_RESULT: ${{ steps.analyze.outcome }}
+          TEST_RESULT: ${{ steps.tests.outcome }}
+        run: |
+          test "$FORMAT_RESULT" = success
+          test "$ANALYZE_RESULT" = success
+          test "$TEST_RESULT" = success

@@ -5,6 +5,7 @@ import math
 import random
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from itertools import islice
 from typing import Any, Iterable, Mapping
 
 from . import SCORE_VERSION
@@ -57,7 +58,7 @@ def _number(value: Any) -> float | None:
         return None
     try:
         number = float(value)
-    except (TypeError, ValueError):
+    except (TypeError, ValueError, OverflowError):
         return None
     return number if math.isfinite(number) and number >= 0 else None
 
@@ -296,7 +297,7 @@ class RecommendationEngine:
             if seed is not None:
                 as_of = as_of.replace(hour=23, minute=59, second=59)
         as_of = as_of.astimezone(UTC)
-        read = set(list(read_ids)[:5000])
+        read = set(islice(read_ids, 5000))
         candidates = self.store.recommendation_candidates(
             read_ids=read,
             per_pool_limit=max(limit * 50, 500),
@@ -449,7 +450,7 @@ class RecommendationEngine:
                         bucket,
                         quality,
                         min(trend, 1.0),
-                        preferences.get(paper_id, 0.0),
+                        preferences.get(paper.paper_id, 0.0) if pool == "personalized" else 0.0,
                         weight,
                         signals,
                     )
@@ -477,7 +478,7 @@ class RecommendationEngine:
                     age_bucket(paper.published_at, as_of),
                     quality,
                     min(trend, 1.0),
-                    preferences.get(paper_id, 0.0),
+                    0.0,
                     weight,
                     signals,
                 )

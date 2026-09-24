@@ -23,6 +23,7 @@ import 'widgets/paper_channel_manager_sheet.dart';
 import 'widgets/paper_empty_state.dart';
 import 'widgets/paper_favorite_group_sheet.dart';
 import 'widgets/paper_grid_card.dart';
+import 'widgets/paper_discovery_card.dart';
 import 'widgets/paper_reader_view.dart';
 import 'widgets/papers_header.dart';
 
@@ -250,6 +251,20 @@ class _PapersScreenState extends State<PapersScreen> {
         onPageChanged: _handlePageChanged,
         itemBuilder: (context, index) {
           final paper = papers[index];
+          final openDetail = widget.onOpenPaperDetail;
+          if (openDetail != null) {
+            return PaperDiscoveryCard(
+              key: ValueKey('paper-discovery-${paper.id}'),
+              paper: paper,
+              saved: _interactions.isSaved(paper.id),
+              readLater: widget.readingController.isReadLater(paper.id),
+              onOpen: () => openDetail(paper.id),
+              onSave: () => _interactions.toggleSave(paper.id),
+              onSaveLongPress: () => _showFavoriteGroups(paper.id),
+              onReadLater: () =>
+                  widget.readingController.toggleReadLater(paper.id),
+            );
+          }
           return PaperReaderView(
             key: ValueKey('paper-reader-${paper.id}'),
             paper: paper,

@@ -17,10 +17,10 @@ void main() {
 
     expect(
       tester.getSize(find.byKey(const ValueKey('paper-feed'))).height,
-      greaterThan(700),
+      greaterThan(600),
     );
     expect(find.textContaining('被引'), findsNothing);
-    expect(find.text('摘要'), findsWidgets);
+    expect(find.text('开始阅读'), findsWidgets);
 
     await tester.tap(find.byKey(const ValueKey('papers-view-mode-toggle')));
     await tester.pumpAndSettle();

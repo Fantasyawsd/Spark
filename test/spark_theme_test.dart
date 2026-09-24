@@ -118,17 +118,17 @@ void main() {
     expect(controller.mode, AppThemeMode.dark);
   });
 
-  test('iOS baseline tokens stay locked', () {
+  test('paper and ember baseline tokens stay locked', () {
     final light = SparkTheme.light();
     final lightPalette = light.extension<SparkPalette>()!;
-    expect(lightPalette.canvas, const Color(0xFFF2F2F7));
-    expect(light.scaffoldBackgroundColor, const Color(0xFFF2F2F7));
+    expect(lightPalette.canvas, const Color(0xFFF6F4EF));
+    expect(light.scaffoldBackgroundColor, const Color(0xFFF6F4EF));
     expect(light.appBarTheme.centerTitle, isTrue);
     expect(
       light.appBarTheme.titleTextStyle?.fontWeight,
       FontWeight.w600,
     );
-    expect(light.textTheme.headlineLarge?.fontWeight, FontWeight.w700);
+    expect(light.textTheme.headlineLarge?.fontWeight, FontWeight.w600);
     expect(light.textTheme.titleLarge?.fontWeight, FontWeight.w600);
 
     final cardShape = light.cardTheme.shape as RoundedRectangleBorder?;
@@ -144,12 +144,12 @@ void main() {
 
     final dark = SparkTheme.dark();
     final darkPalette = dark.extension<SparkPalette>()!;
-    expect(darkPalette.canvas, const Color(0xFF000000));
-    expect(darkPalette.card, const Color(0xFF1C1C1E));
+    expect(darkPalette.canvas, const Color(0xFF171C19));
+    expect(darkPalette.card, const Color(0xFF1D2320));
 
-    expect(SparkDesignTokens.radiusCard, 16.0);
-    expect(SparkDesignTokens.radiusOverlay, 20.0);
-    expect(SparkDesignTokens.radiusDialog, 14.0);
+    expect(SparkDesignTokens.radiusCard, 20.0);
+    expect(SparkDesignTokens.radiusOverlay, 24.0);
+    expect(SparkDesignTokens.radiusDialog, 20.0);
   });
 
   test('dark theme carries the dark palette', () {
@@ -270,7 +270,7 @@ void main() {
     BuildContext shellContext = tester.element(find.byType(SparkShell));
     expect(
       Theme.of(shellContext).colorScheme.primary,
-      SparkThemeColor.pink.value,
+      SparkThemeColor.orange.value,
     );
 
     controller.setColor(SparkThemeColor.blue);

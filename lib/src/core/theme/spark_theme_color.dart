@@ -1,10 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// iOS 风格强调色枚举。
-///
-/// value/darkValue 对齐 Apple 系统色（light/dark 变体）；green/orange 取
-/// Apple 自家的加深可用变体而非纯系统色，保证作为按钮底色配白字时
-/// 在亮色下对比度 ≥ 3:1（Apple 自身 systemBlue 即 4.02 水平）。
+/// 可持久化的强调色。保留枚举名称，兼容已有用户偏好。
 enum SparkThemeColor {
   pink(
     '蔷薇',
@@ -35,10 +31,10 @@ enum SparkThemeColor {
     Color(0xFFF0FAF3),
   ),
   orange(
-    '琥珀',
-    Color(0xFFC93400),
-    Color(0xFFFF9F0A),
-    Color(0xFFFBE9DF),
+    '火花橙',
+    Color(0xFFB84B2F),
+    Color(0xFFF3A589),
+    Color(0xFFF9E8DF),
     Color(0xFFFDF4EE),
   );
 

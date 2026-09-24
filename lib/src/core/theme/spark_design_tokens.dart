@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// iOS HIG-inspired structural tokens for Spark.
+/// Paper & Ember structural tokens for Spark.
 ///
 /// Depth comes from surface layering (canvas vs card fill) rather than
 /// borders; shadows are kept minimal and reserved for interactive and
@@ -25,13 +25,13 @@ abstract final class SparkDesignTokens {
   static const radiusXl = 14.0;
 
   /// 卡片级圆角：SurfaceCard、列表卡、网格卡（iOS inset grouped 卡）。
-  static const radiusCard = 16.0;
+  static const radiusCard = 20.0;
 
   /// 浮层级圆角：sheet、popup menu。
-  static const radiusOverlay = 20.0;
+  static const radiusOverlay = 24.0;
 
   /// iOS alert 风格对话框圆角。
-  static const radiusDialog = 14.0;
+  static const radiusDialog = 20.0;
 
   static const radius2Xl = 18.0;
   static const radius3Xl = 22.0;

@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:spark/spark.dart';
 import 'package:spark/src/features/papers/data/in_memory_paper_interaction_repository.dart';
-import 'package:spark/src/features/papers/presentation/widgets/paper_reader_view.dart';
 import 'package:spark/src/features/search/data/in_memory_paper_search_history_repository.dart';
+
+import 'support/paper_ember_test_navigation.dart';
 
 void main() {
   testWidgets('related paper opens a fullscreen detail and returns to feed', (
@@ -14,17 +15,8 @@ void main() {
 
     await tester.pumpWidget(const SparkApp(showSplash: false));
     await tester.pump();
-    final firstReader = find.byType(PaperReaderView).first;
-    final tabs = find
-        .descendant(
-          of: firstReader,
-          matching: find.byType(SingleChildScrollView),
-        )
-        .first;
-    await tester.drag(tabs, const Offset(-520, 0));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('相关论文').first);
-    await tester.pumpAndSettle();
+    await openFirstDiscoveredPaper(tester);
+    await selectReaderSection(tester, '相关');
 
     final related = find.byKey(const ValueKey('related-paper-2404.01356'));
     expect(related, findsOneWidget);
@@ -42,17 +34,7 @@ void main() {
     expect(find.byKey(const ValueKey('papers-header')), findsNothing);
     expect(find.byKey(const ValueKey('bottom-nav-0')), findsNothing);
 
-    final detailReader = find.byType(PaperReaderView).first;
-    final detailTabs = find
-        .descendant(
-          of: detailReader,
-          matching: find.byType(SingleChildScrollView),
-        )
-        .first;
-    await tester.drag(detailTabs, const Offset(-520, 0));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('相关论文').first);
-    await tester.pumpAndSettle();
+    await selectReaderSection(tester, '相关');
     await tester.tap(find.byKey(const ValueKey('related-paper-2402.06734')));
     await tester.pumpAndSettle();
     expect(
@@ -73,6 +55,8 @@ void main() {
       find.byKey(const ValueKey('paper-title-2402.06734')),
       findsOneWidget,
     );
+    await tester.tap(find.byKey(const ValueKey('paper-detail-back')));
+    await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey('papers-header')), findsOneWidget);
     expect(find.byKey(const ValueKey('bottom-nav-0')), findsOneWidget);
   });
@@ -125,7 +109,7 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('bottom-nav-0')));
     await tester.pumpAndSettle();
     expect(
-      find.byKey(const ValueKey('paper-title-2402.06734')),
+      find.byKey(const ValueKey('paper-discovery-title-2402.06734')),
       findsOneWidget,
     );
   });

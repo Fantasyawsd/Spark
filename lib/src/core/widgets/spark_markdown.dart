@@ -63,8 +63,8 @@ class SparkMarkdown extends StatelessWidget {
 
 /// Reading body measurement style. Color is applied by the theme-specific style.
 const paperReaderBodyTextStyle = TextStyle(
-  fontSize: SparkFontSizes.title,
-  height: 1.28,
+  fontSize: SparkFontSizes.titleSmall,
+  height: 1.8,
 );
 
 MarkdownStyleSheet paperReaderMarkdownStyle(BuildContext context) {
@@ -107,7 +107,7 @@ MarkdownStyleSheet paperReaderMarkdownStyle(BuildContext context) {
     horizontalRuleDecoration: BoxDecoration(
       border: Border(top: BorderSide(color: palette.line)),
     ),
-    blockSpacing: 7,
+    blockSpacing: 12,
     listIndent: 20,
   );
 }

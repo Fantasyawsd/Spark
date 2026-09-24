@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/theme/spark_theme.dart';
+
 /// Chat-specific semantic colors derived from the active application theme.
 abstract final class PaperAiUiTokens {
-  static Color canvas(BuildContext context) => _accentBlend(context, 0.02);
+  static Color canvas(BuildContext context) => SparkColors.of(context).canvas;
 
-  static Color sideChatCanvas(BuildContext context) => _accentBlend(context, 0.10);
+  static Color sideChatCanvas(BuildContext context) =>
+      _accentBlend(context, 0.10);
 
-  static Color composer(BuildContext context) => _accentBlend(context, 0.06);
+  static Color composer(BuildContext context) => SparkColors.of(context).card;
 
   static Color composerBorder(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
@@ -17,7 +20,7 @@ abstract final class PaperAiUiTokens {
   }
 
   static Color userBubble(BuildContext context) =>
-      Theme.of(context).colorScheme.primaryContainer;
+      SparkColors.of(context).surfaceMuted;
 
   static Color assistantReasoning(BuildContext context) =>
       _accentBlend(context, 0.08);

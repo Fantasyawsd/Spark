@@ -17,6 +17,8 @@ import 'package:spark/src/features/papers/domain/paper_translation.dart';
 import 'package:spark/src/features/papers/presentation/widgets/paper_reader_card.dart';
 import 'package:spark/src/features/papers/presentation/widgets/paper_reader_view.dart';
 
+import 'support/paper_ember_test_navigation.dart';
+
 void main() {
   testWidgets('reader initializes only the active tab cache once', (
     tester,
@@ -76,22 +78,27 @@ void main() {
     expect(translationRepository.loadCalls, 1);
     expect(keywordRepository.loadCalls, 0);
 
+    await selectReaderSection(tester, '概览');
     await tester.tap(find.text('Abstract'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('摘要'));
     await tester.pumpAndSettle();
     expect(translationRepository.loadCalls, 1);
 
+    await selectReaderSection(tester, '详情');
     await tester.tap(find.text('关键词'));
     await tester.pumpAndSettle();
     expect(keywordRepository.loadCalls, 1);
 
+    await selectReaderSection(tester, '概览');
     await tester.tap(find.text('Abstract'));
     await tester.pumpAndSettle();
+    await selectReaderSection(tester, '详情');
     await tester.tap(find.text('关键词'));
     await tester.pumpAndSettle();
     expect(keywordRepository.loadCalls, 1);
 
+    await openPaperMore(tester);
     await tester.tap(find.byKey(const ValueKey('paper-action-comment')));
     await tester.pumpAndSettle();
     expect(keywordRepository.loadCalls, 1);
@@ -135,6 +142,7 @@ void main() {
         ),
       );
 
+      await openPaperMore(tester);
       await tester.tap(find.byKey(const ValueKey('paper-action-comment')));
       await tester.pumpAndSettle();
     });
@@ -201,6 +209,7 @@ void main() {
       ),
     );
 
+    await openPaperMore(tester);
     await tester.tap(find.byKey(const ValueKey('paper-action-comment')));
     await tester.pumpAndSettle();
 
@@ -217,6 +226,7 @@ void main() {
       tester.element(find.byKey(const ValueKey('paper-comments-sheet'))),
     ).pop();
     await tester.pumpAndSettle();
+    await selectReaderSection(tester, '详情');
     await tester.tap(find.text('关键词'));
     await tester.pumpAndSettle();
 
@@ -271,6 +281,7 @@ void main() {
       ).hideCurrentSnackBar();
       await tester.pumpAndSettle();
 
+      await openPaperMore(tester);
       await tester.tap(find.byKey(const ValueKey('paper-action-share')));
       await tester.pumpAndSettle();
       expect(find.text('无法分享论文。'), findsOneWidget);

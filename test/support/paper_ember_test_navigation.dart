@@ -3,10 +3,14 @@ import 'package:flutter_test/flutter_test.dart';
 
 /// Traverse the production discovery-to-reader route, including asynchronous load.
 Future<void> openFirstDiscoveredPaper(WidgetTester tester) async {
-  final open = find.byWidgetPredicate((widget) {
-    final key = widget.key;
-    return key is ValueKey<String> && key.value.startsWith('paper-discovery-open-');
-  }).first;
+  final open = find
+      .byWidgetPredicate((widget) {
+        final key = widget.key;
+        return key is ValueKey<String> &&
+            key.value.startsWith('paper-discovery-open-');
+      })
+      .hitTestable()
+      .first;
   await tester.tap(open);
   await tester.pumpAndSettle();
 }

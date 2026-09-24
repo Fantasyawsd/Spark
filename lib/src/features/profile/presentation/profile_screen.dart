@@ -74,10 +74,6 @@ class ProfileScreen extends StatelessWidget {
               onHistoryTap: () => _openHistory(context),
               themeController: themeController,
             ),
-            if (aiSettingsBuilder case final builder?) ...[
-              const SizedBox(height: 16),
-              builder(context),
-            ],
             const SizedBox(height: 16),
             FavoriteCollectionSection(
               groups: favoriteGroups,
@@ -108,6 +104,10 @@ class ProfileScreen extends StatelessWidget {
               onViewAll: () => _openHistory(context),
             ),
             const SizedBox(height: 16),
+            if (aiSettingsBuilder case final builder?) ...[
+              const SizedBox(height: 16),
+              builder(context),
+            ],
             ProfileSettingsSection(
               catalogSourceDescription: status?.description,
               catalogStateLabel: status?.stateLabel,

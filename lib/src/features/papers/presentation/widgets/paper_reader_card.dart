@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import '../../../../core/motion/motion_tokens.dart';
 import '../../../../core/platform/external_http_uri.dart';
 import '../../../../core/platform/spark_clipboard.dart';
-import '../../../../core/theme/spark_font_sizes.dart';
 import '../../../../core/theme/spark_theme.dart';
 import '../../../../core/widgets/spark_segmented_control.dart';
 import '../../../chat/chat.dart';
@@ -92,16 +91,25 @@ class PaperReaderCard extends StatefulWidget {
 }
 
 class _PaperReaderCardState extends State<PaperReaderCard> {
-  static const _tabs = ['Abstract', '摘要', '关键词', '作者', '论文解读', '相关论文'];
+  static const _sections = ['概览', '解读', '相关', '详情'];
 
-  late int _tabIndex;
+  int _sectionIndex = 0;
+  bool _chinese = false;
+  bool _showKeywords = false;
+
+  int get _tabIndex => switch (_sectionIndex) {
+        0 => _chinese ? 1 : 0,
+        1 => 4,
+        2 => 5,
+        _ => _showKeywords ? 2 : 3,
+      };
+
   late final PageController _tabPageController;
   late PaperReaderCardControllerSet _controllers;
 
   @override
   void initState() {
     super.initState();
-    _tabIndex = 0;
     _tabPageController = PageController();
     _controllers = PaperReaderCardControllerSet(
       paper: widget.paper,
@@ -153,79 +161,94 @@ class _PaperReaderCardState extends State<PaperReaderCard> {
     final hasPaperLink = widget.onOpenPaper != null &&
         (validExternalHttpUri(paper.pdfUrl) != null ||
             validExternalHttpUri(paper.paperUrl) != null);
+    final palette = SparkColors.of(context);
+    final header = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        MobileSelectableText(
+          key: ValueKey('paper-title-${paper.id}'),
+          text: paper.title,
+          maxLines: 3,
+          overflow: TextOverflow.ellipsis,
+          onTap: () => platformSparkClipboard.copyText(paper.title),
+          style: SparkTheme.editorialTitle(context),
+        ),
+        const SizedBox(height: 12),
+        PaperMetadata(
+            paper: paper, followed: widget.followed, onFollow: widget.onFollow),
+        if (hasPaperLink)
+          PaperPdfButton(paper: paper, onOpen: widget.onOpenPaper!),
+        const SizedBox(height: 12),
+        SparkSegmentedControl(
+          key: const ValueKey('paper-tabs'),
+          tabs: _sections,
+          selectedIndex: _sectionIndex,
+          onSelected: _selectSection,
+          height: 48,
+        ),
+        if (_sectionIndex == 0)
+          _buildContentSelector(['Abstract', '摘要'], _chinese ? 1 : 0, (value) {
+            setState(() => _chinese = value == 1);
+            unawaited(_initializeCurrentTab());
+          }),
+        if (_sectionIndex == 3)
+          _buildContentSelector(['作者', '关键词'], _showKeywords ? 1 : 0, (value) {
+            setState(() => _showKeywords = value == 1);
+            unawaited(_initializeCurrentTab());
+          }),
+        const SizedBox(height: 12),
+      ],
+    );
+    final pages = PageView.builder(
+      key: const ValueKey('paper-tab-pages'),
+      controller: _tabPageController,
+      itemCount: _sections.length,
+      onPageChanged: _handleSectionChanged,
+      itemBuilder: (context, section) {
+        final contentIndex = switch (section) {
+          0 => _chinese ? 1 : 0,
+          1 => 4,
+          2 => 5,
+          _ => _showKeywords ? 2 : 3,
+        };
+        return _buildTabContent(paper, contentIndex);
+      },
+    );
     return ColoredBox(
-      color: SparkColors.of(context).card,
+      color: palette.card,
       child: Stack(
         children: [
           Positioned.fill(
             child: Padding(
-              padding: EdgeInsets.fromLTRB(
-                16,
-                widget.contentTopInset,
-                16,
-                // 操作栏融入卡片底色，内容避让栏高与 AI 解读悬浮钮。
-                safePadding.bottom + widget.actionBarBottomInset + 96,
+              padding: EdgeInsets.fromLTRB(20, widget.contentTopInset, 20,
+                  safePadding.bottom + widget.actionBarBottomInset + 76),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  // Short windows and enlarged text can scroll the heading away
+                  // without shrinking controls or making the body unreachable.
+                  final compact = constraints.maxHeight < 480 ||
+                      MediaQuery.textScalerOf(context).scale(16) > 22;
+                  if (compact) {
+                    return SingleChildScrollView(
+                      key: const ValueKey('paper-reader-compact-scroll'),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [header, SizedBox(height: 340, child: pages)],
+                      ),
+                    );
+                  }
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [header, Expanded(child: pages)],
+                  );
+                },
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  MobileSelectableText(
-                    key: ValueKey('paper-title-${paper.id}'),
-                    text: paper.title,
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
-                    onTap: () => platformSparkClipboard.copyText(paper.title),
-                    style: TextStyle(
-                      color: SparkColors.of(context).ink,
-                      fontSize: SparkFontSizes.headline,
-                      height: 1.16,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  PaperMetadata(
-                    paper: paper,
-                    followed: widget.followed,
-                    onFollow: widget.onFollow,
-                  ),
-                  if (hasPaperLink) ...[
-                    const SizedBox(height: 3),
-                    PaperPdfButton(paper: paper, onOpen: widget.onOpenPaper!),
-                  ],
-                  const SizedBox(height: 8),
-                  SparkSegmentedControl(
-                    key: const ValueKey('paper-tabs'),
-                    tabs: _tabs,
-                    selectedIndex: _tabIndex,
-                    onSelected: _selectTab,
-                  ),
-                  const SizedBox(height: 11),
-                  Expanded(
-                    child: PageView.builder(
-                      key: const ValueKey('paper-tab-pages'),
-                      controller: _tabPageController,
-                      itemCount: _tabs.length,
-                      onPageChanged: _handleTabChanged,
-                      itemBuilder: (context, index) =>
-                          _buildTabContent(paper, index),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          Positioned(
-            right: 16,
-            bottom: safePadding.bottom + widget.actionBarBottomInset + 56,
-            child: PaperReaderAiInterpretButton(
-              onPressed: () => unawaited(_openDiscussion(widget.onAnalyze)),
             ),
           ),
           Positioned(
             left: 16,
             right: 16,
             bottom: safePadding.bottom + widget.actionBarBottomInset,
-            height: 52,
             child: PaperActionBar(
               paper: paper,
               liked: widget.liked,
@@ -234,6 +257,7 @@ class _PaperReaderCardState extends State<PaperReaderCard> {
               commentCountDelta: widget.commentCountDelta,
               onLike: widget.onLike,
               onComment: () => unawaited(_openDiscussion(widget.onComment)),
+              onAnalyze: () => unawaited(_openDiscussion(widget.onAnalyze)),
               onSave: widget.onSave,
               onSaveLongPress: widget.onSaveLongPress,
               onShare: widget.onShare,
@@ -248,9 +272,46 @@ class _PaperReaderCardState extends State<PaperReaderCard> {
     );
   }
 
-  void _handleTabChanged(int index) {
-    setState(() => _tabIndex = index);
+  Widget _buildContentSelector(
+      List<String> labels, int selected, ValueChanged<int> onSelected) {
+    final palette = SparkColors.of(context);
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(children: [
+        for (var index = 0; index < labels.length; index++)
+          Padding(
+            padding: const EdgeInsets.only(right: 8, top: 6),
+            child: Semantics(
+              selected: selected == index,
+              child: TextButton(
+                onPressed: () => onSelected(index),
+                style: TextButton.styleFrom(
+                  foregroundColor:
+                      selected == index ? palette.primary : palette.muted,
+                  backgroundColor: selected == index
+                      ? palette.primaryPale
+                      : Colors.transparent,
+                  minimumSize: const Size(64, 48),
+                ),
+                child: Text(labels[index]),
+              ),
+            ),
+          ),
+      ]),
+    );
+  }
+
+  void _handleSectionChanged(int index) {
+    setState(() => _sectionIndex = index);
     unawaited(_initializeCurrentTab());
+  }
+
+  void _selectSection(int index) {
+    if (index == _sectionIndex || !_tabPageController.hasClients) return;
+    // Adjacent logical sections, without visiting hidden language/detail tabs.
+    _tabPageController.animateToPage(index,
+        duration: MotionTokens.duration(context, MotionTokens.tabDuration),
+        curve: MotionTokens.pageCurve);
   }
 
   Future<void> _initializeCurrentTab() async {
@@ -273,19 +334,10 @@ class _PaperReaderCardState extends State<PaperReaderCard> {
   }
 
   void _resetToOriginal() {
-    _tabIndex = 0;
-    if (_tabPageController.hasClients) {
-      _tabPageController.jumpToPage(0);
-    }
-  }
-
-  void _selectTab(int index) {
-    if (index == _tabIndex || !_tabPageController.hasClients) return;
-    _tabPageController.animateToPage(
-      index,
-      duration: MotionTokens.duration(context, MotionTokens.tabDuration),
-      curve: MotionTokens.pageCurve,
-    );
+    _sectionIndex = 0;
+    _chinese = false;
+    _showKeywords = false;
+    if (_tabPageController.hasClients) _tabPageController.jumpToPage(0);
   }
 
   Widget _buildTabContent(Paper paper, int index) {
@@ -337,7 +389,7 @@ class _PaperReaderCardState extends State<PaperReaderCard> {
       key: ValueKey('${paper.id}-tab-$index'),
       text: paper.content.originalAbstractMarkdown,
       expandable: true,
-      topics: const [],
+      topics: paper.contentKeywords,
       onExpand: () => _openFullReader(
         paper,
         paper.content.originalAbstractMarkdown,

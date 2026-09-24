@@ -6,9 +6,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:spark/spark.dart';
 import 'package:spark/src/features/papers/presentation/papers_screen.dart';
 import 'package:spark/src/features/papers/presentation/widgets/paper_action_bar.dart';
-import 'package:spark/src/features/papers/presentation/widgets/paper_reader_view.dart';
 
 import 'support/paper_presentation_test_support.dart';
+
+import 'support/paper_ember_test_navigation.dart';
 
 void main() {
   testWidgets('paper title copies on tap while body remains selectable', (
@@ -32,6 +33,7 @@ void main() {
 
     await tester.pumpWidget(const SparkApp(showSplash: false));
     await tester.pump();
+    await openFirstDiscoveredPaper(tester);
 
     const title =
         'Corruption Robust Offline Reinforcement Learning with Human Feedback';
@@ -57,6 +59,7 @@ void main() {
       ),
     );
     await tester.pump();
+    await openFirstDiscoveredPaper(tester);
 
     expect(find.text('关注作者'), findsOneWidget);
     expect(find.textContaining('· arXiv'), findsNothing);
@@ -68,7 +71,7 @@ void main() {
         of: find.byType(PaperActionBar),
         matching: find.text('0'),
       ),
-      findsNWidgets(4),
+      findsNothing,
     );
     expect(
       find.descendant(
@@ -98,6 +101,7 @@ void main() {
       ),
     );
     await tester.pump();
+    await openFirstDiscoveredPaper(tester);
 
     final pagesSize = tester.getSize(
       find.byKey(const ValueKey('paper-tab-pages')).first,
@@ -111,85 +115,63 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('中文摘要内容'), findsOneWidget);
 
-    await tester.tap(find.byIcon(Icons.favorite_border_rounded).first);
+    await openPaperMore(tester);
+    await tester.tap(find.byKey(const ValueKey('paper-action-like')));
     await tester.pumpAndSettle();
+    await openPaperMore(tester);
     expect(find.byIcon(Icons.favorite_rounded), findsWidgets);
+    await tester.tapAt(const Offset(20, 20));
+    await tester.pumpAndSettle();
 
     await tester.tap(find.byIcon(Icons.bookmark_border_rounded).first);
     await tester.pumpAndSettle();
     expect(find.byIcon(Icons.bookmark_rounded), findsWidgets);
   });
 
-  testWidgets('each paper in the vertical feed starts on the original tab', (
-    tester,
-  ) async {
+  testWidgets(
+      'discovery preserves its position and each reader starts at overview',
+      (tester) async {
     await tester.binding.setSurfaceSize(const Size(378, 810));
     addTearDown(() => tester.binding.setSurfaceSize(null));
-
     await tester.pumpWidget(const SparkApp(showSplash: false));
-    await tester.pump();
-
-    final firstReader = find.byType(PaperReaderView).first;
-    final tabs = find
-        .descendant(
-          of: firstReader,
-          matching: find.byType(SingleChildScrollView),
-        )
-        .first;
-    await tester.drag(tabs, const Offset(-520, 0));
     await tester.pumpAndSettle();
-    await tester.tap(
-      find.descendant(of: firstReader, matching: find.text('相关论文')),
-    );
-    await tester.pumpAndSettle();
+    await openFirstDiscoveredPaper(tester);
+    await selectReaderSection(tester, '相关');
     expect(
-      find.descendant(
-        of: firstReader,
-        matching: find.byWidgetPredicate(
-          (widget) =>
-              widget is SparkSegmentedControl && widget.selectedIndex == 5,
-        ),
-      ),
-      findsOneWidget,
-    );
-
-    final feed = tester.widget<PageView>(
-      find.byKey(const ValueKey('paper-feed')),
-    );
-    unawaited(
-      feed.controller!.animateToPage(
-        1,
+        tester
+            .widget<SparkSegmentedControl>(
+                find.byKey(const ValueKey('paper-tabs')))
+            .selectedIndex,
+        2);
+    await tester.tap(find.byKey(const ValueKey('paper-detail-back')));
+    await tester.pumpAndSettle();
+    final feed =
+        tester.widget<PageView>(find.byKey(const ValueKey('paper-feed')));
+    unawaited(feed.controller!.animateToPage(1,
         duration: const Duration(milliseconds: 300),
-        curve: Curves.easeOutCubic,
-      ),
-    );
+        curve: Curves.easeOutCubic));
     await tester.pumpAndSettle();
-
+    await openFirstDiscoveredPaper(tester);
     expect(
-      tester
-          .widget<SparkSegmentedControl>(
-            find.byType(SparkSegmentedControl).hitTestable(),
-          )
-          .selectedIndex,
-      0,
-    );
-
-    unawaited(
-      feed.controller!.animateToPage(
-        0,
+        tester
+            .widget<SparkSegmentedControl>(
+                find.byKey(const ValueKey('paper-tabs')))
+            .selectedIndex,
+        0);
+    await tester.tap(find.byKey(const ValueKey('paper-detail-back')));
+    await tester.pumpAndSettle();
+    expect(feed.controller!.page, 1);
+    unawaited(feed.controller!.animateToPage(0,
         duration: const Duration(milliseconds: 300),
-        curve: Curves.easeOutCubic,
-      ),
-    );
+        curve: Curves.easeOutCubic));
     await tester.pumpAndSettle();
+    await openFirstDiscoveredPaper(tester);
     expect(
-      tester
-          .widget<SparkSegmentedControl>(
-            find.byType(SparkSegmentedControl).hitTestable(),
-          )
-          .selectedIndex,
-      0,
-    );
+        tester
+            .widget<SparkSegmentedControl>(
+                find.byKey(const ValueKey('paper-tabs')))
+            .selectedIndex,
+        0);
   });
 
   testWidgets('long Chinese interpretation can open the full reader', (
@@ -209,6 +191,7 @@ void main() {
       ),
     );
     await tester.pump();
+    await openFirstDiscoveredPaper(tester);
     await tester.tap(find.text('摘要').first);
     await tester.pumpAndSettle();
 
@@ -243,17 +226,18 @@ void main() {
       ),
     );
     await tester.pump();
+    await openFirstDiscoveredPaper(tester);
     await tester.tap(find.text('摘要').first);
     await tester.pumpAndSettle(const Duration(seconds: 1));
 
-    expect(find.text('展开全文'), findsNothing);
+    expect(find.text('展开全文'), findsOneWidget);
     final pagesBottom = tester
         .getRect(find.byKey(const ValueKey('paper-tab-pages')).first)
         .bottom;
     var actionBounds = tester.getRect(
       find.byKey(const ValueKey('paper-translation-refresh')),
     );
-    expect(pagesBottom - actionBounds.center.dy, closeTo(18, 0.1));
+    expect(pagesBottom - actionBounds.center.dy, closeTo(24, 0.1));
 
     await tester.tap(find.byKey(const ValueKey('paper-translation-refresh')));
     await tester.pump();
@@ -262,7 +246,7 @@ void main() {
     actionBounds = tester.getRect(
       find.byKey(const ValueKey('paper-translation-refresh')),
     );
-    expect(pagesBottom - actionBounds.center.dy, closeTo(18, 0.1));
+    expect(pagesBottom - actionBounds.center.dy, closeTo(24, 0.1));
 
     await tester.tap(find.byKey(const ValueKey('paper-translation-refresh')));
     await tester.pump();
@@ -271,7 +255,7 @@ void main() {
   });
 
   testWidgets(
-    'abstract expansion appears only when text exceeds its viewport',
+    'full-reader access remains available for short and long abstracts',
     (tester) async {
       await tester.binding.setSurfaceSize(const Size(378, 810));
       addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -334,7 +318,7 @@ void main() {
       );
       await tester.pump();
 
-      expect(find.text('展开全文'), findsNothing);
+      expect(find.text('展开全文'), findsOneWidget);
     },
   );
 }

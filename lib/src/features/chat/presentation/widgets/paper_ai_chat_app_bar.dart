@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/diagnostics/diagnostics.dart';
 import '../../../../core/theme/spark_font_sizes.dart';
+import '../../../../core/theme/spark_theme.dart';
 import '../../domain/chat_context.dart';
 import '../paper_ai_ui_tokens.dart';
 import 'paper_ai_message_selection_bar.dart';
@@ -19,6 +20,7 @@ class PaperAiChatAppBar extends StatefulWidget implements PreferredSizeWidget {
     required this.selectionCount,
     required this.onCancelSelection,
     this.fullTextAvailable = false,
+    this.showPaperContext = false,
     this.onLoadFullText,
     this.sideChatMode = false,
     this.onToggleSideChat,
@@ -34,12 +36,14 @@ class PaperAiChatAppBar extends StatefulWidget implements PreferredSizeWidget {
   final int selectionCount;
   final VoidCallback onCancelSelection;
   final bool fullTextAvailable;
+  final bool showPaperContext;
   final Future<ChatContext> Function()? onLoadFullText;
   final bool sideChatMode;
   final VoidCallback? onToggleSideChat;
 
   @override
-  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+  Size get preferredSize => Size.fromHeight(
+      kToolbarHeight + (showPaperContext && !selectionActive ? 96 : 0));
 
   @override
   State<PaperAiChatAppBar> createState() => _PaperAiChatAppBarState();
@@ -77,8 +81,15 @@ class _PaperAiChatAppBarState extends State<PaperAiChatAppBar> {
       elevation: 0,
       scrolledUnderElevation: 0,
       titleSpacing: 8,
+      centerTitle: false,
       title: _buildTitle(context),
       actions: _buildActions(),
+      bottom: widget.showPaperContext
+          ? PreferredSize(
+              preferredSize: const Size.fromHeight(96),
+              child: _buildContextCard(context),
+            )
+          : null,
     );
   }
 
@@ -104,23 +115,78 @@ class _PaperAiChatAppBarState extends State<PaperAiChatAppBar> {
                 fontWeight: FontWeight.w600,
               ),
             ),
-            const SizedBox(height: 4),
-            SizedBox(
-              width: MediaQuery.sizeOf(context).width * 0.64,
-              child: Text(
-                widget.subtitle,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  fontSize: SparkFontSizes.caption,
-                  height: 1.15,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
+            if (!widget.showPaperContext) ...[
+              const SizedBox(height: 4),
+              Text(widget.subtitle,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      fontSize: SparkFontSizes.caption,
+                      height: 1.15)),
+            ],
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildContextCard(BuildContext context) {
+    final palette = SparkColors.of(context);
+    final status = _fullTextLoading
+        ? '正在读取全文…'
+        : _fullTextEnabled
+            ? '已读取全文'
+            : '基于论文摘要';
+    return Container(
+      key: const ValueKey('paper-ai-context-card'),
+      height: 88,
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: palette.card,
+        border: Border.all(color: palette.line),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.description_outlined, color: palette.primary),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(widget.subtitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                        color: palette.ink,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600)),
+                const SizedBox(height: 6),
+                Text(status,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(color: palette.muted, fontSize: 12)),
+              ],
+            ),
+          ),
+          if (widget.fullTextAvailable)
+            IconButton(
+              key: const ValueKey('paper-ai-fulltext-toggle'),
+              tooltip: _fullTextEnabled ? '已读取全文' : '读取论文全文',
+              onPressed: _fullTextLoading ? null : _toggleFullText,
+              icon: _fullTextLoading
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2))
+                  : Icon(_fullTextEnabled
+                      ? Icons.check_circle_outline
+                      : Icons.menu_book_outlined),
+            ),
+        ],
       ),
     );
   }
@@ -146,7 +212,7 @@ class _PaperAiChatAppBarState extends State<PaperAiChatAppBar> {
                 )
               : null,
         ),
-      if (widget.fullTextAvailable)
+      if (widget.fullTextAvailable && !widget.showPaperContext)
         IconButton(
           key: const ValueKey('paper-ai-fulltext-toggle'),
           tooltip: _fullTextEnabled ? '已读取全文' : '读取论文全文',

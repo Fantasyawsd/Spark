@@ -1,5 +1,3 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 
 import '../core/motion/motion_tokens.dart';
@@ -21,13 +19,12 @@ class SparkBottomNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final palette = SparkColors.of(context);
     final items = <_NavigationItem>[
       const _NavigationItem(
         label: '论文',
-        icon: Icons.description_outlined,
-        selectedIcon: Icons.description_rounded,
+        icon: Icons.menu_book_outlined,
+        selectedIcon: Icons.menu_book_rounded,
       ),
       const _NavigationItem(
         label: 'ChatPaper',
@@ -42,48 +39,30 @@ class SparkBottomNav extends StatelessWidget {
         ),
       const _NavigationItem(
         label: '我的',
-        icon: Icons.person_outline_rounded,
-        selectedIcon: Icons.person_rounded,
+        icon: Icons.bookmarks_outlined,
+        selectedIcon: Icons.bookmarks_rounded,
       ),
     ];
 
-    return Container(
-      margin: const EdgeInsets.fromLTRB(10, 0, 10, 8),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(SparkDesignTokens.radiusOverlay),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
-          child: Container(
-            padding: const EdgeInsets.all(4),
-            decoration: BoxDecoration(
-              color: palette.popover.withValues(alpha: isDark ? 0.68 : 0.80),
-              borderRadius:
-                  BorderRadius.circular(SparkDesignTokens.radiusOverlay),
-              border: Border.all(
-                color: Colors.white.withValues(alpha: isDark ? 0.10 : 0.55),
-              ),
-              boxShadow: SparkDesignTokens.floatingShadowFor(
-                Theme.of(context).brightness,
-              ),
-            ),
-            child: SafeArea(
-              top: false,
-              minimum: EdgeInsets.zero,
-              child: SizedBox(
-                height: 50,
-                child: Row(
-                  children: [
-                    for (var index = 0; index < items.length; index++)
-                      _NavItem(
-                        item: items[index],
-                        index: index,
-                        selectedIndex: selectedIndex,
-                        onSelected: onSelected,
-                      ),
-                  ],
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: palette.card,
+        border: Border(top: BorderSide(color: palette.line)),
+      ),
+      child: SafeArea(
+        top: false,
+        child: SizedBox(
+          height: 64,
+          child: Row(
+            children: [
+              for (var index = 0; index < items.length; index++)
+                _NavItem(
+                  item: items[index],
+                  index: index,
+                  selectedIndex: selectedIndex,
+                  onSelected: onSelected,
                 ),
-              ),
-            ),
+            ],
           ),
         ),
       ),
@@ -127,48 +106,54 @@ class _NavItem extends StatelessWidget {
         child: Material(
           color: Colors.transparent,
           borderRadius: BorderRadius.circular(SparkDesignTokens.radiusMd),
-          child: InkWell(
-            key: ValueKey('bottom-nav-$index'),
-            onTap: () => onSelected(index),
-            borderRadius: BorderRadius.circular(SparkDesignTokens.radiusMd),
-            child: AnimatedContainer(
-              duration: MotionTokens.duration(
-                context,
-                MotionTokens.tabDuration,
-              ),
-              curve: MotionTokens.enterCurve,
-              decoration: BoxDecoration(
-                color: selected
-                    ? palette.primary.withValues(alpha: 0.10)
-                    : Colors.transparent,
-                borderRadius: BorderRadius.circular(SparkDesignTokens.radiusMd),
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  SizedBox(
-                    width: 32,
-                    height: 25,
-                    child: Align(
-                      child: Icon(
-                        selected ? item.selectedIcon : item.icon,
-                        size: 22,
-                        color: color,
+          child: Semantics(
+            selected: selected,
+            button: true,
+            child: InkWell(
+              key: ValueKey('bottom-nav-$index'),
+              onTap: () => onSelected(index),
+              borderRadius: BorderRadius.circular(SparkDesignTokens.radiusMd),
+              child: AnimatedContainer(
+                duration: MotionTokens.duration(
+                  context,
+                  MotionTokens.tabDuration,
+                ),
+                curve: MotionTokens.enterCurve,
+                decoration: BoxDecoration(
+                  color: selected
+                      ? palette.primary.withValues(alpha: 0.10)
+                      : Colors.transparent,
+                  borderRadius:
+                      BorderRadius.circular(SparkDesignTokens.radiusMd),
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    SizedBox(
+                      width: 32,
+                      height: 25,
+                      child: Align(
+                        child: Icon(
+                          selected ? item.selectedIcon : item.icon,
+                          size: 22,
+                          color: color,
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    item.label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: color,
-                      fontSize: SparkFontSizes.footnote,
-                      fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+                    const SizedBox(height: 2),
+                    Text(
+                      item.label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: color,
+                        fontSize: SparkFontSizes.footnote,
+                        fontWeight:
+                            selected ? FontWeight.w600 : FontWeight.w500,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),

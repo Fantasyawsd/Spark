@@ -188,6 +188,7 @@ class _MainAiChatScreenState extends State<MainAiChatScreen> {
     // 差异化通过 screenTitle/subtitle 与 canvas 体现。
     if (_sideChatMode && _sideChatController != null) {
       return PaperAiChatScreen(
+        isPaperChat: false,
         key: const ValueKey('side-chat-screen'),
         chatContext: _sideChatController!.context,
         aiService: widget.aiService,
@@ -207,6 +208,7 @@ class _MainAiChatScreenState extends State<MainAiChatScreen> {
     }
 
     return PaperAiChatScreen(
+      isPaperChat: false,
       key: const ValueKey('main-chat-screen'),
       chatContext: MainAiChatDefinition.context,
       aiService: widget.aiService,

@@ -28,12 +28,12 @@ class PaperFullReaderPage extends StatefulWidget {
 }
 
 class _PaperFullReaderPageState extends State<PaperFullReaderPage> {
-  /// 字号档位对应的正文字号（基准 17 = SparkFontSizes.title）。
-  static const List<double> _fontSteps = [15, 17, 19];
+  /// 字号档位对应的正文字号（基准 16 = SparkFontSizes.titleSmall）。
+  static const List<double> _fontSteps = [16, 18, 20];
 
   late final ScrollController _scrollController;
   final ValueNotifier<double> _progress = ValueNotifier<double>(0);
-  double _fontSize = 17;
+  double _fontSize = 16;
 
   @override
   void initState() {
@@ -67,8 +67,10 @@ class _PaperFullReaderPageState extends State<PaperFullReaderPage> {
   @override
   Widget build(BuildContext context) {
     final palette = SparkColors.of(context);
-    // 正文基准 17px；SparkMarkdown 内部文本随 MediaQuery textScaler 缩放。
-    final textScaler = TextScaler.linear(_fontSize / SparkFontSizes.title);
+    final textScaler = _ReaderTextScaler(
+      MediaQuery.textScalerOf(context),
+      _fontSize / SparkFontSizes.titleSmall,
+    );
     return Scaffold(
       key: const ValueKey('paper-full-reader'),
       backgroundColor: palette.card,
@@ -147,4 +149,17 @@ class _PaperFullReaderPageState extends State<PaperFullReaderPage> {
       ),
     );
   }
+}
+
+/// Preserve the operating system's (possibly nonlinear) accessibility scale.
+class _ReaderTextScaler extends TextScaler {
+  const _ReaderTextScaler(this.system, this.factor);
+  final TextScaler system;
+  final double factor;
+
+  @override
+  double scale(double fontSize) => system.scale(fontSize * factor);
+
+  @override
+  double get textScaleFactor => scale(16) / 16;
 }

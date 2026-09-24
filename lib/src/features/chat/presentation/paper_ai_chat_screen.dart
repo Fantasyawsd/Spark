@@ -25,6 +25,7 @@ class PaperAiChatScreen extends StatefulWidget {
     required this.sessionRepository,
     this.settingsRepository,
     this.screenTitle = 'ChatPaper',
+    this.isPaperChat = true,
     this.screenSubtitle,
     this.assistantLabel = '默认助手',
     this.modelName = 'deepseek-v4-flash',
@@ -48,6 +49,7 @@ class PaperAiChatScreen extends StatefulWidget {
   final ChatSessionRepository sessionRepository;
   final ChatSessionSettingsRepository? settingsRepository;
   final String screenTitle;
+  final bool isPaperChat;
   final String? screenSubtitle;
   final String assistantLabel;
   final String modelName;
@@ -133,6 +135,7 @@ class _PaperAiChatScreenState extends State<PaperAiChatScreen> {
       backgroundColor: canvasColor,
       appBar: PaperAiChatAppBar(
         initialTitle: widget.screenTitle,
+        showPaperContext: widget.isPaperChat,
         subtitle: _conversationSubtitle,
         previewMode: _previewMode,
         onPreviewModeChanged: (value) => setState(() => _previewMode = value),

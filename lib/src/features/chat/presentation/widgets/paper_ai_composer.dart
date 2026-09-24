@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/motion/motion_tokens.dart';
+
 import '../../domain/chat_ai_service.dart';
 import 'paper_ai_composer_parts.dart';
 
@@ -79,7 +81,8 @@ class _PaperAiComposerState extends State<PaperAiComposer> {
       child: Padding(
         padding: const EdgeInsets.fromLTRB(14, 4, 14, 8),
         child: AnimatedSize(
-          duration: const Duration(milliseconds: 160),
+          duration:
+              MotionTokens.duration(context, const Duration(milliseconds: 160)),
           curve: Curves.easeOutCubic,
           alignment: Alignment.bottomCenter,
           child: Column(

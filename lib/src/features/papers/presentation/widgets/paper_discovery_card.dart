@@ -30,8 +30,8 @@ class PaperDiscoveryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = SparkColors.of(context);
     final chinese = paper.content.chineseAbstractMarkdown.trim();
-    final preview = chinese.isNotEmpty
-        ? chinese : paper.content.originalAbstractMarkdown;
+    final preview =
+        chinese.isNotEmpty ? chinese : paper.content.originalAbstractMarkdown;
     final topic = topicLabel(paper);
     final trend = trendLabel(paper);
     final personalized = personalizationLabel(paper);
@@ -61,36 +61,44 @@ class PaperDiscoveryCard extends StatelessWidget {
                         Row(
                           children: [
                             Expanded(
-                              child: Text([
-                                venueLabel(paper),
-                                if (published != null)
-                                  '${published.year}.${published.month.toString().padLeft(2, '0')}.${published.day.toString().padLeft(2, '0')}',
-                              ].join(' · '),
-                              style: TextStyle(color: palette.muted, fontSize: 12)),
+                              child: Text(
+                                  [
+                                    venueLabel(paper),
+                                    if (published != null)
+                                      '${published.year}.${published.month.toString().padLeft(2, '0')}.${published.day.toString().padLeft(2, '0')}',
+                                  ].join(' · '),
+                                  style: TextStyle(
+                                      color: palette.muted, fontSize: 12)),
                             ),
                             GestureDetector(
                               onLongPress: onSaveLongPress,
                               child: IconButton(
-                              key: ValueKey('paper-discovery-save-${paper.id}'),
-                              tooltip: saved ? '取消收藏' : '收藏',
-                              onPressed: onSave,
-                              icon: Icon(saved ? Icons.bookmark_rounded
-                                  : Icons.bookmark_border_rounded),
-                              color: saved ? palette.primary : palette.muted,
+                                key: ValueKey(
+                                    'paper-discovery-save-${paper.id}'),
+                                tooltip: saved ? '取消收藏' : '收藏',
+                                onPressed: onSave,
+                                icon: Icon(saved
+                                    ? Icons.bookmark_rounded
+                                    : Icons.bookmark_border_rounded),
+                                color: saved ? palette.primary : palette.muted,
                               ),
                             ),
                           ],
                         ),
                         const SizedBox(height: 12),
                         Text(paper.title,
-                          key: ValueKey('paper-discovery-title-${paper.id}'),
-                          style: SparkTheme.editorialTitle(context,
-                              size: compact ? 24 : 28)),
+                            key: ValueKey('paper-discovery-title-${paper.id}'),
+                            style: SparkTheme.editorialTitle(context,
+                                size: compact ? 24 : 28)),
                         const SizedBox(height: 12),
                         Text(compactAuthorLine(paper),
-                          style: TextStyle(color: palette.muted, fontSize: 13,
-                              height: 1.5)),
-                        if (topic != null || trend != null || personalized != null) ...[
+                            style: TextStyle(
+                                color: palette.muted,
+                                fontSize: 13,
+                                height: 1.5)),
+                        if (topic != null ||
+                            trend != null ||
+                            personalized != null) ...[
                           const SizedBox(height: 16),
                           Wrap(spacing: 8, runSpacing: 8, children: [
                             for (final label in [topic, trend, personalized])
@@ -99,25 +107,33 @@ class PaperDiscoveryCard extends StatelessWidget {
                                   padding: const EdgeInsets.symmetric(
                                       horizontal: 10, vertical: 5),
                                   decoration: BoxDecoration(
-                                    color: label == topic ? palette.surfaceMuted
+                                    color: label == topic
+                                        ? palette.surfaceMuted
                                         : palette.primaryPale,
                                     borderRadius: BorderRadius.circular(6),
                                   ),
-                                  child: Text(label, style: TextStyle(
-                                      color: label == topic ? palette.muted
-                                          : palette.primary, fontSize: 12)),
+                                  child: Text(label,
+                                      style: TextStyle(
+                                          color: label == topic
+                                              ? palette.muted
+                                              : palette.primary,
+                                          fontSize: 12)),
                                 ),
                           ]),
                         ],
                         const SizedBox(height: 24),
                         Text(chinese.isEmpty ? 'ABSTRACT' : '中文摘要',
-                          style: TextStyle(color: palette.primary, fontSize: 11,
-                              letterSpacing: 1.2, fontWeight: FontWeight.w600)),
+                            style: TextStyle(
+                                color: palette.primary,
+                                fontSize: 11,
+                                letterSpacing: 1.2,
+                                fontWeight: FontWeight.w600)),
                         const SizedBox(height: 10),
-                        Text(preview, maxLines: compact ? 4 : 7,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(color: palette.ink,
-                              fontSize: 16, height: 1.8)),
+                        Text(preview,
+                            maxLines: compact ? 4 : 7,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                                color: palette.ink, fontSize: 16, height: 1.8)),
                       ],
                     ),
                   ),
@@ -130,7 +146,8 @@ class PaperDiscoveryCard extends StatelessWidget {
                         child: FilledButton.icon(
                           key: ValueKey('paper-discovery-open-${paper.id}'),
                           onPressed: onOpen,
-                          icon: const Icon(Icons.arrow_forward_rounded, size: 18),
+                          icon:
+                              const Icon(Icons.arrow_forward_rounded, size: 18),
                           label: const Text('开始阅读'),
                         ),
                       ),
@@ -140,7 +157,8 @@ class PaperDiscoveryCard extends StatelessWidget {
                         tooltip: readLater ? '移出稍后阅读' : '加入稍后阅读',
                         onPressed: onReadLater,
                         color: readLater ? palette.primary : palette.muted,
-                        icon: Icon(readLater ? Icons.watch_later
+                        icon: Icon(readLater
+                            ? Icons.watch_later
                             : Icons.watch_later_outlined),
                       ),
                     ],

@@ -44,10 +44,10 @@ class CherryIconButton extends StatelessWidget {
             borderRadius: BorderRadius.circular(SparkDesignTokens.radiusMd),
             hoverColor: SparkColors.of(context).accent,
             focusColor: SparkColors.of(context).accent,
-            // 视觉尺寸保持 size，命中区外扩到 44px 触控标准。
+            // 视觉尺寸保持 size，命中区外扩到 48px 触控标准。
             child: SizedBox(
-              width: size < 44 ? 44 : size,
-              height: size < 44 ? 44 : size,
+              width: size < 48 ? 48 : size,
+              height: size < 48 ? 48 : size,
               child: Center(
                 child: SizedBox(
                   width: size,

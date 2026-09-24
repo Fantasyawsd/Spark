@@ -10,7 +10,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:spark/spark.dart';
 import 'package:spark/src/core/theme/in_memory_theme_preference_repository.dart';
 import 'package:spark/src/features/chat/presentation/widgets/paper_ai_chat_app_bar.dart';
-import 'package:spark/src/features/papers/domain/paper.dart';
 import 'package:spark/src/features/papers/presentation/widgets/paper_discovery_card.dart';
 import 'package:spark/src/features/papers/presentation/widgets/papers_header.dart';
 
@@ -20,7 +19,8 @@ import 'support/paper_presentation_test_support.dart';
 const _capture = bool.fromEnvironment('SPARK_CAPTURE_UI');
 
 void main() {
-  test('new profiles default to ember and saved accents are preserved', () async {
+  test('new profiles default to ember and saved accents are preserved',
+      () async {
     final controller = ThemeController();
     addTearDown(controller.dispose);
     await controller.configure(InMemoryThemePreferenceRepository());
@@ -37,10 +37,15 @@ void main() {
       final y = b.computeLuminance();
       return (math.max(x, y) + 0.05) / (math.min(x, y) + 0.05);
     }
+
     for (final accent in SparkThemeColor.values) {
-      for (final palette in [SparkPalette.light(accent), SparkPalette.dark(accent)]) {
+      for (final palette in [
+        SparkPalette.light(accent),
+        SparkPalette.dark(accent)
+      ]) {
         expect(contrast(palette.ink, palette.card), greaterThanOrEqualTo(7));
-        expect(contrast(palette.muted, palette.card), greaterThanOrEqualTo(4.5));
+        expect(
+            contrast(palette.muted, palette.card), greaterThanOrEqualTo(4.5));
         expect(contrast(palette.actionBackground, palette.onAction),
             greaterThanOrEqualTo(4.5));
         expect(contrast(palette.primary, palette.onPrimary),
@@ -58,9 +63,10 @@ void main() {
       await tester.pumpWidget(MaterialApp(
         theme: SparkTheme.light(),
         home: MediaQuery(
-          data: MediaQueryData(size: const Size(320, 720),
-              textScaler: TextScaler.linear(scale)),
-          child: Scaffold(body: Column(children: [
+          data: MediaQueryData(
+              size: const Size(320, 720), textScaler: TextScaler.linear(scale)),
+          child: Scaffold(
+              body: Column(children: [
             PapersHeader(
               channels: const ['推荐', '关注', '最新', '机器学习'],
               selectedIndex: 0,
@@ -72,8 +78,11 @@ void main() {
               gridMode: false,
               onToggleViewMode: () => actions.add('view'),
             ),
-            Expanded(child: PaperDiscoveryCard(
-              paper: _paper(), saved: false, readLater: false,
+            Expanded(
+                child: PaperDiscoveryCard(
+              paper: _paper(),
+              saved: false,
+              readLater: false,
               onOpen: () => actions.add('open'),
               onSave: () => actions.add('save'),
               onSaveLongPress: () => actions.add('group'),
@@ -86,8 +95,10 @@ void main() {
       await tester.tap(find.byKey(const ValueKey('paper-time-filter')));
       await tester.tap(find.byKey(const ValueKey('paper-channel-manage')));
       await tester.tap(find.byKey(const ValueKey('papers-view-mode-toggle')));
-      await tester.tap(find.byKey(const ValueKey('paper-discovery-open-review')));
-      await tester.tap(find.byKey(const ValueKey('paper-discovery-later-review')));
+      await tester
+          .tap(find.byKey(const ValueKey('paper-discovery-open-review')));
+      await tester
+          .tap(find.byKey(const ValueKey('paper-discovery-later-review')));
       expect(actions, ['search', 'filter', 'manage', 'view', 'open', 'later']);
       expect(find.textContaining('Trending'), findsNothing);
       expect(find.textContaining('被引'), findsNothing);
@@ -98,16 +109,23 @@ void main() {
   testWidgets('paper context distinguishes capability, loading and loaded',
       (tester) async {
     final load = Completer<ChatContext>();
-    final context = ChatContext(id: 'review', title: 'Paper title', systemPrompt: '');
+    const context =
+        ChatContext(id: 'review', title: 'Paper title', systemPrompt: '');
     await tester.pumpWidget(MaterialApp(
       theme: SparkTheme.dark(),
-      home: Scaffold(appBar: PaperAiChatAppBar(
-        initialTitle: 'ChatPaper', subtitle: 'Paper title',
-        showPaperContext: true, fullTextAvailable: true,
+      home: Scaffold(
+          appBar: PaperAiChatAppBar(
+        initialTitle: 'ChatPaper',
+        subtitle: 'Paper title',
+        showPaperContext: true,
+        fullTextAvailable: true,
         onLoadFullText: () => load.future,
         onApplyFullText: (value) => value.id == 'review',
-        previewMode: false, onPreviewModeChanged: (_) {},
-        onOpenSettings: () {}, selectionActive: false, selectionCount: 0,
+        previewMode: false,
+        onPreviewModeChanged: (_) {},
+        onOpenSettings: () {},
+        selectionActive: false,
+        selectionCount: 0,
         onCancelSelection: () {},
       )),
     ));
@@ -122,11 +140,13 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('production reader exposes four sections and safe small-screen layout',
+  testWidgets(
+      'production reader exposes four sections and safe small-screen layout',
       (tester) async {
     await tester.binding.setSurfaceSize(const Size(320, 640));
     addTearDown(() => tester.binding.setSurfaceSize(null));
-    await tester.pumpWidget(SparkApp(showSplash: false,
+    await tester.pumpWidget(SparkApp(
+      showSplash: false,
       dependencies: SparkDependencies.preview(
         translationServiceFactory: const FakePaperTranslationServiceFactory(),
       ),
@@ -137,14 +157,15 @@ void main() {
         find.byKey(const ValueKey('paper-tabs')));
     expect(tabs.tabs, ['概览', '解读', '相关', '详情']);
     expect(find.byKey(const ValueKey('paper-action-save')), findsOneWidget);
-    expect(find.byKey(const ValueKey('paper-action-read-later')), findsOneWidget);
+    expect(
+        find.byKey(const ValueKey('paper-action-read-later')), findsOneWidget);
     expect(find.byKey(const ValueKey('paper-ai-entry')), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
   testWidgets('capture implemented light and dark screens', (tester) async {
     if (!_capture) return;
-    await _loadReviewFonts();
+    await tester.runAsync(_loadReviewFonts);
     await tester.binding.setSurfaceSize(const Size(390, 844));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     final boundary = GlobalKey();
@@ -155,8 +176,9 @@ void main() {
       themePreferenceRepository: InMemoryThemePreferenceRepository(),
       translationServiceFactory: const FakePaperTranslationServiceFactory(),
     );
-    await tester.pumpWidget(RepaintBoundary(key: boundary,
-      child: SparkApp(showSplash: false, dependencies: dependencies)));
+    await tester.pumpWidget(RepaintBoundary(
+        key: boundary,
+        child: SparkApp(showSplash: false, dependencies: dependencies)));
     await tester.pumpAndSettle();
     await _captureScreen(tester, boundary, 'discovery');
     await openFirstDiscoveredPaper(tester);
@@ -176,19 +198,24 @@ void main() {
 }
 
 Paper _paper() => Paper(
-  id: 'review',
-  title: 'A long paper title for checking readable discovery previews',
-  authors: const ['Researcher'],
-  abstractText: 'An abstract with enough content to check readable line lengths. ' * 12,
-  chineseAbstractMarkdown: '', readMinutes: 4,
-);
+      id: 'review',
+      title: 'A long paper title for checking readable discovery previews',
+      authors: const ['Researcher'],
+      abstractText:
+          'An abstract with enough content to check readable line lengths. ' *
+              12,
+      chineseAbstractMarkdown: '',
+      readMinutes: 4,
+    );
 
 Future<void> _loadReviewFonts() async {
   final fonts = {
     'Roboto': '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
-    'Noto Sans CJK SC': '/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc',
+    'Noto Sans CJK SC':
+        '/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc',
     'serif': '/usr/share/fonts/opentype/noto/NotoSerifCJK-Regular.ttc',
-    'Noto Serif CJK SC': '/usr/share/fonts/opentype/noto/NotoSerifCJK-Regular.ttc',
+    'Noto Serif CJK SC':
+        '/usr/share/fonts/opentype/noto/NotoSerifCJK-Regular.ttc',
   };
   for (final entry in fonts.entries) {
     final file = File(entry.value);
@@ -199,13 +226,16 @@ Future<void> _loadReviewFonts() async {
   }
 }
 
-Future<void> _captureScreen(WidgetTester tester, GlobalKey key, String name) async {
-  final boundary = key.currentContext!.findRenderObject()! as RenderRepaintBoundary;
-  final image = await boundary.toImage(pixelRatio: 2);
-  final bytes = (await image.toByteData(format: ui.ImageByteFormat.png))!;
+Future<void> _captureScreen(
+    WidgetTester tester, GlobalKey key, String name) async {
+  final boundary =
+      key.currentContext!.findRenderObject()! as RenderRepaintBoundary;
   await tester.runAsync(() async {
+    final image = await boundary.toImage(pixelRatio: 2);
+    final bytes = (await image.toByteData(format: ui.ImageByteFormat.png))!;
     final directory = Directory('build/ui-review')..createSync(recursive: true);
-    File('${directory.path}/$name.png').writeAsBytesSync(bytes.buffer.asUint8List());
+    File('${directory.path}/$name.png')
+        .writeAsBytesSync(bytes.buffer.asUint8List());
+    image.dispose();
   });
-  image.dispose();
 }

@@ -36,12 +36,7 @@ class ProfileHeader extends StatelessWidget {
             Expanded(
               child: Text(
                 '我的研究库',
-                style: TextStyle(
-                  color: SparkColors.of(context).ink,
-                  fontSize: SparkFontSizes.displayLarge,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: -0.5,
-                ),
+                style: SparkTheme.editorialTitle(context, size: 28),
               ),
             ),
             IconButton(
@@ -57,7 +52,7 @@ class ProfileHeader extends StatelessWidget {
         ),
         const SizedBox(height: 4),
         Text(
-          '本地论文、阅读记录与 AI 配置',
+          '收藏灵感，让研究持续深入',
           style: TextStyle(
             color: SparkColors.of(context).muted,
             fontSize: SparkFontSizes.bodySmall,
@@ -106,14 +101,14 @@ class _ProfileStat extends StatelessWidget {
           onTap: onTap,
           borderRadius: BorderRadius.circular(SparkDesignTokens.radiusLg),
           child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 4),
+            padding: const EdgeInsets.symmetric(vertical: 12),
             child: Column(
               children: [
                 Text(
                   value,
                   style: TextStyle(
                     color: SparkColors.of(context).ink,
-                    fontSize: SparkFontSizes.headlineSmall,
+                    fontSize: SparkFontSizes.display,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -123,7 +118,7 @@ class _ProfileStat extends StatelessWidget {
                   maxLines: 1,
                   style: TextStyle(
                     color: SparkColors.of(context).muted,
-                    fontSize: SparkFontSizes.caption,
+                    fontSize: SparkFontSizes.bodySmall,
                   ),
                 ),
               ],

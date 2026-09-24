@@ -18,7 +18,7 @@ void main() {
     await first.flushPendingWrites();
 
     expect(first.color, SparkThemeColor.blue);
-    expect(second.color, SparkThemeColor.pink);
+    expect(second.color, SparkThemeColor.orange);
     expect(first, isNot(same(second)));
   });
 
@@ -46,7 +46,7 @@ void main() {
     final clearedRepository = InMemoryThemePreferenceRepository();
     await controller.configure(clearedRepository);
 
-    expect(controller.color, SparkThemeColor.pink);
+    expect(controller.color, SparkThemeColor.orange);
   });
 
   test('file repository restores the color from versioned storage', () async {

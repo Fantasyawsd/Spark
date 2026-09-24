@@ -37,7 +37,7 @@ class PaperAiComposerToolbar extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 4),
       child: SizedBox(
         key: const ValueKey('paper-ai-composer-toolbar'),
-        height: 38,
+        height: 48,
         child: Row(
           children: [
             _ToolbarAvatarButton(
@@ -124,13 +124,13 @@ class PaperAiComposerInputSurface extends StatelessWidget {
       decoration: BoxDecoration(
         color: PaperAiUiTokens.composer(context),
         borderRadius: BorderRadius.only(
-          topLeft: const Radius.circular(SparkDesignTokens.radius3Xl),
-          topRight: const Radius.circular(SparkDesignTokens.radius3Xl),
+          topLeft: const Radius.circular(SparkDesignTokens.radiusField),
+          topRight: const Radius.circular(SparkDesignTokens.radiusField),
           bottomLeft: Radius.circular(
-            keyboardVisible ? 0 : SparkDesignTokens.radius3Xl,
+            keyboardVisible ? 0 : SparkDesignTokens.radiusField,
           ),
           bottomRight: Radius.circular(
-            keyboardVisible ? 0 : SparkDesignTokens.radius3Xl,
+            keyboardVisible ? 0 : SparkDesignTokens.radiusField,
           ),
         ),
         border: Border.all(color: PaperAiUiTokens.composerBorder(context)),
@@ -164,7 +164,7 @@ class PaperAiComposerInputSurface extends StatelessWidget {
                   height: 1.4,
                 ),
                 decoration: InputDecoration(
-                  hintText: '输入消息与AI聊天',
+                  hintText: '继续输入你的问题…',
                   hintStyle: TextStyle(
                     color: scheme.onSurfaceVariant,
                     fontSize: SparkFontSizes.titleSmall,

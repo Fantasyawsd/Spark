@@ -7,7 +7,7 @@ import 'theme_preference_repository.dart';
 class ThemeController extends ChangeNotifier {
   ThemeController();
 
-  SparkThemeColor _color = SparkThemeColor.pink;
+  SparkThemeColor _color = SparkThemeColor.orange;
   AppThemeMode _mode = AppThemeMode.system;
   ThemePreferenceRepository? _repository;
   Future<void> _writeQueue = Future.value();
@@ -30,7 +30,7 @@ class ThemeController extends ChangeNotifier {
     final repository = _repository;
     if (repository == null) return;
     try {
-      _color = await repository.load() ?? SparkThemeColor.pink;
+      _color = await repository.load() ?? SparkThemeColor.orange;
       _mode = await repository.loadMode() ?? AppThemeMode.system;
       _persistenceError = null;
     } on ThemePreferencePersistenceException catch (error) {

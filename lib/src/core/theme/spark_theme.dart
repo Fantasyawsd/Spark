@@ -14,7 +14,7 @@ import 'spark_theme_color.dart';
 abstract final class SparkColors {
   static SparkPalette of(BuildContext context) {
     return Theme.of(context).extension<SparkPalette>() ??
-        SparkPalette.light(SparkThemeColor.pink);
+        SparkPalette.light(SparkThemeColor.orange);
   }
 }
 
@@ -24,14 +24,14 @@ extension SparkColorsContext on BuildContext {
 }
 
 abstract final class SparkTheme {
-  static ThemeData light([SparkThemeColor color = SparkThemeColor.pink]) {
+  static ThemeData light([SparkThemeColor color = SparkThemeColor.orange]) {
     return _themeData(
       SparkPalette.light(color),
       Brightness.light,
     );
   }
 
-  static ThemeData dark([SparkThemeColor color = SparkThemeColor.pink]) {
+  static ThemeData dark([SparkThemeColor color = SparkThemeColor.orange]) {
     return _themeData(
       SparkPalette.dark(color),
       Brightness.dark,
@@ -46,7 +46,7 @@ abstract final class SparkTheme {
     );
     final scheme = generatedScheme.copyWith(
       primary: palette.primary,
-      onPrimary: Colors.white,
+      onPrimary: palette.onPrimary,
       primaryContainer: palette.primarySoft,
       onPrimaryContainer: palette.ink,
       secondary: isDark ? palette.blue : SparkThemeColor.blue.value,
@@ -73,8 +73,7 @@ abstract final class SparkTheme {
       surfaceContainerLowest: palette.card,
       surfaceContainerLow: palette.popover,
       surfaceContainer: palette.surfaceMuted,
-      surfaceContainerHigh:
-          isDark ? const Color(0xFF323234) : const Color(0xFFECECEF),
+      surfaceContainerHigh: palette.surfaceStrong,
       surfaceContainerHighest: palette.surfaceStrong,
     );
     final textTheme = _textTheme(palette);
@@ -183,11 +182,11 @@ abstract final class SparkTheme {
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          backgroundColor: palette.primary,
-          foregroundColor: Colors.white,
+          backgroundColor: palette.actionBackground,
+          foregroundColor: palette.onAction,
           disabledBackgroundColor: palette.surfaceStrong,
           disabledForegroundColor: palette.subtle,
-          minimumSize: const Size(44, 44),
+          minimumSize: const Size(48, 48),
           elevation: 0,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(SparkDesignTokens.radiusField),
@@ -272,15 +271,19 @@ abstract final class SparkTheme {
       headlineLarge: TextStyle(
         color: palette.ink,
         fontSize: SparkFontSizes.displayLarge,
-        height: 1.22,
-        fontWeight: FontWeight.w700,
+        height: 1.35,
+        fontWeight: FontWeight.w600,
+        fontFamily: platformSerifFontFamily(),
+        fontFamilyFallback: serifFallback,
         letterSpacing: -0.5,
       ),
       headlineMedium: TextStyle(
         color: palette.ink,
         fontSize: SparkFontSizes.display,
-        height: 1.18,
-        fontWeight: FontWeight.w700,
+        height: 1.35,
+        fontWeight: FontWeight.w600,
+        fontFamily: platformSerifFontFamily(),
+        fontFamilyFallback: serifFallback,
       ),
       titleLarge: TextStyle(
         color: palette.ink,
@@ -300,8 +303,8 @@ abstract final class SparkTheme {
       ),
       bodyLarge: TextStyle(
         color: palette.ink,
-        fontSize: SparkFontSizes.bodyLarge,
-        height: 1.55,
+        fontSize: SparkFontSizes.titleSmall,
+        height: 1.75,
       ),
       bodyMedium: TextStyle(
         color: palette.muted,
@@ -338,6 +341,33 @@ abstract final class SparkTheme {
     return OutlineInputBorder(
       borderRadius: BorderRadius.circular(SparkDesignTokens.radiusField),
       borderSide: BorderSide(color: color, width: width),
+    );
+  }
+
+  static const serifFallback = [
+    'Noto Serif CJK SC',
+    'Songti SC',
+    'SimSun',
+    'Georgia',
+    'serif',
+  ];
+
+  /// Uses installed system faces; no font download or font asset is required.
+  static String platformSerifFontFamily() => switch (defaultTargetPlatform) {
+        TargetPlatform.windows => 'SimSun',
+        TargetPlatform.iOS || TargetPlatform.macOS => 'Songti SC',
+        TargetPlatform.linux => 'Noto Serif CJK SC',
+        _ => 'serif',
+      };
+
+  static TextStyle editorialTitle(BuildContext context, {double size = 26}) {
+    return TextStyle(
+      color: SparkColors.of(context).ink,
+      fontSize: size,
+      fontFamily: platformSerifFontFamily(),
+      fontFamilyFallback: serifFallback,
+      height: 1.35,
+      fontWeight: FontWeight.w600,
     );
   }
 

@@ -13,6 +13,8 @@ import 'package:spark/src/features/papers/presentation/widgets/paper_comments_sh
 import 'support/demo_paper_repository.dart';
 import 'support/paper_presentation_test_support.dart';
 
+import 'support/paper_ember_test_navigation.dart';
+
 void main() {
   testWidgets('favorite tap uses default group and long press selects groups', (
     tester,
@@ -31,6 +33,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    await openFirstDiscoveredPaper(tester);
 
     await tester.tap(find.byKey(const ValueKey('paper-action-save')).first);
     await tester.pumpAndSettle();
@@ -71,6 +74,8 @@ void main() {
 
     await tester.tap(find.byTooltip('关闭'));
     await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('paper-detail-back')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('bottom-nav-2')));
     await tester.pumpAndSettle();
     await tester.tap(
@@ -97,6 +102,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    await openFirstDiscoveredPaper(tester);
     final paper = const ArxivSeedRepository().getAll().first;
 
     await tester.tap(find.byKey(const ValueKey('paper-action-more')));
@@ -104,6 +110,8 @@ void main() {
     await tester.tap(find.text('加入稍后阅读'));
     await tester.pumpAndSettle();
 
+    await tester.tap(find.byKey(const ValueKey('paper-detail-back')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('bottom-nav-2')));
     await tester.pumpAndSettle();
 
@@ -153,8 +161,10 @@ void main() {
 
     await tester.pumpWidget(const SparkApp(showSplash: false));
     await tester.pump();
+    await openFirstDiscoveredPaper(tester);
 
-    await tester.tap(find.byIcon(Icons.chat_bubble_outline_rounded).first);
+    await openPaperMore(tester);
+    await tester.tap(find.byKey(const ValueKey('paper-action-comment')));
     await tester.pumpAndSettle();
 
     expect(find.text('评论 0'), findsOneWidget);
@@ -327,6 +337,8 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    await tester.tap(find.byKey(const ValueKey('papers-view-mode-toggle')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byTooltip('点赞').first);
     await tester.pump();
     await tester.tap(find.byKey(const ValueKey('bottom-nav-1')));
@@ -354,10 +366,12 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    await openFirstDiscoveredPaper(tester);
 
+    await openPaperMore(tester);
     final action = find.byKey(const ValueKey('paper-action-comment'));
     expect(
-      find.descendant(of: action, matching: find.text('0')),
+      find.descendant(of: action, matching: find.text('评论 · 0')),
       findsOneWidget,
     );
 
@@ -372,8 +386,9 @@ void main() {
     ).pop();
     await tester.pumpAndSettle();
 
+    await openPaperMore(tester);
     expect(
-      find.descendant(of: action, matching: find.text('1')),
+      find.descendant(of: action, matching: find.text('评论 · 1')),
       findsOneWidget,
     );
   });
@@ -482,6 +497,7 @@ void main() {
     );
     await tester.pump();
 
+    await openPaperMore(tester);
     await tester.tap(find.byKey(const ValueKey('paper-action-share')));
     await tester.pumpAndSettle();
 

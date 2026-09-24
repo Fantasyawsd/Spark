@@ -39,32 +39,28 @@ class SparkPalette extends ThemeExtension<SparkPalette> {
     required this.barrier,
   });
 
-  /// 亮色 palette；[accentColor] 决定 primary 系列。
-  ///
-  /// 中性色对齐 iOS HIG：canvas = systemGroupedBackground（#F2F2F7），
-  /// card = secondarySystemGroupedBackground（白），line = separator，
-  /// 灰阶层依次为 label / secondaryLabel / tertiaryLabel 的合成近似值。
+  /// 暖纸色表面；强调色独立于中性色，继续支持已有主题选择。
   factory SparkPalette.light([
-    SparkThemeColor accentColor = SparkThemeColor.pink,
+    SparkThemeColor accentColor = SparkThemeColor.orange,
   ]) {
     return SparkPalette(
       primary: accentColor.value,
       primarySoft: accentColor.soft,
       primaryPale: accentColor.pale,
-      ink: const Color(0xFF000000),
-      muted: const Color(0xFF8A8A8E),
-      subtle: const Color(0xFFAEAEB2),
-      foregroundTertiary: const Color(0xFF8E8E93),
-      foregroundDisabled: const Color(0xFFC7C7CC),
-      line: const Color(0xFFE5E5EA),
-      lineStrong: const Color(0xFFD1D1D6),
-      canvas: const Color(0xFFF2F2F7),
-      card: Colors.white,
-      popover: const Color(0xFFF7F7F8),
-      surfaceMuted: const Color(0xFFEFF0F2),
-      surfaceStrong: const Color(0xFFE4E5E9),
-      accent: const Color(0xFFEEEEF0),
-      accentForeground: const Color(0xFF000000),
+      ink: const Color(0xFF262A28),
+      muted: const Color(0xFF6F746F),
+      subtle: const Color(0xFF81867F),
+      foregroundTertiary: const Color(0xFF767C73),
+      foregroundDisabled: const Color(0xFFB8BEB3),
+      line: const Color(0xFFE1E3DA),
+      lineStrong: const Color(0xFFC5CCBD),
+      canvas: const Color(0xFFF6F4EF),
+      card: const Color(0xFFFFFDF9),
+      popover: const Color(0xFFF1F0EA),
+      surfaceMuted: const Color(0xFFEEEFE8),
+      surfaceStrong: const Color(0xFFE3E6DC),
+      accent: const Color(0xFFEEEFE8),
+      accentForeground: const Color(0xFF262A28),
       blue: const Color(0xFF007AFF),
       purple: const Color(0xFFAF52DE),
       green: const Color(0xFF248A3D),
@@ -77,15 +73,11 @@ class SparkPalette extends ThemeExtension<SparkPalette> {
     );
   }
 
-  /// 暗色 palette；primary 系列使用强调色的暗色提亮变体，
-  /// primarySoft / primaryPale 由 darkValue 按卡片表面混合派生。
-  ///
-  /// 中性色对齐 iOS 暗色语义：canvas = 纯黑（systemBackground dark），
-  /// card = elevated #1C1C1E，popover / fill 层取 #2C2C2E–#3A3A3C。
+  /// 深灰绿阅读表面；柔和强调色由卡片表面派生。
   factory SparkPalette.dark([
-    SparkThemeColor accentColor = SparkThemeColor.pink,
+    SparkThemeColor accentColor = SparkThemeColor.orange,
   ]) {
-    const darkCard = Color(0xFF1C1C1E);
+    const darkCard = Color(0xFF1D2320);
     return SparkPalette(
       primary: accentColor.darkValue,
       primarySoft: Color.alphaBlend(
@@ -96,20 +88,20 @@ class SparkPalette extends ThemeExtension<SparkPalette> {
         accentColor.darkValue.withValues(alpha: 0.14),
         darkCard,
       ),
-      ink: const Color(0xFFFFFFFF),
-      muted: const Color(0xFF98989F),
-      subtle: const Color(0xFF6C6C70),
-      foregroundTertiary: const Color(0xFF7C7C80),
-      foregroundDisabled: const Color(0xFF48484A),
-      line: const Color(0xFF38383A),
-      lineStrong: const Color(0xFF48484A),
-      canvas: const Color(0xFF000000),
+      ink: const Color(0xFFECEEE8),
+      muted: const Color(0xFFA6AEA6),
+      subtle: const Color(0xFF8B978C),
+      foregroundTertiary: const Color(0xFF8B978C),
+      foregroundDisabled: const Color(0xFF566158),
+      line: const Color(0xFF343E36),
+      lineStrong: const Color(0xFF465348),
+      canvas: const Color(0xFF171C19),
       card: darkCard,
-      popover: const Color(0xFF2C2C2E),
-      surfaceMuted: const Color(0xFF2C2C2E),
-      surfaceStrong: const Color(0xFF3A3A3C),
-      accent: const Color(0xFF333336),
-      accentForeground: const Color(0xFFFFFFFF),
+      popover: const Color(0xFF252D27),
+      surfaceMuted: const Color(0xFF262E28),
+      surfaceStrong: const Color(0xFF333E35),
+      accent: const Color(0xFF2E3830),
+      accentForeground: const Color(0xFFECEEE8),
       blue: const Color(0xFF0A84FF),
       purple: const Color(0xFFBF5AF2),
       green: const Color(0xFF30D158),
@@ -151,6 +143,20 @@ class SparkPalette extends ThemeExtension<SparkPalette> {
   final Color dangerBorder;
   final Color warning;
   final Color barrier;
+
+  /// Filled controls use a quieter orange in the dark palette.
+  Color get actionBackground => primary == SparkThemeColor.orange.darkValue
+      ? const Color(0xFFE2A087)
+      : primary;
+
+  Color get onPrimary => _contentColor(primary);
+  Color get onAction => _contentColor(actionBackground);
+
+  static Color _contentColor(Color background) {
+    final luminance = background.computeLuminance();
+    if (luminance >= 0.45) return const Color(0xFF291F1A);
+    return 1.05 / (luminance + 0.05) >= 4.5 ? Colors.white : Colors.black;
+  }
 
   @override
   SparkPalette copyWith({

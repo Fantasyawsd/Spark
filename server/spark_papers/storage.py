@@ -18,8 +18,9 @@ from .identity_resolution import (
     resolve_identity,
 )
 from .index_storage import IndexStorage
-from .models import PaperRecord, parse_datetime, utc_now
+from .models import PaperRecord, RecommendationBatch, parse_datetime, utc_now
 from .ports import IngestOutcome, IngestStatus
+from .recommendation_snapshot import recommendation_to_record
 from .citation_velocity import compute_citation_velocities
 from .paper_record_merger import merge_paper_records
 from .star_velocity import compute_star_velocity
@@ -977,6 +978,17 @@ class PaperStore:
 
     def latest_source_update(self, source: str) -> datetime | None:
         return self._sync_storage.latest_source_update(source)
+
+    def save_recommendation_batch(self, batch: RecommendationBatch) -> None:
+        """Adapt the domain result to the existing persisted batch format."""
+        self.record_batch(
+            batch.batch_id,
+            batch.generated_at,
+            batch.score_version,
+            batch.sampling_seed,
+            {item.paper.paper_id: recommendation_to_record(item) for item in batch.items},
+            [item.paper.paper_id for item in batch.items],
+        )
 
     def record_batch(
         self,

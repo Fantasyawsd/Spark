@@ -1,0 +1,123 @@
+{
+  "baseline": "64cf4051ccbdeef3bdcf7ecdd8b74a6269c13dfc",
+  "cases": [
+    {
+      "index": 0,
+      "batch": "batch_3bb7895e17eb314a4c2f",
+      "paper_ids": [
+        "paper-008"
+      ],
+      "sha256": "2197213dc17421df844c5fcda8cd2e53c75dcdc252b561efe9fd0f33eb48c7af"
+    },
+    {
+      "index": 1,
+      "batch": "batch_3bb7895e17eb314a4c2f",
+      "paper_ids": [
+        "paper-008"
+      ],
+      "sha256": "2197213dc17421df844c5fcda8cd2e53c75dcdc252b561efe9fd0f33eb48c7af"
+    },
+    {
+      "index": 2,
+      "batch": "batch_3bb7895e17eb314a4c2f",
+      "paper_ids": [
+        "paper-008"
+      ],
+      "sha256": "2197213dc17421df844c5fcda8cd2e53c75dcdc252b561efe9fd0f33eb48c7af"
+    },
+    {
+      "index": 3,
+      "batch": "batch_99d5da0a3b4fc9009e9d",
+      "paper_ids": [
+        "paper-004"
+      ],
+      "sha256": "9099106c7ad7964cf43a0bfe9af742dfd88694d67647dc79b5d92de0fcc64709"
+    },
+    {
+      "index": 4,
+      "batch": "batch_3bb7895e17eb314a4c2f",
+      "paper_ids": [
+        "paper-008"
+      ],
+      "sha256": "2197213dc17421df844c5fcda8cd2e53c75dcdc252b561efe9fd0f33eb48c7af"
+    },
+    {
+      "index": 5,
+      "batch": "batch_3bb7895e17eb314a4c2f",
+      "paper_ids": [
+        "paper-008"
+      ],
+      "sha256": "2197213dc17421df844c5fcda8cd2e53c75dcdc252b561efe9fd0f33eb48c7af"
+    },
+    {
+      "index": 6,
+      "batch": "batch_39a5fbdfdcad82f1c1c1",
+      "paper_ids": [
+        "paper-010"
+      ],
+      "sha256": "be122c98ec1ba9f2966d7f7e88fee3f38df8c40524f09d3a412358d7fb4c58ef"
+    },
+    {
+      "index": 7,
+      "batch": "batch_39a5fbdfdcad82f1c1c1",
+      "paper_ids": [
+        "paper-010"
+      ],
+      "sha256": "20209adb8d8cb8d048371b2ff7bf89e922806561fd22d516d3dde274a6b541aa"
+    },
+    {
+      "index": 56,
+      "batch": "batch_b747d56e67665fc7433c",
+      "paper_ids": [
+        "paper-008",
+        "paper-004",
+        "paper-005",
+        "paper-006",
+        "paper-011"
+      ],
+      "sha256": "18adc199b3a2784bc95c4aef7761e4908790f7bb0f1c5ac70905c4bab77cc7bb"
+    },
+    {
+      "index": 101,
+      "batch": "batch_73cb80a3041d0fc3a92d",
+      "paper_ids": [
+        "paper-004"
+      ],
+      "sha256": "018015001845793f1cb0d1ab740d8613a54d29820fd3c65f1cfe523efd5cb257"
+    },
+    {
+      "index": 401,
+      "batch": "batch_60ce4e98aaeb790d4f82",
+      "paper_ids": [
+        "paper-004",
+        "paper-000",
+        "paper-008",
+        "paper-009",
+        "paper-005",
+        "paper-010",
+        "paper-002",
+        "paper-006",
+        "paper-007",
+        "paper-003"
+      ],
+      "sha256": "74cd2a949f68955bbf21ff37468887960b20d67f1dbaf9f47440818b7194f7a7"
+    },
+    {
+      "index": 599,
+      "batch": "batch_7303fa91bcbe4b924110",
+      "paper_ids": [
+        "paper-008",
+        "paper-010",
+        "paper-002",
+        "paper-011",
+        "paper-003",
+        "paper-007",
+        "paper-000",
+        "paper-009",
+        "paper-004",
+        "paper-006"
+      ],
+      "sha256": "43d6fc080b155f9b13a336a289b529aac74ab16a654f2c5292db9a7f52ce70cf"
+    }
+  ]
+}

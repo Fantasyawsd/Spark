@@ -28,8 +28,8 @@ jobs:
           from pathlib import Path
           root = Path.cwd().resolve()
           transfers = sorted(Path('tool').glob('.paper-ember-transfer-*.json'))
-          if len(transfers) != 6:
-              raise SystemExit('Expected exactly six reviewed transfer files')
+          if len(transfers) != 1:
+              raise SystemExit('Expected exactly one reviewed fix file')
           planned = {}
           for transfer in transfers:
               for entry in json.loads(transfer.read_text(encoding='utf-8')):
@@ -79,7 +79,7 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add -A -- lib test tool
-          git commit -m '新增（UI）：实现纸感火花主题与核心阅读界面'
+          git commit -m '修复（UI）：修正长按收藏和主题对比度并完善回归测试'
           git push origin HEAD:refs/heads/feature/paper-ember-ui
           echo "head=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
   verify:
@@ -138,21 +138,28 @@ jobs:
           code=$?
           cat review/capture.log
           exit "$code"
-      - name: Build development APK
-        if: steps.analyze.outcome == 'success' && steps.test.outcome == 'success'
-        id: build
-        continue-on-error: true
-        run: flutter build apk --debug --flavor development --dart-define=SPARK_ENV=development
-      - uses: actions/upload-artifact@v4
+      - name: Upload review diagnostics
+        uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: ember-review-${{ needs.apply.outputs.head }}
+          name: ember-diagnostics-${{ needs.apply.outputs.head }}
           path: |
             review/
             build/ui-review/
-            build/app/outputs/flutter-apk/app-development-debug.apk
           retention-days: 3
           if-no-files-found: error
+      - name: Build development profile APK
+        if: steps.analyze.outcome == 'success' && steps.test.outcome == 'success'
+        id: build
+        continue-on-error: true
+        run: flutter build apk --profile --flavor development --dart-define=SPARK_ENV=development
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ember-apk-${{ needs.apply.outputs.head }}
+          path: build/app/outputs/flutter-apk/app-development-profile.apk
+          retention-days: 3
+          if-no-files-found: ignore
       - name: Report checks
         if: always()
         env:

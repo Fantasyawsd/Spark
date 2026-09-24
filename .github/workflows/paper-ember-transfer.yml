@@ -1,0 +1,170 @@
+name: Apply Paper Ember UI
+
+on:
+  push:
+    branches: [feature/paper-ember-ui]
+    paths: ['.github/workflows/paper-ember-transfer.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  apply:
+    if: github.ref == 'refs/heads/feature/paper-ember-ui'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    outputs:
+      head: ${{ steps.commit.outputs.head }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Validate exact source and apply reviewed edits
+        shell: python
+        run: |
+          import hashlib, json
+          from pathlib import Path
+          root = Path.cwd().resolve()
+          transfers = sorted(Path('tool').glob('.paper-ember-transfer-*.json'))
+          if len(transfers) != 6:
+              raise SystemExit('Expected exactly six reviewed transfer files')
+          planned = {}
+          for transfer in transfers:
+              for entry in json.loads(transfer.read_text(encoding='utf-8')):
+                  relative = Path(entry['path'])
+                  if relative.is_absolute() or '..' in relative.parts:
+                      raise SystemExit('Invalid path')
+                  if relative.parts[0] not in ('lib', 'test') or relative.suffix != '.dart':
+                      raise SystemExit('Out of scope path')
+                  path = root / relative
+                  if path.is_symlink() or path.resolve().is_relative_to(root) is False:
+                      raise SystemExit('Invalid target')
+                  old = planned.get(path, path.read_bytes() if path.exists() else b'')
+                  if hashlib.sha256(old).hexdigest() != entry['before']:
+                      raise SystemExit('Source changed: ' + str(relative))
+                  lines = old.decode('utf-8').splitlines(keepends=True)
+                  for start, end, replacement in reversed(entry['edits']):
+                      if not 0 <= start <= end <= len(lines):
+                          raise SystemExit('Invalid edit range')
+                      lines[start:end] = replacement.splitlines(keepends=True)
+                  new = ''.join(lines).encode('utf-8')
+                  if hashlib.sha256(new).hexdigest() != entry['after']:
+                      raise SystemExit('Result checksum mismatch: ' + str(relative))
+                  planned[path] = new
+          for path, data in planned.items():
+              path.parent.mkdir(parents=True, exist_ok=True)
+              path.write_bytes(data)
+          for transfer in transfers:
+              transfer.unlink()
+          print('Applied', len(planned), 'verified source edits')
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.44.8
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - name: Format reviewed Dart files
+        shell: bash
+        run: |
+          mapfile -d '' files < <(git diff --name-only -z --diff-filter=ACMR 7e71b36e7209da4e8d2385eba352b13d03e0fea0 -- '*.dart')
+          dart format "${files[@]}"
+          git diff --check
+      - name: Commit only to the UI development branch
+        id: commit
+        shell: bash
+        run: |
+          test "$GITHUB_REF" = refs/heads/feature/paper-ember-ui
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A -- lib test tool
+          git commit -m '新增（UI）：实现纸感火花主题与核心阅读界面'
+          git push origin HEAD:refs/heads/feature/paper-ember-ui
+          echo "head=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+  verify:
+    needs: apply
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.apply.outputs.head }}
+          fetch-depth: 0
+          persist-credentials: false
+      - run: |
+          mkdir -p review
+          git rev-parse HEAD > review/commit.txt
+          git archive --format=zip --output=review/source.zip HEAD
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.44.8
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - name: Verify formatting
+        id: format
+        continue-on-error: true
+        shell: bash
+        run: |
+          mapfile -d '' files < <(git diff --name-only -z --diff-filter=ACMR 7e71b36e7209da4e8d2385eba352b13d03e0fea0 HEAD -- '*.dart')
+          dart format --output=none --set-exit-if-changed "${files[@]}"
+      - name: Analyze
+        id: analyze
+        continue-on-error: true
+        run: flutter analyze 2>&1 | tee review/analyze.log
+      - name: Test
+        id: test
+        continue-on-error: true
+        shell: bash
+        run: |
+          set +e
+          flutter test --reporter expanded > review/tests.log 2>&1
+          code=$?
+          tail -100 review/tests.log
+          exit "$code"
+      - name: Install review fonts
+        continue-on-error: true
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq fonts-noto-cjk
+      - name: Capture implemented screens
+        id: capture
+        continue-on-error: true
+        shell: bash
+        run: |
+          set +e
+          flutter test test/paper_ember_ui_test.dart --plain-name 'capture implemented light and dark screens' --dart-define=SPARK_CAPTURE_UI=true --reporter expanded > review/capture.log 2>&1
+          code=$?
+          cat review/capture.log
+          exit "$code"
+      - name: Build development APK
+        if: steps.analyze.outcome == 'success' && steps.test.outcome == 'success'
+        id: build
+        continue-on-error: true
+        run: flutter build apk --debug --flavor development --dart-define=SPARK_ENV=development
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ember-review-${{ needs.apply.outputs.head }}
+          path: |
+            review/
+            build/ui-review/
+            build/app/outputs/flutter-apk/app-development-debug.apk
+          retention-days: 3
+          if-no-files-found: error
+      - name: Report checks
+        if: always()
+        env:
+          FORMAT: ${{ steps.format.outcome }}
+          ANALYZE: ${{ steps.analyze.outcome }}
+          TEST: ${{ steps.test.outcome }}
+          CAPTURE: ${{ steps.capture.outcome }}
+          BUILD: ${{ steps.build.outcome }}
+        run: |
+          echo "format=$FORMAT analyze=$ANALYZE tests=$TEST capture=$CAPTURE build=$BUILD"
+          test "$FORMAT" = success
+          test "$ANALYZE" = success
+          test "$TEST" = success
+          test "$CAPTURE" = success
+          test "$BUILD" = success

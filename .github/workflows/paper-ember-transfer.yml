@@ -79,7 +79,7 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add -A -- lib test tool
-          git commit -m '修复（UI）：修正长按收藏和主题对比度并完善回归测试'
+          git commit -m '修复（UI）：保留发现上滑切换并验证设置入口与公式预览'
           git push origin HEAD:refs/heads/feature/paper-ember-ui
           echo "head=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
   verify:

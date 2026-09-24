@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/theme/spark_design_tokens.dart';
 import '../../../../core/theme/spark_theme.dart';
+import '../../../../core/widgets/spark_markdown.dart';
 import '../../domain/paper.dart';
 import 'paper_presenter.dart';
 
@@ -53,6 +54,9 @@ class PaperDiscoveryCard extends StatelessWidget {
               children: [
                 Expanded(
                   child: SingleChildScrollView(
+                    // A discovery preview must not consume the feed's vertical
+                    // paging gesture. Full reading is available via onOpen.
+                    physics: const NeverScrollableScrollPhysics(),
                     key: ValueKey('paper-discovery-scroll-${paper.id}'),
                     padding: EdgeInsets.fromLTRB(20, compact ? 12 : 24, 20, 12),
                     child: Column(
@@ -91,6 +95,8 @@ class PaperDiscoveryCard extends StatelessWidget {
                         ),
                         const SizedBox(height: 12),
                         Text(paper.title,
+                            maxLines: 4,
+                            overflow: TextOverflow.ellipsis,
                             key: ValueKey('paper-discovery-title-${paper.id}'),
                             style: SparkTheme.editorialTitle(context,
                                 size: compact ? 24 : 28)),
@@ -126,18 +132,24 @@ class PaperDiscoveryCard extends StatelessWidget {
                           ]),
                         ],
                         const SizedBox(height: 24),
-                        Text('ABSTRACT',
-                            style: TextStyle(
-                                color: palette.primary,
-                                fontSize: 11,
-                                letterSpacing: 1.2,
-                                fontWeight: FontWeight.w600)),
+                        Row(children: [
+                          Text('ABSTRACT',
+                              style: TextStyle(
+                                  color: palette.primary,
+                                  fontSize: 11,
+                                  letterSpacing: 1.2,
+                                  fontWeight: FontWeight.w600)),
+                          const Spacer(),
+                          Text('上滑下一篇',
+                              style: TextStyle(
+                                  color: palette.muted, fontSize: 12)),
+                        ]),
                         const SizedBox(height: 10),
-                        Text(preview,
-                            maxLines: compact ? 4 : 7,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                                color: palette.ink, fontSize: 16, height: 1.8)),
+                        SparkMarkdown(
+                          data: preview,
+                          styleSheet: paperReaderMarkdownStyle(context),
+                          selectable: false,
+                        ),
                       ],
                     ),
                   ),

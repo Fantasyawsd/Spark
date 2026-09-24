@@ -31,8 +31,8 @@ void main() {
     );
 
     await tester.scrollUntilVisible(
-      find.byKey(const ValueKey('profile-deepseek-settings')),
-      250,
+      find.byKey(const ValueKey('profile-deepseek-settings')).hitTestable(),
+      200,
       scrollable: find
           .descendant(
             of: find.byKey(const ValueKey('profile-scroll')),
@@ -40,6 +40,10 @@ void main() {
           )
           .first,
     );
+    await tester.pumpAndSettle();
+    expect(
+        find.byKey(const ValueKey('profile-deepseek-settings')).hitTestable(),
+        findsOneWidget);
     await tester.tap(find.byKey(const ValueKey('profile-deepseek-settings')));
     await tester.pumpAndSettle();
     await tester.enterText(

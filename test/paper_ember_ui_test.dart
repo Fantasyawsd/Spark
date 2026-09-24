@@ -113,6 +113,27 @@ void main() {
     });
   }
 
+  testWidgets('discovery content forwards swipes to the paper feed',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(SparkApp(
+      showSplash: false,
+      dependencies: SparkDependencies.preview(),
+    ));
+    await tester.pumpAndSettle();
+    final feed =
+        tester.widget<PageView>(find.byKey(const ValueKey('paper-feed')));
+    expect(feed.controller!.page, 0);
+    await tester.drag(
+      find.byKey(const ValueKey('paper-discovery-scroll-2402.06734')),
+      const Offset(0, -500),
+    );
+    await tester.pumpAndSettle();
+    expect(feed.controller!.page, 1);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('paper context distinguishes capability, loading and loaded',
       (tester) async {
     final load = Completer<ChatContext>();

@@ -292,6 +292,9 @@ void main() {
       expect(find.byKey(const ValueKey('paper-full-reader')), findsOneWidget);
       expect(find.text('Abstract'), findsOneWidget);
 
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pumpAndSettle();
+
       final shortController = PaperController(
         _TestPaperRepository(_testPaper('A short abstract.')),
       );

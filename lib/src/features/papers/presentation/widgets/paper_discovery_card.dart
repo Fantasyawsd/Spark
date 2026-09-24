@@ -29,9 +29,9 @@ class PaperDiscoveryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = SparkColors.of(context);
-    final chinese = paper.content.chineseAbstractMarkdown.trim();
-    final preview =
-        chinese.isNotEmpty ? chinese : paper.content.originalAbstractMarkdown;
+    // Discovery uses the original abstract. Chinese translations are managed
+    // separately by the reader and must never be inferred from placeholders.
+    final preview = paper.content.originalAbstractMarkdown;
     final topic = topicLabel(paper);
     final trend = trendLabel(paper);
     final personalized = personalizationLabel(paper);
@@ -70,17 +70,21 @@ class PaperDiscoveryCard extends StatelessWidget {
                                   style: TextStyle(
                                       color: palette.muted, fontSize: 12)),
                             ),
-                            GestureDetector(
-                              onLongPress: onSaveLongPress,
-                              child: IconButton(
-                                key: ValueKey(
-                                    'paper-discovery-save-${paper.id}'),
-                                tooltip: saved ? '取消收藏' : '收藏',
-                                onPressed: onSave,
-                                icon: Icon(saved
-                                    ? Icons.bookmark_rounded
-                                    : Icons.bookmark_border_rounded),
-                                color: saved ? palette.primary : palette.muted,
+                            Tooltip(
+                              message: saved ? '取消收藏' : '收藏',
+                              triggerMode: TooltipTriggerMode.manual,
+                              child: GestureDetector(
+                                onLongPress: onSaveLongPress,
+                                child: IconButton(
+                                  key: ValueKey(
+                                      'paper-discovery-save-${paper.id}'),
+                                  onPressed: onSave,
+                                  icon: Icon(saved
+                                      ? Icons.bookmark_rounded
+                                      : Icons.bookmark_border_rounded),
+                                  color:
+                                      saved ? palette.primary : palette.muted,
+                                ),
                               ),
                             ),
                           ],
@@ -122,7 +126,7 @@ class PaperDiscoveryCard extends StatelessWidget {
                           ]),
                         ],
                         const SizedBox(height: 24),
-                        Text(chinese.isEmpty ? 'ABSTRACT' : '中文摘要',
+                        Text('ABSTRACT',
                             style: TextStyle(
                                 color: palette.primary,
                                 fontSize: 11,

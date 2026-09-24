@@ -339,7 +339,8 @@ void main() {
 
     await tester.tap(find.byKey(const ValueKey('papers-view-mode-toggle')));
     await tester.pumpAndSettle();
-    await tester.tap(find.byTooltip('点赞').first);
+    await tester
+        .tap(find.byIcon(Icons.favorite_border_rounded).hitTestable().first);
     await tester.pump();
     await tester.tap(find.byKey(const ValueKey('bottom-nav-1')));
     await tester.pumpAndSettle();

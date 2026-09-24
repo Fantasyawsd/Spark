@@ -30,8 +30,15 @@ void main() {
       ),
     );
 
-    await tester.ensureVisible(
+    await tester.scrollUntilVisible(
       find.byKey(const ValueKey('profile-deepseek-settings')),
+      250,
+      scrollable: find
+          .descendant(
+            of: find.byKey(const ValueKey('profile-scroll')),
+            matching: find.byType(Scrollable),
+          )
+          .first,
     );
     await tester.tap(find.byKey(const ValueKey('profile-deepseek-settings')));
     await tester.pumpAndSettle();

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:spark/src/core/theme/spark_theme_color.dart';
 import 'package:spark/src/core/theme/spark_theme.dart';
+import 'package:spark/src/core/theme/spark_palette.dart';
 import 'package:spark/src/features/chat/domain/chat_ai_service.dart';
 import 'package:spark/src/features/chat/domain/chat_context.dart';
 import 'package:spark/src/features/chat/domain/chat_message.dart';
@@ -53,21 +54,25 @@ void main() {
     }
 
     final blueColors = await pumpWithTheme(blueTheme);
-    expect(blueColors.canvas, _accentBlend(blueTheme, 0.02));
-    expect(blueColors.userBubble, blueTheme.colorScheme.primaryContainer);
-    expect(blueColors.composer, _accentBlend(blueTheme, 0.06));
+    expect(blueColors.canvas, SparkPalette.light(SparkThemeColor.blue).canvas);
+    expect(blueColors.userBubble,
+        SparkPalette.light(SparkThemeColor.blue).surfaceMuted);
+    expect(blueColors.composer, SparkPalette.light(SparkThemeColor.blue).card);
     expect(blueColors.reasoning, _accentBlend(blueTheme, 0.08));
     expect(blueColors.activeControl, blueTheme.colorScheme.primary);
 
     final greenColors = await pumpWithTheme(greenTheme);
-    expect(greenColors.canvas, _accentBlend(greenTheme, 0.02));
-    expect(greenColors.userBubble, greenTheme.colorScheme.primaryContainer);
-    expect(greenColors.composer, _accentBlend(greenTheme, 0.06));
+    expect(
+        greenColors.canvas, SparkPalette.light(SparkThemeColor.green).canvas);
+    expect(greenColors.userBubble,
+        SparkPalette.light(SparkThemeColor.green).surfaceMuted);
+    expect(
+        greenColors.composer, SparkPalette.light(SparkThemeColor.green).card);
     expect(greenColors.reasoning, _accentBlend(greenTheme, 0.08));
     expect(greenColors.activeControl, greenTheme.colorScheme.primary);
-    expect(greenColors.canvas, isNot(blueColors.canvas));
-    expect(greenColors.userBubble, isNot(blueColors.userBubble));
-    expect(greenColors.composer, isNot(blueColors.composer));
+    expect(greenColors.canvas, blueColors.canvas);
+    expect(greenColors.userBubble, blueColors.userBubble);
+    expect(greenColors.composer, blueColors.composer);
     expect(greenColors.reasoning, isNot(blueColors.reasoning));
     expect(greenColors.activeControl, isNot(blueColors.activeControl));
   });

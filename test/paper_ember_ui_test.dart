@@ -10,6 +10,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:spark/spark.dart';
 import 'package:spark/src/core/theme/in_memory_theme_preference_repository.dart';
 import 'package:spark/src/features/chat/presentation/widgets/paper_ai_chat_app_bar.dart';
+import 'package:spark/src/features/chat/presentation/paper_ai_chat_screen.dart';
+import 'package:spark/src/features/chat/data/in_memory_chat_session_repository.dart';
 import 'package:spark/src/features/papers/presentation/widgets/paper_discovery_card.dart';
 import 'package:spark/src/features/papers/presentation/widgets/papers_header.dart';
 
@@ -99,7 +101,12 @@ void main() {
           .tap(find.byKey(const ValueKey('paper-discovery-open-review')));
       await tester
           .tap(find.byKey(const ValueKey('paper-discovery-later-review')));
-      expect(actions, ['search', 'filter', 'manage', 'view', 'open', 'later']);
+      await tester
+          .longPress(find.byKey(const ValueKey('paper-discovery-save-review')));
+      await tester.pumpAndSettle();
+      expect(actions,
+          ['search', 'filter', 'manage', 'view', 'open', 'later', 'group']);
+      expect(find.text('中文摘要尚未生成。'), findsNothing);
       expect(find.textContaining('Trending'), findsNothing);
       expect(find.textContaining('被引'), findsNothing);
       expect(tester.takeException(), isNull);
@@ -193,6 +200,24 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('bottom-nav-2')));
     await tester.pumpAndSettle();
     await _captureScreen(tester, boundary, 'library');
+    await tester.pumpWidget(RepaintBoundary(
+      key: boundary,
+      child: MaterialApp(
+        theme: SparkTheme.light(),
+        home: PaperAiChatScreen(
+          chatContext: const ChatContext(
+            id: 'review-paper',
+            title:
+                'Corruption Robust Offline Reinforcement Learning with Human Feedback',
+            systemPrompt: '',
+          ),
+          aiService: const FakeChatAiService(),
+          sessionRepository: InMemoryChatSessionRepository(),
+        ),
+      ),
+    ));
+    await tester.pumpAndSettle();
+    await _captureScreen(tester, boundary, 'chat');
     expect(tester.takeException(), isNull);
   });
 }
@@ -204,13 +229,18 @@ Paper _paper() => Paper(
       abstractText:
           'An abstract with enough content to check readable line lengths. ' *
               12,
-      chineseAbstractMarkdown: '',
+      chineseAbstractMarkdown: '中文摘要尚未生成。',
       readMinutes: 4,
     );
 
 Future<void> _loadReviewFonts() async {
   final fonts = {
-    'Roboto': '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
+    'Roboto': '/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc',
+    'Arial': '/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc',
+    'Microsoft YaHei': '/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc',
+    'PingFang SC': '/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc',
+    'MaterialIcons':
+        '${Platform.environment['FLUTTER_ROOT']}/bin/cache/artifacts/material_fonts/MaterialIcons-Regular.otf',
     'Noto Sans CJK SC':
         '/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc',
     'serif': '/usr/share/fonts/opentype/noto/NotoSerifCJK-Regular.ttc',
@@ -219,7 +249,9 @@ Future<void> _loadReviewFonts() async {
   };
   for (final entry in fonts.entries) {
     final file = File(entry.value);
-    if (!file.existsSync()) continue;
+    if (!file.existsSync()) {
+      throw StateError('Review font is missing: ${entry.key}');
+    }
     final loader = FontLoader(entry.key);
     loader.addFont(Future.value(ByteData.sublistView(file.readAsBytesSync())));
     await loader.load();

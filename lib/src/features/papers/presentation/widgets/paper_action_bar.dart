@@ -53,16 +53,19 @@ class PaperActionBar extends StatelessWidget {
         padding: const EdgeInsets.all(4),
         child: Row(
           children: [
-            GestureDetector(
-              onLongPress: onSaveLongPress,
-              child: IconButton(
-                key: const ValueKey('paper-action-save'),
-                tooltip: saved ? '取消收藏；长按选择分组' : '收藏；长按选择分组',
-                onPressed: onSave,
-                color: saved ? palette.primary : palette.muted,
-                icon: Icon(saved
-                    ? Icons.bookmark_rounded
-                    : Icons.bookmark_border_rounded),
+            Tooltip(
+              message: saved ? '取消收藏；长按选择分组' : '收藏；长按选择分组',
+              triggerMode: TooltipTriggerMode.manual,
+              child: GestureDetector(
+                onLongPress: onSaveLongPress,
+                child: IconButton(
+                  key: const ValueKey('paper-action-save'),
+                  onPressed: onSave,
+                  color: saved ? palette.primary : palette.muted,
+                  icon: Icon(saved
+                      ? Icons.bookmark_rounded
+                      : Icons.bookmark_border_rounded),
+                ),
               ),
             ),
             IconButton(

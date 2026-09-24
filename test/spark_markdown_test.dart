@@ -312,7 +312,7 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: SizedBox(
-              width: 320,
+              width: 360,
               child: Builder(
                 builder: (context) => SparkMarkdown(
                   data:

@@ -12,7 +12,7 @@ enum SparkThemeColor {
   blue(
     '学术蓝',
     Color(0xFF007AFF),
-    Color(0xFF0A84FF),
+    Color(0xFF228BFF),
     Color(0xFFE4EEFF),
     Color(0xFFF2F7FF),
   ),

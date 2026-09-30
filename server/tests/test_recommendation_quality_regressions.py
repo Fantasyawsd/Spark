@@ -80,10 +80,10 @@ class RecommendationQualityRegressionTest(unittest.TestCase):
         _, items = self.engine(ScoreConfig(personalized_pool_ratio=1.0)).generate(
             limit=2, seed=1, as_of=NOW, anonymous_profile=self.profile,
         )
-        snapshot = self.store.record_batch.call_args.args[4]
-        for item in items:
-            payload = snapshot[item.paper.paper_id]
-            self.assertEqual(payload["personalization_score"], payload["score_signals"]["personalization.preference"])
+        batch = self.store.save_recommendation_batch.call_args.args[0]
+        self.assertEqual(batch.items, tuple(items))
+        for item in batch.items:
+            self.assertEqual(item.personalization_score, item.signals["personalization.preference"])
 
     def test_regular_non_personalized_pool_exposes_zero(self) -> None:
         # round(1 * 0.4) == 0: the selected paper still has a preference signal.

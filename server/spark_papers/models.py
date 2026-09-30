@@ -100,3 +100,14 @@ class RecommendationItem:
     personalization_score: float = 0.0
     recommendation_weight: float = 0.0
     signals: Mapping[str, Any] = field(default_factory=dict)
+
+
+@dataclass(frozen=True)
+class RecommendationBatch:
+    """Domain batch handed to persistence without an API or JSON representation."""
+
+    batch_id: str
+    generated_at: datetime
+    score_version: str
+    sampling_seed: int
+    items: tuple[RecommendationItem, ...]

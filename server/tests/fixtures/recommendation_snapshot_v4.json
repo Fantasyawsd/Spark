@@ -1,0 +1,57 @@
+{
+  "paper_id": "stored-paper",
+  "title": "Paper stored-paper",
+  "abstract": "研究摘要",
+  "authors": [
+    "作者",
+    "Ada"
+  ],
+  "published_at": "2026-09-24T00:00:00Z",
+  "updated_at": "2026-09-24T00:00:00Z",
+  "subjects": [
+    "cs.AI"
+  ],
+  "external_ids": {
+    "arxiv_id": "2609.00001"
+  },
+  "discovery_sources": [
+    "arxiv"
+  ],
+  "signals": {
+    "openalex": {
+      "citation_count": 10
+    },
+    "huggingface": {
+      "heat": 4
+    }
+  },
+  "metadata": {
+    "venue_name": "NeurIPS",
+    "unknown": null
+  },
+  "admitted": true,
+  "admission_reason": "",
+  "withdrawn": false,
+  "schema_version": "paper.v1",
+  "provenance": [
+    {
+      "field_name": "title",
+      "source": "arxiv",
+      "fetched_at": "2026-09-24T00:00:00Z",
+      "source_updated_at": "2026-09-24T00:00:00Z",
+      "evidence": {
+        "verified": true
+      }
+    }
+  ],
+  "pool": "personalized",
+  "age_bucket": "0-1y",
+  "quality_score": 0.333333,
+  "trend_score": 0.987654,
+  "personalization_score": 0.123457,
+  "recommendation_weight": 0.123457,
+  "score_signals": {
+    "personalization.preference": 0.123457,
+    "trend.boost": 1.0
+  }
+}

@@ -5,7 +5,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Any, Iterable, Mapping, Protocol
 
-from .models import PaperRecord
+from .models import PaperRecord, RecommendationBatch
 
 
 class IngestStatus(str, Enum):
@@ -24,7 +24,9 @@ class PaperRepository(Protocol):
     def get(self, paper_id: str) -> PaperRecord | None: ...
     def count(self) -> int: ...
     def all_candidates(self) -> list[PaperRecord]: ...
-    def list_papers_by_keyword(self, keyword: str, *, limit: int = 50) -> list[PaperRecord]: ...
+    def list_papers_by_keyword(
+        self, keyword: str, *, limit: int = 50, to_date: datetime | None = None,
+    ) -> list[PaperRecord]: ...
     def recommendation_candidates(
         self,
         *,
@@ -104,12 +106,4 @@ class PipelineRepository(PaperRepository, Protocol):
 
 
 class RecommendationRepository(PaperRepository, Protocol):
-    def record_batch(
-        self,
-        batch_id: str,
-        generated_at: datetime,
-        score_version: str,
-        sampling_seed: int,
-        feature_snapshot: Mapping[str, Any],
-        selected_paper_ids: list[str],
-    ) -> None: ...
+    def save_recommendation_batch(self, batch: RecommendationBatch) -> None: ...

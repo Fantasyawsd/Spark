@@ -33,8 +33,9 @@ def parse_anonymous_profile(payload: Any) -> AnonymousProfile | None:
     """Parse and validate a profile payload; returns None when invalid.
 
     The version must be known, every dimension holds at most
-    MAX_KEYS_PER_DIMENSION entries, and weights must be finite numbers
-    within [-MAX_WEIGHT_ABS, MAX_WEIGHT_ABS]. Unknown versions are rejected
+    MAX_KEYS_PER_DIMENSION input entries before key normalization. Weights
+    must be finite numbers within [-MAX_WEIGHT_ABS, MAX_WEIGHT_ABS].
+    Unknown versions are rejected
     so clients never silently rely on a server that ignores their signals.
     """
     if not isinstance(payload, Mapping):
@@ -44,7 +45,7 @@ def parse_anonymous_profile(payload: Any) -> AnonymousProfile | None:
     dimensions: dict[str, Mapping[str, float]] = {}
     for name in ("subjects", "keywords", "venues"):
         raw = payload.get(name, {})
-        if not isinstance(raw, Mapping):
+        if not isinstance(raw, Mapping) or len(raw) > MAX_KEYS_PER_DIMENSION:
             return None
         weights: dict[str, float] = {}
         for key, value in raw.items():
@@ -55,8 +56,6 @@ def parse_anonymous_profile(payload: Any) -> AnonymousProfile | None:
             if weight is None or abs(weight) > MAX_WEIGHT_ABS:
                 return None
             weights[normalized] = weight
-        if len(weights) > MAX_KEYS_PER_DIMENSION:
-            return None
         dimensions[name] = weights
     return AnonymousProfile(
         version=PROFILE_VERSION,
@@ -74,9 +73,9 @@ def encode_anonymous_profile(profile: AnonymousProfile) -> str:
 def decode_anonymous_profile(value: str) -> AnonymousProfile | None:
     try:
         padding = "=" * (-len(value) % 4)
-        raw = base64.urlsafe_b64decode((value + padding).encode())
+        raw = base64.b64decode((value + padding).encode(), altchars=b"-_", validate=True)
         return parse_anonymous_profile(json.loads(raw.decode()))
-    except (ValueError, UnicodeDecodeError, json.JSONDecodeError):
+    except (ValueError, UnicodeDecodeError, json.JSONDecodeError, RecursionError):
         return None
 
 
@@ -85,6 +84,6 @@ def _number(value: Any) -> float | None:
         return None
     try:
         parsed = float(value)
-    except (TypeError, ValueError):
+    except (TypeError, ValueError, OverflowError):
         return None
     return parsed if math.isfinite(parsed) else None
